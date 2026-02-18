@@ -53,15 +53,15 @@ export default function HomePage() {
             <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-gray-900 dark:text-white tracking-tight leading-[1.1] mb-6">
               Tout le programme.
               <br />
-              <span className="gradient-text">Zero impasse.</span>
+              <span className="gradient-text">Zéro impasse.</span>
             </h1>
           </div>
 
           {/* Subtitle */}
           <p className="text-lg sm:text-xl text-gray-500 dark:text-dark-200 max-w-2xl mx-auto leading-relaxed mb-10 animate-fade-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
-            SLAM, SISR, maths, droit — chaque concept explique, chaque exercice corrige.
+            SLAM, SISR, maths, droit — chaque concept expliqué, chaque exercice corrigé.
             <br className="hidden sm:block" />
-            <span className="text-gray-900 dark:text-white font-semibold">{totalHours} heures</span> de contenu structure pour reussir ton BTS SIO.
+            <span className="text-gray-900 dark:text-white font-semibold">25 heures</span> de révision pour réussir ton BTS SIO.
           </p>
 
           {/* CTA buttons */}
@@ -70,7 +70,7 @@ export default function HomePage() {
               href="#categories"
               className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-base-blue text-white font-display font-semibold text-sm hover:bg-base-blue-dark transition-all duration-200 shadow-lg shadow-base-blue/25 hover:shadow-xl hover:shadow-base-blue/30 hover:-translate-y-0.5"
             >
-              Commencer les revisions
+              Commencer les révisions
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
                 <path d="M3 8h10M9 4l4 4-4 4" />
               </svg>
@@ -90,12 +90,12 @@ export default function HomePage() {
               <div className="text-[11px] text-gray-400 dark:text-dark-300 font-medium uppercase tracking-wider mt-0.5">Playbooks</div>
             </div>
             <div className="bg-white/60 dark:bg-dark-800/60 backdrop-blur-sm rounded-xl border border-gray-200/60 dark:border-dark-600/60 p-4 text-center">
-              <div className="font-display font-extrabold text-2xl sm:text-3xl text-base-blue">{totalHours}h</div>
-              <div className="text-[11px] text-gray-400 dark:text-dark-300 font-medium uppercase tracking-wider mt-0.5">De contenu</div>
+              <div className="font-display font-extrabold text-2xl sm:text-3xl text-base-blue">25h</div>
+              <div className="text-[11px] text-gray-400 dark:text-dark-300 font-medium uppercase tracking-wider mt-0.5">De révision</div>
             </div>
             <div className="bg-white/60 dark:bg-dark-800/60 backdrop-blur-sm rounded-xl border border-gray-200/60 dark:border-dark-600/60 p-4 text-center">
               <div className="font-display font-extrabold text-2xl sm:text-3xl text-gray-900 dark:text-white">{categories.length}</div>
-              <div className="text-[11px] text-gray-400 dark:text-dark-300 font-medium uppercase tracking-wider mt-0.5">Categories</div>
+              <div className="text-[11px] text-gray-400 dark:text-dark-300 font-medium uppercase tracking-wider mt-0.5">Catégories</div>
             </div>
           </div>
 
@@ -116,7 +116,7 @@ export default function HomePage() {
         {/* Section header */}
         <div className="text-center mb-16">
           <h2 className="font-display font-extrabold text-2xl sm:text-3xl text-gray-900 dark:text-white tracking-tight mb-3">
-            Explorer par categorie
+            Explorer par catégorie
           </h2>
           <p className="text-gray-500 dark:text-dark-300 max-w-md mx-auto">
             {guides.length} playbooks couvrant les options SLAM et SISR du BTS SIO.
