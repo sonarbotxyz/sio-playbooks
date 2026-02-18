@@ -7,7 +7,6 @@ difficulty: "Intermediaire"
 
 # UML -- Unified Modeling Language
 
----
 
 ## Table des matieres
 
@@ -22,7 +21,6 @@ difficulty: "Intermediaire"
 9. [9. Exercices d'examen corriges](#9-exercices-dexamen-corriges)
 10. [Resume final -- Aide-memoire express](#resume-final-aide-memoire-express)
 
----
 
 ## 1. Introduction a UML
 
@@ -89,7 +87,6 @@ Les diagrammes marques *** sont ceux qui tombent au BTS SIO. Les autres sont hor
 > (structure vs comportement). Ne les confondez pas. Le diagramme de classes est
 > STRUCTUREL (statique). Le diagramme de sequence est COMPORTEMENTAL (dynamique).
 
----
 
 ## 2. Diagramme de cas d'utilisation (Use Case)
 
@@ -399,7 +396,6 @@ Responsable ---- Gerer les salles
 (+ tout ce que fait Employe par heritage)
 ```
 
----
 
 ## 3. Diagramme de classes
 
@@ -1009,7 +1005,6 @@ public class LigneFacture
 > Note : En composition, le conteneur cree et detruit ses parties.
 > En agregation, les parties sont passees de l'exterieur (injection).
 
----
 
 ## 4. Diagramme de sequence
 
@@ -1241,7 +1236,6 @@ public Resultat ValiderCommande(Panier panier)
 }
 ```
 
----
 
 ## 5. Diagramme d'activite
 
@@ -1388,7 +1382,6 @@ Notes de lecture :
 - "Prep. colis" et "Empaq." se font en parallele
 - Le losange `<>` represente la decision stock ok / stock ko
 
----
 
 ## 6. Diagramme d'etat (bases)
 
@@ -1532,7 +1525,6 @@ Notes :
 - `do/` : action continue tant qu'on est dans l'etat
 - `exit/` : action executee a la sortie de l'etat (non montre ici)
 
----
 
 ## 7. De UML au code et du code a UML
 
@@ -1996,7 +1988,6 @@ public class SessionManager
 }
 ```
 
----
 
 ## 8. Methodologie d'examen
 
@@ -2112,7 +2103,6 @@ VRAI :  ( Passer commande )
 - [ ] Les fork ont un join correspondant
 - [ ] Les swimlanes sont correctement attribuees
 
----
 
 ## 9. Exercices d'examen corriges
 
@@ -2171,7 +2161,6 @@ Notes :
 - "Se connecter" est un include de "Prendre RDV" car obligatoire
 - "Creer un compte" est un extend de "Prendre RDV" car optionnel (seulement si pas de compte)
 
----
 
 ### Exercice 2 : Diagramme de classes -- Gestion de bibliotheque
 
@@ -2232,7 +2221,6 @@ Ouvrage   1 --------- 0..*  Emprunt
 
 L'Emprunt est une **classe d'association** entre Adherent et Ouvrage. Elle porte les informations propres a la relation (dates).
 
----
 
 ### Exercice 3 : Diagramme de sequence -- Retrait d'argent au distributeur
 
@@ -2310,7 +2298,6 @@ Un client insere sa carte dans le distributeur. Le distributeur demande le code 
      |                |                    |
 ```
 
----
 
 ### Exercice 4 : Diagramme de classes depuis une description -- Site de petites annonces
 
@@ -2380,7 +2367,6 @@ Notes :
 - Photo est en composition avec Annonce (une photo n'existe pas sans son annonce).
 - Message est une association ternaire simplifiee entre deux Utilisateurs et une Annonce.
 
----
 
 ### Exercice 5 : Diagramme d'activite -- Processus d'inscription en ligne
 
@@ -2443,7 +2429,6 @@ Un utilisateur remplit le formulaire d'inscription (pseudo, email, mot de passe)
   +--- (boucle vers "Remplir formulaire")
 ```
 
----
 
 ### Exercice 6 : Diagramme de sequence -- Recherche et emprunt dans une bibliotheque
 
@@ -2514,7 +2499,6 @@ Un adherent recherche un ouvrage par titre via l'interface. L'interface transmet
      |              |               |                |              |
 ```
 
----
 
 ### Exercice 7 : Completer un diagramme de classes existant
 
@@ -2591,7 +2575,6 @@ Lecture des cardinalites :
   - La Participation porte la note et le statut
 ```
 
----
 
 ### Exercice 8 : Diagramme d'etat -- Cycle de vie d'un billet d'avion
 
@@ -2650,7 +2633,6 @@ Transitions d'annulation (toutes vers l'etat Annule) :
 
 L'etat Embarque ne permet PLUS l'annulation (le passager est dans l'avion).
 
----
 
 ### Exercice 9 (bonus) : Du code au diagramme de classes
 
@@ -2804,7 +2786,6 @@ Points cles de la correction :
 - Commentaire et LigneFacture sont en composition (ils n'existent pas seuls)
 - L'attribut `auteur` de type Utilisateur devient une association
 
----
 
 ### Exercice 10 (bonus) : Cas d'utilisation -- Application de covoiturage
 
@@ -2865,7 +2846,6 @@ Notes :
 - Conducteur et Passager heritent d'Utilisateur (donc ils ont acces a "Creer un compte")
 - Le Systeme de paiement est un acteur secondaire (il ne declenche pas le cas, il y participe)
 
----
 
 ## Resume final -- Aide-memoire express
 
@@ -2906,6 +2886,5 @@ Include  = obligatoire, fleche A -----> B (A inclut toujours B)
 Extend   = optionnel,   fleche B -----> A (B etend parfois A)
 ```
 
----
 
 Fin du playbook UML. Relire les exercices, refaire les diagrammes a la main, verifier les cardinalites. Pas de raccourci.

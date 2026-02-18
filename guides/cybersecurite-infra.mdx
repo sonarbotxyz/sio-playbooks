@@ -9,7 +9,6 @@ difficulty: "Avancé"
 # Cybersécurité infrastructure
 
 
----
 
 ## Table des matieres
 
@@ -31,11 +30,9 @@ difficulty: "Avancé"
 16. [15. Wi-Fi sécurisé](#15-wi-fi-scuris)
 17. [16. Exercices corrigés](#16-exercices-corrigs)
 
----
 
 Ce playbook couvre l'ensemble des connaissances requises en sécurité des infrastructures pour le BTS SIO option SISR. Il constitue une référence exhaustive allant des fondamentaux théoriques aux configurations pratiques.
 
----
 
 ## Table des matières
 
@@ -56,7 +53,6 @@ Ce playbook couvre l'ensemble des connaissances requises en sécurité des infra
 15. [Wi-Fi sécurisé](#15-wi-fi-sécurisé)
 16. [Exercices corrigés](#16-exercices-corrigés)
 
----
 
 ## 1. Menaces et vulnérabilités
 
@@ -154,7 +150,6 @@ Contre-mesures : filtrage en entrée (ingress filtering, BCP38), SPF/DKIM/DMARC,
 - **PSSI** : Politique de Sécurité du Système d'Information, document interne définissant les règles de sécurité.
 - **ISO 27001** : norme internationale de gestion de la sécurité de l'information.
 
----
 
 ## 2. Principes de sécurité
 
@@ -207,7 +202,6 @@ Applications pratiques :
 - **Security by design** : intégrer la sécurité dès la conception, pas en tant qu'ajout ultérieur.
 - **KISS (Keep It Simple)** : un système simple est plus facile à sécuriser et à auditer.
 
----
 
 ## 3. Pare-feu : concepts et types
 
@@ -310,7 +304,6 @@ Principes de rédaction des règles :
 - Documenter chaque règle (description).
 - Journaliser les règles de blocage pour la détection d'anomalies.
 
----
 
 ## 4. pfSense
 
@@ -455,7 +448,6 @@ Cas d'utilisation : autoriser l'accès Internet uniquement pendant les heures de
 
 Configuration : Firewall > Schedules > Add, puis associer le schedule à une règle via le champ "Schedule" dans les options avancées de la règle.
 
----
 
 ## 5. DMZ
 
@@ -557,7 +549,6 @@ Pass TCP  DMZ_net  -> *  port 25       (envoi mail)
 Block *   DMZ_net  -> *  *             (tout le reste)
 ```
 
----
 
 ## 6. VPN
 
@@ -652,7 +643,6 @@ Caractéristiques :
 | Intégration pfSense | Oui (natif) | Oui (natif) | Oui (package) |
 | Cas d'usage BTS SIO | Site-à-site | Client-à-site, site-à-site | Client-à-site |
 
----
 
 ## 7. OpenVPN en pratique
 
@@ -847,7 +837,6 @@ verb 3
 - **Full tunneling** : tout le trafic du client passe par le VPN. Ajouter `push "redirect-gateway def1 bypass-dhcp"` dans la configuration serveur.
 - **Split tunneling** : seul le trafic destiné au réseau de l'entreprise passe par le VPN. Le reste sort directement par la connexion Internet du client. Configurer avec `push "route ..."`.
 
----
 
 ## 8. Proxy et filtrage web
 
@@ -991,7 +980,6 @@ Décomposition :
 
 Outils d'analyse : SARG (Squid Analysis Report Generator), Lightsquid, grep/awk pour l'analyse manuelle.
 
----
 
 ## 9. IDS/IPS
 
@@ -1114,7 +1102,6 @@ Il est essentiel de :
 - Ajuster les seuils de détection.
 - Ne pas activer toutes les règles : sélectionner celles pertinentes pour l'environnement.
 
----
 
 ## 10. Chiffrement
 
@@ -1244,7 +1231,6 @@ En pratique, on combine chiffrement asymétrique et symétrique :
 
 C'est le principe utilisé par TLS, SSH, IPSec, PGP.
 
----
 
 ## 11. PKI et certificats
 
@@ -1374,7 +1360,6 @@ certbot certonly --standalone -d www.entreprise.fr
 certbot renew --dry-run
 ```
 
----
 
 ## 12. SSL/TLS
 
@@ -1513,7 +1498,6 @@ Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
 - **nmap** : `nmap --script ssl-enum-ciphers -p 443 exemple.fr`
 - **openssl s_client** : `openssl s_client -connect exemple.fr:443 -tls1_3`
 
----
 
 ## 13. Durcissement des systèmes
 
@@ -1745,7 +1729,6 @@ lynis audit system
 nmap -sS -sV -O -p- 192.168.1.0/24
 ```
 
----
 
 ## 14. Analyse de logs
 
@@ -1873,7 +1856,6 @@ Corrélation : ces quatre événements, pris individuellement, pourraient passer
 - Protéger l'intégrité des logs (serveur dédié, droits restreints, horodatage fiable).
 - Synchroniser les horloges de tous les équipements (NTP) pour garantir la cohérence temporelle.
 
----
 
 ## 15. Wi-Fi sécurisé
 
@@ -1992,7 +1974,6 @@ Sur le point d'accès Wi-Fi ou le contrôleur :
 - Surveiller les points d'accès non autorisés (rogue AP) avec un WIDS.
 - Désactiver le WPS (Wi-Fi Protected Setup), vulnérable aux attaques par brute force du PIN.
 
----
 
 ## 16. Exercices corrigés
 
@@ -2047,7 +2028,6 @@ Règles sur l'interface DMZ :
 
 La règle de blocage DMZ vers LAN doit être placée avant la règle d'autorisation sortante.
 
----
 
 ### Exercice 2 : Analyse d'une attaque par brute force SSH
 
@@ -2087,7 +2067,6 @@ Feb 15 14:30:15 srv01 sshd[4891]: pam_unix(sshd:session): session opened for use
    - Limiter les utilisateurs autorisés à se connecter en SSH (`AllowUsers`).
    - Mettre en place un système d'alerte sur les tentatives de connexion échouées.
 
----
 
 ### Exercice 3 : Mise en place d'un VPN OpenVPN client-à-site
 
@@ -2154,7 +2133,6 @@ Pass | * | 10.8.0.0/24 | 192.168.1.0/24 | * | VPN vers LAN
 - Vérifier la connectivité : `ping 192.168.1.1` depuis le poste distant.
 - Vérifier dans pfSense : Status > OpenVPN pour voir les clients connectés.
 
----
 
 ### Exercice 4 : Règles IDS/IPS Suricata
 
@@ -2201,7 +2179,6 @@ alert dns $HOME_NET any -> any any (msg:"MALWARE DNS query to malware.example.co
 
 Explication : alerte sur toute requête DNS contenant le domaine "malware.example.com". Le mot-clé `dns.query` cible spécifiquement le champ de requête DNS.
 
----
 
 ### Exercice 5 : Chiffrement et PKI
 
@@ -2247,7 +2224,6 @@ openssl verify -CAfile ca.crt serveur.crt
 # Résultat attendu : serveur.crt: OK
 ```
 
----
 
 ### Exercice 6 : Handshake TLS
 
@@ -2280,7 +2256,6 @@ openssl verify -CAfile ca.crt serveur.crt
 
 3. **Perfect Forward Secrecy** : grâce à l'utilisation d'ECDHE (clés éphémères), chaque session TLS utilise des clés uniques qui sont détruites après la session. Si la clé privée RSA du serveur est compromise ultérieurement, les sessions passées restent protégées car les clés éphémères ECDHE n'existent plus. Sans PFS (échange de clé RSA statique), la compromission de la clé privée du serveur permettrait de déchiffrer toutes les sessions passées capturées.
 
----
 
 ### Exercice 7 : Proxy Squid
 
@@ -2326,7 +2301,6 @@ openssl verify -CAfile ca.crt serveur.crt
    - Tester avec `curl -v http://example.com` depuis un poste client et observer les en-têtes HTTP : la présence de `X-Forwarded-For` ou `Via` indique le passage par le proxy.
    - Dans les logs d'accès, vérifier que les requêtes du client apparaissent avec son adresse IP source.
 
----
 
 ### Exercice 8 : Architecture DMZ
 
@@ -2394,7 +2368,6 @@ PORTS_WEB  : 80, 443
 | 4 | Pass | TCP | SRV_MAIL | * | 25 | Envoi de mail sortant |
 | 5 | Pass | TCP | DMZ net | * | 123 | NTP |
 
----
 
 ### Exercice 9 : Durcissement d'un serveur Linux
 
@@ -2481,7 +2454,6 @@ PORTS_WEB  : 80, 443
     ```
     Justification : en cas de compromission, l'attaquant pourrait effacer les logs locaux. Les logs centralisés sur un serveur distinct garantissent la traçabilité.
 
----
 
 ### Exercice 10 : Analyse de capture réseau
 

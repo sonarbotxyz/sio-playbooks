@@ -8,7 +8,6 @@ difficulty: "Debutant"
 # HTML et CSS — Le guide complet pour le BTS SIO SLAM
 
 
----
 
 ## Table des matieres
 
@@ -17,13 +16,10 @@ difficulty: "Debutant"
 3. [Partie 3 — Bonnes pratiques](#partie-3-bonnes-pratiques)
 4. [Partie 4 — Exercices d'examen corriges](#partie-4-exercices-dexamen-corriges)
 
----
 
----
 
 ## Partie 1 — HTML
 
----
 
 ### 1.1 Structure d'une page HTML5
 
@@ -66,7 +62,6 @@ Toute page HTML5 valide respecte une structure precise. Chaque element a un role
 
 **`<body>`** — Contient tout le contenu visible de la page : texte, images, liens, formulaires, tableaux. Il n'y a qu'un seul `<body>` par document.
 
----
 
 ### 1.2 Balises de texte
 
@@ -134,7 +129,6 @@ un nouveau bloc de texte.</p>
 <p>Debut de la deuxieme partie.</p>
 ```
 
----
 
 ### 1.3 Listes
 
@@ -206,7 +200,6 @@ La liste imbriquee se place a l'interieur d'un `<li>`, pas a cote.
 
 `<dl>` (definition list) contient des paires terme/definition. `<dt>` (definition term) est le terme a definir. `<dd>` (definition description) est la definition. Utile pour les glossaires et les FAQ.
 
----
 
 ### 1.4 Liens
 
@@ -271,7 +264,6 @@ Le caractere `#` suivi de l'identifiant permet de naviguer vers un element preci
 <a href="page.html#section-contact">Section contact de l'autre page</a>
 ```
 
----
 
 ### 1.5 Images
 
@@ -314,7 +306,6 @@ Les attributs `width` et `height` permettent de reserver l'espace avant le charg
 
 `<figure>` regroupe une image et sa legende. `<figcaption>` est le texte de legende visible sous (ou au-dessus de) l'image.
 
----
 
 ### 1.6 Tableaux HTML
 
@@ -514,7 +505,6 @@ La balise `<caption>` ajoute un titre au tableau :
 </table>
 ```
 
----
 
 ### 1.7 Formulaires
 
@@ -724,7 +714,6 @@ Les attributs `rows` et `cols` definissent la taille visible (modifiable en CSS)
 <button type="button">Calculer</button>
 ```
 
----
 
 ### 1.8 Balises semantiques HTML5
 
@@ -780,7 +769,6 @@ Les balises semantiques decrivent le role du contenu. Elles n'ont pas d'impact v
 
 **Quand utiliser quoi :** Si le contenu a du sens sorti de son contexte (dans un flux RSS par exemple), c'est un `<article>`. Si le contenu regroupe des elements lies par un theme, c'est une `<section>`. Si le contenu est complementaire, c'est un `<aside>`.
 
----
 
 ### 1.9 Attributs globaux
 
@@ -820,7 +808,6 @@ Les attributs globaux peuvent etre utilises sur n'importe quelle balise HTML.
 
 En JavaScript : `element.dataset.id` renvoie `"42"`, `element.dataset.categorie` renvoie `"informatique"`.
 
----
 
 ### 1.10 Caracteres speciaux (entites HTML)
 
@@ -840,7 +827,6 @@ Certains caracteres ont une signification speciale en HTML. Pour les afficher en
 
 En pratique, avec l'encodage UTF-8 declare dans le `<head>`, on peut taper directement les caracteres accentues. Les entites obligatoires sont `&amp;`, `&lt;` et `&gt;` car ces caracteres sont interpretes par le navigateur.
 
----
 
 ### 1.11 Validation W3C
 
@@ -861,11 +847,9 @@ Erreurs frequentes :
 - `id` duplique dans la page
 - Balise `<li>` en dehors d'un `<ul>` ou `<ol>`
 
----
 
 ## Partie 2 — CSS
 
----
 
 ### 2.1 Les trois facons d'inclure du CSS
 
@@ -909,7 +893,6 @@ Le CSS est dans un fichier separe (`.css`). C'est la methode recommandee car :
 - Reutilisable sur toutes les pages du site
 - Maintenance facilitee
 
----
 
 ### 2.2 Selecteurs CSS
 
@@ -1118,7 +1101,6 @@ h1, h2, h3 {
 
 La virgule signifie "ou" : on applique le meme style a `<h1>`, `<h2>` et `<h3>`.
 
----
 
 ### 2.3 Specificite CSS
 
@@ -1182,7 +1164,6 @@ p { color: red !important; }  /* L'emporte sur tout, meme un id */
 
 `!important` est a eviter autant que possible. C'est un signe de mauvaise architecture CSS. On l'utilise en dernier recours.
 
----
 
 ### 2.4 Le modele de boite (box model)
 
@@ -1296,7 +1277,6 @@ Quand deux marges verticales se touchent, elles fusionnent : seule la plus grand
 
 L'espace entre les deux paragraphes est de 30px (la plus grande des deux marges), pas 50px. Ce comportement ne s'applique qu'aux marges verticales, pas aux marges horizontales.
 
----
 
 ### 2.5 Proprietes de texte
 
@@ -1367,7 +1347,6 @@ overflow: hidden;              /* cache le debordement */
 text-overflow: ellipsis;       /* ajoute "..." si le texte deborde */
 ```
 
----
 
 ### 2.6 Proprietes de fond (background)
 
@@ -1410,7 +1389,6 @@ background: linear-gradient(135deg, #ff0000, #ff9900, #0000ff);
 background: radial-gradient(circle, #ff0000, #0000ff);
 ```
 
----
 
 ### 2.7 La propriete display
 
@@ -1452,7 +1430,6 @@ L'element est completement retire du flux. Il n'occupe aucun espace et n'est pas
 
 Traites en detail dans les sections 2.10 et 2.11.
 
----
 
 ### 2.8 La propriete position
 
@@ -1551,7 +1528,6 @@ Cas concret : en-tete de tableau qui reste visible pendant le defilement, barre 
 
 `z-index` controle l'ordre d'empilement des elements positionnes (tous sauf `static`). Une valeur plus elevee place l'element au-dessus. Sans `z-index`, les elements sont empiles dans l'ordre d'apparition dans le HTML.
 
----
 
 ### 2.9 Proprietes de dimension et debordement
 
@@ -1575,7 +1551,6 @@ overflow-x: auto;       /* defilement horizontal si necessaire */
 overflow-y: hidden;     /* pas de defilement vertical */
 ```
 
----
 
 ### 2.10 Flexbox
 
@@ -1753,7 +1728,6 @@ Ces trois lignes centrent parfaitement un element horizontalement et verticaleme
 
 Le logo est pousse a gauche, les liens a droite, grace a `space-between`. Les liens sont alignes horizontalement grace au `display: flex` sur la liste.
 
----
 
 ### 2.11 CSS Grid
 
@@ -1894,7 +1868,6 @@ Les numeros de ligne commencent a 1 et incluent les bords de la grille. Pour 3 c
 
 Cette syntaxe est tres lisible : on "dessine" la mise en page avec des noms.
 
----
 
 ### 2.12 Responsive design
 
@@ -2075,7 +2048,6 @@ body {
 }
 ```
 
----
 
 ### 2.13 Transitions et animations
 
@@ -2205,7 +2177,6 @@ transform: skew(10deg);           /* deforme en biais */
 transform: translate(50px, 0) rotate(45deg) scale(1.2);
 ```
 
----
 
 ### 2.14 Variables CSS (custom properties)
 
@@ -2255,11 +2226,9 @@ Les variables peuvent etre redefinies dans un contexte specifique :
 }
 ```
 
----
 
 ## Partie 3 — Bonnes pratiques
 
----
 
 ### 3.1 Organisation des fichiers
 
@@ -2391,11 +2360,9 @@ ul, ol {
 
 Normalize.css est une alternative qui conserve les styles par defaut utiles tout en corrigeant les incoherences entre navigateurs.
 
----
 
 ## Partie 4 — Exercices d'examen corriges
 
----
 
 ### Exercice 1 — Formulaire d'inscription complet
 
@@ -2491,7 +2458,6 @@ Normalize.css est une alternative qui conserve les styles par defaut utiles tout
 - Chaque `<label>` est lie a son `<input>` par `for`/`id`
 - `<fieldset>` et `<legend>` regroupent les champs de maniere logique
 
----
 
 ### Exercice 2 — Tableau de donnees avec colspan et rowspan
 
@@ -2578,7 +2544,6 @@ Normalize.css est une alternative qui conserve les styles par defaut utiles tout
 - `<caption>` donne un titre au tableau
 - `<tfoot>` pour la ligne de total
 
----
 
 ### Exercice 3 — Page structuree avec balises semantiques
 
@@ -2681,7 +2646,6 @@ Normalize.css est une alternative qui conserve les styles par defaut utiles tout
 </html>
 ```
 
----
 
 ### Exercice 4 — Specificite CSS
 
@@ -2732,7 +2696,6 @@ Calcul des specificites :
 - C a la specificite la plus elevee (101)
 - Couleur : **verte**
 
----
 
 ### Exercice 5 — Layout Flexbox
 
@@ -2838,7 +2801,6 @@ Calcul des specificites :
 - `flex: 1` sur chaque colonne pour une repartition egale
 - Convention BEM pour le nommage des classes
 
----
 
 ### Exercice 6 — Reproduire une maquette (carte produit)
 
@@ -2938,7 +2900,6 @@ Calcul des specificites :
 - Transitions sur la carte (survol) et le bouton
 - Style de focus pour l'accessibilite clavier
 
----
 
 ### Exercice 7 — CSS Grid : mise en page complete
 
@@ -3036,7 +2997,6 @@ Calcul des specificites :
 }
 ```
 
----
 
 ### Exercice 8 — Formulaire style avec CSS et responsive
 
@@ -3175,7 +3135,6 @@ Calcul des specificites :
 }
 ```
 
----
 
 ### Exercice 9 — Tableau style avec CSS
 
@@ -3296,7 +3255,6 @@ Calcul des specificites :
 - `nth-child(n+2)` pour cibler toutes les colonnes a partir de la deuxieme (les notes)
 - Les nombres sont alignes a droite pour faciliter la lecture comparative
 
----
 
 ### Exercice 10 — Page responsive complete
 

@@ -8,7 +8,6 @@ difficulty: "Intermédiaire"
 
 # Theorie des graphes — Playbook BTS SIO SLAM
 
----
 
 ## Table des matieres
 
@@ -28,7 +27,6 @@ difficulty: "Intermédiaire"
 14. [Recapitulatif des formules et theoremes essentiels](#recapitulatif-des-formules-et-theoremes-essentiels)
 15. [Conseils pour l'examen](#conseils-pour-lexamen)
 
----
 
 ## 1. Definitions fondamentales
 
@@ -109,7 +107,6 @@ Le poids de l'arete {A,B} est 3, celui de {C,D} est 1, etc.
 - **Multigraphe** : graphe admettant plusieurs aretes/arcs entre la meme paire de sommets.
 - **Graphe simple** : ni boucle, ni aretes multiples (cas standard au BTS SIO).
 
----
 
 ## 2. Vocabulaire essentiel
 
@@ -209,7 +206,6 @@ Composante 2 : {E, F, G}
 | Connectivite       | Connexe             | Fortement connexe    |
 | Degre              | d(v)                | d+(v) et d-(v)       |
 
----
 
 ## 3. Representations d'un graphe
 
@@ -299,7 +295,6 @@ C : A
 D : B, C
 ```
 
----
 
 ## 4. Proprietes fondamentales
 
@@ -379,7 +374,6 @@ Il n'existe pas de condition simple necessaire et suffisante (probleme NP-comple
 - **Sous-graphe** : on retire des sommets (et les aretes incidentes).
 - **Graphe partiel** : on retire des aretes (mais on garde tous les sommets).
 
----
 
 ## 5. Parcours de graphes
 
@@ -472,7 +466,6 @@ Note : l'ordre exact depend de l'ordre dans lequel on traite les voisins.
 | Memoire              | Plus gourmand      | Moins gourmand     |
 | Detection de cycles  | Possible           | Oui (classique)    |
 
----
 
 ## 6. Plus court chemin — Algorithme de Dijkstra
 
@@ -545,7 +538,6 @@ F-E : 6
 | E      | +inf     | -            | Non    |
 | F      | +inf     | -            | Non    |
 
----
 
 **Iteration 1** : Sommet de distance minimale non visite = **A (distance 0)**
 
@@ -564,7 +556,6 @@ On visite A. Voisins de A : B (poids 7), C (poids 2), D (poids 10).
 | E      | +inf     | -            | Non    |
 | F      | +inf     | -            | Non    |
 
----
 
 **Iteration 2** : Sommet de distance minimale non visite = **C (distance 2)**
 
@@ -583,7 +574,6 @@ On visite C. Voisins non visites de C : B (poids 3), D (poids 4), F (poids 8).
 | E      | +inf     | -            | Non    |
 | F      | 10       | C            | Non    |
 
----
 
 **Iteration 3** : Sommet de distance minimale non visite = **B (distance 5)**
 
@@ -602,7 +592,6 @@ On visite B. Voisins non visites de B : E (poids 1).
 | E      | 6        | B            | Non    |
 | F      | 10       | C            | Non    |
 
----
 
 **Iteration 4** : Sommet de distance minimale non visite = **D (distance 6)** (ou E, egalite, on prend D par ordre alphabetique)
 
@@ -619,7 +608,6 @@ On visite D. Voisins non visites de D : F (poids 5).
 | E      | 6        | B            | Non    |
 | F      | 10       | C            | Non    |
 
----
 
 **Iteration 5** : Sommet de distance minimale non visite = **E (distance 6)**
 
@@ -636,7 +624,6 @@ On visite E. Voisins non visites de E : F (poids 6).
 | E      | 6        | B            | **Oui**|
 | F      | 10       | C            | Non    |
 
----
 
 **Iteration 6** : Sommet de distance minimale non visite = **F (distance 10)**
 
@@ -651,7 +638,6 @@ On visite F. Plus de voisins non visites.
 | E      | 6        | B            | Oui    |
 | F      | 10       | C            | **Oui**|
 
----
 
 **Tableau final** :
 
@@ -772,7 +758,6 @@ Pas de mise a jour.
 4. Ne pas oublier de **reconstruire le chemin** en remontant les predecesseurs.
 5. En cas d'egalite, choisir par ordre alphabetique (sauf consigne contraire).
 
----
 
 ## 7. Ordonnancement — Methode MPM / PERT
 
@@ -1080,7 +1065,6 @@ I                             [=]  (21-22)*
 5. Un projet peut avoir **plusieurs** chemins critiques.
 6. Montrer **chaque calcul** de to et ta dans la copie d'examen.
 
----
 
 ## 8. Coloration de graphes
 
@@ -1149,7 +1133,6 @@ Verification : aucune arete ne relie deux sommets de meme couleur. chi(G) = 3.
 
 **Attribution de frequences** : chaque antenne est un sommet, une arete relie deux antennes proches (interference). Les couleurs sont des frequences. Le nombre chromatique donne le nombre minimal de frequences.
 
----
 
 ## 9. Arbres et arbres couvrants
 
@@ -1256,7 +1239,6 @@ Detail de l'etape 4 : aretes candidates depuis {A,B,C,D} :
 
 **Poids total = 2 + 3 + 5 + 7 = 17.** Meme resultat que Kruskal.
 
----
 
 ## 10. Flot dans un reseau
 
@@ -1326,7 +1308,6 @@ Verifions : s -> A (capacite residuelle 2), A -> t (capacite residuelle 0). On t
 
 **Flot maximal = 13.**
 
----
 
 ## 11. Lien avec les matrices
 
@@ -1383,7 +1364,6 @@ Si R[i][j] > 0, alors il existe au moins un tel chemin.
 
 Pour un graphe oriente, M[i][j] = 1 signifie arc de i vers j. La matrice n'est pas symetrique. L'interpretation de M^k est : nombre de chemins orientes de longueur k de i a j.
 
----
 
 ## 12. Applications informatiques
 
@@ -1416,11 +1396,9 @@ Les gestionnaires de paquets (npm, pip, apt) modelisent les dependances comme un
 
 Les arbres (binaires, B-arbres, etc.) sont omnipresents en informatique : systemes de fichiers, index de bases de donnees, arbres syntaxiques des compilateurs.
 
----
 
 ## 13. Exercices d'examen corriges
 
----
 
 ### Exercice 1 — Vocabulaire et proprietes
 
@@ -1459,7 +1437,6 @@ Les arbres (binaires, B-arbres, etc.) sont omnipresents en informatique : system
 
 5. Oui. Exemple : A - B - D - A (longueur 3). Autre exemple : B - D - E - B.
 
----
 
 ### Exercice 2 — Matrice d'adjacence
 
@@ -1499,7 +1476,6 @@ Degres :
 - d+(E)=1, d-(E)=1
 - d+(F)=1, d-(F)=1
 
----
 
 ### Exercice 3 — Parcours BFS
 
@@ -1533,7 +1509,6 @@ Adjacences (ordre alphabetique) :
 
 **Ordre BFS : S, A, B, C, D, E**
 
----
 
 ### Exercice 4 — Parcours DFS
 
@@ -1555,7 +1530,6 @@ Adjacences (ordre alphabetique) :
 
 **Ordre DFS : S, A, C, B, E, D**
 
----
 
 ### Exercice 5 — Dijkstra (graphe 6 sommets)
 
@@ -1650,7 +1624,6 @@ Aretes : A-B:3, A-D:7, B-C:1, B-E:2, C-F:5, D-E:4, E-F:3.
 **Plus court chemin A -> F** : F(pred=E) -> E(pred=B) -> B(pred=A) -> A.
 Chemin : **A -> B -> E -> F**, distance **8**.
 
----
 
 ### Exercice 6 — Dijkstra (graphe 8 sommets)
 
@@ -1770,7 +1743,6 @@ Aretes : S-A:2, S-B:4, A-B:1, A-C:3, A-E:6, B-C:5, C-D:7, C-F:4, E-F:2, F-T:1, D
 **Plus court chemin S -> T** : T(F) -> F(C) -> C(A) -> A(S) -> S.
 Chemin : **S -> A -> C -> F -> T**, distance **10**.
 
----
 
 ### Exercice 7 — Ordonnancement complet
 
@@ -1854,7 +1826,6 @@ F                  [==]              (6-9)
 G                        [===]      (15-19)*
 ```
 
----
 
 ### Exercice 8 — Coloration
 
@@ -1897,7 +1868,6 @@ Aretes : A-B, A-C, A-D, B-C, B-D, C-D, C-E, D-F, E-F.
 
 3. Le sous-graphe {A, B, C, D} est un graphe complet K4 (toute paire est reliee). Donc chi(G) >= 4. On a trouve une coloration a 4 couleurs. Donc **chi(G) = 4**.
 
----
 
 ### Exercice 9 — Arbre couvrant (Kruskal)
 
@@ -1936,7 +1906,6 @@ n = 6 sommets, on veut 5 aretes.
 Poids = 1 + 2 + 3 + 5 + 7 = 18
 ```
 
----
 
 ### Exercice 10 — Arbre couvrant (Prim)
 
@@ -1952,7 +1921,6 @@ Poids = 1 + 2 + 3 + 5 + 7 = 18
 
 **Poids = 2 + 3 + 1 + 5 + 7 = 18.** Meme resultat.
 
----
 
 ### Exercice 11 — Euler
 
@@ -1978,7 +1946,6 @@ Poids = 1 + 2 + 3 + 5 + 7 = 18
 
 Verification : 7 aretes ({A,B}, {A,D}, {B,C}, {B,E}, {C,F}, {D,E}, {E,F}), la chaine utilise 7 aretes.
 
----
 
 ### Exercice 12 — Puissance de matrice d'adjacence
 
@@ -2046,7 +2013,6 @@ M^2 :
 - M^2[2][3] = 1 : un chemin de longueur 2 de 2 a 3 : 2->4->3.
 - M^2[4][1] = 1 : un chemin de longueur 2 de 4 a 1 : 4->3->1.
 
----
 
 ### Exercice 13 — Ordonnancement avec Gantt
 
@@ -2110,7 +2076,6 @@ E               [========]                  (4-9)*
 F                           [===]           (9-11)*
 ```
 
----
 
 ### Exercice 14 — Dijkstra avec reconstruction
 
@@ -2191,7 +2156,6 @@ Source A, trouver les plus courts chemins vers tous les sommets.
 | F      | 10       | A -> B -> D -> F        |
 | G      | 11       | A -> B -> D -> F -> G   |
 
----
 
 ### Exercice 15 — Coloration et emploi du temps
 
@@ -2248,7 +2212,6 @@ Est-ce le minimum ? Le graphe contient-il un triangle (K3) ? Maths-Info-Anglais 
 
 Mais peut-on colorer en 2 couleurs ? Le graphe est-il biparti ? Verifions : Maths(c1)-Info(c2)-Anglais(c1)-Chimie(c2)-Physique(c1)-Maths. La chaine Physique(c1)-Maths(c1) : deux voisins de meme couleur. Donc pas biparti. Il faut au moins 3 couleurs. **chi(G) = 3**.
 
----
 
 ### Exercice 16 — Flot maximal
 
@@ -2293,7 +2256,6 @@ Coupe {s,A,B} / {t}. Capacite = c(A,t)+c(B,t) = 3+5 = 8. C'est la coupe minimale
 
 Flot max = coupe min = 8. Verifie.
 
----
 
 ### Exercice 17 — Composantes connexes et connexite
 
@@ -2326,7 +2288,6 @@ Aretes : {1,2}, {2,3}, {5,6}, {6,8}, {7,8}.
 
 Regle generale : pour relier k composantes connexes, il faut au minimum k-1 aretes.
 
----
 
 ## Recapitulatif des formules et theoremes essentiels
 
@@ -2348,7 +2309,6 @@ Regle generale : pour relier k composantes connexes, il faut au minimum k-1 aret
 | Flot max = Coupe min                            | Theoreme de Ford-Fulkerson                                |
 | Composantes connexes a relier                   | k composantes => k-1 aretes minimum                       |
 
----
 
 ## Conseils pour l'examen
 

@@ -9,7 +9,6 @@ difficulty: "Intermédiaire"
 # Sauvegarde et PRA/PCA
 
 
----
 
 ## Table des matieres
 
@@ -29,7 +28,6 @@ difficulty: "Intermédiaire"
 14. [14. Exercices corriges](#14-exercices-corriges)
 15. [15. Points cles a retenir pour l'examen](#15-points-cles-a-retenir-pour-lexamen)
 
----
 
 ## 1. Pourquoi sauvegarder
 
@@ -55,7 +53,6 @@ La sauvegarde des donnees constitue un pilier fondamental de la securite informa
 
 Statistique cle : environ 60 % des PME ayant subi une perte majeure de donnees cessent leur activite dans les 6 mois.
 
----
 
 ## 2. Types de sauvegarde
 
@@ -130,7 +127,6 @@ Vendredi : modification de C
   Restauration : C1+I1+I2+I3+I4  | Restauration : C1 + D4
 ```
 
----
 
 ## 3. Strategie 3-2-1
 
@@ -163,7 +159,6 @@ Extension moderne de la regle :
 
 La copie hors ligne protege contre les ransomwares qui chiffrent les sauvegardes accessibles par le reseau.
 
----
 
 ## 4. Supports de sauvegarde
 
@@ -200,7 +195,6 @@ Reseau de stockage dedie a haute performance, utilisant des protocoles specifiqu
 
 Stockage distant chez un fournisseur (AWS S3, Azure Blob Storage, OVH, Backblaze B2). Offre la copie hors site de la regle 3-2-1. Attention au chiffrement cote client avant envoi et aux couts de bande passante pour la restauration.
 
----
 
 ## 5. RAID (Redundant Array of Independent Disks)
 
@@ -305,7 +299,6 @@ Paire miroir 2 :  Disque 2 (A2, A4)  |  Disque 3 (A2, A4)
 
 (N = nombre de disques, D = taille du plus petit disque)
 
----
 
 ## 6. Outils de sauvegarde
 
@@ -467,7 +460,6 @@ log "Fin de la sauvegarde"
 0 2 * * * /usr/local/bin/sauvegarde.sh
 ```
 
----
 
 ## 7. Sauvegarde des bases de donnees
 
@@ -545,7 +537,6 @@ Permet de restaurer la base a n'importe quel instant en rejouant les WAL (Write-
 | Replication + dump sur le replica | Quasi nul | Elevee | Production critique |
 | Snapshot de volume (LVM, ZFS) | Instant du snapshot | Moyenne | Bases volumineuses |
 
----
 
 ## 8. Plan de Reprise d'Activite (PRA)
 
@@ -618,7 +609,6 @@ Les tests sont indispensables. Un PRA non teste est un PRA qui ne fonctionne pas
 
 Chaque test doit faire l'objet d'un compte-rendu documentant : la duree effective de reprise, les ecarts par rapport au RTO cible, les problemes rencontres et les actions correctives.
 
----
 
 ## 9. Plan de Continuite d'Activite (PCA)
 
@@ -673,7 +663,6 @@ Le PCA englobe le PRA : il inclut toutes les mesures de prevention et de redonda
 - Formation du personnel
 - Tests reguliers
 
----
 
 ## 10. Haute disponibilite
 
@@ -758,7 +747,6 @@ Distribution du trafic entre plusieurs serveurs pour ameliorer la performance et
 
 **Outils :** HAProxy, Nginx, F5 BIG-IP, Azure Load Balancer.
 
----
 
 ## 11. Replication
 
@@ -825,7 +813,6 @@ primary_conninfo = 'host=192.168.1.10 user=replicateur password=motdepasse'
 - **Hyper-V Replica** : replication asynchrone integree a Windows Server, intervalles de 30 secondes a 15 minutes.
 - **Veeam Replication** : replication au niveau image avec points de restauration multiples.
 
----
 
 ## 12. NAS vs SAN
 
@@ -872,7 +859,6 @@ Acces au niveau BLOC
 
 **Fibre Channel** : protocole de transport haute performance dedie au stockage. Debits de 8, 16, 32 ou 64 Gbit/s. Necessite des HBA (Host Bus Adapter) et des commutateurs FC dedies.
 
----
 
 ## 13. Tests de restauration
 
@@ -927,7 +913,6 @@ Actions correctives  : Aucune
 Signature : _______________
 ```
 
----
 
 ## 14. Exercices corriges
 
@@ -946,7 +931,6 @@ Signature : _______________
 
 Pour le RAID 10, il faudrait 4 ou 6 disques. Avec 4 disques de 4 To : capacite = 4/2 x 4 = 8 To, tolerance = 1 disque par paire.
 
----
 
 ### Exercice 2 -- Choix du type de sauvegarde
 
@@ -973,7 +957,6 @@ Alternative avec des differentielles quotidiennes :
 - Semaine 2 : idem = 710 Go
 - Total : 1 420 Go, toujours dans les 2 To.
 
----
 
 ### Exercice 3 -- Determination du RPO et du RTO
 
@@ -996,7 +979,6 @@ Les sauvegardes doivent avoir lieu au moins toutes les heures.
 - Budget restant pour l'interruption = 10 000 - 5 000 = 5 000 EUR
 - RTO = 5 000 / 10 000 = 30 minutes maximum
 
----
 
 ### Exercice 4 -- Planification d'une strategie 3-2-1
 
@@ -1017,7 +999,6 @@ Detail par service :
 
 Retention : 30 jours sur NAS, 90 jours sur cloud. Tests de restauration mensuels.
 
----
 
 ### Exercice 5 -- Configuration RAID 5 et reconstruction
 
@@ -1033,7 +1014,6 @@ Retention : 30 jours sur NAS, 90 jours sur cloud. Tests de restauration mensuels
 
 (d) La reconstruction d'un disque de 2 To prend generalement entre 4 et 12 heures selon la charge du serveur et la vitesse des disques. Pendant cette periode, les performances sont fortement degradees car le controleur doit lire tous les disques restants pour recalculer les donnees.
 
----
 
 ### Exercice 6 -- Script de sauvegarde MySQL
 
@@ -1077,7 +1057,6 @@ ssh nas01 "find /backup/mysql -name '${DB}_*.sql.gz' -mtime +$RETENTION -delete"
 echo "Sauvegarde reussie : ${FICHIER} ($TAILLE octets)"
 ```
 
----
 
 ### Exercice 7 -- Comparaison NAS et SAN
 
@@ -1104,7 +1083,6 @@ Pour l'hebergement de machines virtuelles sur VMware ESXi, le **SAN** est le cho
 | Complexite | Faible | Elevee |
 | Recommandation | Petite infra, budget serre | Infrastructure VMware standard |
 
----
 
 ### Exercice 8 -- Redaction d'un PRA simplifie
 
@@ -1145,7 +1123,6 @@ Pour l'hebergement de machines virtuelles sur VMware ESXi, le **SAN** est le cho
 - Test de restauration : mensuel
 - Test de basculement complet : annuel
 
----
 
 ### Exercice 9 -- Haute disponibilite avec Keepalived
 
@@ -1221,7 +1198,6 @@ vrrp_instance VI_WEB {
 
 **Fonctionnement :** srv-web01 (priorite 100) detient la VIP en fonctionnement normal. Si le script de verification HTTP echoue 3 fois consecutives, sa priorite tombe a 80, donc inferieure a celle de srv-web02 (90). La VIP bascule automatiquement sur srv-web02.
 
----
 
 ### Exercice 10 -- Calcul d'espace pour une strategie de sauvegarde
 
@@ -1248,7 +1224,6 @@ Retention de 4 semaines : 4 x 410 = **1 640 Go**, soit environ **1,6 To**.
 
 Il convient de prevoir une marge de 20 % : 1,6 x 1,2 = **1,92 To**, donc un espace de stockage de **2 To** minimum.
 
----
 
 ### Exercice 11 -- Replication MySQL maitre-esclave
 
@@ -1324,7 +1299,6 @@ Verifier que :
 - `Seconds_Behind_Master: 0` (pas de retard)
 - `Last_Error:` (vide, aucune erreur)
 
----
 
 ### Exercice 12 -- Site de secours : choix et justification
 
@@ -1366,7 +1340,6 @@ Site principal                        Site de secours (chaud)
 
 **Cout estime** : le site chaud represente un investissement important (doublement de l'infrastructure), justifie par la criticite vitale des donnees medicales et les obligations reglementaires (hebergement de donnees de sante certifie HDS).
 
----
 
 ### Exercice 13 -- Analyse de risques et strategie globale
 
@@ -1393,7 +1366,6 @@ Site principal                        Site de secours (chaud)
 - **Fichiers bureautiques** : criticite moindre, les utilisateurs peuvent travailler temporairement hors ligne. Un RPO de 24 h est acceptable.
 - **Site web vitrine** : impact commercial modere (pas de e-commerce). Un RTO d'1 h est raisonnable, assure par un serveur de secours pre-configure.
 
----
 
 ### Exercice 14 -- Verification XOR en RAID 5
 
@@ -1445,7 +1417,6 @@ Etape 2 : 1100 XOR 0000 = 1100
 
 Disque 1 reconstruit = **1100** (valeur correcte retrouvee).
 
----
 
 ## 15. Points cles a retenir pour l'examen
 

@@ -9,7 +9,6 @@ difficulty: "Intermédiaire"
 # Services réseau
 
 
----
 
 ## Table des matieres
 
@@ -25,11 +24,9 @@ difficulty: "Intermédiaire"
 10. [10. Synthèse des ports](#10-synthse-des-ports)
 11. [11. Points cles pour l'examen](#11-points-cles-pour-lexamen)
 
----
 
 Ce playbook couvre l'ensemble des services réseau au programme du BTS SIO option SISR : DNS, DHCP, HTTP/HTTPS, FTP, messagerie, NTP, SNMP et Syslog. Chaque section détaille le protocole, son installation sous Linux et/ou Windows Server, sa configuration et son dépannage.
 
----
 
 ## 1. DNS avancé
 
@@ -375,7 +372,6 @@ ns1.exemple.fr.     86400   IN      A       192.168.1.2
 ;; SERVER: 192.168.1.2#53(192.168.1.2)
 ```
 
----
 
 ## 2. DHCP avancé
 
@@ -562,7 +558,6 @@ subnet 192.168.1.0 netmask 255.255.255.0 {
 
 **Serveur secondaire :** même configuration en remplacant `primary` par `secondary` et en inversant les adresses.
 
----
 
 ## 3. HTTP et HTTPS
 
@@ -822,7 +817,6 @@ server {
 }
 ```
 
----
 
 ## 4. FTP et SFTP
 
@@ -938,7 +932,6 @@ sudo systemctl restart sshd
 
 SFTP est toujours préférable à FTP en production car le trafic est intégralement chiffré.
 
----
 
 ## 5. Messagerie
 
@@ -1052,7 +1045,6 @@ sudo tail -f /var/log/mail.log
 5. Le serveur stocke le message dans la boite aux lettres (MDA - Mail Delivery Agent)
 6. Le destinataire récupère le message via POP3 (port 110) ou IMAP (port 143)
 
----
 
 ## 6. NTP
 
@@ -1132,7 +1124,6 @@ w32tm /resync
 w32tm /query /status
 ```
 
----
 
 ## 7. SNMP
 
@@ -1244,7 +1235,6 @@ snmpget -v3 -u superviseur -l authPriv -a SHA -A "MotDePasseAuth" -x AES -X "Mot
 snmptable -v2c -c public 192.168.1.2 ifTable
 ```
 
----
 
 ## 8. Syslog
 
@@ -1335,7 +1325,6 @@ Dans `/etc/rsyslog.d/60-remote.conf` :
 *.*  @@192.168.1.50:514
 ```
 
----
 
 ## 9. Exercices corriges
 
@@ -1375,7 +1364,6 @@ intranet IN     CNAME   www.entreprise.local.
 
 Points importants : le point final après chaque FQDN est obligatoire. Sans lui, le nom de la zone est automatiquement ajouté (ex : `ns1.entreprise.local` deviendrait `ns1.entreprise.local.entreprise.local`).
 
----
 
 ### Exercice 2 -- Configuration d'une zone DNS inverse
 
@@ -1403,7 +1391,6 @@ $TTL    86400
 
 La zone se déclare dans `named.conf.local` sous le nom `0.16.172.in-addr.arpa`. L'adresse réseau est écrite à l'envers, sans la partie hôte.
 
----
 
 ### Exercice 3 -- Analyse de requêtes DNS avec dig
 
@@ -1439,7 +1426,6 @@ ns2.entreprise.local.  86400 IN     A       172.16.0.3
 - **ADDITIONAL SECTION** : les adresses IP correspondant aux noms mentionnés (résolution complémentaire pour éviter des requêtes supplémentaires)
 - Le serveur interrogé est `172.16.0.2` sur le port 53, avec un temps de réponse de 1 ms
 
----
 
 ### Exercice 4 -- Analyse d'un échange DHCP
 
@@ -1456,7 +1442,6 @@ ns2.entreprise.local.  86400 IN     A       172.16.0.3
 
 Le DHCPREQUEST est envoyé en broadcast (et non en unicast au serveur choisi) pour informer tous les serveurs DHCP du réseau.
 
----
 
 ### Exercice 5 -- Configuration DHCP avec réservations
 
@@ -1492,7 +1477,6 @@ host srv-impression {
 
 L'adresse réservée (10.0.0.50) doit être en dehors de la plage dynamique pour éviter les conflits.
 
----
 
 ### Exercice 6 -- Dépannage DNS
 
@@ -1560,7 +1544,6 @@ ipconfig /flushdns
 sudo systemd-resolve --flush-caches
 ```
 
----
 
 ### Exercice 7 -- Configuration d'un Virtual Host Apache avec HTTPS
 
@@ -1607,7 +1590,6 @@ sudo apachectl configtest
 sudo systemctl reload apache2
 ```
 
----
 
 ### Exercice 8 -- Configuration vsftpd en mode passif
 
@@ -1646,7 +1628,6 @@ sudo systemctl restart vsftpd
 
 Le mode passif est nécessaire lorsque les clients se trouvent derrière un NAT ou un pare-feu qui bloque les connexions entrantes.
 
----
 
 ### Exercice 9 -- Interprétation de codes HTTP
 
@@ -1668,7 +1649,6 @@ Le mode passif est nécessaire lorsque les clients se trouvent derrière un NAT 
 5. **404 Not Found** : la ressource demandée n'existe pas sur le serveur.
 6. **500 Internal Server Error** : une erreur s'est produite côté serveur (code PHP incorrect, configuration défaillante, etc.).
 
----
 
 ### Exercice 10 -- Configuration SNMP v3
 
@@ -1711,7 +1691,6 @@ Détail des options :
 - `-x AES` : algorithme de chiffrement
 - `-X` : mot de passe de chiffrement
 
----
 
 ### Exercice 11 -- Centralisation Syslog
 
@@ -1764,7 +1743,6 @@ sudo systemctl restart rsyslog
 logger "Test centralisation syslog"
 ```
 
----
 
 ### Exercice 12 -- Dépannage DHCP
 
@@ -1830,7 +1808,6 @@ sudo ufw allow 68/udp
 sudo tcpdump -i ens33 port 67 or port 68 -vv
 ```
 
----
 
 ### Exercice 13 -- Dépannage complet : un site web interne inaccessible
 
@@ -1872,7 +1849,6 @@ Cas C -- La résolution fonctionne mais le site est inaccessible :
 - Vérifier le pare-feu : `sudo ufw status` (port 80 ouvert ?)
 - Vérifier les permissions du DocumentRoot
 
----
 
 ### Exercice 14 -- Analyse de configuration Postfix
 
@@ -1910,7 +1886,6 @@ mynetworks = 127.0.0.0/8, 192.168.1.0/24
 home_mailbox = Maildir/
 ```
 
----
 
 ## 10. Synthèse des ports
 
@@ -1935,7 +1910,6 @@ home_mailbox = Maildir/
 | SNMP Trap | UDP | 162 |
 | Syslog | UDP/TCP | 514 |
 
----
 
 ## 11. Points cles pour l'examen
 

@@ -9,7 +9,6 @@ difficulty: "Intermédiaire"
 # Conteneurs et Docker
 
 
----
 
 ## Table des matieres
 
@@ -30,7 +29,6 @@ difficulty: "Intermédiaire"
 15. [15. Exercices corriges](#15-exercices-corriges)
 16. [16. Resume des commandes](#16-resume-des-commandes)
 
----
 
 ## 1. Conteneurs vs Machines Virtuelles
 
@@ -87,7 +85,6 @@ Un conteneur partage le noyau du systeme hote. Il n'embarque que l'application e
 - **VM** : heberger des OS differents (Windows sur Linux), isolation forte pour la securite, environnements legacy.
 - **Conteneurs** : deploiement d'applications web, microservices, pipelines CI/CD, environnements de developpement reproductibles, scaling horizontal.
 
----
 
 ## 2. Installation de Docker
 
@@ -158,7 +155,6 @@ sudo systemctl status docker
 sudo systemctl restart docker
 ```
 
----
 
 ## 3. Concepts fondamentaux
 
@@ -209,7 +205,6 @@ Layer 2 : RUN apt-get install  (paquets systeme)
 Layer 1 : FROM node:18         (image de base)
 ```
 
----
 
 ## 4. Commandes essentielles
 
@@ -320,7 +315,6 @@ docker push mon-registre/mon-app:v1.0
 | `--memory` | Limiter la memoire |
 | `--cpus` | Limiter le nombre de CPUs |
 
----
 
 ## 5. Images Docker
 
@@ -353,7 +347,6 @@ Sur le site hub.docker.com, chaque image dispose d'une page de documentation ave
 - **`image:version-slim`** : version allegee de Debian, sans les outils superflus.
 - **`image:version-bullseye`** / **`bookworm`** : basee sur une version specifique de Debian.
 
----
 
 ## 6. Dockerfile
 
@@ -508,7 +501,6 @@ Avantages :
 - Reduction significative de la taille de l'image.
 - Separation claire entre environnement de build et environnement d'execution.
 
----
 
 ## 7. Construction d'images
 
@@ -569,7 +561,6 @@ USER appuser
 
 7. **Nettoyer les caches** dans la meme instruction RUN que l'installation.
 
----
 
 ## 8. Volumes
 
@@ -642,7 +633,6 @@ docker rm -f mysql-prod
 docker run -d --name mysql-prod -v mysql-data:/var/lib/mysql mysql:8.0
 ```
 
----
 
 ## 9. Reseaux Docker
 
@@ -720,7 +710,6 @@ docker run -d -P nginx
 # Docker attribue un port aleatoire sur l'hote pour chaque port EXPOSE
 ```
 
----
 
 ## 10. Docker Compose
 
@@ -875,7 +864,6 @@ services:
       start_period: 30s
 ```
 
----
 
 ## 11. Exemple complet : application web + base de donnees
 
@@ -1034,7 +1022,6 @@ docker compose logs -f
 docker compose down -v
 ```
 
----
 
 ## 12. Registre prive
 
@@ -1075,7 +1062,6 @@ Pour utiliser le registre depuis d'autres machines du reseau (sans HTTPS), ajout
 
 Redemarrer le service Docker apres modification.
 
----
 
 ## 13. Securite
 
@@ -1151,7 +1137,6 @@ services:
 - **Limiter les capabilities Linux** : `--cap-drop ALL --cap-add NET_BIND_SERVICE`.
 - **Utiliser le mode read-only** : `--read-only` pour le systeme de fichiers du conteneur.
 
----
 
 ## 14. Docker en production : orchestration
 
@@ -1234,7 +1219,6 @@ spec:
 
 Kubernetes depasse le cadre du BTS SIO SISR mais il est important d'en connaitre l'existence et les concepts de base.
 
----
 
 ## 15. Exercices corriges
 
@@ -1259,7 +1243,6 @@ docker ps -a
 docker rm <id_conteneur>
 ```
 
----
 
 ### Exercice 2 : Lancer un serveur web
 
@@ -1278,7 +1261,6 @@ docker stop serveur-web
 docker rm serveur-web
 ```
 
----
 
 ### Exercice 3 : Ecrire un Dockerfile simple
 
@@ -1311,7 +1293,6 @@ docker build -t flask-app:v1.0 .
 docker run -d -p 5000:5000 --name flask flask-app:v1.0
 ```
 
----
 
 ### Exercice 4 : Volumes et persistance
 
@@ -1346,7 +1327,6 @@ docker exec -it mysql-test2 mysql -uroot -ptest123 testdb \
 # Resultat attendu : 1, Alice
 ```
 
----
 
 ### Exercice 5 : Reseaux et communication entre conteneurs
 
@@ -1371,7 +1351,6 @@ docker stop web && docker rm web
 docker network rm app-network
 ```
 
----
 
 ### Exercice 6 : Docker Compose basique
 
@@ -1412,7 +1391,6 @@ curl http://localhost:8080
 docker compose down -v
 ```
 
----
 
 ### Exercice 7 : Dockerfile multi-stage
 
@@ -1458,7 +1436,6 @@ docker run -d -p 8080:8080 go-app
 curl http://localhost:8080
 ```
 
----
 
 ### Exercice 8 : Docker Compose multi-services avec build
 
@@ -1548,7 +1525,6 @@ networks:
   app-net:
 ```
 
----
 
 ### Exercice 9 : Debugging d'un conteneur
 
@@ -1596,7 +1572,6 @@ Codes de sortie courants :
 - **139** : erreur de segmentation.
 - **143** : arret par signal SIGTERM.
 
----
 
 ### Exercice 10 : Securiser un conteneur
 
@@ -1640,7 +1615,6 @@ Ameliorations :
 - `--no-cache-dir` pour reduire la taille de l'image.
 - Forme exec pour CMD (meilleure gestion des signaux).
 
----
 
 ### Exercice 11 : Registre prive et workflow
 
@@ -1675,7 +1649,6 @@ docker pull localhost:5000/mon-app:v1.0
 docker images
 ```
 
----
 
 ### Exercice 12 : Application complete avec Docker Compose
 
@@ -1765,7 +1738,6 @@ docker compose down
 docker compose down -v
 ```
 
----
 
 ### Exercice 13 : Variables d'environnement et configuration
 
@@ -1812,7 +1784,6 @@ docker build --build-arg APP_VERSION=2.0.0 --build-arg NODE_ENV=development -t m
 docker run -e NODE_ENV=staging mon-app
 ```
 
----
 
 ### Exercice 14 : Diagnostic et reparation d'un docker-compose.yml
 
@@ -1903,7 +1874,6 @@ networks:
   backend:
 ```
 
----
 
 ## 16. Resume des commandes
 

@@ -9,7 +9,6 @@ difficulty: "Débutant"
 # Réseaux -- Fondamentaux
 
 
----
 
 ## Table des matieres
 
@@ -34,9 +33,7 @@ difficulty: "Débutant"
 19. [19. Tableau de référence : puissances de 2](#19-tableau-de-rfrence-puissances-de-2)
 20. [20. Tableau de référence : conversion rapide des masques](#20-tableau-de-rfrence-conversion-rapide-des-masques)
 
----
 
----
 
 ## 1. Pourquoi les réseaux
 
@@ -67,7 +64,6 @@ Un réseau informatique est un ensemble d'équipements (ordinateurs, serveurs, i
 - **Broadcast** : un émetteur vers tous les hôtes du réseau local.
 - **Multicast** : un émetteur vers un groupe d'hôtes identifiés.
 
----
 
 ## 2. Le modèle OSI
 
@@ -246,7 +242,6 @@ Couche 1   : Conversion en bits → signal électrique/optique/radio
 
 Ce mécanisme garantit l'indépendance des couches : chaque couche n'a besoin de connaître que l'interface avec ses couches voisines.
 
----
 
 ## 3. Le modèle TCP/IP
 
@@ -273,7 +268,6 @@ Le modèle TCP/IP a été développé par le département de la Défense améric
 
 Cependant, le modèle OSI reste la référence pédagogique pour comprendre les réseaux car il offre une granularité plus fine.
 
----
 
 ## 4. Supports de transmission
 
@@ -351,7 +345,6 @@ Le WiFi utilise des ondes radio pour transmettre les données sans câblage.
 - WPA2 : standard actuel, utilise AES-CCMP.
 - WPA3 : dernière version, chiffrement renforcé, protection contre les attaques par dictionnaire.
 
----
 
 ## 5. Topologies réseau
 
@@ -397,7 +390,6 @@ Extension de la topologie en étoile : plusieurs étoiles interconnectées de ma
 - **Inconvénients** : dépendance au noeud racine, panne d'un switch intermédiaire isole une branche.
 - **Usage** : réseaux d'entreprise structurés en couches (accès, distribution, coeur).
 
----
 
 ## 6. Equipements réseau
 
@@ -440,7 +432,6 @@ Le pare-feu filtre le trafic réseau selon des règles définies par l'administr
 - **Pare-feu applicatif / proxy** (couche 7) : inspecte le contenu des paquets (URL, contenu HTTP, etc.).
 - **UTM** (Unified Threat Management) : combine pare-feu, antivirus, IDS/IPS, filtrage URL, VPN.
 
----
 
 ## 7. Adressage IPv4
 
@@ -503,7 +494,6 @@ Pour accéder à Internet depuis un réseau privé, il faut utiliser la **NAT** 
 | `255.255.255.255` | Broadcast limité. Envoi à tous les hôtes du réseau local. Non routé par les routeurs. |
 | `169.254.0.0/16` | APIPA (Automatic Private IP Addressing). Adresse auto-attribuée quand aucun serveur DHCP ne répond. |
 
----
 
 ## 8. Masques de sous-réseau
 
@@ -611,7 +601,6 @@ Broadcast : 192.168.1.255
 | /29 | 255.255.255.248 | 32 | 6 | 8 |
 | /30 | 255.255.255.252 | 64 | 2 | 4 |
 
----
 
 ## 9. Découpage en sous-réseaux (subnetting)
 
@@ -705,7 +694,6 @@ Masque : 11111111.11111111.11111110.00000000 = 255.255.254.0
 
 Nombre total de sous-réseaux possibles : 2^(23-8) = 2^15 = 32 768 sous-réseaux.
 
----
 
 ## 10. Protocole ARP
 
@@ -745,7 +733,6 @@ Adresse IP        Adresse MAC           Type
 
 ARP ne possède aucun mécanisme d'authentification. Une machine malveillante peut envoyer de fausses réponses ARP pour intercepter le trafic (attaque Man-in-the-Middle). Contre-mesures : ARP statique, Dynamic ARP Inspection (DAI) sur les switchs managés, 802.1X.
 
----
 
 ## 11. Protocole ICMP
 
@@ -786,7 +773,6 @@ traceroute 8.8.8.8       (Linux/Mac)
 tracert 8.8.8.8           (Windows)
 ```
 
----
 
 ## 12. DNS (Domain Name System)
 
@@ -858,7 +844,6 @@ Quand un utilisateur tape `www.example.com` dans son navigateur :
 - `dig www.example.com` (Linux) : requête détaillée.
 - `dig -x 93.184.216.34` : résolution inverse (PTR).
 
----
 
 ## 13. DHCP (Dynamic Host Configuration Protocol)
 
@@ -901,7 +886,6 @@ L'administrateur peut configurer le serveur DHCP pour attribuer toujours la mêm
 
 Les messages DHCP étant envoyés en broadcast, ils ne franchissent pas les routeurs. Si le serveur DHCP se trouve sur un autre sous-réseau, un agent relais DHCP (souvent configuré sur le routeur) intercepte les Discover et les transmet en unicast au serveur DHCP.
 
----
 
 ## 14. TCP vs UDP
 
@@ -1007,7 +991,6 @@ UDP est un protocole de couche 4 **sans connexion** et **non fiable**.
 - **Ports enregistrés** (Registered) : 1024 à 49151. Utilisés par des applications spécifiques.
 - **Ports dynamiques/privés** : 49152 à 65535. Attribués temporairement aux clients.
 
----
 
 ## 15. NAT et PAT
 
@@ -1051,7 +1034,6 @@ Le routeur maintient une table de traduction NAT pour associer chaque flux inter
 - Rend difficile l'hébergement de services derrière le NAT (nécessite la redirection de ports).
 - Ajoute de la latence (traitement supplémentaire).
 
----
 
 ## 16. IPv6
 
@@ -1139,7 +1121,6 @@ Le préfixe est noté avec la longueur, comme en CIDR : `2001:db8:abcd:12::/64`.
 | IPsec | Optionnel | Intégré nativement (mais optionnel en pratique) |
 | Checksum IP | Oui | Non (délégué aux couches supérieures) |
 
----
 
 ## 17. Exercices corrigés
 
@@ -1185,7 +1166,6 @@ Le préfixe est noté avec la longueur, comme en CIDR : `2001:db8:abcd:12::/64`.
 Résultat : 10101100.00010000.11111110.00000001
 ```
 
----
 
 ### Exercice 2 -- Identification de la classe et du type d'adresse
 
@@ -1213,7 +1193,6 @@ Résultat : 10101100.00010000.11111110.00000001
 | `224.0.0.1` | D (1er octet = 224) | Multicast |
 | `192.0.2.1` | C (1er octet = 192) | Spéciale -- Documentation (RFC 5737) |
 
----
 
 ### Exercice 3 -- Calcul d'adresse réseau et broadcast
 
@@ -1274,7 +1253,6 @@ Dernière adresse  : 10.45.207.254
 Broadcast         : 10.45.207.255
 ```
 
----
 
 ### Exercice 4 -- Subnetting : découper en 8 sous-réseaux
 
@@ -1324,7 +1302,6 @@ Broadcast : 172.16.01011111.11111111 = 172.16.95.255
                       Bits hôte tous à 1
 ```
 
----
 
 ### Exercice 5 -- Subnetting avec contrainte d'hôtes
 
@@ -1359,7 +1336,6 @@ Taille du bloc : 2^5 = 32.
 | 7 | 192.168.5.192/27 | 192.168.5.193 | 192.168.5.222 | 192.168.5.223 |
 | 8 | 192.168.5.224/27 | 192.168.5.225 | 192.168.5.254 | 192.168.5.255 |
 
----
 
 ### Exercice 6 -- Adresse réseau avec masque non standard
 
@@ -1406,7 +1382,6 @@ Dernière adresse  : 192.168.100.206
 Broadcast         : 192.168.100.207
 ```
 
----
 
 ### Exercice 7 -- Deux machines sont-elles sur le même réseau ?
 
@@ -1438,7 +1413,6 @@ Adresse réseau B : 192.168.1.128
 
 Les deux adresses réseau sont identiques (192.168.1.128). **Oui, les machines A et B sont sur le même réseau.**
 
----
 
 ### Exercice 8 -- Deux machines sur des réseaux différents
 
@@ -1468,7 +1442,6 @@ Réseau D : 192.168.1.192
 
 Les adresses réseau sont différentes (64 vs 192). **Non, les machines C et D ne sont pas sur le même réseau.** Elles ont besoin d'un routeur pour communiquer.
 
----
 
 ### Exercice 9 -- VLSM (Variable Length Subnet Masking)
 
@@ -1530,7 +1503,6 @@ Avec VLSM, on alloue des masques de taille variable. On commence par le plus gra
 
 Adresses restantes non utilisées : 192.168.50.244 à 192.168.50.255 (12 adresses).
 
----
 
 ### Exercice 10 -- Identifier le masque à partir du nombre d'hôtes
 
@@ -1555,7 +1527,6 @@ Masque = 32 - 9 = /23.
 
 On obtient 510 adresses utilisables, ce qui couvre le besoin de 500 hôtes.
 
----
 
 ### Exercice 11 -- Analyse d'une trame Ethernet
 
@@ -1580,7 +1551,6 @@ Questions :
 
 3. ARP utilise le broadcast car la machine source ne connaît pas l'adresse MAC de la destination. Elle doit donc demander à toutes les machines du réseau "Qui possède cette adresse IP ?". Seule la machine concernée répondra (en unicast).
 
----
 
 ### Exercice 12 -- Processus DHCP
 
@@ -1597,7 +1567,6 @@ Questions :
 
 Note : certaines implémentations utilisent l'unicast pour le Offer et le Ack, en utilisant l'adresse IP proposée au client. Le broadcast reste le comportement standard décrit dans la RFC 2131.
 
----
 
 ### Exercice 13 -- TCP : analyse du three-way handshake
 
@@ -1636,7 +1605,6 @@ Segment 3 : Client → Serveur
 La connexion TCP est maintenant établie. Les données peuvent être échangées.
 ```
 
----
 
 ### Exercice 14 -- NAT/PAT
 
@@ -1658,7 +1626,6 @@ La connexion TCP est maintenant établie. Les données peuvent être échangées
 
 Les trois machines partagent la même adresse IP publique (`203.0.113.5`). Le routeur attribue un port source externe unique à chaque flux pour pouvoir rediriger les réponses vers la bonne machine interne. C'est le principe du PAT (Port Address Translation).
 
----
 
 ### Exercice 15 -- IPv6 : notation abrégée
 
@@ -1692,7 +1659,6 @@ Les trois machines partagent la même adresse IP publique (`203.0.113.5`). Le ro
    - Supprimer les zéros en tête : `ff02:0:0:0:0:0:0:1`
    - Remplacer par `::` : **`ff02::1`** (multicast tous les noeuds du lien)
 
----
 
 ### Exercice 16 -- Calcul complet en binaire avec masque /22
 
@@ -1772,7 +1738,6 @@ Broadcast         : 172.16.47.255
 Nombre d'hôtes    : 1022
 ```
 
----
 
 ### Exercice 17 -- Résolution DNS pas à pas
 
@@ -1793,7 +1758,6 @@ Nombre d'hôtes    : 1022
 8. Le système transmet l'adresse IP au navigateur.
 9. Le navigateur établit une connexion TCP (puis TLS car HTTPS) vers `X.X.X.X:443`.
 
----
 
 ### Exercice 18 -- Questions rapides (QCM corrigé)
 
@@ -1833,7 +1797,6 @@ Réponse : **CNAME** (Canonical Name).
 **10. Quel protocole remplace ARP en IPv6 ?**
 Réponse : **NDP** (Neighbor Discovery Protocol), en particulier les messages ICMPv6 Neighbor Solicitation et Neighbor Advertisement.
 
----
 
 ## 18. Résumé des formules essentielles
 
@@ -1848,7 +1811,6 @@ Réponse : **NDP** (Neighbor Discovery Protocol), en particulier les messages IC
 | Dernière adresse utilisable | Broadcast - 1 |
 | Nombre de liaisons (maillage complet) | n(n-1)/2 |
 
----
 
 ## 19. Tableau de référence : puissances de 2
 
@@ -1872,7 +1834,6 @@ Réponse : **NDP** (Neighbor Discovery Protocol), en particulier les messages IC
 | 16 | 65536 | 65534 |
 | 24 | 16777216 | 16777214 |
 
----
 
 ## 20. Tableau de référence : conversion rapide des masques
 

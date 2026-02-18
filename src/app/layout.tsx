@@ -26,7 +26,7 @@ const fontMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: {
     default: 'BTS SIO — Ton arme secrete pour l\'examen',
-    template: '%s | BTS SIO Playbooks',
+    template: '%s | Reussir mon BTS SIO',
   },
   description: 'SLAM, SISR, Maths, Droit — tout le programme BTS SIO en playbooks ultra-detailles avec exercices corriges. Gratuit.',
   openGraph: {

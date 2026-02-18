@@ -9,7 +9,6 @@ difficulty: "Intermédiaire"
 # Virtualisation
 
 
----
 
 ## Table des matieres
 
@@ -29,7 +28,6 @@ difficulty: "Intermédiaire"
 14. [14. Exercices corriges](#14-exercices-corriges)
 15. [15. Points cles pour l'examen](#15-points-cles-pour-lexamen)
 
----
 
 ## 1. Concepts fondamentaux
 
@@ -62,7 +60,6 @@ La virtualisation consiste a executer plusieurs systemes d'exploitation sur une 
 
 **Haute disponibilite** : migrer des VM entre hotes sans interruption de service.
 
----
 
 ## 2. Les hyperviseurs
 
@@ -116,7 +113,6 @@ L'hyperviseur s'installe sur un systeme d'exploitation existant. Plus simple a m
 | Administration | Interface dediee (web/client) | Interface graphique integree |
 | Cout | Variable (licences serveur) | Souvent gratuit |
 
----
 
 ## 3. Oracle VirtualBox
 
@@ -328,7 +324,6 @@ VBoxManage controlvm "srv-debian" poweroff
 VBoxManage export "srv-debian" -o srv-debian.ova
 ```
 
----
 
 ## 4. VMware (ESXi et vSphere)
 
@@ -427,7 +422,6 @@ VM3 ──┘                      └── vmnic1 ──> Switch physique (red
 - Configuration centralisee sur plusieurs hotes
 - Fonctions avancees : NetFlow, port mirroring, LACP
 
----
 
 ## 5. Proxmox VE
 
@@ -531,7 +525,6 @@ iface vmbr0 inet static
 - Activer "VLAN aware" sur le bridge
 - Assigner un VLAN tag a chaque VM/conteneur dans sa configuration reseau
 
----
 
 ## 6. Allocation de ressources
 
@@ -577,7 +570,6 @@ Un vCPU est un coeur de processeur virtuel assigne a une VM. L'hyperviseur plani
 | Disque | Oui (thin provisioning) | Espace insuffisant | Surveiller l'utilisation reelle |
 | Reseau | Oui (bande passante partagee) | Saturation | QoS, traffic shaping |
 
----
 
 ## 7. Stockage virtuel
 
@@ -636,7 +628,6 @@ Le stockage partage permet a plusieurs hotes d'acceder aux memes donnees. Indisp
 | Cout | Faible | Moyen | Eleve |
 | Partage multi-hotes | Natif | Avec VMFS/clustering | Avec VMFS/clustering |
 
----
 
 ## 8. Reseau virtuel
 
@@ -688,7 +679,6 @@ Le mode bridge connecte directement la VM au reseau physique. La VM apparait com
 - Les trames de la VM sont envoyees directement sur le reseau physique
 - La VM obtient une IP du serveur DHCP du reseau physique (ou IP statique dans le meme sous-reseau)
 
----
 
 ## 9. Snapshots
 
@@ -722,7 +712,6 @@ Un snapshot capture l'etat d'une VM a un instant precis :
 - Le temps de suppression d'un snapshot est proportionnel a la taille du delta a fusionner
 - Certains logiciels (bases de donnees) necessitent une quiesce (mise en coherence) avant le snapshot
 
----
 
 ## 10. Templates et clones
 
@@ -779,7 +768,6 @@ Avec un template et le clonage, deployer 10 serveurs identiques prend quelques m
 2. Cloner le template pour chaque nouvelle VM
 3. Personnaliser chaque clone (hostname, IP, role)
 
----
 
 ## 11. Migration de machines virtuelles
 
@@ -828,7 +816,6 @@ qm migrate <VMID> <noeud_destination> --online
 
 Deplacement du stockage d'une VM d'un datastore a un autre sans interruption. La VM reste sur le meme hote.
 
----
 
 ## 12. Haute disponibilite
 
@@ -875,7 +862,6 @@ En cas de panne d'un noeud, les VM sont automatiquement redemarrees sur un autre
 
 **Proxmox :** pas de DRS natif, mais des scripts et outils tiers permettent de repartir les VM.
 
----
 
 ## 13. Conteneurs vs machines virtuelles
 
@@ -940,7 +926,6 @@ docker build -t mon-app:v1 .
 
 **Lien avec la virtualisation :** Docker s'execute souvent dans des VM en production (VM qui heberge le moteur Docker et les conteneurs). Les conteneurs LXC de Proxmox et les conteneurs Docker reposent sur les memes mecanismes Linux (namespaces et cgroups) mais avec des objectifs differents : LXC virtualise un systeme complet, Docker isole une application.
 
----
 
 ## 14. Exercices corriges
 
@@ -1002,7 +987,6 @@ iptables -t nat -A POSTROUTING -o enp0s3 -j MASQUERADE
 
 7. Verification : depuis chaque VM, `ping 172.16.0.x` pour tester la communication.
 
----
 
 ### Exercice 2 -- Configurer les modes reseau VirtualBox
 
@@ -1024,7 +1008,6 @@ Procedure pour chaque test :
 3. Verifier l'IP (`ip addr show`)
 4. Tester la connectivite (`ping`)
 
----
 
 ### Exercice 3 -- Snapshots et restauration
 
@@ -1062,7 +1045,6 @@ ss -tlnp | grep 80
 # Apache ecoute de nouveau sur le port 80
 ```
 
----
 
 ### Exercice 4 -- Creer une VM sur Proxmox avec stockage et reseau
 
@@ -1107,7 +1089,6 @@ iface ens18 inet static
     dns-nameservers 10.10.10.1
 ```
 
----
 
 ### Exercice 5 -- Planifier l'allocation de ressources
 
@@ -1134,7 +1115,6 @@ Est-ce realisable ? Justifier.
 
 **Conclusion :** l'hebergement est realisable avec une surveillance attentive du stockage. Ajouter un second disque ou un stockage externe serait prudent.
 
----
 
 ### Exercice 6 -- Migration a chaud sur Proxmox
 
@@ -1169,7 +1149,6 @@ qm migrate 100 pve2 --online
 
 **En cas d'echec :** verifier les logs (`/var/log/pve/tasks/`), la connectivite reseau entre les noeuds, et les permissions d'acces au stockage partage.
 
----
 
 ### Exercice 7 -- Configurer un vSwitch avec VLAN sur ESXi
 
@@ -1211,7 +1190,6 @@ interface GigabitEthernet0/1
 
 7. Verification : VM1 et VM2 peuvent communiquer entre elles. VM3 ne peut pas communiquer directement avec VM1 et VM2 (VLAN differents). Un routeur inter-VLAN est necessaire pour la communication entre VLAN.
 
----
 
 ### Exercice 8 -- Deploiement rapide par template (Proxmox)
 
@@ -1269,7 +1247,6 @@ dpkg-reconfigure openssh-server
 systemctl restart sshd
 ```
 
----
 
 ### Exercice 9 -- Conteneurs LXC vs VM sur Proxmox
 
@@ -1296,7 +1273,6 @@ Creer un conteneur LXC Debian 12 et une VM Debian 12 sur le meme noeud Proxmox. 
 
 5. Conclusion : les conteneurs LXC sont beaucoup plus legers et rapides que les VM, mais offrent une isolation moindre. Pour un service Linux standard (serveur web, DNS, DHCP), un conteneur est souvent suffisant. Pour Windows ou une isolation forte, la VM est obligatoire.
 
----
 
 ### Exercice 10 -- Configurer un stockage iSCSI sur Proxmox
 
@@ -1331,7 +1307,6 @@ lvs
 
 5. Avantage : le stockage iSCSI etant accessible par tous les noeuds du cluster (si configure sur chacun), il permet la migration a chaud et la haute disponibilite.
 
----
 
 ### Exercice 11 -- Comparer les formats de disques virtuels
 
@@ -1367,7 +1342,6 @@ qemu-img info test-qcow2.qcow2
 - RAW : meilleures performances brutes, pas de fonctions avancees
 - QCOW2 prealloue : performances proches du RAW, conserve les fonctions QCOW2
 
----
 
 ### Exercice 12 -- Haute disponibilite sur Proxmox
 
@@ -1426,7 +1400,6 @@ cat /var/log/pve/ha-manager/current
 
 7. Retour a la normale : quand `pve1` revient en ligne, la VM 100 peut etre remigree manuellement ou automatiquement selon la configuration du groupe HA.
 
----
 
 ### Exercice 13 -- VBoxManage : gestion en ligne de commande
 
@@ -1476,7 +1449,6 @@ VBoxManage startvm "srv-dns" --type headless
 VBoxManage modifyvm "srv-dns" --vrde on --vrdeport 5001
 ```
 
----
 
 ### Exercice 14 -- Concevoir une infrastructure virtualisee complete
 
@@ -1530,7 +1502,6 @@ Les deux noeuds sont largement dimensionnes. En cas de panne d'un noeud, l'autre
 
 **Sauvegardes :** Proxmox Backup Server planifie des sauvegardes quotidiennes de toutes les VM sur le NAS. Retention : 7 quotidiennes, 4 hebdomadaires, 3 mensuelles.
 
----
 
 ## 15. Points cles pour l'examen
 

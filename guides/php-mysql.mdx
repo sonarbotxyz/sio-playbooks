@@ -8,7 +8,6 @@ difficulty: "Intermédiaire"
 
 # PHP et MySQL -- Playbook BTS SIO SLAM
 
----
 
 ## Table des matieres
 
@@ -32,7 +31,6 @@ difficulty: "Intermédiaire"
 18. [18. Exercices d'examen corriges](#18-exercices-dexamen-corriges)
 19. [Recapitulatif des points essentiels pour l'examen](#recapitulatif-des-points-essentiels-pour-lexamen)
 
----
 
 ## 1. Introduction a PHP
 
@@ -133,7 +131,6 @@ phpinfo();
 
 Cette fonction affiche une page detaillee avec toutes les directives de configuration, les extensions chargees et les variables d'environnement.
 
----
 
 ## 2. Bases du langage PHP
 
@@ -572,7 +569,6 @@ echo compteur(); // 2
 echo compteur(); // 3
 ```
 
----
 
 ## 3. Chaines de caracteres
 
@@ -765,7 +761,6 @@ echo str_ends_with("Bonjour", "jour");   // true (PHP 8+)
 echo str_contains("Bonjour", "njo");     // true (PHP 8+)
 ```
 
----
 
 ## 4. Tableaux
 
@@ -1053,7 +1048,6 @@ $flat = array_merge(...$nested);
 // [1, 2, 3, 4, 5, 6]
 ```
 
----
 
 ## 5. Superglobales
 
@@ -1179,7 +1173,6 @@ $_FILES['photo']['tmp_name'];  // Chemin temporaire sur le serveur
 $_FILES['photo']['error'];     // Code d'erreur (0 = OK)
 ```
 
----
 
 ## 6. Formulaires HTML et PHP
 
@@ -1369,7 +1362,6 @@ PHP propose une syntaxe alternative aux accolades pour les structures de control
 
 La balise `<?= $variable ?>` est un raccourci pour `<?php echo $variable; ?>`.
 
----
 
 ## 7. Sessions et cookies
 
@@ -1554,7 +1546,6 @@ header("Location: login.php");
 exit;
 ```
 
----
 
 ## 8. Programmation orientee objet en PHP
 
@@ -1925,7 +1916,6 @@ require_once 'vendor/autoload.php';
 $obj = new App\Models\Produit("Clavier", 49.99);
 ```
 
----
 
 ## 9. Connexion MySQL avec PDO
 
@@ -2014,7 +2004,6 @@ $pdo = Database::getInstance();
 
 Ce pattern Singleton garantit qu'une seule connexion est ouverte durant l'execution du script.
 
----
 
 ## 10. Requetes preparees
 
@@ -2141,7 +2130,6 @@ $stmt->execute([':cat' => 'alimentaire']);
 echo $stmt->rowCount(); // Nombre de lignes modifiees
 ```
 
----
 
 ## 11. CRUD complet avec PDO
 
@@ -2411,7 +2399,6 @@ $produits = $stmt->fetchAll();
 </html>
 ```
 
----
 
 ## 12. Architecture MVC en PHP
 
@@ -2773,7 +2760,6 @@ class ProduitController {
 </table>
 ```
 
----
 
 ## 13. Upload de fichiers
 
@@ -2864,7 +2850,6 @@ Points de securite pour l'upload :
 - Stocker les fichiers en dehors du dossier web si possible
 - Limiter la taille
 
----
 
 ## 14. Gestion des erreurs
 
@@ -3004,7 +2989,6 @@ set_error_handler(function (int $severity, string $message, string $file, int $l
 });
 ```
 
----
 
 ## 15. Securite
 
@@ -3177,7 +3161,6 @@ if ($utilisateur && password_verify($_POST['motdepasse'], $utilisateur['mot_de_p
 | Uploads | Verifier type MIME reel, renommer le fichier, limiter la taille |
 | Donnees utilisateur | Valider et sanitizer toute entree |
 
----
 
 ## 16. Include et require
 
@@ -3278,7 +3261,6 @@ spl_autoload_register(function (string $classe): void {
 });
 ```
 
----
 
 ## 17. Pagination des resultats
 
@@ -3440,7 +3422,6 @@ $nombrePages = $pagination['nombre_pages'];
 $pageCourante = $pagination['page_courante'];
 ```
 
----
 
 ## 18. Exercices d'examen corriges
 
@@ -3490,7 +3471,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </html>
 ```
 
----
 
 ### Exercice 2 -- Structures de controle et tableaux
 
@@ -3541,7 +3521,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </html>
 ```
 
----
 
 ### Exercice 3 -- Fonctions et chaines de caracteres
 
@@ -3583,7 +3562,6 @@ echo censurerMot($phrase, "PHP") . "\n";    // Le *** est un langage de programm
 echo censurerMot($phrase, "langage") . "\n"; // Le PHP est un ******* de programmation
 ```
 
----
 
 ### Exercice 4 -- Formulaire avec validation complete
 
@@ -3704,7 +3682,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </html>
 ```
 
----
 
 ### Exercice 5 -- POO : Classe Etudiant
 
@@ -3830,7 +3807,6 @@ foreach ($promo->getClassement() as $rang => $etudiant) {
 }
 ```
 
----
 
 ### Exercice 6 -- Connexion PDO et requetes
 
@@ -3913,7 +3889,6 @@ try {
 }
 ```
 
----
 
 ### Exercice 7 -- CRUD complet
 
@@ -4053,7 +4028,6 @@ if ($action === 'edit' && $id > 0) {
 </html>
 ```
 
----
 
 ### Exercice 8 -- Sessions et authentification
 
@@ -4197,7 +4171,6 @@ header("Location: login.php");
 exit;
 ```
 
----
 
 ### Exercice 9 -- MVC : Application de gestion de taches
 
@@ -4382,7 +4355,6 @@ class TacheController {
 </table>
 ```
 
----
 
 ### Exercice 10 -- Securite et upload
 
@@ -4534,7 +4506,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </html>
 ```
 
----
 
 ### Exercice 11 -- Pagination et recherche
 
@@ -4658,7 +4629,6 @@ $paramsUrl = http_build_query(array_filter(['q' => $recherche, 'cat' => $categor
 </html>
 ```
 
----
 
 ### Exercice 12 -- Synthese : Mini-application de blog
 
@@ -4905,7 +4875,6 @@ match ($action) {
 };
 ```
 
----
 
 ## Recapitulatif des points essentiels pour l'examen
 

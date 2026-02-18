@@ -8,7 +8,6 @@ difficulty: "Intermédiaire"
 
 # Supervision et monitoring
 
----
 
 ## Table des matieres
 
@@ -27,7 +26,6 @@ difficulty: "Intermédiaire"
 13. [Exercices corriges](#exercices-corriges)
 14. [Synthese des points cles pour l'examen](#synthese-des-points-cles-pour-lexamen)
 
----
 
 ## Pourquoi superviser
 
@@ -60,7 +58,6 @@ La **supervision passive** consiste a attendre que l'equipement supervise envoie
 
 Les deux approches sont complementaires. La supervision active permet de detecter l'indisponibilite totale d'un equipement (s'il ne repond plus, c'est qu'il est en panne). La supervision passive est plus adaptee aux evenements ponctuels et imprevisibles.
 
----
 
 ## SNMP
 
@@ -188,7 +185,6 @@ sudo systemctl restart snmpd
 sudo systemctl enable snmpd
 ```
 
----
 
 ## Nagios et Centreon
 
@@ -375,7 +371,6 @@ Un service passe par les etats suivants :
 
 Ce mecanisme evite les fausses alertes dues a des problemes transitoires. Par exemple, avec `max_check_attempts=3` et `retry_interval=1`, Nagios reessaie 3 fois a 1 minute d'intervalle avant de confirmer un etat CRITICAL et d'envoyer une notification.
 
----
 
 ## Zabbix
 
@@ -546,7 +541,6 @@ La decouverte automatique permet de detecter et superviser dynamiquement des ele
 
 Configuration de la decouverte reseau : Configuration > Discovery > creer une regle avec la plage IP, les services a verifier (SNMP, agent Zabbix, ICMP) et les actions a declencher (ajout automatique, liaison a un template, envoi de notification).
 
----
 
 ## Alertes et notifications
 
@@ -615,7 +609,6 @@ Strategies pour reduire les faux positifs :
 
 L'acquittement (acknowledge) est l'action par laquelle un operateur signale qu'il a pris connaissance d'une alerte et qu'il la traite. L'alerte reste visible mais les notifications d'escalade sont suspendues. Dans Zabbix, l'acquittement se fait depuis l'interface web (Monitoring > Problems > Ack).
 
----
 
 ## Tableaux de bord et Grafana
 
@@ -688,7 +681,6 @@ Prometheus est un systeme de collecte de metriques par scraping HTTP. Les applic
 - Utiliser des variables (templates) Grafana pour filtrer dynamiquement par hote, service ou site.
 - Configurer des alertes Grafana en complement de celles de l'outil de supervision.
 
----
 
 ## Gestion de parc avec GLPI
 
@@ -832,7 +824,6 @@ La base de connaissances de GLPI permet de capitaliser les solutions aux problem
 
 L'objectif est de permettre aux utilisateurs de trouver eux-memes la solution (self-service) et aux techniciens de resoudre plus rapidement les incidents deja documentes.
 
----
 
 ## ITIL : concepts fondamentaux
 
@@ -874,7 +865,6 @@ Relation avec les OLA et UC :
 
 **CMDB (Configuration Management Database).** Base de donnees contenant les elements de configuration (CI - Configuration Items) et leurs relations. Un CI peut etre un serveur, un routeur, une application, un contrat, un document. La CMDB permet de comprendre les dependances entre elements.
 
----
 
 ## Gestion des incidents
 
@@ -932,7 +922,6 @@ Exemple concret :
 
 **Escalade hierarchique (verticale)** : notification du management lorsque l'incident n'est pas resolu dans les delais ou lorsque son impact le justifie. Exemple : notification du DSI pour une panne majeure affectant la production.
 
----
 
 ## Supervision reseau
 
@@ -1053,7 +1042,6 @@ Options principales :
 | `-X` | Afficher le contenu en hexadecimal et ASCII |
 | `-A` | Afficher le contenu en ASCII |
 
----
 
 ## Metriques systeme
 
@@ -1159,7 +1147,6 @@ TCP:   128 (estab 45, closed 12, orphaned 0, timewait 15)
 | `iftop` | Bande passante par connexion en temps reel |
 | `ss` / `netstat` | Connexions reseau et sockets |
 
----
 
 ## Centralisation des logs
 
@@ -1308,7 +1295,6 @@ Avantages de Graylog par rapport a ELK :
 
 Graylog recoit les logs via le protocole **GELF** (Graylog Extended Log Format) sur UDP ou TCP, ou via syslog standard.
 
----
 
 ## Exercices corriges
 
@@ -1344,7 +1330,6 @@ Pour tester depuis le serveur de supervision :
 snmpwalk -v2c -c supervBTS 192.168.1.1 system
 ```
 
----
 
 ### Exercice 2 : Requetes SNMP en ligne de commande
 
@@ -1378,7 +1363,6 @@ snmpget -v2c -c public 10.0.0.1 1.3.6.1.2.1.2.2.1.10.2
 snmpget -v2c -c public 10.0.0.1 ifInOctets.2
 ```
 
----
 
 ### Exercice 3 : Configuration d'un hote et d'un service dans Nagios
 
@@ -1447,7 +1431,6 @@ Rechargement de Nagios :
 sudo systemctl reload nagios
 ```
 
----
 
 ### Exercice 4 : Creation d'un trigger Zabbix
 
@@ -1474,7 +1457,6 @@ Le trigger 3 utilise `idle < 10` car si le CPU inactif est inferieur a 10 %, cel
 
 Pour le trigger espace disque, il est recommande de configurer une **dependance** du trigger WARNING vers le trigger CRITICAL : si le seuil critique est atteint, le trigger warning ne doit pas generer de notification supplementaire.
 
----
 
 ### Exercice 5 : Creation d'un ticket dans GLPI
 
@@ -1504,7 +1486,6 @@ Suivi du ticket :
 5. Test : le poste demarre normalement, l'utilisateur confirme le bon fonctionnement.
 6. Cloture du ticket.
 
----
 
 ### Exercice 6 : Filtres Wireshark
 
@@ -1538,7 +1519,6 @@ frame.len > 1500
 tcp.flags.syn == 1 && tcp.flags.ack == 0
 ```
 
----
 
 ### Exercice 7 : Analyse d'une capture tcpdump
 
@@ -1566,7 +1546,6 @@ tcp.flags.syn == 1 && tcp.flags.ack == 0
 
 Il s'agit d'un echange TCP classique : etablissement de connexion (three-way handshake) suivi de l'envoi d'une requete HTTP.
 
----
 
 ### Exercice 8 : Configuration de rsyslog pour la centralisation
 
@@ -1630,7 +1609,6 @@ ls /var/log/remote/
 cat /var/log/remote/client-hostname/test.log
 ```
 
----
 
 ### Exercice 9 : Supervision systeme avec commandes Linux
 
@@ -1695,7 +1673,6 @@ $ dmesg | tail -50
 
 Rechercher des erreurs noyau (OOM killer, erreurs disque, erreurs materiel).
 
----
 
 ### Exercice 10 : Matrice urgence/impact dans GLPI
 
@@ -1721,7 +1698,6 @@ Justifications :
 - L'incident 3 dispose d'un contournement et ne touche qu'un utilisateur : priorite minimale.
 - L'incident 4 a un impact externe (clients, partenaires) qui justifie une priorite maximale.
 
----
 
 ### Exercice 11 : ITIL - Distinction incident, probleme, changement
 
@@ -1748,7 +1724,6 @@ Justifications :
 
 6. **Probleme.** La recurrence de 5 incidents similaires justifie l'ouverture d'un ticket de probleme pour identifier et traiter la cause racine (driver d'imprimante, configuration reseau, materiel defectueux).
 
----
 
 ### Exercice 12 : Configuration complete de supervision avec Zabbix
 
@@ -1838,7 +1813,6 @@ GRANT USAGE, REPLICATION CLIENT, PROCESS, SHOW DATABASES, SHOW VIEW ON *.* TO 'z
 1. Monitoring > Dashboards > creer un dashboard "Serveurs BDD".
 2. Ajouter les widgets : graphique CPU, graphique RAM, graphique espace disque, graphique connexions MySQL, problemes actifs.
 
----
 
 ### Exercice 13 : Decouverte automatique Zabbix
 
@@ -1875,7 +1849,6 @@ Configuration > Actions > Discovery actions > Create action :
 
 Ainsi, tout nouveau serveur Linux connecte au reseau sera automatiquement detecte, ajoute a l'inventaire Zabbix et supervise sans intervention manuelle.
 
----
 
 ### Exercice 14 : Configuration d'un dashboard Grafana connecte a Zabbix
 
@@ -1916,7 +1889,6 @@ Ainsi, tout nouveau serveur Linux connecte au reseau sera automatiquement detect
 
 Enregistrer le dashboard et configurer un rafraichissement automatique toutes les 60 secondes.
 
----
 
 ## Synthese des points cles pour l'examen
 

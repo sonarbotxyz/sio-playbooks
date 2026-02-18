@@ -8,7 +8,6 @@ difficulty: "Débutant"
 
 # Git et GitHub
 
----
 
 ## Table des matieres
 
@@ -31,7 +30,6 @@ difficulty: "Débutant"
 17. [17. Exercices d'examen corriges](#17-exercices-dexamen-corriges)
 18. [Resume des commandes essentielles](#resume-des-commandes-essentielles)
 
----
 
 ## 1. Introduction au versioning
 
@@ -98,7 +96,6 @@ Developpeur C (depot complet) <--->       |
 | Courbe d'apprentissage | Plus raide | Plus simple |
 | Adoption | Standard de l'industrie | En declin |
 
----
 
 ## 2. Installation et configuration
 
@@ -223,7 +220,6 @@ ssh -T git@github.com
 3. Verifier l'email.
 4. Configurer l'authentification a deux facteurs (2FA) : fortement recommande.
 
----
 
 ## 3. Les commandes de base
 
@@ -379,7 +375,6 @@ git diff index.html
 git diff --stat
 ```
 
----
 
 ## 4. Le modele Git : les trois zones
 
@@ -424,7 +419,6 @@ Le repertoire cache `.git/` contient l'integralite de l'historique : tous les co
 4. git push                  -> Remote Repository (GitHub)
 ```
 
----
 
 ## 5. Le fichier .gitignore
 
@@ -528,7 +522,6 @@ git config --global core.excludesfile ~/.gitignore_global
 
 Puis creer `~/.gitignore_global` avec les patterns souhaites.
 
----
 
 ## 6. Les branches
 
@@ -697,7 +690,6 @@ Permet de reorganiser, fusionner (squash), renommer ou supprimer des commits.
 | Securite | Sur (ne reecrit pas l'historique) | Dangereux si commits partages |
 | Usage | Branches partagees, pull requests | Branches locales, nettoyage |
 
----
 
 ## 7. Resolution de conflits
 
@@ -791,7 +783,6 @@ Outils courants : VS Code (integre), IntelliJ (integre), Meld, KDiff3, Beyond Co
 
 VS Code affiche les conflits avec des boutons cliquables : "Accept Current Change", "Accept Incoming Change", "Accept Both Changes".
 
----
 
 ## 8. GitHub : travail distant
 
@@ -898,7 +889,6 @@ git checkout --track origin/feature
 git switch -c feature origin/feature
 ```
 
----
 
 ## 9. Pull Requests
 
@@ -969,7 +959,6 @@ git branch -d feature/formulaire-contact
 - Lier les issues concernees (`Closes #42`).
 - Repondre a tous les commentaires de review.
 
----
 
 ## 10. Collaboration et workflows
 
@@ -1064,7 +1053,6 @@ test(user): ajouter les tests unitaires du service utilisateur
 4. Corps : expliquer le "pourquoi", pas le "quoi" (le diff montre le quoi).
 5. Etre specifique : "Corriger le crash au lancement sur iOS 17" plutot que "Fix bug".
 
----
 
 ## 11. Manipulation de l'historique
 
@@ -1205,7 +1193,6 @@ Cas d'usage : un correctif a ete fait sur `develop` et doit etre applique d'urge
 | Cree un nouveau commit | Non | Oui |
 | Usage | Branche locale | Branche partagee |
 
----
 
 ## 12. Tags et versioning semantique
 
@@ -1274,7 +1261,6 @@ Format : `MAJOR.MINOR.PATCH`
 
 **Pre-release :** `1.0.0-alpha`, `1.0.0-beta.1`, `1.0.0-rc.1`
 
----
 
 ## 13. Le stash
 
@@ -1338,7 +1324,6 @@ git stash pop
 # Continuer le travail
 ```
 
----
 
 ## 14. GitHub Pages
 
@@ -1393,7 +1378,6 @@ git push origin main
 # Le site est mis a jour automatiquement (delai de quelques minutes)
 ```
 
----
 
 ## 15. GitHub Issues et Projects
 
@@ -1446,11 +1430,9 @@ Les issues et PR peuvent etre ajoutees comme cartes dans le tableau. Le deplacem
 Creer `.github/ISSUE_TEMPLATE/bug_report.md` :
 
 ```markdown
----
 name: Bug Report
 about: Signaler un bug
 labels: bug
----
 
 ## Description
 Description claire du bug.
@@ -1475,7 +1457,6 @@ Si pertinent.
 - Version : [ex: 1.2.3]
 ```
 
----
 
 ## 16. Bonnes pratiques
 
@@ -1524,7 +1505,6 @@ Sur GitHub, proteger la branche `main` :
 - Utiliser des variables d'environnement ou un fichier `.env` (ajoute au `.gitignore`).
 - Si un secret a ete committe par erreur, le considerer comme compromis et le renouveler immediatement. Le supprimer de l'historique avec `git filter-branch` ou BFG Repo-Cleaner.
 
----
 
 ## 17. Exercices d'examen corriges
 
@@ -1587,7 +1567,6 @@ git log --oneline
 # a1b2c3d feat: initialiser le projet avec index.html et .gitignore
 ```
 
----
 
 ### Exercice 2 : Branches et merge fast-forward
 
@@ -1636,7 +1615,6 @@ git branch -d feature/navigation
 git log --oneline
 ```
 
----
 
 ### Exercice 3 : Merge avec commit de fusion
 
@@ -1680,7 +1658,6 @@ git log --oneline --graph
 git branch -d feature/header feature/footer
 ```
 
----
 
 ### Exercice 4 : Resolution de conflit
 
@@ -1730,7 +1707,6 @@ git commit -m "fix: resoudre le conflit de titre"
 git branch -d dev-alice dev-bob
 ```
 
----
 
 ### Exercice 5 : Utilisation de GitHub (push, pull, clone)
 
@@ -1761,7 +1737,6 @@ git log --oneline
 # Le commit du README distant apparait dans l'historique
 ```
 
----
 
 ### Exercice 6 : Workflow Pull Request complet
 
@@ -1830,7 +1805,6 @@ git pull
 git branch -d feature/page-contact
 ```
 
----
 
 ### Exercice 7 : Annulation avec reset et revert
 
@@ -1887,7 +1861,6 @@ ls
 # (fichier-b.txt a ete supprime par le revert)
 ```
 
----
 
 ### Exercice 8 : Stash et changement de contexte
 
@@ -1937,7 +1910,6 @@ git status
 # Changes to be committed: new file: dashboard.html
 ```
 
----
 
 ### Exercice 9 : Cherry-pick et tags
 
@@ -1980,7 +1952,6 @@ git log --oneline
 git tag -l
 ```
 
----
 
 ### Exercice 10 : Workflow Git Flow complet
 
@@ -2075,7 +2046,6 @@ git log --oneline --graph --all
 git push origin main develop --tags
 ```
 
----
 
 ### Exercice 11 : Rebase interactif
 
@@ -2136,7 +2106,6 @@ git log --oneline
 # n3w1111 feat: initialiser la fonctionnalite
 ```
 
----
 
 ### Exercice 12 : Recuperation avec reflog
 
@@ -2179,7 +2148,6 @@ git log --oneline
 
 **Lecon :** tant que le reflog existe (90 jours par defaut), presque rien n'est veritablement perdu dans Git.
 
----
 
 ## Resume des commandes essentielles
 

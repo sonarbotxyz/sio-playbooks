@@ -7,7 +7,6 @@ difficulty: "Debutant"
 
 # Algorithmique par methode descendante — Le guide complet BTS SIO SLAM
 
----
 
 ## Table des matieres
 
@@ -24,7 +23,6 @@ difficulty: "Debutant"
 11. [11. Exercices d'examen corriges {#11-exercices-dexamen-corriges}](#11-exercices-dexamen-corriges-11-exercices-dexamen-corriges)
 12. [Recapitulatif final](#recapitulatif-final)
 
----
 
 ## 1. Introduction
 
@@ -70,7 +68,6 @@ L'algorithme est le plan. Le code est la construction. Sans plan :
 
 A l'examen, on vous demande des algorithmes, pas du code. La raison est simple : un algorithme est independant du langage de programmation. Un bon algorithme peut etre traduit en Python, en Java, en C#, en PHP, ou en n'importe quel langage. Si vous ne comprenez pas l'algorithmique, vous ne comprendrez jamais vraiment la programmation.
 
----
 
 ### 1.2 La methode descendante : le coeur de ce cours
 
@@ -138,7 +135,6 @@ Le referentiel du BTS SIO SLAM mentionne explicitement la methode descendante. C
 
 Si vous ne decomposez pas et ecrivez un algorithme monolithique de 80 lignes, vous perdrez des points meme si l'algorithme est correct.
 
----
 
 ## 2. Les bases de l'algorithmique {#2-les-bases}
 
@@ -500,7 +496,6 @@ Fin
 
 Cet algorithme effectue la division euclidienne de a par b par soustractions successives. 17 = 5 x 3 + 2.
 
----
 
 ## 3. Structures de controle {#3-structures-de-controle}
 
@@ -784,7 +779,6 @@ Fin
 
 **Note** : l'ordre des tests est essentiel. On teste d'abord la condition la plus specifique (divisible par 400), puis la moins specifique.
 
----
 
 ## 4. Structures iteratives {#4-structures-iteratives}
 
@@ -1208,7 +1202,6 @@ Debut
 Fin
 ```
 
----
 
 ## 5. La methode descendante en detail {#5-la-methode-descendante-en-detail}
 
@@ -1602,7 +1595,6 @@ Debut
 Fin
 ```
 
----
 
 ## 6. Les tableaux {#6-les-tableaux}
 
@@ -2096,7 +2088,6 @@ Debut
 Fin
 ```
 
----
 
 ## 7. Fonctions et procedures {#7-fonctions-et-procedures}
 
@@ -2333,7 +2324,6 @@ Fin
 
 Notez comment l'algorithme principal est parfaitement lisible en quatre lignes. Chaque sous-programme est independant et testable.
 
----
 
 ## 8. Les fichiers {#8-les-fichiers}
 
@@ -2478,7 +2468,6 @@ Fin
 - `SousChaine(chaine, debut, longueur)` extrait une portion de chaine
 - A l'examen, ces fonctions utilitaires sont souvent fournies dans l'enonce ou supposees connues. Lisez bien l'enonce.
 
----
 
 ## 9. Notions de complexite {#9-notions-de-complexite}
 
@@ -2568,7 +2557,6 @@ FIN POUR
 
 **Ce qu'il faut retenir pour l'examen** : le tri par selection et le tri a bulles sont en O(n²). Pour de grands tableaux, ils sont inefficaces. Il existe des algorithmes de tri en O(n log n) (tri fusion, tri rapide), mais ils ne sont generalement pas au programme du BTS SIO.
 
----
 
 ## 10. Methodologie d'examen {#10-methodologie-dexamen}
 
@@ -2726,7 +2714,6 @@ Avant de poser le stylo, verifiez chaque point :
 - [ ] Les parametres en sortie sont bien marques `en sortie` ou `en entree/sortie`
 - [ ] L'algorithme repond bien a la question posee (relisez l'enonce)
 
----
 
 ## 11. Exercices d'examen corriges {#11-exercices-dexamen-corriges}
 
@@ -2791,7 +2778,6 @@ Fin
 - DeterminerResultat : 13.5 >= 16 ? NON. 13.5 >= 14 ? NON. 13.5 >= 12 ? OUI.
 - Affiche : "Admis - Mention Assez Bien"
 
----
 
 ### Exercice 2 : Compter les voyelles d'un mot
 
@@ -2863,7 +2849,6 @@ Fin
 
 Affiche : "Le mot 'Bonjour' contient 3 voyelle(s)"
 
----
 
 ### Exercice 3 : Puissance d'un nombre
 
@@ -2898,7 +2883,6 @@ Retourne 81 (3^4 = 81).
 
 **Cas particulier** : si n = 0, la boucle ne s'execute pas et on retourne 1. C'est correct car x^0 = 1 pour tout x non nul.
 
----
 
 ### Exercice 4 : Palindrome
 
@@ -2964,7 +2948,6 @@ La boucle se termine normalement. Retourne VRAI.
 |---|---|---|---|
 | 1 | m (pos 1) | n (pos 6) | NON --> Retourne FAUX immediatement |
 
----
 
 ### Exercice 5 : Tri et recherche dans un bulletin de notes
 
@@ -3074,7 +3057,6 @@ Fin
 
 **Point important** : quand on trie deux tableaux "paralleles" (noms et notes), il faut echanger les elements des DEUX tableaux simultanement. Si on echange uniquement les notes, les noms ne correspondent plus aux bonnes notes. C'est un piege classique.
 
----
 
 ### Exercice 6 : Recherche dichotomique
 
@@ -3120,7 +3102,6 @@ Fin
 
 Retourne 6 (position de la valeur 23). En seulement 3 comparaisons au lieu de 6 pour une recherche sequentielle.
 
----
 
 ### Exercice 7 : Conversion decimal-binaire
 
@@ -3199,7 +3180,6 @@ Fin
 
 Affichage en ordre inverse : 1101. En effet, 13 = 8 + 4 + 1 = 1101 en binaire.
 
----
 
 ### Exercice 8 : Gestion d'un carnet de contacts
 
@@ -3359,7 +3339,6 @@ Fin
 - On verifie que le contact n'existe pas deja avant d'ajouter
 - Les deux tableaux (noms et telephones) doivent rester synchronises
 
----
 
 ### Exercice 9 : Matrice — somme et transposee
 
@@ -3471,7 +3450,6 @@ Fin
 
 **Point important** : la matrice transposee d'une matrice L x C est de dimension C x L. Lors de l'affichage de la transposee, les dimensions sont inversees. C'est un piege frequent a l'examen.
 
----
 
 ### Exercice 10 : PGCD par l'algorithme d'Euclide
 
@@ -3544,7 +3522,6 @@ Fin
 
 PGCD(48, 18) = 6. Donc 48/18 = 8/3.
 
----
 
 ### Exercice 11 : Gestion de file d'attente (exercice avance)
 
@@ -3639,7 +3616,6 @@ Debut
 Fin
 ```
 
----
 
 ### Exercice 12 : Traitement complet d'un fichier de temperatures (exercice de synthese)
 
@@ -3761,7 +3737,6 @@ Fin
 
 Cet exercice de synthese combine toutes les competences du cours : lecture de fichier, tableaux, fonctions/procedures, methode descendante, ecriture de fichier. C'est exactement le type d'exercice qui peut tomber a l'examen.
 
----
 
 ## Recapitulatif final
 

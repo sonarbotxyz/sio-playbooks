@@ -9,7 +9,6 @@ difficulty: "Intermediaire"
 
 > Bible complete pour le BTS SIO SLAM. Concepts illustres en JavaScript et C#.
 
----
 
 ## Table des matieres
 
@@ -26,7 +25,6 @@ difficulty: "Intermediaire"
 11. [Resume des concepts cles](#resume-des-concepts-cles)
 12. [Erreurs frequentes a l'examen](#erreurs-frequentes-a-lexamen)
 
----
 
 ## Pourquoi la POO ?
 
@@ -88,7 +86,6 @@ Un **formulaire rempli** : c'est l'**objet** (ou instance). C'est un exemplaire 
 
 On peut imprimer autant de formulaires qu'on veut a partir du meme modele. De meme, on peut creer autant d'objets qu'on veut a partir d'une meme classe.
 
----
 
 ## Classes et Objets
 
@@ -435,7 +432,6 @@ class CompteBancaire
 }
 ```
 
----
 
 ## Encapsulation
 
@@ -745,7 +741,6 @@ class Produit {
 }
 ```
 
----
 
 ## Heritage
 
@@ -1235,7 +1230,6 @@ class Developpeur : Employe
 }
 ```
 
----
 
 ## Polymorphisme
 
@@ -1510,7 +1504,6 @@ foreach (Vehicule v in vehicules)
 }
 ```
 
----
 
 ## Abstraction
 
@@ -1815,7 +1808,6 @@ foreach (IPayable e in employes)
 }
 ```
 
----
 
 ## Relations entre objets
 
@@ -2009,7 +2001,6 @@ class Maison
 | Agregation | Moyenne | Le contenu survit au conteneur | Voiture -- Roue |
 | Composition | Forte | Le contenu meurt avec le conteneur | Maison -- Piece |
 
----
 
 ## Collections d'objets
 
@@ -2235,7 +2226,6 @@ let nomsEnStock = produits
   .map(p => p.nom);
 ```
 
----
 
 ## Design patterns simples
 
@@ -2448,7 +2438,6 @@ Le pattern MVC est un pattern architectural qui separe une application en trois 
 
 Ce pattern est traite en detail dans le playbook dedie a l'architecture MVC. L'essentiel a retenir pour la POO : les classes metier (Etudiant, Produit, Commande) sont le **Modele**. Elles ne doivent pas contenir de code d'affichage ni de code de gestion d'interface.
 
----
 
 ## Exercices d'examen corriges
 
@@ -2638,7 +2627,6 @@ class Bibliotheque {
 }
 ```
 
----
 
 ### Exercice 9 : Code vers diagramme de classes
 
@@ -2746,7 +2734,6 @@ Relations identifiees :
 - `Professeur` herite de `Personne`
 - `Personne` a une association avec `Adresse` (agregation : l'adresse peut exister sans la personne, car elle est passee en parametre du constructeur)
 
----
 
 ### Exercice 10 : Completer une classe
 
@@ -2852,7 +2839,6 @@ class Panier
 }
 ```
 
----
 
 ### Exercice 11 : Identifier les erreurs
 
@@ -2951,7 +2937,6 @@ voiture.Demarrer();
 
 **Erreur 6 :** Il manque `using System;` et `using System.Collections.Generic;` en haut du fichier (necessaire pour `Console.WriteLine`).
 
----
 
 ### Exercice 12 : Concevoir une hierarchie -- Systeme de reservation
 
@@ -3177,7 +3162,6 @@ class ChambreFamiliale extends Chambre {
 }
 ```
 
----
 
 ### Exercice 13 : QCM et questions de cours
 
@@ -3205,7 +3189,6 @@ class ChambreFamiliale extends Chambre {
 
 **Reponse :** La liaison dynamique (late binding) signifie que le choix de la methode a executer se fait au moment de l'execution, pas a la compilation. Quand on appelle une methode virtuelle sur une variable de type classe mere, c'est la version de la classe fille (le type reel de l'objet) qui est executee.
 
----
 
 ### Exercice 14 : Systeme de gestion de notes
 
@@ -3391,7 +3374,6 @@ e.ajouterNote(18, info);
 console.log(e.afficherBulletin());
 ```
 
----
 
 ### Exercice 15 : Systeme de commande e-commerce
 
@@ -3548,7 +3530,6 @@ class Commande {
 }
 ```
 
----
 
 ## Resume des concepts cles
 
@@ -3569,7 +3550,6 @@ class Commande {
 | Agregation | Contenant/contenu independants | Objet passe en parametre | Objet passe en parametre |
 | Composition | Contenant/contenu lies | Objet cree dans le constructeur | Objet cree dans le constructeur |
 
----
 
 ## Erreurs frequentes a l'examen
 

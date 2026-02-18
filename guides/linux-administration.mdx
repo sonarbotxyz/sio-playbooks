@@ -9,7 +9,6 @@ difficulty: "Intermediaire"
 # Linux -- Administration systeme
 
 
----
 
 ## Table des matieres
 
@@ -32,9 +31,7 @@ difficulty: "Intermediaire"
 17. [17. Exercices corriges](#17-exercices-corriges)
 18. [Aide-memoire : commandes essentielles](#aide-memoire-commandes-essentielles)
 
----
 
----
 
 ## 1. Introduction a Linux
 
@@ -103,7 +100,6 @@ uname -a
 # Affiche toutes les informations systeme
 ```
 
----
 
 ## 2. Installation Debian / Ubuntu Server
 
@@ -218,7 +214,6 @@ Lors de l'installation Debian, l'ecran `tasksel` propose des profils :
 
 Recommandation : installer un systeme minimal et ajouter les paquets necessaires ensuite.
 
----
 
 ## 3. L'arborescence Linux (FHS)
 
@@ -263,7 +258,6 @@ Le FHS (Filesystem Hierarchy Standard) definit l'organisation des repertoires da
 | `/dev/sda1` | Premiere partition du premier disque |
 | `/dev/tty` | Terminal courant |
 
----
 
 ## 4. Terminal et commandes essentielles
 
@@ -426,7 +420,6 @@ awk '{sum += $1} END {print sum}' nombres.txt # Somme d'une colonne
 awk 'NR==5,NR==10' fichier.txt             # Lignes 5 a 10
 ```
 
----
 
 ## 5. Redirections et pipes
 
@@ -492,7 +485,6 @@ fichiers=$(ls /tmp)
 nb_users=$(wc -l < /etc/passwd)
 ```
 
----
 
 ## 6. Gestion des utilisateurs et groupes
 
@@ -605,7 +597,6 @@ sudo -i                              # Ouvrir un shell root
 sudo -l                              # Lister les droits sudo de l'utilisateur courant
 ```
 
----
 
 ## 7. Permissions
 
@@ -751,7 +742,6 @@ umask 0027               # Definir : fichiers 640, repertoires 750
 
 Pour rendre le umask permanent, l'ajouter dans `~/.bashrc` ou `/etc/profile`.
 
----
 
 ## 8. Gestion des processus
 
@@ -868,7 +858,6 @@ commande_longue &
 disown %1
 ```
 
----
 
 ## 9. Gestion des paquets
 
@@ -959,7 +948,6 @@ Apres modification des sources :
 sudo apt update
 ```
 
----
 
 ## 10. Systemd
 
@@ -1073,7 +1061,6 @@ sudo systemctl enable --now mon-app
 sudo systemctl status mon-app
 ```
 
----
 
 ## 11. Planification des taches
 
@@ -1178,7 +1165,6 @@ atrm 3
 @monthly   15     cron.monthly  run-parts /etc/cron.monthly
 ```
 
----
 
 ## 12. Stockage et systemes de fichiers
 
@@ -1290,7 +1276,6 @@ sudo vgremove vg-data
 sudo pvremove /dev/sdb1
 ```
 
----
 
 ## 13. Reseau Linux
 
@@ -1444,7 +1429,6 @@ curl -O https://example.com/fichier.tar.gz
 wget https://example.com/fichier.tar.gz
 ```
 
----
 
 ## 14. SSH (Secure Shell)
 
@@ -1564,7 +1548,6 @@ ssh serveur-web                  # Equivalent de ssh -p 2222 jean@192.168.1.100
 scp fichier.txt serveur-web:/tmp/
 ```
 
----
 
 ## 15. Journalisation (Logs)
 
@@ -1655,7 +1638,6 @@ sudo logrotate -d /etc/logrotate.d/mon-app   # Mode debug (simulation)
 sudo logrotate -f /etc/logrotate.d/mon-app   # Forcer la rotation
 ```
 
----
 
 ## 16. Scripts Bash
 
@@ -2020,7 +2002,6 @@ while IFS=',' read -r prenom nom groupe; do
 done < "$FICHIER"
 ```
 
----
 
 ## 17. Exercices corriges
 
@@ -2036,7 +2017,6 @@ ls -lat /etc | grep -i network
 find /etc -maxdepth 1 -name "*network*" -ls
 ```
 
----
 
 ### Exercice 2 -- Redirections
 
@@ -2048,7 +2028,6 @@ find /etc -maxdepth 1 -name "*network*" -ls
 find / -name "*.conf" > configs.txt 2> erreurs.txt
 ```
 
----
 
 ### Exercice 3 -- Gestion des utilisateurs
 
@@ -2070,7 +2049,6 @@ id technicien
 grep technicien /etc/passwd
 ```
 
----
 
 ### Exercice 4 -- Permissions octales
 
@@ -2091,7 +2069,6 @@ drwxr-s--- 2 root developpeurs 4096 ... /srv/partage/
 
 Le `s` dans les permissions du groupe indique le SGID.
 
----
 
 ### Exercice 5 -- Permissions symboliques
 
@@ -2114,7 +2091,6 @@ Equivalent en une seule commande :
 chmod 704 rapport.txt
 ```
 
----
 
 ### Exercice 6 -- Processus
 
@@ -2130,7 +2106,6 @@ kill 4521
 kill -9 4521
 ```
 
----
 
 ### Exercice 7 -- Crontab
 
@@ -2147,7 +2122,6 @@ kill -9 4521
 */15 * * * 1-5 /usr/local/bin/check.sh
 ```
 
----
 
 ### Exercice 8 -- LVM
 
@@ -2179,7 +2153,6 @@ echo "/dev/vg-prod/lv-data /data ext4 defaults 0 2" | sudo tee -a /etc/fstab
 df -h /data
 ```
 
----
 
 ### Exercice 9 -- Configuration reseau
 
@@ -2213,7 +2186,6 @@ cat /etc/resolv.conf
 ping -c 2 172.16.0.1
 ```
 
----
 
 ### Exercice 10 -- SSH
 
@@ -2250,7 +2222,6 @@ ssh-copy-id -p 2222 jean@172.16.0.50
 ssh -p 2222 jean@172.16.0.50
 ```
 
----
 
 ### Exercice 11 -- systemd
 
@@ -2293,7 +2264,6 @@ sudo systemctl status webapp
 journalctl -u webapp -f
 ```
 
----
 
 ### Exercice 12 -- Script Bash : sauvegarde conditionnelle
 
@@ -2347,7 +2317,6 @@ echo "Sauvegarde terminee : $ARCHIVE ($TAILLE)"
 exit 0
 ```
 
----
 
 ### Exercice 13 -- Analyse de logs
 
@@ -2366,7 +2335,6 @@ Explication :
 - `sort -rn` : trie par nombre decroissant
 - `head -10` : affiche les 10 premieres
 
----
 
 ### Exercice 14 -- Script de surveillance disque
 
@@ -2400,7 +2368,6 @@ if [ "$alerte" -eq 0 ]; then
 fi
 ```
 
----
 
 ### Exercice 15 -- Gestion complete : fstab
 
@@ -2432,7 +2399,6 @@ Explication des options :
 - `noexec` : interdit l'execution de binaires depuis cette partition
 - `nosuid` : ignore les bits SUID/SGID (securite)
 
----
 
 ### Exercice 16 -- Script : gestion de menus
 
@@ -2479,7 +2445,6 @@ while true; do
 done
 ```
 
----
 
 ### Exercice 17 -- sed et awk
 
@@ -2499,7 +2464,6 @@ marie -> /bin/bash
 technicien -> /bin/bash
 ```
 
----
 
 ## Aide-memoire : commandes essentielles
 
