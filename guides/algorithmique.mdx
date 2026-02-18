@@ -1,0 +1,3779 @@
+---
+title: "Algorithmique par methode descendante"
+description: "Guide complet sur l'algorithmique et la methode descendante pour le BTS SIO SLAM"
+category: "Fondamentaux"
+tags: ["algorithmique", "methode descendante", "pseudo-code"]
+difficulty: "Debutant"
+---
+
+# Algorithmique par methode descendante — Le guide complet BTS SIO SLAM
+
+---
+
+## Table des matieres
+
+1. [Introduction](#1-introduction)
+2. [Les bases de l'algorithmique](#2-les-bases)
+3. [Structures de controle](#3-structures-de-controle)
+4. [Structures iteratives](#4-structures-iteratives)
+5. [La methode descendante en detail](#5-la-methode-descendante-en-detail)
+6. [Les tableaux](#6-les-tableaux)
+7. [Fonctions et procedures](#7-fonctions-et-procedures)
+8. [Les fichiers](#8-les-fichiers)
+9. [Notions de complexite](#9-notions-de-complexite)
+10. [Methodologie d'examen](#10-methodologie-dexamen)
+11. [Exercices d'examen corriges](#11-exercices-dexamen-corriges)
+
+---
+
+## 1. Introduction
+
+### 1.1 Qu'est-ce qu'un algorithme ?
+
+#### Le probleme de depart
+
+Imaginons que vous deviez expliquer a quelqu'un qui ne sait absolument pas cuisiner comment preparer des pates. Vous ne pouvez pas lui dire simplement "fais des pates". Il faut detailler chaque action, dans le bon ordre, sans ambiguite. C'est exactement ce qu'est un algorithme.
+
+#### Definition formelle
+
+Un **algorithme** est une suite finie et ordonnee d'instructions precises et non ambigues qui, a partir de donnees initiales (les entrees), produit un resultat (les sorties) en un temps fini.
+
+Decomposons cette definition mot par mot, car chaque terme compte :
+
+- **Suite finie** : l'algorithme a un debut et une fin. Il ne tourne pas indefiniment (sinon c'est un bug, pas un algorithme).
+- **Ordonnee** : l'ordre des instructions compte. Mettre les pates dans l'eau avant de la faire bouillir ne donne pas le meme resultat.
+- **Instructions precises et non ambigues** : chaque instruction a un sens unique. "Ajouter un peu de sel" est ambigu. "Ajouter 10 grammes de sel" est precis.
+- **Donnees initiales (entrees)** : ce que l'algorithme recoit pour travailler. Pour une recette : les ingredients.
+- **Resultat (sorties)** : ce que l'algorithme produit. Pour une recette : le plat fini.
+- **En un temps fini** : l'algorithme doit terminer. Toujours.
+
+#### L'analogie de la recette de cuisine
+
+| Recette de cuisine | Algorithme |
+|---|---|
+| Ingredients | Donnees d'entree (variables) |
+| Ustensiles | Outils de traitement (operateurs) |
+| Etapes de preparation | Instructions sequentielles |
+| "Si la sauce est trop epaisse, ajouter de l'eau" | Structure conditionnelle |
+| "Remuer pendant 5 minutes" | Structure iterative (boucle) |
+| Le plat fini | Resultat (sortie) |
+
+#### Pourquoi ne pas coder directement ?
+
+Voici une erreur que commettent la majorite des debutants : ouvrir leur editeur de code et commencer a taper du code immediatement. C'est comme commencer a construire une maison sans plan.
+
+L'algorithme est le plan. Le code est la construction. Sans plan :
+- On oublie des cas particuliers
+- On se perd dans la logique
+- On passe trois fois plus de temps a debugger
+- On produit un programme qui "marche a peu pres" mais qui plante sur les cas limites
+
+A l'examen, on vous demande des algorithmes, pas du code. La raison est simple : un algorithme est independant du langage de programmation. Un bon algorithme peut etre traduit en Python, en Java, en C#, en PHP, ou en n'importe quel langage. Si vous ne comprenez pas l'algorithmique, vous ne comprendrez jamais vraiment la programmation.
+
+---
+
+### 1.2 La methode descendante : le coeur de ce cours
+
+#### Le probleme qu'elle resout
+
+Face a un probleme complexe, le cerveau humain est incapable de tout gerer en meme temps. Essayez de penser simultanement a la saisie des donnees, au traitement, a l'affichage, aux cas d'erreur, aux boucles, aux conditions... C'est impossible. Le cerveau sature.
+
+La methode descendante est une strategie de resolution qui consiste a **decomposer un probleme complexe en sous-problemes plus simples**, puis a decomposer chaque sous-probleme en sous-sous-problemes, et ainsi de suite, jusqu'a obtenir des actions elementaires que l'on sait exprimer directement en instructions algorithmiques.
+
+#### Le principe : du general au particulier
+
+On part du probleme global (le niveau le plus haut) et on descend progressivement vers les details (le niveau le plus bas). D'ou le nom : methode **descendante**.
+
+#### Analogie : organiser un mariage
+
+Imaginons qu'on vous demande d'organiser un mariage. Le probleme global est enorme. Mais si on le decompose :
+
+**Niveau 0 (probleme global)** : Organiser le mariage
+
+**Niveau 1 (sous-problemes)** :
+- Gerer le lieu
+- Gerer la restauration
+- Gerer les invitations
+- Gerer la ceremonie
+
+**Niveau 2 (sous-sous-problemes de "Gerer la restauration")** :
+- Choisir le traiteur
+- Definir le menu
+- Gerer les allergies alimentaires
+- Organiser le plan de table
+
+**Niveau 3 (actions elementaires de "Definir le menu")** :
+- Lister les entrees possibles
+- Selectionner deux entrees
+- Lister les plats principaux possibles
+- Selectionner deux plats principaux
+- Lister les desserts possibles
+- Selectionner un dessert
+
+Au niveau 3, chaque action est suffisamment simple pour etre realisee directement. C'est la qu'on s'arrete de decomposer.
+
+#### Representation sous forme d'arbre
+
+La decomposition se represente naturellement sous forme d'arbre (ou arborescence) :
+
+```
+                    Organiser le mariage
+                    /        |         \
+            Lieu      Restauration    Invitations    Ceremonie
+                      /     |     \
+               Traiteur   Menu   Allergies   Plan de table
+                         / | \
+                   Entrees Plats Desserts
+```
+
+Cette representation visuelle est fondamentale. A l'examen, dessiner cet arbre avant d'ecrire la moindre ligne d'algorithme est la meilleure chose que vous puissiez faire.
+
+#### Pourquoi cette methode est exigee au BTS SIO
+
+Le referentiel du BTS SIO SLAM mentionne explicitement la methode descendante. Ce n'est pas un choix pedagogique optionnel, c'est une competence evaluee. Quand un sujet d'examen dit "en utilisant la methode descendante", il attend :
+
+1. Une decomposition claire du probleme en sous-problemes
+2. L'ecriture de chaque sous-probleme sous forme de fonction ou procedure
+3. Un algorithme principal qui appelle ces sous-programmes
+
+Si vous ne decomposez pas et ecrivez un algorithme monolithique de 80 lignes, vous perdrez des points meme si l'algorithme est correct.
+
+---
+
+## 2. Les bases de l'algorithmique {#2-les-bases}
+
+### 2.1 Variables et types de donnees
+
+#### Pourquoi a-t-on besoin de variables ?
+
+Un algorithme manipule des donnees. Il faut bien stocker ces donnees quelque part pendant le traitement. Une variable est un espace de stockage en memoire, identifie par un nom, qui contient une valeur d'un certain type.
+
+#### L'analogie des boites etiquetees
+
+Imaginez une etagere avec des boites. Chaque boite :
+- A une **etiquette** (le nom de la variable) : `age`, `nom`, `moyenne`
+- Contient une **valeur** : `25`, `"Dupont"`, `14.5`
+- A une **taille et un format precis** (le type) : on ne met pas un texte dans une boite prevue pour un nombre
+
+#### Les quatre types fondamentaux
+
+| Type | Description | Exemples de valeurs | Utilisation typique |
+|---|---|---|---|
+| **Entier** | Nombre sans virgule (positif, negatif ou zero) | -3, 0, 42, 1000 | Compteurs, indices, ages, quantites |
+| **Reel** | Nombre avec virgule (partie decimale) | 3.14, -0.5, 100.0 | Moyennes, prix, pourcentages |
+| **Chaine de caracteres** | Texte (sequence de caracteres entre guillemets) | "Bonjour", "SIO", "" | Noms, messages, saisies textuelles |
+| **Booleen** | Valeur logique, uniquement VRAI ou FAUX | VRAI, FAUX | Conditions, drapeaux (flags), etats |
+
+**Attention a l'examen** : ne confondez jamais entier et reel. La division de 7 par 2 donne 3 en entier (division entiere) et 3.5 en reel. Cette distinction est un piege classique.
+
+#### Declaration de variables
+
+Avant d'utiliser une variable, il faut la **declarer** : indiquer son nom et son type. C'est comme preparer les boites avant de commencer a travailler.
+
+```
+Variables :
+    age : Entier
+    nom : Chaine
+    moyenne : Reel
+    estRecu : Booleen
+```
+
+Regles de declaration :
+- Une variable par ligne (plus lisible) ou plusieurs du meme type separees par des virgules
+- Le type est indique apres les deux-points
+- On declare TOUTES les variables au debut de l'algorithme (ou au debut de la fonction/procedure)
+
+#### Conventions de nommage
+
+Le nom d'une variable doit :
+- Commencer par une lettre (jamais un chiffre, jamais un caractere special)
+- Ne contenir que des lettres, chiffres et le caractere underscore `_`
+- Etre explicite : `moyenneClasse` est meilleur que `m` ou `x`
+- Ne pas etre un mot reserve du langage algorithmique (`SI`, `POUR`, `TANT QUE`, etc.)
+
+Conventions courantes :
+- **camelCase** : `moyenneClasse`, `nombreEleves`, `estValide` (premiere lettre en minuscule, chaque mot suivant commence par une majuscule)
+- **snake_case** : `moyenne_classe`, `nombre_eleves`, `est_valide` (tout en minuscule, mots separes par des underscores)
+
+Choisissez une convention et tenez-vous y dans tout l'algorithme. La coherence est evaluee.
+
+### 2.2 Les operations fondamentales
+
+#### L'affectation
+
+L'affectation consiste a **stocker une valeur dans une variable**. On utilise la fleche vers la gauche : `<-`
+
+```
+age <- 25
+nom <- "Dupont"
+moyenne <- 14.5
+estRecu <- VRAI
+```
+
+Lecture de l'affectation : "age **recoit** la valeur 25". Ne dites jamais "age **egale** 25" — l'egalite est un test, l'affectation est un stockage.
+
+**Point crucial** : l'affectation ecrase la valeur precedente. Si `age` contenait 30 et qu'on ecrit `age <- 25`, la valeur 30 est definitivement perdue.
+
+L'affectation peut aussi utiliser des expressions :
+
+```
+somme <- a + b
+moyenne <- somme / nombre
+prixTTC <- prixHT * 1.20
+resultat <- (a + b) * c - d
+```
+
+Le membre droit (apres la fleche) est evalue en premier, puis le resultat est stocke dans la variable du membre gauche. Cela signifie qu'on peut ecrire :
+
+```
+compteur <- compteur + 1
+```
+
+Cela signifie : "prendre la valeur actuelle de `compteur`, lui ajouter 1, et stocker le resultat dans `compteur`". Ce n'est pas une equation mathematique (sinon elle serait fausse), c'est une instruction d'affectation.
+
+#### La lecture (saisie)
+
+La lecture permet de **demander une valeur a l'utilisateur** et de la stocker dans une variable.
+
+```
+Lire(age)
+```
+
+Cela signifie : le programme attend que l'utilisateur tape quelque chose au clavier, et la valeur saisie est stockee dans la variable `age`.
+
+#### L'ecriture (affichage)
+
+L'ecriture permet d'**afficher un resultat a l'ecran**.
+
+```
+Ecrire("Bonjour")
+Ecrire(age)
+Ecrire("Votre age est : ", age, " ans")
+```
+
+On peut melanger du texte (entre guillemets) et des variables dans une meme instruction d'ecriture, separes par des virgules.
+
+#### Les operateurs
+
+**Operateurs arithmetiques :**
+
+| Operateur | Signification | Exemple | Resultat |
+|---|---|---|---|
+| `+` | Addition | `7 + 3` | `10` |
+| `-` | Soustraction | `7 - 3` | `4` |
+| `*` | Multiplication | `7 * 3` | `21` |
+| `/` | Division | `7 / 2` | `3.5` (reel) |
+| `DIV` | Division entiere | `7 DIV 2` | `3` |
+| `MOD` | Modulo (reste de la division entiere) | `7 MOD 2` | `1` |
+
+**Attention** : `DIV` et `MOD` sont extremement frequents a l'examen. `MOD` sert notamment a tester si un nombre est pair (`n MOD 2 = 0`) ou a extraire les chiffres d'un nombre.
+
+**Operateurs de comparaison :**
+
+| Operateur | Signification |
+|---|---|
+| `=` | Egal a |
+| `<>` ou `!=` | Different de |
+| `<` | Strictement inferieur a |
+| `>` | Strictement superieur a |
+| `<=` | Inferieur ou egal a |
+| `>=` | Superieur ou egal a |
+
+**Operateurs logiques :**
+
+| Operateur | Signification | Exemple |
+|---|---|---|
+| `ET` | Les deux conditions doivent etre vraies | `(age >= 18) ET (age <= 65)` |
+| `OU` | Au moins une condition doit etre vraie | `(note < 0) OU (note > 20)` |
+| `NON` | Inverse la condition | `NON(estRecu)` |
+
+**Table de verite (a connaitre par coeur)** :
+
+| A | B | A ET B | A OU B | NON A |
+|---|---|---|---|---|
+| VRAI | VRAI | VRAI | VRAI | FAUX |
+| VRAI | FAUX | FAUX | VRAI | FAUX |
+| FAUX | VRAI | FAUX | VRAI | VRAI |
+| FAUX | FAUX | FAUX | FAUX | VRAI |
+
+**Priorite des operateurs** (du plus prioritaire au moins prioritaire) :
+1. Parentheses `()`
+2. `NON`
+3. `*`, `/`, `DIV`, `MOD`
+4. `+`, `-`
+5. `=`, `<>`, `<`, `>`, `<=`, `>=`
+6. `ET`
+7. `OU`
+
+En cas de doute, utilisez des parentheses. Elles ne coutent rien et rendent l'expression lisible.
+
+#### La concatenation de chaines
+
+Pour assembler des chaines de caracteres, on utilise l'operateur `+` ou `&` :
+
+```
+nomComplet <- prenom + " " + nom
+message <- "Bonjour " & prenom & ", bienvenue !"
+```
+
+### 2.3 Structure d'un algorithme
+
+Tout algorithme suit la meme structure :
+
+```
+Algorithme NomDeLAlgorithme
+
+Variables :
+    // Declaration de toutes les variables
+
+Debut
+    // Instructions
+Fin
+```
+
+Exemple complet :
+
+```
+Algorithme CalculMoyenne
+
+Variables :
+    note1 : Reel
+    note2 : Reel
+    moyenne : Reel
+
+Debut
+    Ecrire("Saisissez la premiere note : ")
+    Lire(note1)
+    Ecrire("Saisissez la deuxieme note : ")
+    Lire(note2)
+    moyenne <- (note1 + note2) / 2
+    Ecrire("La moyenne est : ", moyenne)
+Fin
+```
+
+### 2.4 La trace d'execution
+
+#### Pourquoi c'est essentiel
+
+La trace d'execution consiste a **executer l'algorithme a la main**, ligne par ligne, en notant l'etat de chaque variable apres chaque instruction. C'est la competence la plus demandee a l'examen. Si vous ne savez pas faire une trace, vous ne pouvez pas :
+- Verifier qu'un algorithme est correct
+- Trouver une erreur dans un algorithme
+- Comprendre ce que fait un algorithme donne
+
+**Si vous ne maitrisez pas la trace d'execution, vous perdrez des points sur la quasi-totalite des exercices d'examen.**
+
+#### Methode
+
+1. Creer un tableau avec une colonne par variable et une colonne pour la sortie ecran
+2. Ajouter une colonne "Ligne" ou "Instruction" pour savoir ou on en est
+3. Executer chaque instruction dans l'ordre
+4. A chaque affectation, mettre a jour la valeur de la variable dans le tableau
+5. A chaque `Lire`, noter la valeur saisie (donnee dans l'enonce)
+6. A chaque `Ecrire`, noter ce qui s'affiche
+
+#### Exemple detaille
+
+Soit l'algorithme :
+
+```
+Algorithme Echange
+
+Variables :
+    a : Entier
+    b : Entier
+    temp : Entier
+
+Debut
+    Lire(a)
+    Lire(b)
+    temp <- a
+    a <- b
+    b <- temp
+    Ecrire(a, " ", b)
+Fin
+```
+
+Trace avec les valeurs saisies : a = 5, b = 8
+
+| Instruction | a | b | temp | Ecran |
+|---|---|---|---|---|
+| Lire(a) | 5 | ? | ? | |
+| Lire(b) | 5 | 8 | ? | |
+| temp <- a | 5 | 8 | 5 | |
+| a <- b | 8 | 8 | 5 | |
+| b <- temp | 8 | 5 | 5 | |
+| Ecrire(a, " ", b) | 8 | 5 | 5 | 8 5 |
+
+Cet algorithme echange les valeurs de `a` et `b`. Notez le role essentiel de `temp` : sans cette variable temporaire, la premiere valeur de `a` serait perdue au moment ou on ecrit `a <- b`.
+
+**Piege classique a l'examen** : on vous demande d'ecrire un algorithme d'echange sans variable temporaire. Sans `temp`, ecrire `a <- b` puis `b <- a` ne fonctionne pas (les deux variables finissent avec la meme valeur). C'est un piege frequent.
+
+#### Exercice de trace 1
+
+Donnez la trace de l'algorithme suivant avec n = 4 :
+
+```
+Algorithme Mystere1
+
+Variables :
+    n : Entier
+    resultat : Entier
+
+Debut
+    Lire(n)
+    resultat <- 1
+    resultat <- resultat * n
+    n <- n - 1
+    resultat <- resultat * n
+    n <- n - 1
+    resultat <- resultat * n
+    n <- n - 1
+    resultat <- resultat * n
+    Ecrire(resultat)
+Fin
+```
+
+**Solution :**
+
+| Instruction | n | resultat | Ecran |
+|---|---|---|---|
+| Lire(n) | 4 | ? | |
+| resultat <- 1 | 4 | 1 | |
+| resultat <- resultat * n | 4 | 4 | |
+| n <- n - 1 | 3 | 4 | |
+| resultat <- resultat * n | 3 | 12 | |
+| n <- n - 1 | 2 | 12 | |
+| resultat <- resultat * n | 2 | 24 | |
+| n <- n - 1 | 1 | 24 | |
+| resultat <- resultat * n | 1 | 24 | |
+| Ecrire(resultat) | 1 | 24 | 24 |
+
+Cet algorithme calcule la factorielle de 4 (4! = 4 x 3 x 2 x 1 = 24) de maniere deroulee, sans boucle.
+
+#### Exercice de trace 2
+
+Donnez la trace avec a = 17 et b = 5 :
+
+```
+Algorithme Mystere2
+
+Variables :
+    a : Entier
+    b : Entier
+    q : Entier
+    r : Entier
+
+Debut
+    Lire(a)
+    Lire(b)
+    q <- 0
+    r <- a
+    TANT QUE r >= b FAIRE
+        r <- r - b
+        q <- q + 1
+    FIN TANT QUE
+    Ecrire("Quotient : ", q)
+    Ecrire("Reste : ", r)
+Fin
+```
+
+**Solution :**
+
+| Instruction | a | b | q | r | Condition r >= b | Ecran |
+|---|---|---|---|---|---|---|
+| Lire(a) | 17 | ? | ? | ? | | |
+| Lire(b) | 17 | 5 | ? | ? | | |
+| q <- 0 | 17 | 5 | 0 | ? | | |
+| r <- a | 17 | 5 | 0 | 17 | | |
+| Test r >= b | 17 | 5 | 0 | 17 | 17 >= 5 : VRAI | |
+| r <- r - b | 17 | 5 | 0 | 12 | | |
+| q <- q + 1 | 17 | 5 | 1 | 12 | | |
+| Test r >= b | 17 | 5 | 1 | 12 | 12 >= 5 : VRAI | |
+| r <- r - b | 17 | 5 | 1 | 7 | | |
+| q <- q + 1 | 17 | 5 | 2 | 7 | | |
+| Test r >= b | 17 | 5 | 2 | 7 | 7 >= 5 : VRAI | |
+| r <- r - b | 17 | 5 | 2 | 2 | | |
+| q <- q + 1 | 17 | 5 | 3 | 2 | | |
+| Test r >= b | 17 | 5 | 3 | 2 | 2 >= 5 : FAUX | |
+| Ecrire(...) | 17 | 5 | 3 | 2 | | Quotient : 3 |
+| Ecrire(...) | 17 | 5 | 3 | 2 | | Reste : 2 |
+
+Cet algorithme effectue la division euclidienne de a par b par soustractions successives. 17 = 5 x 3 + 2.
+
+---
+
+## 3. Structures de controle {#3-structures-de-controle}
+
+### 3.1 Pourquoi les structures de controle ?
+
+Jusqu'ici, nos algorithmes s'executent de maniere purement sequentielle : instruction apres instruction, toujours dans le meme ordre. Mais dans la realite, on a besoin de prendre des decisions. "Si le client a plus de 65 ans, appliquer la reduction senior." "Si la note est inferieure a 10, l'eleve est recale." Sans structures de controle, on ne peut ecrire que des algorithmes triviaux.
+
+### 3.2 La structure SI (conditionnelle simple)
+
+#### Syntaxe
+
+```
+SI condition ALORS
+    instructions
+FIN SI
+```
+
+Les instructions ne s'executent que si la condition est VRAIE. Si la condition est FAUSSE, on passe directement apres le `FIN SI`.
+
+#### Exemple
+
+```
+SI age >= 18 ALORS
+    Ecrire("Vous etes majeur")
+FIN SI
+```
+
+### 3.3 La structure SI...SINON (alternative)
+
+#### Syntaxe
+
+```
+SI condition ALORS
+    instructions si VRAI
+SINON
+    instructions si FAUX
+FIN SI
+```
+
+On execute obligatoirement l'un des deux blocs, jamais les deux, jamais aucun.
+
+#### Exemple
+
+```
+SI moyenne >= 10 ALORS
+    Ecrire("Admis")
+SINON
+    Ecrire("Recale")
+FIN SI
+```
+
+### 3.4 La structure SI...SINON SI...SINON (conditionnelle multiple)
+
+#### Syntaxe
+
+```
+SI condition1 ALORS
+    instructions si condition1 est VRAIE
+SINON SI condition2 ALORS
+    instructions si condition2 est VRAIE
+SINON SI condition3 ALORS
+    instructions si condition3 est VRAIE
+SINON
+    instructions si aucune condition n'est VRAIE
+FIN SI
+```
+
+**Regle fondamentale** : les conditions sont evaluees dans l'ordre. Des que l'une est VRAIE, son bloc est execute et on sort de la structure. Les conditions suivantes ne sont meme pas evaluees.
+
+#### Exemple : attribuer une mention
+
+```
+SI moyenne >= 16 ALORS
+    mention <- "Tres bien"
+SINON SI moyenne >= 14 ALORS
+    mention <- "Bien"
+SINON SI moyenne >= 12 ALORS
+    mention <- "Assez bien"
+SINON SI moyenne >= 10 ALORS
+    mention <- "Passable"
+SINON
+    mention <- "Recale"
+FIN SI
+```
+
+**Piege a l'examen** : l'ordre des conditions est crucial. Si on avait ecrit `SI moyenne >= 10` en premier, un eleve ayant 18 de moyenne serait classe "Passable" car la premiere condition serait vraie. On teste toujours du plus restrictif au moins restrictif.
+
+### 3.5 Les conditions imbriquees
+
+On peut placer un `SI` a l'interieur d'un autre `SI`. C'est l'imbrication.
+
+```
+SI age >= 18 ALORS
+    SI permisValide = VRAI ALORS
+        Ecrire("Vous pouvez conduire")
+    SINON
+        Ecrire("Vous devez passer le permis")
+    FIN SI
+SINON
+    Ecrire("Vous etes mineur")
+FIN SI
+```
+
+**Conseil** : ne depassez pas trois niveaux d'imbrication. Au-dela, le code devient illisible. Utilisez plutot des operateurs logiques (`ET`, `OU`) pour combiner les conditions, ou decoupez en sous-programmes.
+
+Version equivalente sans imbrication :
+
+```
+SI (age >= 18) ET (permisValide = VRAI) ALORS
+    Ecrire("Vous pouvez conduire")
+SINON SI (age >= 18) ET (permisValide = FAUX) ALORS
+    Ecrire("Vous devez passer le permis")
+SINON
+    Ecrire("Vous etes mineur")
+FIN SI
+```
+
+### 3.6 La structure SELON (aiguillage)
+
+#### Quand l'utiliser ?
+
+Quand on teste la valeur d'une **seule variable** parmi un **ensemble fini de valeurs discretes** (pas d'intervalles, pas de comparaisons complexes).
+
+#### Syntaxe
+
+```
+SELON variable FAIRE
+    CAS valeur1 :
+        instructions
+    CAS valeur2 :
+        instructions
+    CAS valeur3 :
+        instructions
+    DEFAUT :
+        instructions
+FIN SELON
+```
+
+#### Exemple
+
+```
+Ecrire("Saisissez le numero du jour (1-7) : ")
+Lire(jour)
+
+SELON jour FAIRE
+    CAS 1 :
+        Ecrire("Lundi")
+    CAS 2 :
+        Ecrire("Mardi")
+    CAS 3 :
+        Ecrire("Mercredi")
+    CAS 4 :
+        Ecrire("Jeudi")
+    CAS 5 :
+        Ecrire("Vendredi")
+    CAS 6 :
+        Ecrire("Samedi")
+    CAS 7 :
+        Ecrire("Dimanche")
+    DEFAUT :
+        Ecrire("Numero invalide")
+FIN SELON
+```
+
+#### SELON vs SI : quand choisir lequel ?
+
+| Situation | Utiliser |
+|---|---|
+| Tester une variable parmi des valeurs fixes | SELON |
+| Tester des intervalles (note entre 10 et 12) | SI |
+| Combiner plusieurs conditions (ET, OU) | SI |
+| Tester une seule valeur entiere ou chaine | SELON |
+| Moins de 3 cas | SI (plus simple) |
+| Plus de 4-5 cas sur la meme variable | SELON (plus lisible) |
+
+### 3.7 Exercices sur les structures de controle
+
+#### Exercice 1 : Calcul de remise
+
+Un magasin applique les remises suivantes :
+- Montant >= 500 euros : 15% de remise
+- Montant >= 200 euros : 10% de remise
+- Montant >= 100 euros : 5% de remise
+- Sinon : pas de remise
+
+Ecrire l'algorithme qui saisit le montant et affiche le montant apres remise.
+
+**Solution :**
+
+```
+Algorithme CalculRemise
+
+Variables :
+    montant : Reel
+    remise : Reel
+    montantFinal : Reel
+
+Debut
+    Ecrire("Saisissez le montant : ")
+    Lire(montant)
+
+    SI montant >= 500 ALORS
+        remise <- montant * 0.15
+    SINON SI montant >= 200 ALORS
+        remise <- montant * 0.10
+    SINON SI montant >= 100 ALORS
+        remise <- montant * 0.05
+    SINON
+        remise <- 0
+    FIN SI
+
+    montantFinal <- montant - remise
+    Ecrire("Remise : ", remise, " euros")
+    Ecrire("Montant a payer : ", montantFinal, " euros")
+Fin
+```
+
+#### Exercice 2 : Validation de saisie
+
+Ecrire un algorithme qui saisit une note (entre 0 et 20) et affiche "Valide" si la note est dans l'intervalle, "Invalide" sinon.
+
+**Solution :**
+
+```
+Algorithme ValidationNote
+
+Variables :
+    note : Reel
+
+Debut
+    Ecrire("Saisissez une note : ")
+    Lire(note)
+
+    SI (note >= 0) ET (note <= 20) ALORS
+        Ecrire("Valide")
+    SINON
+        Ecrire("Invalide")
+    FIN SI
+Fin
+```
+
+#### Exercice 3 : Annee bissextile
+
+Une annee est bissextile si :
+- Elle est divisible par 4
+- MAIS PAS divisible par 100
+- SAUF si elle est divisible par 400
+
+Ecrire l'algorithme.
+
+**Solution :**
+
+```
+Algorithme AnneeBissextile
+
+Variables :
+    annee : Entier
+    estBissextile : Booleen
+
+Debut
+    Ecrire("Saisissez une annee : ")
+    Lire(annee)
+
+    SI (annee MOD 400 = 0) ALORS
+        estBissextile <- VRAI
+    SINON SI (annee MOD 100 = 0) ALORS
+        estBissextile <- FAUX
+    SINON SI (annee MOD 4 = 0) ALORS
+        estBissextile <- VRAI
+    SINON
+        estBissextile <- FAUX
+    FIN SI
+
+    SI estBissextile = VRAI ALORS
+        Ecrire(annee, " est une annee bissextile")
+    SINON
+        Ecrire(annee, " n'est pas une annee bissextile")
+    FIN SI
+Fin
+```
+
+**Note** : l'ordre des tests est essentiel. On teste d'abord la condition la plus specifique (divisible par 400), puis la moins specifique.
+
+---
+
+## 4. Structures iteratives {#4-structures-iteratives}
+
+### 4.1 Pourquoi les boucles ?
+
+Imaginons qu'on doive afficher les nombres de 1 a 1000. Sans boucle, il faudrait ecrire 1000 instructions `Ecrire`. C'est absurde. Les boucles permettent de **repeter un bloc d'instructions** un certain nombre de fois, ou tant qu'une condition est remplie.
+
+### 4.2 La boucle POUR
+
+#### Quand l'utiliser ?
+
+Quand on connait **a l'avance** le nombre exact d'iterations. C'est la boucle la plus simple et la plus courante.
+
+#### Syntaxe
+
+```
+POUR compteur DE valeurDebut A valeurFin [PAS DE increment] FAIRE
+    instructions
+FIN POUR
+```
+
+Si le pas n'est pas precise, il vaut 1 par defaut.
+
+#### Fonctionnement detaille
+
+1. `compteur` est initialise a `valeurDebut`
+2. On verifie si `compteur` <= `valeurFin` (si pas positif) ou `compteur` >= `valeurFin` (si pas negatif)
+3. Si oui, on execute les instructions du bloc
+4. On incremente `compteur` du pas
+5. On retourne a l'etape 2
+
+#### Exemples progressifs
+
+**Exemple 1 : afficher les nombres de 1 a 10**
+
+```
+POUR i DE 1 A 10 FAIRE
+    Ecrire(i)
+FIN POUR
+```
+
+**Exemple 2 : calculer la somme des nombres de 1 a N**
+
+```
+Lire(n)
+somme <- 0
+POUR i DE 1 A n FAIRE
+    somme <- somme + i
+FIN POUR
+Ecrire("La somme est : ", somme)
+```
+
+Trace avec n = 4 :
+
+| Iteration | i | somme (avant) | somme (apres) |
+|---|---|---|---|
+| 1 | 1 | 0 | 1 |
+| 2 | 2 | 1 | 3 |
+| 3 | 3 | 3 | 6 |
+| 4 | 4 | 6 | 10 |
+
+Resultat affiche : 10
+
+**Exemple 3 : afficher les nombres pairs de 20 a 0 (ordre decroissant)**
+
+```
+POUR i DE 20 A 0 PAS DE -2 FAIRE
+    Ecrire(i)
+FIN POUR
+```
+
+Affiche : 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0
+
+**Exemple 4 : calcul de la factorielle**
+
+```
+Lire(n)
+fact <- 1
+POUR i DE 2 A n FAIRE
+    fact <- fact * i
+FIN POUR
+Ecrire(n, "! = ", fact)
+```
+
+### 4.3 La boucle TANT QUE
+
+#### Quand l'utiliser ?
+
+Quand on **ne connait pas a l'avance** le nombre d'iterations. La boucle continue tant que la condition est vraie. La condition est testee **avant** chaque iteration : si elle est fausse des le depart, le bloc n'est jamais execute (zero iteration possible).
+
+#### Syntaxe
+
+```
+TANT QUE condition FAIRE
+    instructions
+FIN TANT QUE
+```
+
+#### Fonctionnement
+
+1. On evalue la condition
+2. Si VRAI, on execute les instructions, puis retour a l'etape 1
+3. Si FAUX, on sort de la boucle
+
+#### Exemples
+
+**Exemple 1 : saisie avec controle de validite**
+
+On veut que l'utilisateur saisisse une note entre 0 et 20. S'il saisit une valeur incorrecte, on lui redemande.
+
+```
+Ecrire("Saisissez une note entre 0 et 20 : ")
+Lire(note)
+TANT QUE (note < 0) OU (note > 20) FAIRE
+    Ecrire("Erreur ! Saisissez une note entre 0 et 20 : ")
+    Lire(note)
+FIN TANT QUE
+Ecrire("Note enregistree : ", note)
+```
+
+Remarquez que la premiere saisie est faite **avant** la boucle. Si la valeur est correcte des le depart, on n'entre jamais dans la boucle. C'est le schema classique de la "saisie controlee".
+
+**Exemple 2 : compter les chiffres d'un nombre**
+
+```
+Lire(n)
+nbChiffres <- 0
+temp <- n
+TANT QUE temp > 0 FAIRE
+    temp <- temp DIV 10
+    nbChiffres <- nbChiffres + 1
+FIN TANT QUE
+Ecrire(n, " a ", nbChiffres, " chiffres")
+```
+
+Trace avec n = 4523 :
+
+| Iteration | temp (avant) | temp DIV 10 | nbChiffres |
+|---|---|---|---|
+| 1 | 4523 | 452 | 1 |
+| 2 | 452 | 45 | 2 |
+| 3 | 45 | 4 | 3 |
+| 4 | 4 | 0 | 4 |
+
+Sortie de boucle car temp = 0 (0 > 0 est FAUX). Affiche : "4523 a 4 chiffres"
+
+**Attention au cas n = 0** : la boucle ne s'execute jamais et nbChiffres vaut 0. Or, 0 a un chiffre. Il faut traiter ce cas a part :
+
+```
+SI n = 0 ALORS
+    nbChiffres <- 1
+SINON
+    // ... boucle ci-dessus
+FIN SI
+```
+
+C'est le genre de cas limite que les sujets d'examen adorent.
+
+### 4.4 La boucle REPETER...JUSQU'A
+
+#### Quand l'utiliser ?
+
+Quand on veut que le bloc s'execute **au moins une fois** avant de tester la condition. La condition est testee **apres** chaque iteration.
+
+#### Syntaxe
+
+```
+REPETER
+    instructions
+JUSQU'A condition
+```
+
+**Attention a la logique** : la boucle s'arrete quand la condition devient **VRAIE**. C'est l'inverse de `TANT QUE` (qui continue tant que la condition est VRAIE).
+
+#### Exemple : saisie controlee (version REPETER)
+
+```
+REPETER
+    Ecrire("Saisissez une note entre 0 et 20 : ")
+    Lire(note)
+JUSQU'A (note >= 0) ET (note <= 20)
+```
+
+Comparez avec la version `TANT QUE` : ici, pas besoin de la premiere saisie avant la boucle. Le code est plus concis. C'est le cas d'utilisation ideal de `REPETER...JUSQU'A` : la saisie avec controle.
+
+#### Exemple : menu interactif
+
+```
+REPETER
+    Ecrire("=== MENU ===")
+    Ecrire("1. Ajouter un produit")
+    Ecrire("2. Supprimer un produit")
+    Ecrire("3. Afficher le stock")
+    Ecrire("0. Quitter")
+    Ecrire("Votre choix : ")
+    Lire(choix)
+
+    SELON choix FAIRE
+        CAS 1 :
+            // appel procedure ajout
+        CAS 2 :
+            // appel procedure suppression
+        CAS 3 :
+            // appel procedure affichage
+        CAS 0 :
+            Ecrire("Au revoir")
+        DEFAUT :
+            Ecrire("Choix invalide")
+    FIN SELON
+JUSQU'A choix = 0
+```
+
+### 4.5 Comparaison des trois boucles
+
+| Critere | POUR | TANT QUE | REPETER...JUSQU'A |
+|---|---|---|---|
+| Nombre d'iterations connu ? | OUI | NON | NON |
+| Test de la condition | Automatique (compteur) | AVANT chaque iteration | APRES chaque iteration |
+| Nombre minimal d'iterations | 0 (si debut > fin) | 0 | 1 |
+| Gestion du compteur | Automatique | Manuelle | Manuelle |
+| Cas d'utilisation typique | Parcours de tableau, compteur | Recherche, saisie controlee | Saisie controlee, menu |
+
+**Regle de choix :**
+1. Je connais le nombre d'iterations ? --> POUR
+2. Je ne le connais pas, mais il peut etre zero ? --> TANT QUE
+3. Je veux au moins une execution ? --> REPETER...JUSQU'A
+
+### 4.6 Erreurs classiques avec les boucles
+
+#### La boucle infinie
+
+```
+i <- 1
+TANT QUE i <= 10 FAIRE
+    Ecrire(i)
+    // OUBLI : i <- i + 1
+FIN TANT QUE
+```
+
+Sans l'incrementation, `i` reste a 1 eternellement. La condition `1 <= 10` est toujours VRAIE. Le programme ne s'arrete jamais.
+
+**Prevention** : verifiez systematiquement que la condition de boucle finira par devenir FAUSSE. Posez-vous la question : "Qu'est-ce qui fait evoluer ma condition vers la sortie ?"
+
+#### L'erreur de decalage de 1 (off-by-one)
+
+```
+// Objectif : afficher les nombres de 1 a 10
+POUR i DE 0 A 10 FAIRE    // ERREUR : affiche 0 a 10 (11 nombres)
+    Ecrire(i)
+FIN POUR
+
+POUR i DE 1 A 9 FAIRE     // ERREUR : affiche 1 a 9 (manque le 10)
+    Ecrire(i)
+FIN POUR
+
+POUR i DE 1 A 10 FAIRE    // CORRECT : affiche 1 a 10
+    Ecrire(i)
+FIN POUR
+```
+
+L'erreur de decalage de 1 est la plus frequente en programmation. A l'examen, faites toujours une trace rapide des premieres et dernieres iterations pour verifier les bornes.
+
+#### Modifier le compteur dans une boucle POUR
+
+```
+POUR i DE 1 A 10 FAIRE
+    Ecrire(i)
+    i <- i + 1    // INTERDIT : ne modifiez JAMAIS le compteur d'une boucle POUR
+FIN POUR
+```
+
+Le comportement est imprevisible. Si vous avez besoin de modifier le compteur, utilisez une boucle `TANT QUE`.
+
+### 4.7 Exercices sur les boucles
+
+#### Exercice 1 : table de multiplication
+
+Ecrire un algorithme qui saisit un nombre N et affiche sa table de multiplication (de 1 a 10).
+
+**Solution :**
+
+```
+Algorithme TableMultiplication
+
+Variables :
+    n : Entier
+    i : Entier
+
+Debut
+    Ecrire("Saisissez un nombre : ")
+    Lire(n)
+
+    POUR i DE 1 A 10 FAIRE
+        Ecrire(n, " x ", i, " = ", n * i)
+    FIN POUR
+Fin
+```
+
+#### Exercice 2 : somme des chiffres d'un nombre
+
+Ecrire un algorithme qui saisit un entier positif et affiche la somme de ses chiffres.
+
+**Solution :**
+
+```
+Algorithme SommeChiffres
+
+Variables :
+    n : Entier
+    temp : Entier
+    somme : Entier
+    chiffre : Entier
+
+Debut
+    Ecrire("Saisissez un entier positif : ")
+    Lire(n)
+
+    somme <- 0
+    temp <- n
+
+    TANT QUE temp > 0 FAIRE
+        chiffre <- temp MOD 10
+        somme <- somme + chiffre
+        temp <- temp DIV 10
+    FIN TANT QUE
+
+    Ecrire("La somme des chiffres de ", n, " est : ", somme)
+Fin
+```
+
+Trace avec n = 1234 :
+
+| Iteration | temp | chiffre (temp MOD 10) | somme | temp (temp DIV 10) |
+|---|---|---|---|---|
+| 1 | 1234 | 4 | 4 | 123 |
+| 2 | 123 | 3 | 7 | 12 |
+| 3 | 12 | 2 | 9 | 1 |
+| 4 | 1 | 1 | 10 | 0 |
+
+Resultat : 10 (1 + 2 + 3 + 4 = 10)
+
+#### Exercice 3 : nombre premier
+
+Ecrire un algorithme qui determine si un nombre saisi est premier (divisible uniquement par 1 et par lui-meme).
+
+**Solution :**
+
+```
+Algorithme NombrePremier
+
+Variables :
+    n : Entier
+    i : Entier
+    estPremier : Booleen
+
+Debut
+    Ecrire("Saisissez un entier superieur a 1 : ")
+    Lire(n)
+
+    estPremier <- VRAI
+
+    SI n <= 1 ALORS
+        estPremier <- FAUX
+    SINON
+        i <- 2
+        TANT QUE (i * i <= n) ET (estPremier = VRAI) FAIRE
+            SI n MOD i = 0 ALORS
+                estPremier <- FAUX
+            FIN SI
+            i <- i + 1
+        FIN TANT QUE
+    FIN SI
+
+    SI estPremier = VRAI ALORS
+        Ecrire(n, " est premier")
+    SINON
+        Ecrire(n, " n'est pas premier")
+    FIN SI
+Fin
+```
+
+**Astuce** : on teste `i * i <= n` au lieu de `i <= n` car si n a un diviseur, il en a forcement un inferieur ou egal a sa racine carree. Cela reduit considerablement le nombre d'iterations.
+
+#### Exercice 4 : suite de Fibonacci
+
+Afficher les N premiers termes de la suite de Fibonacci (0, 1, 1, 2, 3, 5, 8, 13, 21...) ou chaque terme est la somme des deux precedents.
+
+**Solution :**
+
+```
+Algorithme Fibonacci
+
+Variables :
+    n : Entier
+    i : Entier
+    a : Entier
+    b : Entier
+    temp : Entier
+
+Debut
+    Ecrire("Combien de termes ? ")
+    Lire(n)
+
+    a <- 0
+    b <- 1
+
+    SI n >= 1 ALORS
+        Ecrire(a)
+    FIN SI
+
+    SI n >= 2 ALORS
+        Ecrire(b)
+    FIN SI
+
+    POUR i DE 3 A n FAIRE
+        temp <- a + b
+        a <- b
+        b <- temp
+        Ecrire(b)
+    FIN POUR
+Fin
+```
+
+---
+
+## 5. La methode descendante en detail {#5-la-methode-descendante-en-detail}
+
+### 5.1 Les cinq etapes de la methode
+
+La methode descendante est une demarche rigoureuse en cinq etapes. Chaque etape est indispensable. En sauter une, c'est risquer de produire un algorithme incorrect ou incomplet.
+
+#### Etape 1 : Comprendre le probleme
+
+Avant d'ecrire quoi que ce soit, vous devez etre capable de **reformuler le probleme avec vos propres mots**. Si vous ne pouvez pas l'expliquer simplement a quelqu'un d'autre, c'est que vous ne l'avez pas compris.
+
+Questions a se poser :
+- Quelles sont les donnees d'entree ? (qu'est-ce qu'on recoit ?)
+- Quelles sont les sorties attendues ? (qu'est-ce qu'on doit produire ?)
+- Y a-t-il des contraintes ? (valeurs limites, cas particuliers)
+- Quels sont les cas d'erreur possibles ?
+
+#### Etape 2 : Identifier le resultat attendu
+
+Etre tres precis sur ce que l'algorithme doit produire. "Afficher les resultats" ne suffit pas. Il faut savoir exactement quels resultats, sous quelle forme, dans quel ordre.
+
+#### Etape 3 : Decomposer en sous-problemes
+
+C'est le coeur de la methode. On identifie les grandes etapes du traitement et on les represente sous forme d'arbre hierarchique.
+
+Regles de decomposition :
+- Chaque sous-probleme doit etre **independant** des autres autant que possible
+- Chaque sous-probleme doit etre **plus simple** que le probleme initial
+- On continue a decomposer tant qu'un sous-probleme n'est pas directement traduisible en instructions algorithmiques elementaires
+- Chaque feuille de l'arbre deviendra une fonction ou une procedure
+
+#### Etape 4 : Traiter chaque sous-probleme
+
+On ecrit l'algorithme de chaque sous-probleme individuellement, en commencant par les feuilles de l'arbre (les plus simples) et en remontant vers la racine.
+
+#### Etape 5 : Assembler
+
+On ecrit l'algorithme principal qui appelle les sous-programmes dans le bon ordre. C'est le "chef d'orchestre" qui coordonne les sous-problemes.
+
+### 5.2 Exemple complet 1 : Gestion de notes d'une classe
+
+#### Enonce
+
+On souhaite ecrire un programme qui :
+1. Saisit les notes d'une classe de N eleves
+2. Calcule la moyenne de la classe
+3. Trouve la note minimale et la note maximale
+4. Affiche les resultats
+
+#### Etape 1 : Comprendre le probleme
+
+Entrees : le nombre d'eleves (N) et les notes de chaque eleve
+Sorties : la moyenne, le minimum, le maximum
+Contraintes : les notes sont entre 0 et 20, N > 0
+
+#### Etape 2 : Identifier le resultat attendu
+
+Afficher :
+- La moyenne avec deux decimales
+- La note la plus basse
+- La note la plus haute
+- Le nombre d'eleves au-dessus de la moyenne
+
+#### Etape 3 : Decomposer (arbre)
+
+```
+              Gestion des notes
+              /    |     |      \
+        Saisir  Calculer  Trouver  Afficher
+        notes   moyenne   min/max  resultats
+          |                  |
+    Controler            Comparer
+    validite             chaque note
+```
+
+Sous-problemes identifies :
+1. **SaisirNotes** : saisir N et les notes avec controle de validite, stocker dans un tableau
+2. **CalculerMoyenne** : parcourir le tableau, calculer la somme, diviser par N
+3. **TrouverMinMax** : parcourir le tableau, trouver la plus petite et la plus grande valeur
+4. **CompterAuDessus** : parcourir le tableau, compter les notes >= moyenne
+5. **AfficherResultats** : afficher proprement tous les resultats
+
+#### Etape 4 : Traiter chaque sous-probleme
+
+**Procedure SaisirNotes :**
+
+```
+Procedure SaisirNotes(notes : Tableau de Reel en sortie, n : Entier en sortie)
+Variables :
+    i : Entier
+Debut
+    REPETER
+        Ecrire("Nombre d'eleves : ")
+        Lire(n)
+    JUSQU'A n > 0
+
+    POUR i DE 1 A n FAIRE
+        REPETER
+            Ecrire("Note de l'eleve ", i, " : ")
+            Lire(notes[i])
+        JUSQU'A (notes[i] >= 0) ET (notes[i] <= 20)
+    FIN POUR
+Fin
+```
+
+**Fonction CalculerMoyenne :**
+
+```
+Fonction CalculerMoyenne(notes : Tableau de Reel, n : Entier) : Reel
+Variables :
+    i : Entier
+    somme : Reel
+Debut
+    somme <- 0
+    POUR i DE 1 A n FAIRE
+        somme <- somme + notes[i]
+    FIN POUR
+    Retourner somme / n
+Fin
+```
+
+**Procedure TrouverMinMax :**
+
+```
+Procedure TrouverMinMax(notes : Tableau de Reel, n : Entier, min : Reel en sortie, max : Reel en sortie)
+Variables :
+    i : Entier
+Debut
+    min <- notes[1]
+    max <- notes[1]
+    POUR i DE 2 A n FAIRE
+        SI notes[i] < min ALORS
+            min <- notes[i]
+        FIN SI
+        SI notes[i] > max ALORS
+            max <- notes[i]
+        FIN SI
+    FIN POUR
+Fin
+```
+
+**Fonction CompterAuDessus :**
+
+```
+Fonction CompterAuDessus(notes : Tableau de Reel, n : Entier, moyenne : Reel) : Entier
+Variables :
+    i : Entier
+    compteur : Entier
+Debut
+    compteur <- 0
+    POUR i DE 1 A n FAIRE
+        SI notes[i] >= moyenne ALORS
+            compteur <- compteur + 1
+        FIN SI
+    FIN POUR
+    Retourner compteur
+Fin
+```
+
+**Procedure AfficherResultats :**
+
+```
+Procedure AfficherResultats(moyenne : Reel, min : Reel, max : Reel, nbAuDessus : Entier, n : Entier)
+Debut
+    Ecrire("=== RESULTATS ===")
+    Ecrire("Moyenne de la classe : ", moyenne)
+    Ecrire("Note minimale : ", min)
+    Ecrire("Note maximale : ", max)
+    Ecrire("Nombre d'eleves au-dessus de la moyenne : ", nbAuDessus, " sur ", n)
+Fin
+```
+
+#### Etape 5 : Assembler (algorithme principal)
+
+```
+Algorithme GestionNotes
+
+Variables :
+    notes : Tableau[1..50] de Reel
+    n : Entier
+    moyenne : Reel
+    noteMin : Reel
+    noteMax : Reel
+    nbAuDessus : Entier
+
+Debut
+    SaisirNotes(notes, n)
+    moyenne <- CalculerMoyenne(notes, n)
+    TrouverMinMax(notes, n, noteMin, noteMax)
+    nbAuDessus <- CompterAuDessus(notes, n, moyenne)
+    AfficherResultats(moyenne, noteMin, noteMax, nbAuDessus, n)
+Fin
+```
+
+Remarquez la clarte de l'algorithme principal : cinq lignes, cinq actions clairement identifiees. C'est la force de la methode descendante. Chaque sous-programme peut etre compris, teste et debogue independamment.
+
+### 5.3 Exemple complet 2 : Gestion de stock
+
+#### Enonce
+
+Un petit commerce souhaite gerer son stock de produits. Le programme doit :
+1. Permettre d'enregistrer des entrees de stock (livraisons)
+2. Permettre d'enregistrer des sorties de stock (ventes)
+3. Alerter quand un produit est en stock bas (< 5 unites)
+4. Afficher un bilan du stock
+
+Le stock contient au maximum 100 produits, chacun identifie par un nom et une quantite.
+
+#### Etape 3 : Decomposition
+
+```
+                    Gestion de stock
+                /    |       |        \
+          Initialiser  Gerer    Gerer     Afficher
+            stock      entrees  sorties   bilan
+                         |        |
+                    Verifier   Verifier    Alerter
+                    produit    stock       stock bas
+                    existe     suffisant
+```
+
+#### Algorithme principal
+
+```
+Algorithme GestionStock
+
+Variables :
+    noms : Tableau[1..100] de Chaine
+    quantites : Tableau[1..100] de Entier
+    nbProduits : Entier
+    choix : Entier
+
+Debut
+    nbProduits <- 0
+
+    REPETER
+        Ecrire("=== GESTION DE STOCK ===")
+        Ecrire("1. Entree de stock (livraison)")
+        Ecrire("2. Sortie de stock (vente)")
+        Ecrire("3. Afficher le bilan")
+        Ecrire("4. Afficher les alertes stock bas")
+        Ecrire("0. Quitter")
+        Ecrire("Votre choix : ")
+        Lire(choix)
+
+        SELON choix FAIRE
+            CAS 1 :
+                GererEntree(noms, quantites, nbProduits)
+            CAS 2 :
+                GererSortie(noms, quantites, nbProduits)
+            CAS 3 :
+                AfficherBilan(noms, quantites, nbProduits)
+            CAS 4 :
+                AlerterStockBas(noms, quantites, nbProduits)
+            CAS 0 :
+                Ecrire("Au revoir")
+            DEFAUT :
+                Ecrire("Choix invalide")
+        FIN SELON
+    JUSQU'A choix = 0
+Fin
+```
+
+**Fonction auxiliaire : RechercherProduit**
+
+```
+Fonction RechercherProduit(noms : Tableau de Chaine, nbProduits : Entier, nomRecherche : Chaine) : Entier
+Variables :
+    i : Entier
+    position : Entier
+Debut
+    position <- -1
+    POUR i DE 1 A nbProduits FAIRE
+        SI noms[i] = nomRecherche ALORS
+            position <- i
+        FIN SI
+    FIN POUR
+    Retourner position
+Fin
+```
+
+Si le produit n'est pas trouve, on retourne -1 (convention courante).
+
+**Procedure GererEntree :**
+
+```
+Procedure GererEntree(noms : Tableau de Chaine, quantites : Tableau de Entier, nbProduits : Entier en entree/sortie)
+Variables :
+    nomProduit : Chaine
+    qte : Entier
+    pos : Entier
+Debut
+    Ecrire("Nom du produit : ")
+    Lire(nomProduit)
+    Ecrire("Quantite recue : ")
+    Lire(qte)
+
+    pos <- RechercherProduit(noms, nbProduits, nomProduit)
+
+    SI pos = -1 ALORS
+        // Nouveau produit
+        nbProduits <- nbProduits + 1
+        noms[nbProduits] <- nomProduit
+        quantites[nbProduits] <- qte
+        Ecrire("Nouveau produit ajoute : ", nomProduit, " (", qte, " unites)")
+    SINON
+        // Produit existant
+        quantites[pos] <- quantites[pos] + qte
+        Ecrire("Stock mis a jour : ", nomProduit, " (", quantites[pos], " unites)")
+    FIN SI
+Fin
+```
+
+**Procedure GererSortie :**
+
+```
+Procedure GererSortie(noms : Tableau de Chaine, quantites : Tableau de Entier, nbProduits : Entier)
+Variables :
+    nomProduit : Chaine
+    qte : Entier
+    pos : Entier
+Debut
+    Ecrire("Nom du produit : ")
+    Lire(nomProduit)
+
+    pos <- RechercherProduit(noms, nbProduits, nomProduit)
+
+    SI pos = -1 ALORS
+        Ecrire("Erreur : produit introuvable")
+    SINON
+        Ecrire("Quantite vendue : ")
+        Lire(qte)
+
+        SI qte > quantites[pos] ALORS
+            Ecrire("Erreur : stock insuffisant (", quantites[pos], " disponibles)")
+        SINON
+            quantites[pos] <- quantites[pos] - qte
+            Ecrire("Vente enregistree. Stock restant : ", quantites[pos])
+
+            SI quantites[pos] < 5 ALORS
+                Ecrire("ALERTE : stock bas pour ", nomProduit, " !")
+            FIN SI
+        FIN SI
+    FIN SI
+Fin
+```
+
+**Procedure AfficherBilan :**
+
+```
+Procedure AfficherBilan(noms : Tableau de Chaine, quantites : Tableau de Entier, nbProduits : Entier)
+Variables :
+    i : Entier
+    totalUnites : Entier
+Debut
+    SI nbProduits = 0 ALORS
+        Ecrire("Le stock est vide")
+    SINON
+        Ecrire("=== BILAN DU STOCK ===")
+        totalUnites <- 0
+        POUR i DE 1 A nbProduits FAIRE
+            Ecrire(noms[i], " : ", quantites[i], " unites")
+            totalUnites <- totalUnites + quantites[i]
+        FIN POUR
+        Ecrire("---")
+        Ecrire("Nombre de produits : ", nbProduits)
+        Ecrire("Total unites en stock : ", totalUnites)
+    FIN SI
+Fin
+```
+
+**Procedure AlerterStockBas :**
+
+```
+Procedure AlerterStockBas(noms : Tableau de Chaine, quantites : Tableau de Entier, nbProduits : Entier)
+Variables :
+    i : Entier
+    nbAlertes : Entier
+Debut
+    nbAlertes <- 0
+    POUR i DE 1 A nbProduits FAIRE
+        SI quantites[i] < 5 ALORS
+            Ecrire("ALERTE : ", noms[i], " - ", quantites[i], " unites restantes")
+            nbAlertes <- nbAlertes + 1
+        FIN SI
+    FIN POUR
+
+    SI nbAlertes = 0 ALORS
+        Ecrire("Aucun produit en stock bas")
+    FIN SI
+Fin
+```
+
+---
+
+## 6. Les tableaux {#6-les-tableaux}
+
+### 6.1 Pourquoi les tableaux ?
+
+Imaginons qu'on doive gerer les notes de 30 eleves. Sans tableau, il faudrait declarer 30 variables : `note1`, `note2`, `note3`, ..., `note30`. Et si on veut calculer la moyenne, il faudrait ecrire `somme <- note1 + note2 + note3 + ... + note30`. C'est impraticable.
+
+Un tableau permet de stocker **plusieurs valeurs du meme type** sous un seul nom, accessibles par un **indice** (un numero de position).
+
+### 6.2 Tableau a une dimension
+
+#### Declaration
+
+```
+Variables :
+    notes : Tableau[1..30] de Reel
+    noms : Tableau[1..30] de Chaine
+    ages : Tableau[0..99] de Entier
+```
+
+`Tableau[1..30]` signifie que les indices vont de 1 a 30. Le tableau contient donc 30 elements.
+
+**Convention BTS SIO** : les indices commencent generalement a 1 (contrairement a certains langages de programmation ou ils commencent a 0). Suivez la convention de votre sujet d'examen.
+
+#### Acces a un element
+
+On accede a un element par son indice entre crochets :
+
+```
+notes[1] <- 15.5     // premier element
+notes[2] <- 12.0     // deuxieme element
+notes[30] <- 18.0    // dernier element
+```
+
+L'indice peut etre une variable :
+
+```
+i <- 5
+notes[i] <- 14.0     // equivalent a notes[5] <- 14.0
+```
+
+**Erreur fatale a l'examen** : acceder a un indice hors limites. Si le tableau va de 1 a 30, `notes[0]` et `notes[31]` sont des erreurs. Verifiez toujours vos indices.
+
+#### Parcours d'un tableau
+
+Le parcours est l'operation la plus courante sur un tableau. On utilise une boucle `POUR` :
+
+```
+// Saisie
+POUR i DE 1 A n FAIRE
+    Ecrire("Note ", i, " : ")
+    Lire(notes[i])
+FIN POUR
+
+// Affichage
+POUR i DE 1 A n FAIRE
+    Ecrire("Note ", i, " : ", notes[i])
+FIN POUR
+```
+
+#### Algorithmes classiques sur tableaux a une dimension
+
+**Somme et moyenne :**
+
+```
+somme <- 0
+POUR i DE 1 A n FAIRE
+    somme <- somme + tab[i]
+FIN POUR
+moyenne <- somme / n
+```
+
+**Recherche sequentielle (trouver un element) :**
+
+```
+Fonction Rechercher(tab : Tableau de Entier, n : Entier, valeur : Entier) : Entier
+Variables :
+    i : Entier
+    position : Entier
+Debut
+    position <- -1
+    i <- 1
+    TANT QUE (i <= n) ET (position = -1) FAIRE
+        SI tab[i] = valeur ALORS
+            position <- i
+        FIN SI
+        i <- i + 1
+    FIN TANT QUE
+    Retourner position
+Fin
+```
+
+On utilise `TANT QUE` plutot que `POUR` car on veut s'arreter des qu'on a trouve l'element (optimisation). On retourne -1 si l'element n'est pas trouve.
+
+**Recherche du minimum :**
+
+```
+Fonction RechercherMin(tab : Tableau de Entier, n : Entier) : Entier
+Variables :
+    i : Entier
+    min : Entier
+Debut
+    min <- tab[1]
+    POUR i DE 2 A n FAIRE
+        SI tab[i] < min ALORS
+            min <- tab[i]
+        FIN SI
+    FIN POUR
+    Retourner min
+Fin
+```
+
+**Point important** : on initialise `min` avec le premier element du tableau (pas avec 0 ou une valeur arbitraire). Si tous les elements sont negatifs, initialiser a 0 donnerait un resultat faux.
+
+**Recherche de la position du minimum** (utile pour le tri) :
+
+```
+Fonction PositionMin(tab : Tableau de Entier, debut : Entier, n : Entier) : Entier
+Variables :
+    i : Entier
+    posMin : Entier
+Debut
+    posMin <- debut
+    POUR i DE debut + 1 A n FAIRE
+        SI tab[i] < tab[posMin] ALORS
+            posMin <- i
+        FIN SI
+    FIN POUR
+    Retourner posMin
+Fin
+```
+
+**Recherche du maximum** : identique au minimum en remplacant `<` par `>`.
+
+**Compter les occurrences d'une valeur :**
+
+```
+Fonction CompterOccurrences(tab : Tableau de Entier, n : Entier, valeur : Entier) : Entier
+Variables :
+    i : Entier
+    compteur : Entier
+Debut
+    compteur <- 0
+    POUR i DE 1 A n FAIRE
+        SI tab[i] = valeur ALORS
+            compteur <- compteur + 1
+        FIN SI
+    FIN POUR
+    Retourner compteur
+Fin
+```
+
+### 6.3 Algorithmes de tri
+
+#### Pourquoi trier ?
+
+Un tableau trie permet des recherches plus efficaces (recherche dichotomique), des affichages ordonnes (classement), et facilite de nombreux traitements (medianes, quartiles, doublons).
+
+#### Le tri par selection
+
+**Principe** : a chaque etape, on cherche le plus petit element dans la partie non triee du tableau et on le place a sa position definitive.
+
+**Explication pas a pas :**
+
+1. On parcourt tout le tableau pour trouver le plus petit element
+2. On echange cet element avec le premier element du tableau
+3. Le premier element est maintenant a sa place definitive
+4. On recommence a partir du deuxieme element : on cherche le plus petit dans le reste
+5. On echange avec le deuxieme element
+6. Et ainsi de suite...
+
+**Algorithme :**
+
+```
+Procedure TriSelection(tab : Tableau de Entier en entree/sortie, n : Entier)
+Variables :
+    i : Entier
+    j : Entier
+    posMin : Entier
+    temp : Entier
+Debut
+    POUR i DE 1 A n - 1 FAIRE
+        // Chercher la position du minimum dans tab[i..n]
+        posMin <- i
+        POUR j DE i + 1 A n FAIRE
+            SI tab[j] < tab[posMin] ALORS
+                posMin <- j
+            FIN SI
+        FIN POUR
+
+        // Echanger tab[i] et tab[posMin]
+        SI posMin <> i ALORS
+            temp <- tab[i]
+            tab[i] <- tab[posMin]
+            tab[posMin] <- temp
+        FIN SI
+    FIN POUR
+Fin
+```
+
+**Trace avec le tableau [64, 25, 12, 22, 11] :**
+
+| Etape i | Tableau au debut | posMin | Echange | Tableau apres |
+|---|---|---|---|---|
+| i=1 | [**64**, 25, 12, 22, 11] | 5 (valeur 11) | 64 <-> 11 | [11, 25, 12, 22, 64] |
+| i=2 | [11, **25**, 12, 22, 64] | 3 (valeur 12) | 25 <-> 12 | [11, 12, 25, 22, 64] |
+| i=3 | [11, 12, **25**, 22, 64] | 4 (valeur 22) | 25 <-> 22 | [11, 12, 22, 25, 64] |
+| i=4 | [11, 12, 22, **25**, 64] | 4 (valeur 25) | pas d'echange | [11, 12, 22, 25, 64] |
+
+Resultat : [11, 12, 22, 25, 64]
+
+La boucle externe va de 1 a `n-1` (pas `n`) car quand les n-1 premiers elements sont places, le dernier est forcement a sa place.
+
+#### Le tri a bulles
+
+**Principe** : on parcourt le tableau en comparant chaque element avec le suivant. Si deux elements adjacents sont dans le mauvais ordre, on les echange. On repete ce parcours jusqu'a ce qu'aucun echange ne soit necessaire (le tableau est trie).
+
+**Pourquoi "a bulles" ?** : les plus grands elements "remontent" progressivement vers la fin du tableau, comme des bulles d'air dans l'eau.
+
+**Algorithme :**
+
+```
+Procedure TriBulles(tab : Tableau de Entier en entree/sortie, n : Entier)
+Variables :
+    i : Entier
+    temp : Entier
+    permutation : Booleen
+Debut
+    REPETER
+        permutation <- FAUX
+        POUR i DE 1 A n - 1 FAIRE
+            SI tab[i] > tab[i + 1] ALORS
+                // Echanger tab[i] et tab[i+1]
+                temp <- tab[i]
+                tab[i] <- tab[i + 1]
+                tab[i + 1] <- temp
+                permutation <- VRAI
+            FIN SI
+        FIN POUR
+        n <- n - 1
+    JUSQU'A permutation = FAUX
+Fin
+```
+
+**Trace avec le tableau [5, 3, 8, 1, 2] :**
+
+**Passe 1** (n=5) :
+- Compare 5 et 3 : 5 > 3, echange --> [3, 5, 8, 1, 2]
+- Compare 5 et 8 : 5 < 8, rien --> [3, 5, 8, 1, 2]
+- Compare 8 et 1 : 8 > 1, echange --> [3, 5, 1, 8, 2]
+- Compare 8 et 2 : 8 > 2, echange --> [3, 5, 1, 2, 8]
+- Permutation = VRAI, on continue. Le 8 est a sa place.
+
+**Passe 2** (n=4) :
+- Compare 3 et 5 : 3 < 5, rien --> [3, 5, 1, 2, 8]
+- Compare 5 et 1 : 5 > 1, echange --> [3, 1, 5, 2, 8]
+- Compare 5 et 2 : 5 > 2, echange --> [3, 1, 2, 5, 8]
+- Permutation = VRAI, on continue. Le 5 est a sa place.
+
+**Passe 3** (n=3) :
+- Compare 3 et 1 : 3 > 1, echange --> [1, 3, 2, 5, 8]
+- Compare 3 et 2 : 3 > 2, echange --> [1, 2, 3, 5, 8]
+- Permutation = VRAI, on continue.
+
+**Passe 4** (n=2) :
+- Compare 1 et 2 : 1 < 2, rien --> [1, 2, 3, 5, 8]
+- Permutation = FAUX, on arrete.
+
+Resultat : [1, 2, 3, 5, 8]
+
+**Avantage du tri a bulles** : il detecte un tableau deja trie en une seule passe (aucun echange necessaire). **Inconvenient** : il est lent sur de gros tableaux (complexite O(n²)).
+
+### 6.4 Tableau a deux dimensions (matrice)
+
+#### Pourquoi les matrices ?
+
+Certaines donnees sont naturellement bidimensionnelles : un emploi du temps (lignes = heures, colonnes = jours), un tableur (lignes et colonnes), les pixels d'une image, les notes de plusieurs eleves dans plusieurs matieres.
+
+#### Declaration
+
+```
+Variables :
+    matrice : Tableau[1..3, 1..4] de Entier
+    // 3 lignes, 4 colonnes
+```
+
+Representation visuelle de `matrice` :
+
+```
+         Colonne 1  Colonne 2  Colonne 3  Colonne 4
+Ligne 1  [  ?    ,    ?    ,    ?    ,    ?   ]
+Ligne 2  [  ?    ,    ?    ,    ?    ,    ?   ]
+Ligne 3  [  ?    ,    ?    ,    ?    ,    ?   ]
+```
+
+#### Acces a un element
+
+```
+matrice[2, 3] <- 42    // ligne 2, colonne 3
+valeur <- matrice[1, 1] // premier element (ligne 1, colonne 1)
+```
+
+#### Parcours d'une matrice
+
+On utilise **deux boucles imbriquees** : une pour les lignes, une pour les colonnes.
+
+**Parcours complet (ligne par ligne) :**
+
+```
+POUR i DE 1 A nbLignes FAIRE
+    POUR j DE 1 A nbColonnes FAIRE
+        Ecrire(matrice[i, j], " ")
+    FIN POUR
+    Ecrire("")   // saut de ligne
+FIN POUR
+```
+
+**Saisie d'une matrice :**
+
+```
+POUR i DE 1 A nbLignes FAIRE
+    POUR j DE 1 A nbColonnes FAIRE
+        Ecrire("Element [", i, ",", j, "] : ")
+        Lire(matrice[i, j])
+    FIN POUR
+FIN POUR
+```
+
+**Somme de tous les elements :**
+
+```
+somme <- 0
+POUR i DE 1 A nbLignes FAIRE
+    POUR j DE 1 A nbColonnes FAIRE
+        somme <- somme + matrice[i, j]
+    FIN POUR
+FIN POUR
+```
+
+**Somme par ligne :**
+
+```
+POUR i DE 1 A nbLignes FAIRE
+    sommeLigne <- 0
+    POUR j DE 1 A nbColonnes FAIRE
+        sommeLigne <- sommeLigne + matrice[i, j]
+    FIN POUR
+    Ecrire("Somme ligne ", i, " : ", sommeLigne)
+FIN POUR
+```
+
+**Somme par colonne :**
+
+```
+POUR j DE 1 A nbColonnes FAIRE
+    sommeCol <- 0
+    POUR i DE 1 A nbLignes FAIRE
+        sommeCol <- sommeCol + matrice[i, j]
+    FIN POUR
+    Ecrire("Somme colonne ", j, " : ", sommeCol)
+FIN POUR
+```
+
+Notez l'inversion des boucles : pour les sommes par colonne, la boucle externe parcourt les colonnes et la boucle interne parcourt les lignes.
+
+#### Exemple : notes de plusieurs eleves dans plusieurs matieres
+
+```
+// notes[i, j] = note de l'eleve i dans la matiere j
+// Calcul de la moyenne de chaque eleve
+
+POUR i DE 1 A nbEleves FAIRE
+    somme <- 0
+    POUR j DE 1 A nbMatieres FAIRE
+        somme <- somme + notes[i, j]
+    FIN POUR
+    moyenneEleve <- somme / nbMatieres
+    Ecrire("Moyenne eleve ", i, " : ", moyenneEleve)
+FIN POUR
+```
+
+### 6.5 Exercices types examen sur les tableaux
+
+#### Exercice 1 : Inverser un tableau
+
+Ecrire une procedure qui inverse l'ordre des elements d'un tableau (le premier devient le dernier, etc.).
+
+**Solution :**
+
+```
+Procedure InverserTableau(tab : Tableau de Entier en entree/sortie, n : Entier)
+Variables :
+    i : Entier
+    temp : Entier
+Debut
+    POUR i DE 1 A n DIV 2 FAIRE
+        temp <- tab[i]
+        tab[i] <- tab[n - i + 1]
+        tab[n - i + 1] <- temp
+    FIN POUR
+Fin
+```
+
+Trace avec [10, 20, 30, 40, 50] (n=5, n DIV 2 = 2) :
+- i=1 : echange tab[1] et tab[5] --> [50, 20, 30, 40, 10]
+- i=2 : echange tab[2] et tab[4] --> [50, 40, 30, 20, 10]
+
+L'element central (tab[3]) reste en place. C'est correct pour un nombre impair d'elements.
+
+#### Exercice 2 : Fusionner deux tableaux tries
+
+Etant donnes deux tableaux tries par ordre croissant, produire un troisieme tableau trie contenant tous les elements des deux.
+
+**Solution :**
+
+```
+Procedure FusionnerTries(tab1 : Tableau de Entier, n1 : Entier,
+                          tab2 : Tableau de Entier, n2 : Entier,
+                          resultat : Tableau de Entier en sortie)
+Variables :
+    i : Entier
+    j : Entier
+    k : Entier
+Debut
+    i <- 1
+    j <- 1
+    k <- 0
+
+    TANT QUE (i <= n1) ET (j <= n2) FAIRE
+        k <- k + 1
+        SI tab1[i] <= tab2[j] ALORS
+            resultat[k] <- tab1[i]
+            i <- i + 1
+        SINON
+            resultat[k] <- tab2[j]
+            j <- j + 1
+        FIN SI
+    FIN TANT QUE
+
+    // Copier les elements restants de tab1
+    TANT QUE i <= n1 FAIRE
+        k <- k + 1
+        resultat[k] <- tab1[i]
+        i <- i + 1
+    FIN TANT QUE
+
+    // Copier les elements restants de tab2
+    TANT QUE j <= n2 FAIRE
+        k <- k + 1
+        resultat[k] <- tab2[j]
+        j <- j + 1
+    FIN TANT QUE
+Fin
+```
+
+#### Exercice 3 : Supprimer les doublons
+
+Ecrire un algorithme qui supprime les doublons d'un tableau (ne garder que la premiere occurrence de chaque valeur).
+
+**Solution :**
+
+```
+Procedure SupprimerDoublons(tab : Tableau de Entier en entree/sortie, n : Entier en entree/sortie)
+Variables :
+    i : Entier
+    j : Entier
+    k : Entier
+    estDoublon : Booleen
+Debut
+    i <- 2
+    TANT QUE i <= n FAIRE
+        // Verifier si tab[i] existe deja dans tab[1..i-1]
+        estDoublon <- FAUX
+        POUR j DE 1 A i - 1 FAIRE
+            SI tab[j] = tab[i] ALORS
+                estDoublon <- VRAI
+            FIN SI
+        FIN POUR
+
+        SI estDoublon = VRAI ALORS
+            // Decaler tous les elements suivants d'une position vers la gauche
+            POUR k DE i A n - 1 FAIRE
+                tab[k] <- tab[k + 1]
+            FIN POUR
+            n <- n - 1
+            // Ne pas incrementer i car le nouvel element a la position i doit etre teste
+        SINON
+            i <- i + 1
+        FIN SI
+    FIN TANT QUE
+Fin
+```
+
+---
+
+## 7. Fonctions et procedures {#7-fonctions-et-procedures}
+
+### 7.1 Pourquoi decouper en sous-programmes ?
+
+La methode descendante conduit naturellement a decouper un probleme en sous-problemes. En algorithmique, chaque sous-probleme est implemente sous forme de **fonction** ou de **procedure** (on parle de **sous-programme**).
+
+Trois raisons fondamentales :
+
+1. **Lisibilite** : un algorithme de 100 lignes est illisible. Cinq sous-programmes de 20 lignes sont comprehensibles.
+2. **Reutilisabilite** : un sous-programme ecrit une fois peut etre appele autant de fois que necessaire. Si on calcule la moyenne a trois endroits differents, on ecrit la fonction une seule fois.
+3. **Testabilite** : on peut tester chaque sous-programme independamment. Si le calcul de la moyenne est faux, on sait exactement ou chercher l'erreur.
+
+### 7.2 Procedure vs Fonction
+
+| | Procedure | Fonction |
+|---|---|---|
+| Retourne une valeur ? | NON | OUI (une seule) |
+| Appel | `NomProcedure(parametres)` | `variable <- NomFonction(parametres)` |
+| Utilisation | Effectuer une action (afficher, modifier) | Calculer et retourner un resultat |
+| Mot-cle de retour | Aucun | `Retourner valeur` |
+
+**Regle simple** : si le sous-programme doit produire un seul resultat utilisable ensuite, c'est une fonction. Si le sous-programme effectue une action (affichage, modification de plusieurs variables), c'est une procedure.
+
+### 7.3 Syntaxe
+
+**Procedure :**
+
+```
+Procedure NomProcedure(param1 : Type1, param2 : Type2 en sortie)
+Variables :
+    // variables locales
+Debut
+    // instructions
+Fin
+```
+
+**Fonction :**
+
+```
+Fonction NomFonction(param1 : Type1, param2 : Type2) : TypeRetour
+Variables :
+    // variables locales
+Debut
+    // instructions
+    Retourner resultat
+Fin
+```
+
+### 7.4 Les parametres
+
+#### Passage par valeur
+
+Le parametre recoit une **copie** de la valeur. Toute modification du parametre dans le sous-programme n'affecte PAS la variable de l'appelant.
+
+**Analogie** : vous photocopiez un document et donnez la photocopie. Si la personne ecrit sur la photocopie, votre original n'est pas modifie.
+
+```
+Procedure Afficher(valeur : Entier)   // passage par valeur (par defaut)
+Debut
+    Ecrire(valeur)
+    valeur <- 0    // cette modification n'a AUCUN effet sur la variable de l'appelant
+Fin
+```
+
+```
+// Dans l'algorithme principal :
+a <- 42
+Afficher(a)     // affiche 42
+Ecrire(a)       // affiche toujours 42 (a n'a pas ete modifie)
+```
+
+#### Passage par reference (en entree/sortie)
+
+Le parametre est un **alias** de la variable de l'appelant. Toute modification du parametre modifie directement la variable d'origine.
+
+**Analogie** : vous donnez le document original. Si la personne ecrit dessus, votre document est modifie.
+
+On indique le passage par reference avec le mot-cle `en sortie` ou `en entree/sortie` :
+
+```
+Procedure Doubler(valeur : Entier en entree/sortie)
+Debut
+    valeur <- valeur * 2    // modifie directement la variable de l'appelant
+Fin
+```
+
+```
+// Dans l'algorithme principal :
+a <- 5
+Doubler(a)
+Ecrire(a)       // affiche 10 (a a ete modifie)
+```
+
+#### Quand utiliser quel passage ?
+
+| Situation | Passage |
+|---|---|
+| Le sous-programme a seulement besoin de lire la valeur | Par valeur (defaut) |
+| Le sous-programme doit modifier la variable de l'appelant | Par reference |
+| Le sous-programme doit remplir une variable non encore initialisee | Par reference (en sortie) |
+| Le sous-programme recoit un tableau | Par reference (par efficacite et convention) |
+
+**Convention** : les tableaux sont toujours passes par reference, meme si on ne les modifie pas, pour eviter de copier potentiellement des milliers d'elements.
+
+### 7.5 Portee des variables
+
+#### Variables locales
+
+Une variable declaree a l'interieur d'un sous-programme est **locale** : elle n'existe que pendant l'execution de ce sous-programme. Quand le sous-programme se termine, la variable est detruite.
+
+```
+Procedure Test()
+Variables :
+    x : Entier    // variable locale
+Debut
+    x <- 10
+    Ecrire(x)
+Fin
+
+// Dans l'algorithme principal :
+Test()        // affiche 10
+Ecrire(x)    // ERREUR : x n'existe pas ici
+```
+
+#### Variables globales
+
+Une variable declaree dans l'algorithme principal (au niveau le plus haut) est **globale** : elle est accessible partout, y compris dans les sous-programmes.
+
+**Regle d'or** : evitez les variables globales autant que possible. Elles rendent le code difficile a comprendre et a deboguer car n'importe quel sous-programme peut les modifier. Preferez les parametres pour communiquer entre l'algorithme principal et les sous-programmes.
+
+#### Masquage
+
+Si un sous-programme declare une variable locale portant le meme nom qu'une variable globale, la variable locale "masque" la globale pendant l'execution du sous-programme :
+
+```
+Algorithme Masquage
+
+Variables :
+    x : Entier    // variable globale
+
+Procedure Test()
+Variables :
+    x : Entier    // variable locale qui masque la globale
+Debut
+    x <- 99
+    Ecrire("Dans Test : x = ", x)    // affiche 99
+Fin
+
+Debut
+    x <- 10
+    Ecrire("Avant Test : x = ", x)   // affiche 10
+    Test()
+    Ecrire("Apres Test : x = ", x)   // affiche 10 (la globale n'a pas ete modifiee)
+Fin
+```
+
+C'est un piege classique a l'examen. Lisez attentivement les declarations pour distinguer les variables locales des globales.
+
+### 7.6 Exercices
+
+#### Exercice 1 : decomposition en fonctions
+
+Ecrire un algorithme qui, pour N valeurs saisies :
+- Calcule la moyenne
+- Calcule l'ecart-type
+- Affiche les resultats
+
+Utiliser la methode descendante avec fonctions et procedures.
+
+**Solution :**
+
+```
+Algorithme StatistiquesDescriptives
+
+Variables :
+    valeurs : Tableau[1..100] de Reel
+    n : Entier
+    moy : Reel
+    ecart : Reel
+
+Procedure SaisirValeurs(tab : Tableau de Reel en sortie, n : Entier en sortie)
+Variables :
+    i : Entier
+Debut
+    REPETER
+        Ecrire("Nombre de valeurs : ")
+        Lire(n)
+    JUSQU'A (n > 0) ET (n <= 100)
+
+    POUR i DE 1 A n FAIRE
+        Ecrire("Valeur ", i, " : ")
+        Lire(tab[i])
+    FIN POUR
+Fin
+
+Fonction Moyenne(tab : Tableau de Reel, n : Entier) : Reel
+Variables :
+    i : Entier
+    somme : Reel
+Debut
+    somme <- 0
+    POUR i DE 1 A n FAIRE
+        somme <- somme + tab[i]
+    FIN POUR
+    Retourner somme / n
+Fin
+
+Fonction EcartType(tab : Tableau de Reel, n : Entier, moy : Reel) : Reel
+Variables :
+    i : Entier
+    sommeCarres : Reel
+Debut
+    sommeCarres <- 0
+    POUR i DE 1 A n FAIRE
+        sommeCarres <- sommeCarres + (tab[i] - moy) * (tab[i] - moy)
+    FIN POUR
+    Retourner RacineCarree(sommeCarres / n)
+Fin
+
+Procedure AfficherResultats(moy : Reel, ecart : Reel)
+Debut
+    Ecrire("Moyenne : ", moy)
+    Ecrire("Ecart-type : ", ecart)
+Fin
+
+Debut
+    SaisirValeurs(valeurs, n)
+    moy <- Moyenne(valeurs, n)
+    ecart <- EcartType(valeurs, n, moy)
+    AfficherResultats(moy, ecart)
+Fin
+```
+
+Notez comment l'algorithme principal est parfaitement lisible en quatre lignes. Chaque sous-programme est independant et testable.
+
+---
+
+## 8. Les fichiers {#8-les-fichiers}
+
+### 8.1 Pourquoi les fichiers ?
+
+Jusqu'ici, toutes les donnees sont perdues quand le programme se termine. Les variables existent uniquement en memoire vive (RAM). Pour conserver des donnees entre deux executions, il faut les stocker dans un **fichier** sur le disque dur.
+
+Cas d'utilisation frequents :
+- Sauvegarder les resultats d'un traitement
+- Lire des donnees preparees a l'avance (fichier CSV, fichier de configuration)
+- Journaliser les operations (fichier de log)
+
+### 8.2 Operations sur les fichiers texte
+
+#### Ouverture
+
+```
+Ouvrir("chemin/fichier.txt", f, mode)
+```
+
+Ou `f` est une variable de type Fichier et `mode` est :
+- **Lecture** : lire le contenu existant
+- **Ecriture** : ecraser le contenu et ecrire a neuf
+- **Ajout** : ecrire a la suite du contenu existant
+
+#### Lecture
+
+```
+LireLigne(f, ligne)      // lit une ligne entiere dans la variable 'ligne'
+```
+
+Pour lire tout le fichier :
+
+```
+Ouvrir("donnees.txt", f, Lecture)
+TANT QUE NON FinDeFichier(f) FAIRE
+    LireLigne(f, ligne)
+    Ecrire(ligne)
+FIN TANT QUE
+Fermer(f)
+```
+
+`FinDeFichier(f)` retourne VRAI quand il n'y a plus de lignes a lire.
+
+#### Ecriture
+
+```
+Ouvrir("resultats.txt", f, Ecriture)
+EcrireLigne(f, "Premiere ligne")
+EcrireLigne(f, "Deuxieme ligne")
+Fermer(f)
+```
+
+#### Fermeture
+
+**Toujours fermer un fichier apres utilisation.** C'est une regle absolue. Un fichier non ferme peut perdre des donnees ou empecher d'autres programmes d'y acceder.
+
+```
+Fermer(f)
+```
+
+### 8.3 Exemple : traitement d'un fichier CSV
+
+Un fichier `notes.csv` contient les donnees suivantes :
+
+```
+Dupont;14;12;16
+Martin;8;15;11
+Durand;17;13;9
+```
+
+Chaque ligne contient : nom;note1;note2;note3
+
+Ecrire un algorithme qui lit ce fichier, calcule la moyenne de chaque eleve, et ecrit les resultats dans un nouveau fichier.
+
+```
+Algorithme TraiterCSV
+
+Variables :
+    fEntree : Fichier
+    fSortie : Fichier
+    ligne : Chaine
+    nom : Chaine
+    note1 : Reel
+    note2 : Reel
+    note3 : Reel
+    moyenne : Reel
+
+Fonction ExtraireChamp(ligne : Chaine, numero : Entier) : Chaine
+// Extrait le champ numero 'numero' d'une ligne separee par des ';'
+// (implementation detaillee omise pour la clarte — utilise recherche de ';' et extraction de sous-chaine)
+Variables :
+    debut : Entier
+    fin : Entier
+    i : Entier
+    compteur : Entier
+Debut
+    debut <- 1
+    compteur <- 1
+    POUR i DE 1 A Longueur(ligne) FAIRE
+        SI SousChaine(ligne, i, 1) = ";" ALORS
+            SI compteur = numero ALORS
+                Retourner SousChaine(ligne, debut, i - debut)
+            FIN SI
+            compteur <- compteur + 1
+            debut <- i + 1
+        FIN SI
+    FIN POUR
+    // Dernier champ (pas de ';' a la fin)
+    SI compteur = numero ALORS
+        Retourner SousChaine(ligne, debut, Longueur(ligne) - debut + 1)
+    FIN SI
+    Retourner ""
+Fin
+
+Debut
+    Ouvrir("notes.csv", fEntree, Lecture)
+    Ouvrir("resultats.csv", fSortie, Ecriture)
+
+    EcrireLigne(fSortie, "Nom;Moyenne")
+
+    TANT QUE NON FinDeFichier(fEntree) FAIRE
+        LireLigne(fEntree, ligne)
+        nom <- ExtraireChamp(ligne, 1)
+        note1 <- ConvertirEnReel(ExtraireChamp(ligne, 2))
+        note2 <- ConvertirEnReel(ExtraireChamp(ligne, 3))
+        note3 <- ConvertirEnReel(ExtraireChamp(ligne, 4))
+        moyenne <- (note1 + note2 + note3) / 3
+        EcrireLigne(fSortie, nom + ";" + ConvertirEnChaine(moyenne))
+    FIN TANT QUE
+
+    Fermer(fEntree)
+    Fermer(fSortie)
+
+    Ecrire("Traitement termine")
+Fin
+```
+
+**Remarques** :
+- `ConvertirEnReel` et `ConvertirEnChaine` sont des fonctions utilitaires supposees disponibles (conversion de type)
+- `Longueur(chaine)` retourne le nombre de caracteres
+- `SousChaine(chaine, debut, longueur)` extrait une portion de chaine
+- A l'examen, ces fonctions utilitaires sont souvent fournies dans l'enonce ou supposees connues. Lisez bien l'enonce.
+
+---
+
+## 9. Notions de complexite {#9-notions-de-complexite}
+
+### 9.1 Pourquoi certains algorithmes sont plus rapides ?
+
+Prenons deux algorithmes de recherche dans un tableau de 1 000 000 d'elements :
+- La **recherche sequentielle** parcourt les elements un par un. Dans le pire cas, elle effectue 1 000 000 de comparaisons.
+- La **recherche dichotomique** (dans un tableau trie) divise l'espace de recherche par deux a chaque etape. Elle effectue au maximum environ 20 comparaisons (log2 de 1 000 000).
+
+La difference est colossale. La complexite algorithmique permet de mesurer et comparer cette efficacite.
+
+### 9.2 La notation O (grand O)
+
+La notation O exprime comment le temps d'execution evolue quand la taille des donnees (n) augmente.
+
+| Complexite | Nom | Exemple | 10 elements | 1000 elements | 1 000 000 elements |
+|---|---|---|---|---|---|
+| O(1) | Constante | Acces direct tab[i] | 1 | 1 | 1 |
+| O(log n) | Logarithmique | Recherche dichotomique | 3 | 10 | 20 |
+| O(n) | Lineaire | Recherche sequentielle, parcours | 10 | 1 000 | 1 000 000 |
+| O(n log n) | Quasi-lineaire | Tri fusion, tri rapide | 33 | 10 000 | 20 000 000 |
+| O(n²) | Quadratique | Tri selection, tri a bulles | 100 | 1 000 000 | 1 000 000 000 000 |
+
+**Interpretation simple** :
+- **O(1)** : le temps ne depend pas de la taille. Instantane.
+- **O(n)** : si on double les donnees, on double le temps.
+- **O(n²)** : si on double les donnees, on quadruple le temps. Pour 1 million d'elements, c'est concretement inutilisable.
+- **O(log n)** : meme avec des milliards d'elements, ca reste rapide.
+
+### 9.3 Comment determiner la complexite ?
+
+**Regle 1** : une boucle simple de 1 a n est O(n).
+
+```
+POUR i DE 1 A n FAIRE       // O(n)
+    // instruction O(1)
+FIN POUR
+```
+
+**Regle 2** : deux boucles imbriquees, chacune de 1 a n, donnent O(n²).
+
+```
+POUR i DE 1 A n FAIRE        // O(n²)
+    POUR j DE 1 A n FAIRE
+        // instruction O(1)
+    FIN POUR
+FIN POUR
+```
+
+C'est le cas des tris par selection et a bulles : deux boucles imbriquees = O(n²).
+
+**Regle 3** : si a chaque etape on divise par 2, c'est O(log n).
+
+```
+TANT QUE n > 1 FAIRE         // O(log n)
+    n <- n DIV 2
+FIN TANT QUE
+```
+
+**Regle 4** : deux blocs consecutifs --> on prend la complexite la plus grande.
+
+```
+// Bloc 1 : O(n)
+POUR i DE 1 A n FAIRE
+    ...
+FIN POUR
+
+// Bloc 2 : O(n²)
+POUR i DE 1 A n FAIRE
+    POUR j DE 1 A n FAIRE
+        ...
+    FIN POUR
+FIN POUR
+
+// Complexite totale : O(n²) (le terme dominant)
+```
+
+### 9.4 Application aux algorithmes etudies
+
+| Algorithme | Complexite | Pourquoi |
+|---|---|---|
+| Recherche sequentielle | O(n) | Une boucle, parcours lineaire |
+| Recherche du min/max | O(n) | Une boucle, parcours lineaire |
+| Tri par selection | O(n²) | Deux boucles imbriquees |
+| Tri a bulles | O(n²) pire cas, O(n) meilleur cas | Deux boucles, mais s'arrete tot si trie |
+| Parcours de matrice n x m | O(n x m) | Deux boucles imbriquees |
+
+**Ce qu'il faut retenir pour l'examen** : le tri par selection et le tri a bulles sont en O(n²). Pour de grands tableaux, ils sont inefficaces. Il existe des algorithmes de tri en O(n log n) (tri fusion, tri rapide), mais ils ne sont generalement pas au programme du BTS SIO.
+
+---
+
+## 10. Methodologie d'examen {#10-methodologie-dexamen}
+
+### 10.1 Comment lire un sujet d'algorithmique
+
+1. **Lire l'enonce en entier** avant de commencer a ecrire. Deux fois si necessaire.
+2. **Souligner** les mots-cles : "saisir", "afficher", "calculer", "trier", "rechercher", "tant que", "pour chaque".
+3. **Identifier** les entrees et les sorties.
+4. **Reperer** si l'enonce demande une methode descendante (si oui, decomposer obligatoirement).
+5. **Reperer** les contraintes : taille des tableaux, validite des saisies, cas particuliers.
+6. **Verifier** si des fonctions utilitaires sont fournies (souvent en annexe du sujet).
+
+### 10.2 Les pieges classiques
+
+#### Piege 1 : variable non initialisee
+
+```
+// FAUX : somme n'est pas initialisee
+POUR i DE 1 A n FAIRE
+    somme <- somme + tab[i]    // somme vaut combien au debut ? On ne sait pas.
+FIN POUR
+
+// CORRECT :
+somme <- 0
+POUR i DE 1 A n FAIRE
+    somme <- somme + tab[i]
+FIN POUR
+```
+
+Toute variable utilisee dans un calcul doit avoir recu une valeur avant. Les accumulateurs (`somme`, `compteur`, `produit`) doivent etre initialises (generalement a 0 pour une somme, a 1 pour un produit, a 0 pour un compteur).
+
+#### Piege 2 : boucle infinie
+
+```
+// FAUX : i n'est jamais incremente
+i <- 1
+TANT QUE i <= 10 FAIRE
+    Ecrire(i)
+FIN TANT QUE
+
+// CORRECT :
+i <- 1
+TANT QUE i <= 10 FAIRE
+    Ecrire(i)
+    i <- i + 1
+FIN TANT QUE
+```
+
+#### Piege 3 : indice hors tableau
+
+```
+// FAUX si n = taille du tableau :
+POUR i DE 1 A n FAIRE
+    SI tab[i] > tab[i + 1] ALORS    // quand i = n, tab[n+1] n'existe pas !
+        ...
+    FIN SI
+FIN POUR
+
+// CORRECT :
+POUR i DE 1 A n - 1 FAIRE
+    SI tab[i] > tab[i + 1] ALORS
+        ...
+    FIN SI
+FIN POUR
+```
+
+#### Piege 4 : confusion entre = (comparaison) et <- (affectation)
+
+```
+// FAUX : c'est une affectation, pas un test
+SI x <- 5 ALORS
+    ...
+FIN SI
+
+// CORRECT :
+SI x = 5 ALORS
+    ...
+FIN SI
+```
+
+#### Piege 5 : oublier le cas particulier
+
+- Tableau vide (n = 0)
+- Un seul element (n = 1)
+- Toutes les valeurs identiques
+- Valeurs negatives quand on initialise le min a 0
+- Division par zero
+
+Posez-vous toujours la question : "que se passe-t-il si...?"
+
+#### Piege 6 : condition REPETER...JUSQU'A inversee
+
+`TANT QUE` continue tant que la condition est VRAIE.
+`REPETER...JUSQU'A` s'arrete quand la condition devient VRAIE.
+
+Ce sont des logiques inversees. Un `TANT QUE note < 0 OU note > 20` devient un `JUSQU'A note >= 0 ET note <= 20`.
+
+### 10.3 Comment rediger proprement
+
+#### Indentation
+
+Chaque bloc imbrique doit etre decale de **4 espaces** (ou une tabulation). L'indentation montre la structure logique.
+
+```
+// MAL indente (illisible) :
+POUR i DE 1 A n FAIRE
+SI tab[i] > max ALORS
+max <- tab[i]
+FIN SI
+FIN POUR
+
+// BIEN indente :
+POUR i DE 1 A n FAIRE
+    SI tab[i] > max ALORS
+        max <- tab[i]
+    FIN SI
+FIN POUR
+```
+
+A l'examen, une copie mal indentee peut etre penalisee. L'indentation n'est pas decorative, elle est structurelle.
+
+#### Commentaires
+
+Ajoutez des commentaires pour expliquer les passages non evidents. Pas besoin de commenter l'evident (`i <- i + 1 // on incremente i` est inutile), mais les decisions algorithmiques meritent une explication.
+
+```
+// On commence a 2 car tout nombre est divisible par 1
+i <- 2
+TANT QUE (i * i <= n) ET (estPremier = VRAI) FAIRE
+    // On teste jusqu'a racine de n (optimisation)
+    SI n MOD i = 0 ALORS
+        estPremier <- FAUX
+    FIN SI
+    i <- i + 1
+FIN TANT QUE
+```
+
+#### Nommage coherent
+
+Utilisez des noms de variables explicites et coherents dans tout l'algorithme. Si vous appelez le compteur `i` dans une boucle, ne l'appelez pas `j` dans une boucle similaire ailleurs (sauf pour les boucles imbriquees).
+
+### 10.4 Checklist avant de rendre sa copie
+
+Avant de poser le stylo, verifiez chaque point :
+
+- [ ] Toutes les variables sont declarees avec leur type
+- [ ] Toutes les variables sont initialisees avant leur premiere utilisation dans un calcul
+- [ ] Les boucles ont une condition de sortie qui finira par etre atteinte
+- [ ] Les indices de tableau ne sortent jamais des bornes
+- [ ] Les `FIN SI`, `FIN POUR`, `FIN TANT QUE` sont tous presents et correctement places
+- [ ] L'indentation est coherente
+- [ ] Les cas particuliers sont traites (tableau vide, valeurs extremes, division par zero)
+- [ ] La trace d'execution (si demandee) est complete avec toutes les colonnes
+- [ ] Les fonctions retournent bien une valeur (`Retourner`)
+- [ ] Les parametres en sortie sont bien marques `en sortie` ou `en entree/sortie`
+- [ ] L'algorithme repond bien a la question posee (relisez l'enonce)
+
+---
+
+## 11. Exercices d'examen corriges {#11-exercices-dexamen-corriges}
+
+### Exercice 1 : Calcul de la mention au baccalaureat
+
+**Enonce** : Ecrire un algorithme qui saisit la moyenne generale d'un candidat au baccalaureat et affiche s'il est admis et avec quelle mention. Si la moyenne est entre 8 et 10, il passe au rattrapage.
+
+**Decomposition par methode descendante** :
+
+```
+        Mention bac
+       /           \
+  SaisirMoyenne   DeterminerResultat
+                  /        |         \
+            Admis?    Mention?    Afficher
+```
+
+**Solution :**
+
+```
+Algorithme MentionBac
+
+Variables :
+    moyenne : Reel
+
+Fonction SaisirMoyenne() : Reel
+Variables :
+    m : Reel
+Debut
+    REPETER
+        Ecrire("Saisissez la moyenne generale (0-20) : ")
+        Lire(m)
+    JUSQU'A (m >= 0) ET (m <= 20)
+    Retourner m
+Fin
+
+Procedure DeterminerResultat(moyenne : Reel)
+Debut
+    SI moyenne >= 16 ALORS
+        Ecrire("Admis - Mention Tres Bien")
+    SINON SI moyenne >= 14 ALORS
+        Ecrire("Admis - Mention Bien")
+    SINON SI moyenne >= 12 ALORS
+        Ecrire("Admis - Mention Assez Bien")
+    SINON SI moyenne >= 10 ALORS
+        Ecrire("Admis - Sans mention")
+    SINON SI moyenne >= 8 ALORS
+        Ecrire("Rattrapage")
+    SINON
+        Ecrire("Recale")
+    FIN SI
+Fin
+
+Debut
+    moyenne <- SaisirMoyenne()
+    DeterminerResultat(moyenne)
+Fin
+```
+
+**Trace avec moyenne = 13.5** :
+- SaisirMoyenne retourne 13.5
+- DeterminerResultat : 13.5 >= 16 ? NON. 13.5 >= 14 ? NON. 13.5 >= 12 ? OUI.
+- Affiche : "Admis - Mention Assez Bien"
+
+---
+
+### Exercice 2 : Compter les voyelles d'un mot
+
+**Enonce** : Ecrire un algorithme qui saisit un mot et affiche le nombre de voyelles qu'il contient.
+
+**Decomposition** :
+
+```
+        Compter voyelles
+       /       |        \
+  Saisir    Compter    Afficher
+   mot      voyelles   resultat
+               |
+        EstVoyelle?
+```
+
+**Solution :**
+
+```
+Algorithme CompterVoyelles
+
+Variables :
+    mot : Chaine
+    nbVoyelles : Entier
+
+Fonction EstVoyelle(c : Chaine) : Booleen
+Debut
+    SI (c = "a") OU (c = "e") OU (c = "i") OU (c = "o") OU (c = "u") OU (c = "y")
+       OU (c = "A") OU (c = "E") OU (c = "I") OU (c = "O") OU (c = "U") OU (c = "Y") ALORS
+        Retourner VRAI
+    SINON
+        Retourner FAUX
+    FIN SI
+Fin
+
+Fonction CompterVoyellesDansMot(mot : Chaine) : Entier
+Variables :
+    i : Entier
+    compteur : Entier
+Debut
+    compteur <- 0
+    POUR i DE 1 A Longueur(mot) FAIRE
+        SI EstVoyelle(SousChaine(mot, i, 1)) = VRAI ALORS
+            compteur <- compteur + 1
+        FIN SI
+    FIN POUR
+    Retourner compteur
+Fin
+
+Debut
+    Ecrire("Saisissez un mot : ")
+    Lire(mot)
+    nbVoyelles <- CompterVoyellesDansMot(mot)
+    Ecrire("Le mot '", mot, "' contient ", nbVoyelles, " voyelle(s)")
+Fin
+```
+
+**Trace avec mot = "Bonjour"** (Longueur = 7) :
+
+| i | Caractere | EstVoyelle ? | compteur |
+|---|---|---|---|
+| 1 | B | NON | 0 |
+| 2 | o | OUI | 1 |
+| 3 | n | NON | 1 |
+| 4 | j | NON | 1 |
+| 5 | o | OUI | 2 |
+| 6 | u | OUI | 3 |
+| 7 | r | NON | 3 |
+
+Affiche : "Le mot 'Bonjour' contient 3 voyelle(s)"
+
+---
+
+### Exercice 3 : Puissance d'un nombre
+
+**Enonce** : Ecrire une fonction qui calcule x^n (x eleve a la puissance n) sans utiliser de fonction predenie. x est un reel, n est un entier positif ou nul.
+
+**Solution :**
+
+```
+Fonction Puissance(x : Reel, n : Entier) : Reel
+Variables :
+    i : Entier
+    resultat : Reel
+Debut
+    resultat <- 1
+    POUR i DE 1 A n FAIRE
+        resultat <- resultat * x
+    FIN POUR
+    Retourner resultat
+Fin
+```
+
+**Trace avec x = 3, n = 4** :
+
+| i | resultat (avant) | resultat (apres) |
+|---|---|---|
+| 1 | 1 | 3 |
+| 2 | 3 | 9 |
+| 3 | 9 | 27 |
+| 4 | 27 | 81 |
+
+Retourne 81 (3^4 = 81).
+
+**Cas particulier** : si n = 0, la boucle ne s'execute pas et on retourne 1. C'est correct car x^0 = 1 pour tout x non nul.
+
+---
+
+### Exercice 4 : Palindrome
+
+**Enonce** : Ecrire un algorithme qui verifie si un mot saisi est un palindrome (se lit de la meme maniere dans les deux sens, comme "kayak" ou "radar").
+
+**Decomposition** :
+
+```
+      Verification palindrome
+      /          |          \
+  Saisir    EstPalindrome    Afficher
+    mot         |            resultat
+          Comparer debut/fin
+```
+
+**Solution :**
+
+```
+Algorithme Palindrome
+
+Variables :
+    mot : Chaine
+    resultat : Booleen
+
+Fonction EstPalindrome(mot : Chaine) : Booleen
+Variables :
+    i : Entier
+    longueur : Entier
+Debut
+    longueur <- Longueur(mot)
+    POUR i DE 1 A longueur DIV 2 FAIRE
+        SI SousChaine(mot, i, 1) <> SousChaine(mot, longueur - i + 1, 1) ALORS
+            Retourner FAUX
+        FIN SI
+    FIN POUR
+    Retourner VRAI
+Fin
+
+Debut
+    Ecrire("Saisissez un mot : ")
+    Lire(mot)
+    resultat <- EstPalindrome(mot)
+    SI resultat = VRAI ALORS
+        Ecrire(mot, " est un palindrome")
+    SINON
+        Ecrire(mot, " n'est pas un palindrome")
+    FIN SI
+Fin
+```
+
+**Trace avec mot = "radar"** (longueur = 5, 5 DIV 2 = 2) :
+
+| i | Caractere position i | Caractere position 5-i+1 | Egaux ? |
+|---|---|---|---|
+| 1 | r (pos 1) | r (pos 5) | OUI |
+| 2 | a (pos 2) | a (pos 4) | OUI |
+
+La boucle se termine normalement. Retourne VRAI.
+
+**Trace avec mot = "maison"** (longueur = 6, 6 DIV 2 = 3) :
+
+| i | Caractere position i | Caractere position 6-i+1 | Egaux ? |
+|---|---|---|---|
+| 1 | m (pos 1) | n (pos 6) | NON --> Retourne FAUX immediatement |
+
+---
+
+### Exercice 5 : Tri et recherche dans un bulletin de notes
+
+**Enonce** : On dispose d'un tableau de N notes (reels entre 0 et 20) et d'un tableau de N noms correspondants. Ecrire un algorithme qui :
+1. Saisit les noms et notes
+2. Trie les eleves par ordre decroissant de notes
+3. Affiche le classement
+4. Affiche la mediane
+
+**Decomposition** :
+
+```
+              Bulletin de notes
+         /       |        |        \
+    Saisir     Trier    Afficher   Calculer
+   donnees    (decroissant) classement  mediane
+```
+
+**Solution :**
+
+```
+Algorithme BulletinNotes
+
+Variables :
+    noms : Tableau[1..50] de Chaine
+    notes : Tableau[1..50] de Reel
+    n : Entier
+
+Procedure SaisirDonnees(noms : Tableau de Chaine en sortie, notes : Tableau de Reel en sortie, n : Entier en sortie)
+Variables :
+    i : Entier
+Debut
+    REPETER
+        Ecrire("Nombre d'eleves : ")
+        Lire(n)
+    JUSQU'A (n > 0) ET (n <= 50)
+
+    POUR i DE 1 A n FAIRE
+        Ecrire("Nom de l'eleve ", i, " : ")
+        Lire(noms[i])
+        REPETER
+            Ecrire("Note de ", noms[i], " : ")
+            Lire(notes[i])
+        JUSQU'A (notes[i] >= 0) ET (notes[i] <= 20)
+    FIN POUR
+Fin
+
+Procedure TriDecroissant(noms : Tableau de Chaine en entree/sortie, notes : Tableau de Reel en entree/sortie, n : Entier)
+// Tri par selection, ordre decroissant
+Variables :
+    i : Entier
+    j : Entier
+    posMax : Entier
+    tempNote : Reel
+    tempNom : Chaine
+Debut
+    POUR i DE 1 A n - 1 FAIRE
+        posMax <- i
+        POUR j DE i + 1 A n FAIRE
+            SI notes[j] > notes[posMax] ALORS
+                posMax <- j
+            FIN SI
+        FIN POUR
+
+        SI posMax <> i ALORS
+            // Echanger les notes
+            tempNote <- notes[i]
+            notes[i] <- notes[posMax]
+            notes[posMax] <- tempNote
+            // Echanger les noms correspondants
+            tempNom <- noms[i]
+            noms[i] <- noms[posMax]
+            noms[posMax] <- tempNom
+        FIN SI
+    FIN POUR
+Fin
+
+Procedure AfficherClassement(noms : Tableau de Chaine, notes : Tableau de Reel, n : Entier)
+Variables :
+    i : Entier
+Debut
+    Ecrire("=== CLASSEMENT ===")
+    POUR i DE 1 A n FAIRE
+        Ecrire(i, ". ", noms[i], " : ", notes[i])
+    FIN POUR
+Fin
+
+Fonction CalculerMediane(notes : Tableau de Reel, n : Entier) : Reel
+// Le tableau doit etre deja trie
+Debut
+    SI n MOD 2 = 1 ALORS
+        // Nombre impair : la mediane est l'element du milieu
+        Retourner notes[(n + 1) DIV 2]
+    SINON
+        // Nombre pair : la mediane est la moyenne des deux elements du milieu
+        Retourner (notes[n DIV 2] + notes[n DIV 2 + 1]) / 2
+    FIN SI
+Fin
+
+Debut
+    SaisirDonnees(noms, notes, n)
+    TriDecroissant(noms, notes, n)
+    AfficherClassement(noms, notes, n)
+    Ecrire("Mediane : ", CalculerMediane(notes, n))
+Fin
+```
+
+**Point important** : quand on trie deux tableaux "paralleles" (noms et notes), il faut echanger les elements des DEUX tableaux simultanement. Si on echange uniquement les notes, les noms ne correspondent plus aux bonnes notes. C'est un piege classique.
+
+---
+
+### Exercice 6 : Recherche dichotomique
+
+**Enonce** : Ecrire une fonction qui effectue une recherche dichotomique dans un tableau trie par ordre croissant. La fonction retourne la position de l'element cherche, ou -1 s'il n'est pas trouve.
+
+**Principe de la recherche dichotomique** : on compare l'element cherche avec l'element du milieu du tableau. Si c'est lui, on a fini. S'il est plus petit, on cherche dans la moitie gauche. S'il est plus grand, on cherche dans la moitie droite. A chaque etape, on divise l'espace de recherche par deux.
+
+**Solution :**
+
+```
+Fonction RechercheDichotomique(tab : Tableau de Entier, n : Entier, valeur : Entier) : Entier
+Variables :
+    gauche : Entier
+    droite : Entier
+    milieu : Entier
+Debut
+    gauche <- 1
+    droite <- n
+
+    TANT QUE gauche <= droite FAIRE
+        milieu <- (gauche + droite) DIV 2
+
+        SI tab[milieu] = valeur ALORS
+            Retourner milieu
+        SINON SI tab[milieu] < valeur ALORS
+            gauche <- milieu + 1
+        SINON
+            droite <- milieu - 1
+        FIN SI
+    FIN TANT QUE
+
+    Retourner -1
+Fin
+```
+
+**Trace avec tab = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91], n = 10, valeur = 23** :
+
+| Iteration | gauche | droite | milieu | tab[milieu] | Comparaison |
+|---|---|---|---|---|---|
+| 1 | 1 | 10 | 5 | 16 | 16 < 23, gauche = 6 |
+| 2 | 6 | 10 | 8 | 56 | 56 > 23, droite = 7 |
+| 3 | 6 | 7 | 6 | 23 | 23 = 23, trouve ! |
+
+Retourne 6 (position de la valeur 23). En seulement 3 comparaisons au lieu de 6 pour une recherche sequentielle.
+
+---
+
+### Exercice 7 : Conversion decimal-binaire
+
+**Enonce** : Ecrire un algorithme qui convertit un nombre entier positif en binaire (base 2) en utilisant la methode des divisions successives.
+
+**Principe** : on divise le nombre par 2 de maniere repetee. Les restes successifs, lus de bas en haut, donnent la representation binaire.
+
+**Decomposition** :
+
+```
+        Conversion decimale-binaire
+        /           |            \
+    Saisir     Convertir      Afficher
+    nombre     (divisions)    resultat
+```
+
+**Solution :**
+
+```
+Algorithme ConversionBinaire
+
+Variables :
+    n : Entier
+    bits : Tableau[1..32] de Entier
+    nbBits : Entier
+
+Procedure Convertir(n : Entier, bits : Tableau de Entier en sortie, nbBits : Entier en sortie)
+Variables :
+    temp : Entier
+Debut
+    nbBits <- 0
+    temp <- n
+
+    SI temp = 0 ALORS
+        nbBits <- 1
+        bits[1] <- 0
+    SINON
+        TANT QUE temp > 0 FAIRE
+            nbBits <- nbBits + 1
+            bits[nbBits] <- temp MOD 2
+            temp <- temp DIV 2
+        FIN TANT QUE
+    FIN SI
+Fin
+
+Procedure AfficherBinaire(bits : Tableau de Entier, nbBits : Entier)
+Variables :
+    i : Entier
+Debut
+    // Afficher les bits en ordre inverse (du poids fort au poids faible)
+    POUR i DE nbBits A 1 PAS DE -1 FAIRE
+        Ecrire(bits[i])
+    FIN POUR
+Fin
+
+Debut
+    REPETER
+        Ecrire("Saisissez un entier positif : ")
+        Lire(n)
+    JUSQU'A n >= 0
+
+    Ecrire(n, " en binaire : ")
+    Convertir(n, bits, nbBits)
+    AfficherBinaire(bits, nbBits)
+Fin
+```
+
+**Trace avec n = 13** :
+
+| Iteration | temp | temp MOD 2 | temp DIV 2 | nbBits | bits |
+|---|---|---|---|---|---|
+| 1 | 13 | 1 | 6 | 1 | [1] |
+| 2 | 6 | 0 | 3 | 2 | [1, 0] |
+| 3 | 3 | 1 | 1 | 3 | [1, 0, 1] |
+| 4 | 1 | 1 | 0 | 4 | [1, 0, 1, 1] |
+
+Affichage en ordre inverse : 1101. En effet, 13 = 8 + 4 + 1 = 1101 en binaire.
+
+---
+
+### Exercice 8 : Gestion d'un carnet de contacts
+
+**Enonce** : Ecrire un algorithme (methode descendante) de gestion d'un carnet de contacts avec les fonctionnalites suivantes :
+- Ajouter un contact (nom, telephone)
+- Rechercher un contact par nom
+- Supprimer un contact
+- Afficher tous les contacts
+
+**Decomposition** :
+
+```
+                  Carnet de contacts
+            /       |         |         \
+        Ajouter  Rechercher  Supprimer  Afficher
+                     |          |
+                 Trouver     Trouver
+                 position    position
+```
+
+**Solution :**
+
+```
+Algorithme CarnetContacts
+
+Variables :
+    noms : Tableau[1..200] de Chaine
+    telephones : Tableau[1..200] de Chaine
+    nbContacts : Entier
+    choix : Entier
+
+Fonction RechercherPosition(noms : Tableau de Chaine, nbContacts : Entier, nomRecherche : Chaine) : Entier
+Variables :
+    i : Entier
+Debut
+    POUR i DE 1 A nbContacts FAIRE
+        SI noms[i] = nomRecherche ALORS
+            Retourner i
+        FIN SI
+    FIN POUR
+    Retourner -1
+Fin
+
+Procedure AjouterContact(noms : Tableau de Chaine en entree/sortie, telephones : Tableau de Chaine en entree/sortie, nbContacts : Entier en entree/sortie)
+Variables :
+    nom : Chaine
+    tel : Chaine
+Debut
+    SI nbContacts >= 200 ALORS
+        Ecrire("Carnet plein !")
+    SINON
+        Ecrire("Nom : ")
+        Lire(nom)
+
+        SI RechercherPosition(noms, nbContacts, nom) <> -1 ALORS
+            Ecrire("Ce contact existe deja")
+        SINON
+            Ecrire("Telephone : ")
+            Lire(tel)
+            nbContacts <- nbContacts + 1
+            noms[nbContacts] <- nom
+            telephones[nbContacts] <- tel
+            Ecrire("Contact ajoute")
+        FIN SI
+    FIN SI
+Fin
+
+Procedure RechercherContact(noms : Tableau de Chaine, telephones : Tableau de Chaine, nbContacts : Entier)
+Variables :
+    nom : Chaine
+    pos : Entier
+Debut
+    Ecrire("Nom a rechercher : ")
+    Lire(nom)
+    pos <- RechercherPosition(noms, nbContacts, nom)
+
+    SI pos = -1 ALORS
+        Ecrire("Contact introuvable")
+    SINON
+        Ecrire("Nom : ", noms[pos])
+        Ecrire("Telephone : ", telephones[pos])
+    FIN SI
+Fin
+
+Procedure SupprimerContact(noms : Tableau de Chaine en entree/sortie, telephones : Tableau de Chaine en entree/sortie, nbContacts : Entier en entree/sortie)
+Variables :
+    nom : Chaine
+    pos : Entier
+    i : Entier
+Debut
+    Ecrire("Nom a supprimer : ")
+    Lire(nom)
+    pos <- RechercherPosition(noms, nbContacts, nom)
+
+    SI pos = -1 ALORS
+        Ecrire("Contact introuvable")
+    SINON
+        // Decaler les elements suivants vers la gauche
+        POUR i DE pos A nbContacts - 1 FAIRE
+            noms[i] <- noms[i + 1]
+            telephones[i] <- telephones[i + 1]
+        FIN POUR
+        nbContacts <- nbContacts - 1
+        Ecrire("Contact supprime")
+    FIN SI
+Fin
+
+Procedure AfficherContacts(noms : Tableau de Chaine, telephones : Tableau de Chaine, nbContacts : Entier)
+Variables :
+    i : Entier
+Debut
+    SI nbContacts = 0 ALORS
+        Ecrire("Le carnet est vide")
+    SINON
+        Ecrire("=== CONTACTS (", nbContacts, ") ===")
+        POUR i DE 1 A nbContacts FAIRE
+            Ecrire(i, ". ", noms[i], " - ", telephones[i])
+        FIN POUR
+    FIN SI
+Fin
+
+Debut
+    nbContacts <- 0
+
+    REPETER
+        Ecrire("")
+        Ecrire("=== CARNET DE CONTACTS ===")
+        Ecrire("1. Ajouter un contact")
+        Ecrire("2. Rechercher un contact")
+        Ecrire("3. Supprimer un contact")
+        Ecrire("4. Afficher tous les contacts")
+        Ecrire("0. Quitter")
+        Ecrire("Choix : ")
+        Lire(choix)
+
+        SELON choix FAIRE
+            CAS 1 :
+                AjouterContact(noms, telephones, nbContacts)
+            CAS 2 :
+                RechercherContact(noms, telephones, nbContacts)
+            CAS 3 :
+                SupprimerContact(noms, telephones, nbContacts)
+            CAS 4 :
+                AfficherContacts(noms, telephones, nbContacts)
+            CAS 0 :
+                Ecrire("Au revoir")
+            DEFAUT :
+                Ecrire("Choix invalide")
+        FIN SELON
+    JUSQU'A choix = 0
+Fin
+```
+
+**Points d'attention** :
+- La suppression decale tous les elements qui suivent : c'est une operation couteuse (O(n))
+- On verifie que le carnet n'est pas plein avant d'ajouter
+- On verifie que le contact n'existe pas deja avant d'ajouter
+- Les deux tableaux (noms et telephones) doivent rester synchronises
+
+---
+
+### Exercice 9 : Matrice — somme et transposee
+
+**Enonce** : Ecrire un algorithme qui :
+1. Saisit une matrice M de dimension L x C
+2. Affiche la matrice
+3. Calcule et affiche la somme de chaque ligne et de chaque colonne
+4. Calcule et affiche la matrice transposee (lignes et colonnes inversees)
+
+**Solution :**
+
+```
+Algorithme OperationsMatrice
+
+Variables :
+    M : Tableau[1..10, 1..10] de Reel
+    T : Tableau[1..10, 1..10] de Reel
+    nbLig : Entier
+    nbCol : Entier
+
+Procedure SaisirMatrice(M : Tableau en sortie, nbLig : Entier en sortie, nbCol : Entier en sortie)
+Variables :
+    i : Entier
+    j : Entier
+Debut
+    REPETER
+        Ecrire("Nombre de lignes (1-10) : ")
+        Lire(nbLig)
+    JUSQU'A (nbLig >= 1) ET (nbLig <= 10)
+
+    REPETER
+        Ecrire("Nombre de colonnes (1-10) : ")
+        Lire(nbCol)
+    JUSQU'A (nbCol >= 1) ET (nbCol <= 10)
+
+    POUR i DE 1 A nbLig FAIRE
+        POUR j DE 1 A nbCol FAIRE
+            Ecrire("M[", i, ",", j, "] = ")
+            Lire(M[i, j])
+        FIN POUR
+    FIN POUR
+Fin
+
+Procedure AfficherMatrice(M : Tableau, nbLig : Entier, nbCol : Entier)
+Variables :
+    i : Entier
+    j : Entier
+Debut
+    POUR i DE 1 A nbLig FAIRE
+        POUR j DE 1 A nbCol FAIRE
+            Ecrire(M[i, j], "  ")
+        FIN POUR
+        Ecrire("")
+    FIN POUR
+Fin
+
+Procedure SommesLignesColonnes(M : Tableau, nbLig : Entier, nbCol : Entier)
+Variables :
+    i : Entier
+    j : Entier
+    somme : Reel
+Debut
+    // Somme par ligne
+    POUR i DE 1 A nbLig FAIRE
+        somme <- 0
+        POUR j DE 1 A nbCol FAIRE
+            somme <- somme + M[i, j]
+        FIN POUR
+        Ecrire("Somme ligne ", i, " : ", somme)
+    FIN POUR
+
+    // Somme par colonne
+    POUR j DE 1 A nbCol FAIRE
+        somme <- 0
+        POUR i DE 1 A nbLig FAIRE
+            somme <- somme + M[i, j]
+        FIN POUR
+        Ecrire("Somme colonne ", j, " : ", somme)
+    FIN POUR
+Fin
+
+Procedure Transposer(M : Tableau, nbLig : Entier, nbCol : Entier, T : Tableau en sortie)
+Variables :
+    i : Entier
+    j : Entier
+Debut
+    // La transposee echange lignes et colonnes : T[j, i] = M[i, j]
+    POUR i DE 1 A nbLig FAIRE
+        POUR j DE 1 A nbCol FAIRE
+            T[j, i] <- M[i, j]
+        FIN POUR
+    FIN POUR
+Fin
+
+Debut
+    SaisirMatrice(M, nbLig, nbCol)
+
+    Ecrire("=== MATRICE ===")
+    AfficherMatrice(M, nbLig, nbCol)
+
+    Ecrire("=== SOMMES ===")
+    SommesLignesColonnes(M, nbLig, nbCol)
+
+    Ecrire("=== MATRICE TRANSPOSEE ===")
+    Transposer(M, nbLig, nbCol, T)
+    AfficherMatrice(T, nbCol, nbLig)    // Attention : nbCol et nbLig sont inverses
+Fin
+```
+
+**Point important** : la matrice transposee d'une matrice L x C est de dimension C x L. Lors de l'affichage de la transposee, les dimensions sont inversees. C'est un piege frequent a l'examen.
+
+---
+
+### Exercice 10 : PGCD par l'algorithme d'Euclide
+
+**Enonce** : Ecrire un algorithme qui calcule le PGCD (Plus Grand Commun Diviseur) de deux entiers positifs en utilisant l'algorithme d'Euclide, puis simplifier une fraction.
+
+**Principe de l'algorithme d'Euclide** : le PGCD de a et b (avec a > b) est le meme que le PGCD de b et (a MOD b). On repete jusqu'a ce que le reste soit 0. Le dernier diviseur non nul est le PGCD.
+
+**Decomposition** :
+
+```
+           Simplification de fraction
+           /          |           \
+       Saisir      Calculer     Afficher
+     a et b        PGCD         fraction simplifiee
+                     |
+              Euclide (iteratif)
+```
+
+**Solution :**
+
+```
+Algorithme SimplificationFraction
+
+Variables :
+    numerateur : Entier
+    denominateur : Entier
+    diviseur : Entier
+
+Fonction PGCD(a : Entier, b : Entier) : Entier
+Variables :
+    temp : Entier
+Debut
+    TANT QUE b <> 0 FAIRE
+        temp <- b
+        b <- a MOD b
+        a <- temp
+    FIN TANT QUE
+    Retourner a
+Fin
+
+Debut
+    Ecrire("Numerateur : ")
+    Lire(numerateur)
+
+    REPETER
+        Ecrire("Denominateur (non nul) : ")
+        Lire(denominateur)
+    JUSQU'A denominateur <> 0
+
+    diviseur <- PGCD(numerateur, denominateur)
+
+    Ecrire("Fraction originale : ", numerateur, "/", denominateur)
+    Ecrire("PGCD : ", diviseur)
+
+    numerateur <- numerateur DIV diviseur
+    denominateur <- denominateur DIV diviseur
+
+    Ecrire("Fraction simplifiee : ", numerateur, "/", denominateur)
+Fin
+```
+
+**Trace du PGCD avec a = 48, b = 18** :
+
+| Iteration | a | b | a MOD b |
+|---|---|---|---|
+| 1 | 48 | 18 | 12 |
+| 2 | 18 | 12 | 6 |
+| 3 | 12 | 6 | 0 |
+| 4 | 6 | 0 | Sortie de boucle |
+
+PGCD(48, 18) = 6. Donc 48/18 = 8/3.
+
+---
+
+### Exercice 11 : Gestion de file d'attente (exercice avance)
+
+**Enonce** : Modeliser une file d'attente (premier arrive, premier servi) avec les operations :
+- Enfiler (ajouter a la fin)
+- Defiler (retirer au debut)
+- Afficher la file
+
+Ce type d'exercice teste la maitrise des tableaux et la gestion des indices.
+
+**Solution :**
+
+```
+Algorithme FileAttente
+
+Variables :
+    file : Tableau[1..100] de Chaine
+    taille : Entier
+    choix : Entier
+
+Procedure Enfiler(file : Tableau de Chaine en entree/sortie, taille : Entier en entree/sortie)
+Variables :
+    element : Chaine
+Debut
+    SI taille >= 100 ALORS
+        Ecrire("File pleine !")
+    SINON
+        Ecrire("Element a ajouter : ")
+        Lire(element)
+        taille <- taille + 1
+        file[taille] <- element
+        Ecrire(element, " ajoute a la file")
+    FIN SI
+Fin
+
+Fonction Defiler(file : Tableau de Chaine en entree/sortie, taille : Entier en entree/sortie) : Chaine
+Variables :
+    element : Chaine
+    i : Entier
+Debut
+    SI taille = 0 ALORS
+        Ecrire("File vide !")
+        Retourner ""
+    SINON
+        element <- file[1]
+        // Decaler tous les elements d'une position vers la gauche
+        POUR i DE 1 A taille - 1 FAIRE
+            file[i] <- file[i + 1]
+        FIN POUR
+        taille <- taille - 1
+        Ecrire(element, " retire de la file")
+        Retourner element
+    FIN SI
+Fin
+
+Procedure AfficherFile(file : Tableau de Chaine, taille : Entier)
+Variables :
+    i : Entier
+Debut
+    SI taille = 0 ALORS
+        Ecrire("File vide")
+    SINON
+        Ecrire("File d'attente (", taille, " elements) :")
+        POUR i DE 1 A taille FAIRE
+            Ecrire("  ", i, ". ", file[i])
+        FIN POUR
+    FIN SI
+Fin
+
+Debut
+    taille <- 0
+
+    REPETER
+        Ecrire("")
+        Ecrire("1. Enfiler")
+        Ecrire("2. Defiler")
+        Ecrire("3. Afficher")
+        Ecrire("0. Quitter")
+        Lire(choix)
+
+        SELON choix FAIRE
+            CAS 1 :
+                Enfiler(file, taille)
+            CAS 2 :
+                Defiler(file, taille)
+            CAS 3 :
+                AfficherFile(file, taille)
+            CAS 0 :
+                Ecrire("Fin")
+        FIN SELON
+    JUSQU'A choix = 0
+Fin
+```
+
+---
+
+### Exercice 12 : Traitement complet d'un fichier de temperatures (exercice de synthese)
+
+**Enonce** : Un fichier `temperatures.txt` contient une temperature par ligne (valeurs reelles). Ecrire un algorithme (methode descendante) qui :
+1. Lit les temperatures depuis le fichier et les stocke dans un tableau
+2. Calcule la temperature moyenne
+3. Trouve les temperatures minimale et maximale
+4. Compte le nombre de jours ou la temperature depasse la moyenne
+5. Ecrit un rapport dans un fichier `rapport.txt`
+
+**Decomposition** :
+
+```
+                 Traitement temperatures
+            /        |        |        |         \
+        Lire     Calculer  Trouver  Compter    Ecrire
+       fichier   moyenne   min/max  > moyenne  rapport
+```
+
+**Solution :**
+
+```
+Algorithme TraitementTemperatures
+
+Variables :
+    temps : Tableau[1..365] de Reel
+    n : Entier
+    moy : Reel
+    tMin : Reel
+    tMax : Reel
+    nbSupMoy : Entier
+
+Procedure LireTemperatures(temps : Tableau de Reel en sortie, n : Entier en sortie)
+Variables :
+    f : Fichier
+    valeur : Reel
+Debut
+    n <- 0
+    Ouvrir("temperatures.txt", f, Lecture)
+    TANT QUE NON FinDeFichier(f) FAIRE
+        LireLigne(f, valeur)
+        n <- n + 1
+        temps[n] <- valeur
+    FIN TANT QUE
+    Fermer(f)
+Fin
+
+Fonction CalculerMoyenne(temps : Tableau de Reel, n : Entier) : Reel
+Variables :
+    i : Entier
+    somme : Reel
+Debut
+    somme <- 0
+    POUR i DE 1 A n FAIRE
+        somme <- somme + temps[i]
+    FIN POUR
+    Retourner somme / n
+Fin
+
+Procedure TrouverMinMax(temps : Tableau de Reel, n : Entier, tMin : Reel en sortie, tMax : Reel en sortie)
+Variables :
+    i : Entier
+Debut
+    tMin <- temps[1]
+    tMax <- temps[1]
+    POUR i DE 2 A n FAIRE
+        SI temps[i] < tMin ALORS
+            tMin <- temps[i]
+        FIN SI
+        SI temps[i] > tMax ALORS
+            tMax <- temps[i]
+        FIN SI
+    FIN POUR
+Fin
+
+Fonction CompterSuperieurMoyenne(temps : Tableau de Reel, n : Entier, moy : Reel) : Entier
+Variables :
+    i : Entier
+    compteur : Entier
+Debut
+    compteur <- 0
+    POUR i DE 1 A n FAIRE
+        SI temps[i] > moy ALORS
+            compteur <- compteur + 1
+        FIN SI
+    FIN POUR
+    Retourner compteur
+Fin
+
+Procedure EcrireRapport(n : Entier, moy : Reel, tMin : Reel, tMax : Reel, nbSupMoy : Entier)
+Variables :
+    f : Fichier
+Debut
+    Ouvrir("rapport.txt", f, Ecriture)
+    EcrireLigne(f, "=== RAPPORT TEMPERATURES ===")
+    EcrireLigne(f, "Nombre de jours : " + ConvertirEnChaine(n))
+    EcrireLigne(f, "Moyenne : " + ConvertirEnChaine(moy))
+    EcrireLigne(f, "Temperature minimale : " + ConvertirEnChaine(tMin))
+    EcrireLigne(f, "Temperature maximale : " + ConvertirEnChaine(tMax))
+    EcrireLigne(f, "Jours au-dessus de la moyenne : " + ConvertirEnChaine(nbSupMoy))
+    EcrireLigne(f, "Amplitude thermique : " + ConvertirEnChaine(tMax - tMin))
+    Fermer(f)
+    Ecrire("Rapport ecrit dans rapport.txt")
+Fin
+
+Debut
+    LireTemperatures(temps, n)
+
+    SI n = 0 ALORS
+        Ecrire("Erreur : fichier vide")
+    SINON
+        moy <- CalculerMoyenne(temps, n)
+        TrouverMinMax(temps, n, tMin, tMax)
+        nbSupMoy <- CompterSuperieurMoyenne(temps, n, moy)
+        EcrireRapport(n, moy, tMin, tMax, nbSupMoy)
+    FIN SI
+Fin
+```
+
+Cet exercice de synthese combine toutes les competences du cours : lecture de fichier, tableaux, fonctions/procedures, methode descendante, ecriture de fichier. C'est exactement le type d'exercice qui peut tomber a l'examen.
+
+---
+
+## Recapitulatif final
+
+Ce document couvre l'integralite du programme d'algorithmique par methode descendante du BTS SIO SLAM. Les concepts cles a maitriser absolument sont :
+
+1. **Les bases** : variables, types, affectation, lecture/ecriture
+2. **La trace d'execution** : savoir derouler un algorithme a la main, ligne par ligne
+3. **Les structures de controle** : SI/SINON, SELON
+4. **Les boucles** : POUR, TANT QUE, REPETER...JUSQU'A — et savoir laquelle choisir
+5. **La methode descendante** : decomposer, puis coder chaque sous-probleme, puis assembler
+6. **Les tableaux** : parcours, recherche, tri (selection et bulles)
+7. **Les fonctions et procedures** : passage par valeur/reference, portee des variables
+8. **Les fichiers** : ouvrir, lire, ecrire, fermer
+
+Pour chaque concept, revisez les exercices corriges et refaites les traces d'execution. La trace est l'outil qui transforme un algorithme abstrait en quelque chose de concret et verifiable. Maitrisez-la, et vous maitriserez l'algorithmique.

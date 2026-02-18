@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #0A0B0D;
+  --color-surface: #111217;
+  --color-surface-raised: #1A1B23;
+  --color-border: #252631;
+  --color-text: #B0B4CC;
+  --color-text-muted: #5A5E7A;
+  --color-text-bright: #E8EAF0;
+  --color-accent: #0052FF;
+  --color-accent-glow: #3370FF;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #252631 #0A0B0D;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0B0D;
+}
+::-webkit-scrollbar-thumb {
+  background: #252631;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3D4058;
+}
+
+::selection {
+  background-color: rgba(0, 82, 255, 0.3);
+  color: #E8EAF0;
+}
+
+/* Code rain background pattern */
+.code-rain-bg {
+  position: relative;
+  overflow: hidden;
+}
+.code-rain-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 24px,
+      rgba(0, 82, 255, 0.03) 24px,
+      rgba(0, 82, 255, 0.03) 25px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 48px,
+      rgba(0, 82, 255, 0.02) 48px,
+      rgba(0, 82, 255, 0.02) 49px
+    );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Matrix characters overlay */
+.matrix-overlay {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.06;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 70%);
+}
+
+.matrix-column {
+  position: absolute;
+  top: -100%;
+  font-family: var(--font-mono), 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 20px;
+  color: #0052FF;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  animation: matrix-fall linear infinite;
+  white-space: nowrap;
+}
+
+@keyframes matrix-fall {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(calc(100vh + 100%));
+  }
+}
+
+/* Glow effects */
+.glow-blue {
+  box-shadow: 0 0 20px rgba(0, 82, 255, 0.15),
+              0 0 60px rgba(0, 82, 255, 0.05);
+}
+
+.glow-blue-strong {
+  box-shadow: 0 0 20px rgba(0, 82, 255, 0.25),
+              0 0 60px rgba(0, 82, 255, 0.1),
+              0 0 100px rgba(0, 82, 255, 0.05);
+}
+
+.hover-glow {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+.hover-glow:hover {
+  box-shadow: 0 0 24px rgba(0, 82, 255, 0.2),
+              0 0 60px rgba(0, 82, 255, 0.08);
+  border-color: rgba(0, 82, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Glass morphism */
+.glass {
+  background: rgba(17, 18, 23, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(37, 38, 49, 0.6);
+}
+
+.glass-strong {
+  background: rgba(17, 18, 23, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(37, 38, 49, 0.8);
+}
+
+/* Reading progress bar */
+.reading-progress {
+  background: linear-gradient(90deg, #0052FF, #3370FF, #4D8AFF);
+  box-shadow: 0 0 10px rgba(0, 82, 255, 0.5),
+              0 0 30px rgba(0, 82, 255, 0.2);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #FFFFFF 0%, #B0B4CC 50%, #4D8AFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Accent line */
+.accent-line {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #0052FF, transparent);
+}
+
+/* Category pills */
+.category-pill {
+  transition: all 0.2s ease;
+}
+.category-pill:hover {
+  background-color: rgba(0, 82, 255, 0.15);
+  border-color: rgba(0, 82, 255, 0.3);
+}
+.category-pill.active {
+  background-color: rgba(0, 82, 255, 0.2);
+  border-color: #0052FF;
+  color: #4D8AFF;
+}
+
+/* Highlight code theme overrides */
+.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+}

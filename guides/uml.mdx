@@ -1,0 +1,2911 @@
+---
+title: "UML - Unified Modeling Language"
+description: "Guide complet UML pour le BTS SIO SLAM"
+category: "Architecture"
+tags: ["uml", "diagrammes", "modelisation"]
+difficulty: "Intermediaire"
+---
+
+# UML -- Unified Modeling Language
+
+---
+
+## Table des matieres
+
+1. Introduction a UML
+2. Diagramme de cas d'utilisation (Use Case)
+3. Diagramme de classes
+4. Diagramme de sequence
+5. Diagramme d'activite
+6. Diagramme d'etat
+7. De UML au code et du code a UML
+8. Methodologie d'examen
+9. Exercices d'examen corriges
+
+---
+
+## 1. Introduction a UML
+
+### Qu'est-ce que UML ?
+
+UML (Unified Modeling Language) est un **langage visuel standardise** pour representer, specifier, construire et documenter les elements d'un systeme logiciel. Ce n'est PAS un langage de programmation. C'est un langage de **modelisation**.
+
+Concretement : UML permet de dessiner des schemas normalises que tout developpeur dans le monde peut lire et comprendre de la meme facon.
+
+### Pourquoi UML ?
+
+Trois raisons fondamentales :
+
+1. **Communiquer** -- Un diagramme UML parle a tous les developpeurs, quel que soit leur langage de programmation. Un developpeur Java et un developpeur C# lisent le meme diagramme de classes.
+
+2. **Documenter** -- Les diagrammes UML constituent une documentation vivante du systeme. Quand un nouveau developpeur rejoint le projet, il lit les diagrammes pour comprendre l'architecture.
+
+3. **Planifier AVANT de coder** -- On ne construit pas une maison sans plan. UML permet de reflechir a la structure et au comportement du systeme avant d'ecrire la moindre ligne de code. C'est la phase de conception.
+
+### Historique bref
+
+```
+1991-1994 : Trois methodes concurrentes
+  - Grady Booch      --> methode Booch (conception orientee objet)
+  - James Rumbaugh    --> OMT (Object Modeling Technique)
+  - Ivar Jacobson     --> OOSE (Object-Oriented Software Engineering)
+
+1994-1996 : Les trois auteurs se reunissent chez Rational Software
+  --> Fusion de leurs methodes
+
+1997 : UML 1.0 -- premiere version standardisee par l'OMG
+       (Object Management Group)
+
+2005 : UML 2.0 -- revision majeure, 14 types de diagrammes
+
+Aujourd'hui : UML 2.5.1 (2017) -- version actuelle
+```
+
+### Les 14 types de diagrammes UML 2.x
+
+UML 2.x definit 14 diagrammes repartis en deux grandes familles :
+
+**Diagrammes de structure (statiques) :**
+- Diagramme de classes ***
+- Diagramme d'objets
+- Diagramme de composants
+- Diagramme de deploiement
+- Diagramme de paquetages
+- Diagramme de structures composites
+- Diagramme de profils
+
+**Diagrammes de comportement (dynamiques) :**
+- Diagramme de cas d'utilisation ***
+- Diagramme de sequence ***
+- Diagramme d'activite ***
+- Diagramme d'etat ***
+- Diagramme de communication
+- Diagramme de temps
+- Diagramme global d'interaction
+
+Les diagrammes marques *** sont ceux qui tombent au BTS SIO. Les autres sont hors programme dans la grande majorite des cas.
+
+> PIEGE EXAMEN : On peut vous demander de citer les grandes familles de diagrammes UML
+> (structure vs comportement). Ne les confondez pas. Le diagramme de classes est
+> STRUCTUREL (statique). Le diagramme de sequence est COMPORTEMENTAL (dynamique).
+
+---
+
+## 2. Diagramme de cas d'utilisation (Use Case)
+
+### A quoi ca sert ?
+
+Le diagramme de cas d'utilisation represente **QUI** fait **QUOI** avec le systeme. C'est la vue fonctionnelle : il montre les fonctionnalites offertes par le systeme du point de vue de ses utilisateurs.
+
+C'est souvent le **premier diagramme** realise lors de l'analyse d'un projet. Il repond a la question : "Qu'est-ce que le systeme doit faire, et pour qui ?"
+
+### Les elements
+
+#### L'acteur
+
+Un acteur est une entite externe qui interagit avec le systeme. Ce peut etre :
+- Une personne physique (client, administrateur, employe)
+- Un systeme externe (API bancaire, service de mail, base de donnees externe)
+- Un dispositif materiel (capteur, imprimante)
+
+Representation : un bonhomme baton avec son nom en dessous.
+
+```
+   O
+  /|\
+  / \
+Client
+```
+
+Regles importantes :
+- Un acteur est TOUJOURS **en dehors** du systeme (il n'est pas dans le rectangle)
+- Un acteur a un **role**, pas un nom propre ("Client", pas "Jean Dupont")
+- Un meme individu peut jouer plusieurs roles (un employe peut aussi etre client)
+
+#### Le cas d'utilisation
+
+Un cas d'utilisation est une fonctionnalite du systeme, vue de l'exterieur. Il decrit une action complete qui apporte de la valeur a un acteur.
+
+Representation : une ellipse avec le nom du cas a l'interieur.
+
+```
+(  Passer commande  )
+```
+
+Regles importantes :
+- Le nom commence toujours par un **verbe a l'infinitif** ("Passer commande", "Consulter catalogue", "Gerer les stocks")
+- Un cas d'utilisation represente une fonctionnalite **complete**, pas une etape technique
+
+#### Le systeme (frontiere)
+
+Le systeme est represente par un rectangle qui contient tous les cas d'utilisation. Les acteurs sont a l'exterieur.
+
+```
++----------------------------------+
+|         Systeme de vente         |
+|                                  |
+|   ( Consulter catalogue )        |
+|                                  |
+|   ( Passer commande )            |
+|                                  |
+|   ( Gerer les stocks )           |
+|                                  |
++----------------------------------+
+```
+
+### Les relations
+
+#### Association (trait simple)
+
+Relie un acteur a un cas d'utilisation. Signifie : "cet acteur participe a ce cas d'utilisation".
+
+```
+   O
+  /|\  --------  ( Passer commande )
+  / \
+Client
+```
+
+#### Include (<<include>>)
+
+Le cas A **inclut systematiquement** le cas B. B est execute a chaque fois que A est execute. C'est une relation obligatoire et automatique.
+
+```
+( Passer commande ) - - - - -> ( S'authentifier )
+                     <<include>>
+```
+
+La fleche pointillee va du cas INCLUANT vers le cas INCLUS.
+
+Exemples :
+- "Passer commande" <<include>> "S'authentifier" : on ne peut PAS passer commande sans s'authentifier
+- "Retirer de l'argent" <<include>> "Verifier le code PIN"
+- "Envoyer un message" <<include>> "Se connecter"
+
+#### Extend (<<extend>>)
+
+Le cas B **peut** etendre le cas A, sous certaines conditions. C'est optionnel.
+
+```
+( Passer commande ) < - - - - - ( Appliquer code promo )
+                      <<extend>>
+```
+
+La fleche pointillee va du cas QUI ETEND vers le cas ETENDU. C'est l'inverse du include dans le sens de la fleche.
+
+Exemples :
+- "Passer commande" <<extend>> "Appliquer code promo" : le code promo est facultatif
+- "Consulter produit" <<extend>> "Laisser un avis" : on peut consulter sans laisser d'avis
+- "Payer" <<extend>> "Payer en plusieurs fois" : option conditionnelle
+
+#### Generalisation (heritage entre acteurs)
+
+Un acteur specialise herite des cas d'utilisation de l'acteur general.
+
+```
+   O                    O
+  /|\                  /|\
+  / \                  / \
+Utilisateur    Administrateur
+     ^                 |
+     |_________________|
+     (triangle vide = generalisation)
+```
+
+L'administrateur peut faire tout ce que fait l'utilisateur, plus ses propres cas.
+
+### Include vs Extend -- LA distinction de l'examen
+
+C'est la question classique. Voici le tableau definitif :
+
+```
++--------------------+---------------------------+---------------------------+
+|                    |  <<include>>              |  <<extend>>               |
++--------------------+---------------------------+---------------------------+
+| Obligation         | OBLIGATOIRE               | OPTIONNEL                 |
+| Condition          | Toujours execute          | Execute sous condition    |
+| Sens de la fleche  | A -----> B                | B -----> A                |
+|                    | (A inclut B)              | (B etend A)               |
+| Qui depend de qui  | A depend de B             | B depend de A             |
+| Exemple            | Passer commande           | Passer commande           |
+|                    |   --include--> Authentif.  |   <--extend-- Code promo  |
++--------------------+---------------------------+---------------------------+
+```
+
+**Moyen mnemotechnique :**
+- Include = Indispensable (les deux commencent par "In")
+- Extend = Extra, En option (les deux commencent par "E")
+
+> PIEGE EXAMEN : Le sens des fleches est INVERSE entre include et extend.
+> - Include : la fleche part du cas principal VERS le cas inclus
+> - Extend : la fleche part du cas optionnel VERS le cas principal
+> Ne les inversez JAMAIS. C'est l'erreur numero 1 aux examens.
+
+### Identifier les acteurs depuis un cahier des charges
+
+Methode systematique :
+
+1. Lire le cahier des charges en entier
+2. Souligner toutes les personnes, roles et systemes externes mentionnes
+3. Se poser la question : "QUI interagit avec le systeme ?"
+4. Eliminer les doublons (un "visiteur" qui "s'inscrit" devient un "utilisateur")
+5. Identifier les acteurs principaux (declenchent les cas) et secondaires (participent)
+
+Mots-cles typiques dans un cahier des charges :
+- "L'utilisateur peut..." --> acteur : Utilisateur
+- "Le systeme envoie un mail..." --> acteur secondaire : Service mail
+- "L'administrateur gere..." --> acteur : Administrateur
+- "La banque valide..." --> acteur : Systeme bancaire
+
+### Identifier les cas d'utilisation
+
+Methode systematique :
+
+1. Pour chaque acteur, lister tout ce qu'il peut faire avec le systeme
+2. Formuler chaque action avec un verbe a l'infinitif
+3. Verifier que chaque cas apporte de la valeur a l'acteur
+4. Regrouper les cas trop similaires
+5. Identifier les relations include/extend
+
+Mots-cles typiques :
+- "peut consulter" --> cas d'utilisation
+- "doit s'authentifier" --> cas inclus (include)
+- "peut eventuellement" --> cas extend
+- "a la possibilite de" --> cas extend
+
+### Exemple complet : site e-commerce
+
+**Cahier des charges resume :**
+Un site de vente en ligne permet aux clients de consulter le catalogue, d'ajouter des produits au panier et de passer commande. Pour passer commande, le client doit s'authentifier. Il peut facultativement appliquer un code promo. L'administrateur gere les produits et les commandes. Le systeme de paiement externe valide les transactions.
+
+**Identification des acteurs :**
+- Client (acteur principal)
+- Administrateur (acteur principal)
+- Systeme de paiement (acteur secondaire)
+
+**Identification des cas d'utilisation :**
+- Consulter catalogue
+- Ajouter au panier
+- Passer commande
+- S'authentifier (inclus dans Passer commande)
+- Appliquer code promo (etend Passer commande)
+- Gerer les produits
+- Gerer les commandes
+- Valider le paiement
+
+**Diagramme :**
+
+```
+                    +--------------------------------------------------+
+                    |            Site e-commerce                        |
+   O                |                                                  |
+  /|\  -------------|---  ( Consulter catalogue )                      |
+  / \               |                                                  |
+Client  ------------|---  ( Ajouter au panier )                        |
+   |                |                                                  |
+   |   -------------|---  ( Passer commande )                          |
+   |                |         |              ^                         |
+                    |         | <<include>>  | <<extend>>              |
+                    |         v              |                         |
+                    |   ( S'authentifier )  ( Appliquer code promo )   |
+                    |                                                  |
+                    |         ( Passer commande )                      |      O
+                    |              |                                   |     /|\
+                    |              | <<include>>                       |------ |
+                    |              v                                   |     / \
+                    |         ( Valider paiement ) --------------------|  Systeme de
+                    |                                                  |  paiement
+   O                |                                                  |
+  /|\  -------------|---  ( Gerer les produits )                       |
+  / \               |                                                  |
+Admin  -------------|---  ( Gerer les commandes )                      |
+                    |                                                  |
+                    +--------------------------------------------------+
+```
+
+### Exemple : bibliotheque
+
+**Cahier des charges :**
+Une bibliotheque municipale souhaite informatiser la gestion des emprunts. Un adherent peut rechercher un ouvrage, emprunter un livre (il doit presenter sa carte d'adherent) et retourner un livre. Le bibliothecaire peut inscrire un nouvel adherent, enregistrer un emprunt, enregistrer un retour et gerer le catalogue. Si un livre est en retard, le systeme envoie une relance automatique par mail.
+
+**Acteurs :**
+- Adherent
+- Bibliothecaire
+- Systeme de mail (acteur secondaire)
+
+**Cas d'utilisation :**
+
+```
++-----------------------------------------------------------+
+|                  Systeme Bibliotheque                      |
+|                                                           |
+|   ( Rechercher ouvrage )                                  |
+|   ( Emprunter livre ) ---- <<include>> --> ( Verifier     |
+|   ( Retourner livre )                      carte adherent)|
+|                                                           |
+|   ( Inscrire adherent )                                   |
+|   ( Enregistrer emprunt )                                 |
+|   ( Enregistrer retour )                                  |
+|   ( Gerer catalogue )                                     |
+|                                                           |
+|   ( Envoyer relance )                                     |
++-----------------------------------------------------------+
+
+Adherent ---- Rechercher ouvrage
+Adherent ---- Emprunter livre
+Adherent ---- Retourner livre
+
+Bibliothecaire ---- Inscrire adherent
+Bibliothecaire ---- Enregistrer emprunt
+Bibliothecaire ---- Enregistrer retour
+Bibliothecaire ---- Gerer catalogue
+
+Systeme de mail ---- Envoyer relance
+```
+
+### Exemple : application de reservation de salles
+
+**Cahier des charges :**
+Une application permet aux employes de reserver des salles de reunion. L'employe consulte les disponibilites, reserve une salle (il doit s'authentifier) et peut annuler sa reservation. Il peut optionnellement ajouter des equipements (videoprojecteur, tableau blanc). Le responsable peut en plus valider ou refuser les reservations et gerer les salles.
+
+**Acteurs et heritage :**
+
+```
+Employe <|---- Responsable
+(le Responsable herite de l'Employe)
+
++-----------------------------------------------------------+
+|            Application de reservation                      |
+|                                                           |
+|   ( Consulter disponibilites )                            |
+|   ( Reserver salle ) --<<include>>--> ( S'authentifier )  |
+|          ^                                                |
+|          | <<extend>>                                     |
+|   ( Ajouter equipements )                                 |
+|   ( Annuler reservation )                                 |
+|                                                           |
+|   ( Valider reservation )                                 |
+|   ( Refuser reservation )                                 |
+|   ( Gerer les salles )                                    |
++-----------------------------------------------------------+
+
+Employe ---- Consulter disponibilites
+Employe ---- Reserver salle
+Employe ---- Annuler reservation
+
+Responsable ---- Valider reservation
+Responsable ---- Refuser reservation
+Responsable ---- Gerer les salles
+(+ tout ce que fait Employe par heritage)
+```
+
+---
+
+## 3. Diagramme de classes
+
+### A quoi ca sert ?
+
+Le diagramme de classes represente la **structure statique** du systeme : les classes, leurs attributs, leurs methodes et les relations entre elles. C'est le diagramme le plus utilise en UML et le plus frequemment demande a l'examen.
+
+Il repond a la question : "De quoi est compose le systeme ? Comment les elements sont-ils relies ?"
+
+### Notation d'une classe
+
+Une classe se represente par un rectangle divise en trois compartiments :
+
+```
++---------------------------+
+|       NomDeLaClasse       |   <-- nom de la classe (PascalCase)
++---------------------------+
+| - attributPriv : Type     |   <-- attributs
+| + attributPubl : Type     |
+| # attributProt : Type     |
++---------------------------+
+| + methode() : TypeRetour  |   <-- methodes
+| - calcul(x: int) : float |
++---------------------------+
+```
+
+### Visibilite des membres
+
+```
++  public     --> accessible par tout le monde
+-  private    --> accessible uniquement dans la classe
+#  protected  --> accessible dans la classe et ses sous-classes
+~  package    --> accessible dans le meme paquetage (rarement utilise au BTS)
+```
+
+> PIEGE EXAMEN : Le signe # signifie "protected", PAS "prive".
+> Le prive c'est le signe - (tiret/moins).
+
+### Types d'attributs courants
+
+```
+- nom : string
+- age : int
+- prix : float (ou double)
+- estActif : boolean (ou bool)
+- dateCreation : Date (ou DateTime)
+- liste : List<string>
+```
+
+### Methodes : notation complete
+
+```
++ nomMethode(param1: Type, param2: Type) : TypeRetour
+```
+
+Exemples :
+```
++ getNom() : string
++ setNom(nom: string) : void
++ calculerTotal(quantite: int, prixUnit: float) : float
++ estMajeur() : boolean
+```
+
+Si la methode ne retourne rien : `void` ou on omet le type de retour.
+
+### Exemple complet d'une classe
+
+```
++-------------------------------------+
+|              Produit                 |
++-------------------------------------+
+| - id : int                          |
+| - nom : string                      |
+| - description : string              |
+| - prix : float                      |
+| - stock : int                       |
++-------------------------------------+
+| + getPrix() : float                 |
+| + setPrix(prix: float) : void       |
+| + estDisponible() : boolean         |
+| + diminuerStock(qte: int) : void    |
++-------------------------------------+
+```
+
+### Les relations
+
+#### Association simple (trait)
+
+Deux classes sont liees. Exemple : un Client passe des Commandes.
+
+```
++----------+                    +----------+
+|  Client  | ----------------> | Commande |
++----------+    passe           +----------+
+```
+
+L'association peut etre :
+- Unidirectionnelle (fleche) : A connait B, mais B ne connait pas A
+- Bidirectionnelle (trait simple) : A et B se connaissent mutuellement
+
+#### Cardinalites (multiplicites)
+
+Les cardinalites indiquent combien d'instances d'une classe peuvent etre associees a une instance de l'autre classe.
+
+```
+Notation    Signification
+-------     -------------------------------------------
+1           Exactement un
+0..1        Zero ou un (optionnel)
+*           Zero ou plusieurs (0..*)
+1..*        Un ou plusieurs (au moins un)
+0..*        Zero ou plusieurs (identique a *)
+n           Exactement n
+n..m        Entre n et m
+```
+
+Les cardinalites se lisent **dans le sens inverse** de ce qu'on pourrait croire :
+
+```
++----------+  1      0..*  +----------+
+|  Client  | ------------- | Commande |
++----------+               +----------+
+```
+
+Lecture : Un Client possede 0 ou plusieurs Commandes. Une Commande appartient a exactement 1 Client.
+
+La cardinalite pres de Commande (0..*) concerne le Client : "un client a combien de commandes ?"
+La cardinalite pres de Client (1) concerne la Commande : "une commande a combien de clients ?"
+
+> PIEGE EXAMEN : Les cardinalites se lisent "a l'envers". La cardinalite est placee
+> du cote de la classe CIBLE, pas de la classe SOURCE. C'est l'erreur la plus
+> frequente. Relisez toujours : "Un [classe gauche] a [cardinalite droite] [classe droite]".
+
+#### Agregation (losange vide)
+
+L'agregation est une relation "a un" faible. La partie peut exister independamment du tout.
+
+```
++----------+  1     0..*  +----------+
+|  Equipe  | <>---------- |  Joueur  |
++----------+              +----------+
+```
+
+Le losange vide est du cote du "tout" (l'Equipe).
+Un Joueur peut exister sans Equipe. Si l'Equipe est dissoute, les Joueurs existent toujours.
+
+#### Composition (losange plein)
+
+La composition est une relation "est compose de" forte. La partie ne peut PAS exister sans le tout.
+
+```
++----------+  1     1..*  +---------------+
+|  Facture | <*>--------- | LigneFacture  |
++----------+              +---------------+
+```
+
+Le losange plein est du cote du "tout" (la Facture).
+Une LigneFacture ne peut PAS exister sans sa Facture. Si la Facture est supprimee, ses LigneFacture sont aussi supprimees.
+
+**Comment distinguer agregation et composition :**
+
+```
+Question a se poser : "Si le conteneur est detruit, la partie est-elle aussi detruite ?"
+  - OUI --> Composition (losange plein)
+  - NON --> Agregation (losange vide)
+
+Exemples :
+  Maison  <*>---- Piece          (composition : pas de piece sans maison)
+  Voiture <*>---- Moteur         (composition : le moteur est lie a cette voiture)
+  Equipe  <>---- Joueur          (agregation : le joueur existe sans equipe)
+  Universite <>---- Etudiant     (agregation : l'etudiant existe sans l'universite)
+  Commande <*>---- LigneCommande (composition : pas de ligne sans commande)
+  Bibliotheque <>---- Livre      (agregation : le livre existe sans la bibliotheque)
+```
+
+> PIEGE EXAMEN : Le losange est TOUJOURS du cote du TOUT (le conteneur),
+> jamais du cote de la partie. Facture <*>---- LigneFacture, pas l'inverse.
+
+#### Heritage / Generalisation (fleche triangle vide)
+
+La classe enfant herite de la classe parent. La fleche triangle va de l'enfant vers le parent.
+
+```
++------------------+
+|     Vehicule     |
++------------------+
+| - marque : string|
+| - vitesse : int  |
++------------------+
+| + demarrer()     |
++------------------+
+        ^
+        |  (triangle vide = heritage)
+        |
+   +---------+----------+
+   |                     |
++--------+         +-----------+
+| Voiture|         |   Moto    |
++--------+         +-----------+
+| - nbPortes: int | - cylindree: int|
++--------+         +-----------+
+```
+
+Voiture et Moto heritent des attributs et methodes de Vehicule.
+
+#### Realisation d'interface (fleche triangle vide pointillee)
+
+Une classe implemente une interface. La fleche pointillee va de la classe vers l'interface.
+
+```
++-------------------+
+| <<interface>>     |
+|    Payable        |
++-------------------+
+| + payer() : void  |
++-------------------+
+        ^
+        : (pointille + triangle)
+        :
++-------------------+
+|    Commande       |
++-------------------+
+```
+
+#### Dependance (fleche pointillee simple)
+
+Une classe utilise une autre classe de facon temporaire (parametre de methode, variable locale).
+
+```
++----------+           +----------+
+| Service  | - - - - > | Logger   |
++----------+           +----------+
+```
+
+Le Service utilise le Logger, mais ne le "possede" pas.
+
+### Classes abstraites
+
+Une classe abstraite ne peut pas etre instanciee directement. Son nom est ecrit **en italique** (en UML graphique) ou precede de `{abstract}`.
+
+```
++----------------------------+
+|    {abstract}              |
+|    FormeGeometrique        |
++----------------------------+
+| # couleur : string         |
++----------------------------+
+| + {abstract} aire() : float|
+| + {abstract} perimetre()   |
++----------------------------+
+        ^
+        |
+   +----+------+
+   |           |
++--------+ +-----------+
+| Cercle | | Rectangle |
++--------+ +-----------+
+| - rayon  | - largeur |
++--------+ | - longueur|
+           +-----------+
+```
+
+Les methodes abstraites (en italique ou {abstract}) n'ont pas d'implementation dans la classe abstraite. Les sous-classes DOIVENT les implementer.
+
+### Interfaces
+
+```
++-------------------+
+| <<interface>>     |
+|   Serialisable    |
++-------------------+
+| + serialiser()    |
+| + deserialiser()  |
++-------------------+
+```
+
+Une interface ne contient QUE des signatures de methodes (pas d'attributs, pas d'implementation). Les classes qui la realisent doivent implementer toutes ses methodes.
+
+> Note : En C# et Java modernes, les interfaces peuvent avoir des methodes par defaut,
+> mais au BTS SIO on considere le modele classique : interface = contrat pur.
+
+### Lien avec Merise : MCD vers diagramme de classes
+
+Le passage du MCD (Modele Conceptuel de Donnees) au diagramme de classes est un exercice classique a l'examen.
+
+**Regles de conversion :**
+
+```
+MCD                          -->  Diagramme de classes
+--------------------------------------------------------------
+Entite                       -->  Classe
+Propriete d'entite           -->  Attribut de classe
+Identifiant d'entite         -->  Attribut + contrainte {id}
+Association MCD (1,1)-(0,n)  -->  Association UML avec cardinalites
+Association MCD (0,n)-(0,n)  -->  Classe d'association ou classe intermediaire
+Propriete d'association      -->  Attribut de la classe d'association
+```
+
+**Conversion des cardinalites Merise vers UML :**
+
+Attention, les cardinalites sont INVERSEES entre Merise et UML.
+
+```
+Merise (cote entite A)    UML (cote OPPOSE, pres de B)
+-----------------------   ----------------------------
+(1,1)                     1
+(0,1)                     0..1
+(1,n)                     1..*
+(0,n)                     0..*
+```
+
+> PIEGE EXAMEN : En Merise, les cardinalites sont du cote de l'entite concernee.
+> En UML, les cardinalites sont du cote OPPOSE (pres de la classe cible).
+> Exemple : Si en Merise on a Client (1,1) --- passe --- (0,n) Commande
+> En UML : Client 1 ---------- 0..* Commande
+> (le 1 est pres de Client car une commande a 1 client,
+>  le 0..* est pres de Commande car un client a 0..* commandes)
+>
+> ATTENTION : la formulation ci-dessus peut preter a confusion. Soyons precis :
+> En Merise, (1,1) cote Client signifie "un client passe au minimum 1, au maximum 1 commande" -- NON.
+> En fait en Merise, les cardinalites se lisent : "une occurrence de cette entite participe
+> [min, max] fois a cette association".
+> Donc Client (1,1) passe Commande signifie : un client passe entre 1 et 1 commande.
+> Et Commande (0,n) signifie : une commande... non, c'est l'inverse.
+>
+> Reprenons clairement :
+> En Merise : Client --(0,n)-- passe --(1,1)-- Commande
+> Se lit : Un Client passe entre 0 et n Commandes. Une Commande est passee par 1 et 1 seul Client.
+> En UML : Client 0..* ---------- 1 Commande
+> Le 0..* est PRES de Commande (un client a 0..* commandes).
+> Le 1 est PRES de Client (une commande a 1 client).
+>
+> En resume : les cardinalites Merise "migrent" du meme cote en UML mais avec la lecture inversee.
+> La cardinalite Merise (0,n) cote Client donne 0..* du cote de Commande en UML.
+
+Reformulation definitive et sans ambiguite :
+
+```
+Merise : Client --(0,n)-- PASSE --(1,1)-- Commande
+Lecture Merise :
+  - Un Client participe de 0 a n fois a l'association PASSE
+    (= un client passe de 0 a n commandes)
+  - Une Commande participe de 1 a 1 fois a l'association PASSE
+    (= une commande est passee par exactement 1 client)
+
+UML :
+  Client  1 ─────────── 0..*  Commande
+  
+  Lecture UML (les cardinalites sont du cote oppose) :
+  - Pres de Commande : 0..* (un client a 0 a plusieurs commandes)
+  - Pres de Client : 1 (une commande a exactement 1 client)
+```
+
+### Lien avec le code
+
+Le diagramme de classes se traduit directement en code. C'est un exercice tres frequent a l'examen.
+
+**Classe simple :**
+
+Diagramme :
+```
++-------------------------------+
+|           Produit             |
++-------------------------------+
+| - id : int                    |
+| - nom : string                |
+| - prix : float                |
++-------------------------------+
+| + getId() : int               |
+| + getNom() : string           |
+| + getPrix() : float           |
+| + setPrix(prix: float) : void |
++-------------------------------+
+```
+
+Code C# :
+```csharp
+public class Produit
+{
+    private int id;
+    private string nom;
+    private float prix;
+
+    public int GetId()
+    {
+        return id;
+    }
+
+    public string GetNom()
+    {
+        return nom;
+    }
+
+    public float GetPrix()
+    {
+        return prix;
+    }
+
+    public void SetPrix(float prix)
+    {
+        this.prix = prix;
+    }
+}
+```
+
+Code JavaScript (ES6) :
+```javascript
+class Produit {
+    #id;
+    #nom;
+    #prix;
+
+    constructor(id, nom, prix) {
+        this.#id = id;
+        this.#nom = nom;
+        this.#prix = prix;
+    }
+
+    getId() {
+        return this.#id;
+    }
+
+    getNom() {
+        return this.#nom;
+    }
+
+    getPrix() {
+        return this.#prix;
+    }
+
+    setPrix(prix) {
+        this.#prix = prix;
+    }
+}
+```
+
+**Heritage :**
+
+Diagramme :
+```
++-------------------+
+|     Personne      |
++-------------------+
+| - nom : string    |
+| - prenom : string |
++-------------------+
+| + sePresenter()   |
++-------------------+
+        ^
+        |
++-------------------+
+|     Etudiant      |
++-------------------+
+| - numEtu : string |
++-------------------+
+| + getNumEtu()     |
++-------------------+
+```
+
+Code C# :
+```csharp
+public class Personne
+{
+    private string nom;
+    private string prenom;
+
+    public void SePresenter()
+    {
+        Console.WriteLine(nom + " " + prenom);
+    }
+}
+
+public class Etudiant : Personne
+{
+    private string numEtu;
+
+    public string GetNumEtu()
+    {
+        return numEtu;
+    }
+}
+```
+
+Code JavaScript :
+```javascript
+class Personne {
+    #nom;
+    #prenom;
+
+    constructor(nom, prenom) {
+        this.#nom = nom;
+        this.#prenom = prenom;
+    }
+
+    sePresenter() {
+        console.log(this.#nom + " " + this.#prenom);
+    }
+}
+
+class Etudiant extends Personne {
+    #numEtu;
+
+    constructor(nom, prenom, numEtu) {
+        super(nom, prenom);
+        this.#numEtu = numEtu;
+    }
+
+    getNumEtu() {
+        return this.#numEtu;
+    }
+}
+```
+
+**Interface :**
+
+Diagramme :
+```
++---------------------+
+| <<interface>>       |
+|    Affichable       |
++---------------------+
+| + afficher() : void |
++---------------------+
+        ^
+        : (pointille)
+        :
++---------------------+
+|      Produit        |
++---------------------+
+```
+
+Code C# :
+```csharp
+public interface IAffichable
+{
+    void Afficher();
+}
+
+public class Produit : IAffichable
+{
+    public void Afficher()
+    {
+        Console.WriteLine("Produit : " + nom);
+    }
+}
+```
+
+**Association avec cardinalite :**
+
+Diagramme :
+```
++----------+  1      0..*  +----------+
+|  Client  | ------------- | Commande |
++----------+               +----------+
+```
+
+Code C# :
+```csharp
+public class Client
+{
+    private List<Commande> commandes; // 0..* commandes
+
+    public Client()
+    {
+        commandes = new List<Commande>();
+    }
+}
+
+public class Commande
+{
+    private Client client; // 1 client obligatoire
+}
+```
+
+**Composition :**
+
+Code C# :
+```csharp
+public class Facture
+{
+    private List<LigneFacture> lignes; // composition : les lignes sont creees/detruites avec la facture
+
+    public Facture()
+    {
+        lignes = new List<LigneFacture>();
+    }
+
+    public void AjouterLigne(string desc, float montant)
+    {
+        lignes.Add(new LigneFacture(desc, montant)); // creation interne
+    }
+}
+
+public class LigneFacture
+{
+    private string description;
+    private float montant;
+
+    public LigneFacture(string description, float montant)
+    {
+        this.description = description;
+        this.montant = montant;
+    }
+}
+```
+
+> Note : En composition, le conteneur cree et detruit ses parties.
+> En agregation, les parties sont passees de l'exterieur (injection).
+
+---
+
+## 4. Diagramme de sequence
+
+### A quoi ca sert ?
+
+Le diagramme de sequence represente les **interactions entre objets dans le temps**. C'est une vue dynamique : il montre l'ordre dans lequel les messages sont echanges pour realiser un scenario precis.
+
+Il repond a la question : "Comment les objets collaborent-ils pour realiser cette fonctionnalite ?"
+
+### Les elements
+
+#### Lignes de vie
+
+Chaque objet participant est represente en haut du diagramme. Une ligne pointillee verticale descend vers le bas, representant le passage du temps.
+
+```
+  :Client          :Serveur         :BaseDeDonnees
+     |                 |                 |
+     |                 |                 |
+     |                 |                 |
+     v                 v                 v
+   (temps)
+```
+
+La notation est : `:NomClasse` ou `nomObjet:NomClasse`.
+
+#### Messages synchrones (fleche pleine)
+
+Un appel de methode classique. L'emetteur attend la reponse avant de continuer.
+
+```
+  :Client              :Serveur
+     |                    |
+     |--- requete() ----->|
+     |                    |
+     |<-- reponse() ------|
+     |                    |
+```
+
+#### Messages asynchrones (fleche ouverte)
+
+L'emetteur envoie le message et continue sans attendre la reponse.
+
+```
+  :Client              :Serveur
+     |                    |
+     |--- notification -->|  (fleche ouverte, sans pointe pleine)
+     |                    |
+```
+
+#### Message de retour (fleche pointillee)
+
+Represente la valeur de retour d'un appel synchrone.
+
+```
+  :Client              :Serveur
+     |                    |
+     |--- getData() ----->|
+     |                    |
+     |<- - - donnees - - -|  (pointille = retour)
+     |                    |
+```
+
+#### Barre d'activation
+
+Un rectangle etroit sur la ligne de vie indique que l'objet est actif (en train de traiter un message).
+
+```
+  :Client              :Serveur
+     |                    |
+     |--- requete() ----->|
+     |                    +--+
+     |                    |  |  <-- barre d'activation
+     |                    |  |      (le serveur traite la requete)
+     |<-- reponse() ------|--+
+     |                    |
+```
+
+### Fragments combines
+
+Les fragments combines permettent d'exprimer des structures de controle (conditions, boucles, etc.) dans le diagramme de sequence.
+
+#### alt -- alternative (si/sinon)
+
+```
+  :Client              :Serveur           :BDD
+     |                    |                 |
+     |--- authentifier -->|                 |
+     |                    |--- verifier --->|
+     |                    |<-- resultat ----|
+     |                    |                 |
+     +--------------------------------------------+
+     | alt [resultat == vrai]                      |
+     |   |<-- succes ------|                       |
+     |   |                 |                       |
+     |   |-----------------------------------------|
+     |   [sinon]                                   |
+     |   |<-- erreur ------|                       |
+     +--------------------------------------------+
+     |                    |                 |
+```
+
+Le fragment alt a deux (ou plus) sections separees par une ligne horizontale pointillee. Chaque section a une condition entre crochets.
+
+#### opt -- optionnel
+
+Equivalent d'un "if" sans "else".
+
+```
+     +--------------------------------------------+
+     | opt [code promo saisi]                      |
+     |   |--- appliquerPromo() -->|                |
+     |   |<-- reduction ----------|                |
+     +--------------------------------------------+
+```
+
+#### loop -- boucle
+
+```
+     +--------------------------------------------+
+     | loop [pour chaque produit du panier]        |
+     |   |--- calculerPrix() --->|                 |
+     |   |<-- prix --------------|                 |
+     +--------------------------------------------+
+```
+
+#### ref -- reference
+
+Renvoie a un autre diagramme de sequence pour eviter la duplication.
+
+```
+     +--------------------------------------------+
+     | ref  Diagramme d'authentification           |
+     +--------------------------------------------+
+```
+
+### Exercice detaille : sequence d'un achat en ligne
+
+**Scenario :** Un client connecte ajoute un produit au panier, procede au paiement, et recoit une confirmation.
+
+```
+  :Client     :InterfaceWeb    :Controleur    :ServiceCmd    :BDD
+     |              |               |              |           |
+     |-- cliquer    |               |              |           |
+     |  "Ajouter" ->|               |              |           |
+     |              |-- ajouterAu   |              |           |
+     |              |   Panier() -->|              |           |
+     |              |               |-- verifier   |           |
+     |              |               |   Stock() -->|           |
+     |              |               |              |-- SELECT  |
+     |              |               |              |   stock ->|
+     |              |               |              |<- qte ----|
+     |              |               |<- ok --------|           |
+     |              |<- afficher    |              |           |
+     |              |   Panier() ---|              |           |
+     |<- page MAJ --|              |              |           |
+     |              |               |              |           |
+     |-- cliquer    |               |              |           |
+     |  "Payer" --->|               |              |           |
+     |              |-- valider     |              |           |
+     |              |   Commande()->|              |           |
+     |              |               |-- creer      |           |
+     |              |               |   Commande()->|          |
+     |              |               |              |-- INSERT  |
+     |              |               |              |   cmd --->|
+     |              |               |              |<- ok -----|
+     |              |               |              |           |
+     +----------------------------------------------------------+
+     | alt [paiement accepte]                                   |
+     |              |               |              |           |
+     |              |               |-- confirmer  |           |
+     |              |               |   Paiement()->|          |
+     |              |               |              |-- UPDATE  |
+     |              |               |              |   statut->|
+     |              |               |              |<- ok -----|
+     |              |               |<- confirmation|          |
+     |              |<- page        |              |           |
+     |              |   confirm. ---|              |           |
+     |<- confirmation|             |              |           |
+     |              |               |              |           |
+     |-----------------------------------------------------------
+     | [sinon]                                                  |
+     |              |               |              |           |
+     |              |<- erreur      |              |           |
+     |              |   paiement ---|              |           |
+     |<- msg erreur-|              |              |           |
+     +----------------------------------------------------------+
+     |              |               |              |           |
+```
+
+### Lien avec le code
+
+Chaque message dans le diagramme de sequence correspond a un **appel de methode** dans le code.
+
+Le diagramme ci-dessus se traduit (partiellement) en :
+
+```csharp
+// Dans Controleur
+public void AjouterAuPanier(int produitId)
+{
+    bool disponible = serviceCmd.VerifierStock(produitId);
+    if (disponible)
+    {
+        panier.Ajouter(produitId);
+    }
+}
+
+// Dans ServiceCmd
+public bool VerifierStock(int produitId)
+{
+    int qte = bdd.ExecuteScalar("SELECT stock FROM Produit WHERE id = @id", produitId);
+    return qte > 0;
+}
+
+// Dans Controleur
+public Resultat ValiderCommande(Panier panier)
+{
+    Commande cmd = serviceCmd.CreerCommande(panier);
+    
+    if (cmd.PaiementAccepte)
+    {
+        serviceCmd.ConfirmerPaiement(cmd.Id);
+        return new Resultat(true, "Commande confirmee");
+    }
+    else
+    {
+        return new Resultat(false, "Erreur de paiement");
+    }
+}
+```
+
+---
+
+## 5. Diagramme d'activite
+
+### A quoi ca sert ?
+
+Le diagramme d'activite represente un **processus** ou un **workflow**. C'est un organigramme ameliore qui peut representer le parallelisme et la repartition des responsabilites (swimlanes).
+
+Il repond a la question : "Quelles sont les etapes du processus, dans quel ordre, et qui fait quoi ?"
+
+### Les elements
+
+#### Noeud initial
+
+Un point noir plein. C'est le debut du processus.
+
+```
+  (*)
+```
+
+#### Noeud final
+
+Un point noir entoure d'un cercle. C'est la fin du processus.
+
+```
+  (O)
+```
+
+#### Action
+
+Un rectangle aux coins arrondis contenant le nom de l'action.
+
+```
+  /-------------------\
+  | Verifier commande |
+  \-------------------/
+```
+
+#### Decision (losange)
+
+Un losange avec des conditions sur les branches sortantes.
+
+```
+            <>
+           / \
+  [oui]   /   \  [non]
+         v     v
+```
+
+#### Barres de synchronisation (fork et join)
+
+Barres horizontales epaisses representant le debut et la fin d'activites paralleles.
+
+Fork (separation en parallele) :
+```
+         |
+  ===============  (barre epaisse)
+    |    |    |
+    v    v    v
+```
+
+Join (synchronisation) :
+```
+    |    |    |
+  ===============  (barre epaisse)
+         |
+         v
+```
+
+#### Couloirs d'activite (swimlanes)
+
+Des colonnes verticales (ou horizontales) separant les actions par responsable.
+
+### Exercice complet : traitement d'une commande avec swimlanes
+
+**Scenario :** Un client passe commande, le service commercial la traite, l'entrepot prepare le colis, et le transporteur livre.
+
+```
+  |   Client     |  Service      |  Entrepot     |  Transporteur |
+  |              |  commercial   |               |               |
+  |              |               |               |               |
+  |  (*)         |               |               |               |
+  |   |          |               |               |               |
+  | /----------\ |               |               |               |
+  | | Passer   | |               |               |               |
+  | | commande | |               |               |               |
+  | \----------/ |               |               |               |
+  |   |          |               |               |               |
+  |   |--------->|               |               |               |
+  |              | /----------\  |               |               |
+  |              | | Verifier |  |               |               |
+  |              | | stock    |  |               |               |
+  |              | \----------/  |               |               |
+  |              |     <>        |               |               |
+  |              |    / \        |               |               |
+  |              |[ok]   [ko]   |               |               |
+  |              |  |      |     |               |               |
+  |              |  |  /-------\ |               |               |
+  |              |  |  |Notifier||               |               |
+  |              |  |  |rupture| |               |               |
+  |              |  |  \-------/ |               |               |
+  |              |  |      |     |               |               |
+  | /----------\ |  |   (O)     |               |               |
+  | | Recevoir | |  |           |               |               |
+  | | notif    | |<-|           |               |               |
+  | | rupture  | |              |               |               |
+  | \----------/ |              |               |               |
+  |   |          |              |               |               |
+  |  (O)         |              |               |               |
+  |              |              |               |               |
+  |              | /----------\ |               |               |
+  |              | | Valider  | |               |               |
+  |              | | commande | |               |               |
+  |              | \----------/ |               |               |
+  |              |    |-------->|               |               |
+  |              |              | ============= |               |
+  |              |              |   |       |    |               |
+  |              |              | /-----\ /---\ |               |
+  |              |              | |Prep.| |Emp-| |               |
+  |              |              | |colis| |aq. | |               |
+  |              |              | \-----/ \---/  |               |
+  |              |              |   |       |    |               |
+  |              |              | ============= |               |
+  |              |              |       |        |               |
+  |              |              | /----------\   |               |
+  |              |              | | Expedier |   |               |
+  |              |              | | colis    |   |               |
+  |              |              | \----------/   |               |
+  |              |              |       |------->|               |
+  |              |              |                | /----------\  |
+  |              |              |                | | Livrer   |  |
+  |              |              |                | | commande |  |
+  |              |              |                | \----------/  |
+  |              |              |                |       |       |
+  | /----------\ |              |                |       |       |
+  | | Recevoir |<|--------------|----------------|-------|       |
+  | | colis    | |              |                |               |
+  | \----------/ |              |                |               |
+  |   |          |               |               |               |
+  |  (O)         |               |               |               |
+```
+
+Notes de lecture :
+- Les barres `=====` representent les barres de synchronisation (fork et join)
+- "Prep. colis" et "Empaq." se font en parallele
+- Le losange `<>` represente la decision stock ok / stock ko
+
+---
+
+## 6. Diagramme d'etat (bases)
+
+### A quoi ca sert ?
+
+Le diagramme d'etat represente les **differents etats** d'un objet au cours de sa vie et les **transitions** entre ces etats. Il est adapte aux objets qui ont un cycle de vie bien defini.
+
+Il repond a la question : "Par quels etats passe cet objet, et qu'est-ce qui provoque les changements d'etat ?"
+
+### Les elements
+
+- **Etat** : rectangle aux coins arrondis avec le nom de l'etat
+- **Transition** : fleche d'un etat vers un autre, etiquetee avec l'evenement declencheur
+- **Etat initial** : point noir plein
+- **Etat final** : point noir entoure d'un cercle
+- **Garde** : condition entre crochets sur une transition [condition]
+
+### Syntaxe d'une transition
+
+```
+evenement [garde] / action
+```
+
+- L'evenement est ce qui declenche la transition
+- La garde est une condition optionnelle (entre crochets)
+- L'action est executee lors de la transition
+
+### Exemple : cycle de vie d'une commande
+
+```
+  (*)
+   |
+   | creerCommande()
+   v
++--------------+
+|  En attente  |
++--------------+
+   |
+   | valider() [stock disponible]
+   v
++--------------+
+|   Validee    |
++--------------+
+   |
+   | expedier() / envoyerMailExpedition()
+   v
++--------------+
+|   Expediee   |
++--------------+
+   |
+   | livrer()
+   v
++--------------+
+|   Livree     |
++--------------+
+   |
+   v
+  (O)
+```
+
+Avec les cas d'annulation :
+
+```
+                      (*)
+                       |
+                       v
+                +--------------+
+                |  En attente  |-------- annuler() ------+
+                +--------------+                          |
+                       |                                  |
+           valider()   |                                  |
+          [stock ok]   |                                  v
+                       v                          +-----------+
+                +--------------+                  |  Annulee  |
+                |   Validee    |--- annuler() --->|           |
+                +--------------+                  +-----------+
+                       |                                  |
+            expedier() |                                  v
+                       v                                 (O)
+                +--------------+
+                |   Expediee   |
+                +--------------+
+                       |
+              livrer() |
+                       v
+                +--------------+
+                |    Livree    |
+                +--------------+
+                       |
+                       v
+                      (O)
+```
+
+### Exercice : cycle de vie d'un ticket de support
+
+```
+  (*)
+   |
+   v
++-------------------+
+| Ouvert            |
+| entry/ notifier   |
+|   support         |
++-------------------+
+   |
+   | assigner(technicien)
+   v
++-------------------+
+| En cours          |
+| do/ diagnostiquer |
++-------------------+
+   |           |
+   |           | demander info [info manquante]
+   |           v
+   |    +-------------------+
+   |    | En attente info   |
+   |    +-------------------+
+   |           |
+   |           | recevoir info
+   |           v
+   |    (retour a En cours)
+   |
+   | resoudre()
+   v
++-------------------+
+| Resolu            |
++-------------------+
+   |
+   | confirmer [client satisfait]
+   v
++-------------------+
+| Ferme             |
++-------------------+
+   |
+   v
+  (O)
+```
+
+Notes :
+- `entry/` : action executee a l'entree dans l'etat
+- `do/` : action continue tant qu'on est dans l'etat
+- `exit/` : action executee a la sortie de l'etat (non montre ici)
+
+---
+
+## 7. De UML au code et du code a UML
+
+### Diagramme de classes vers code C#
+
+**Diagramme complet :**
+
+```
++------------------------------+
+|    {abstract}                |
+|    Personne                  |
++------------------------------+
+| # nom : string               |
+| # prenom : string            |
+| # dateNaissance : DateTime   |
++------------------------------+
+| + getNomComplet() : string   |
+| + {abstract} getRole(): str  |
++------------------------------+
+        ^            ^
+        |            |
++-------------+  +-------------------+
+|   Client    |  |    Employe        |
++-------------+  +-------------------+
+| - numClient |  | - matricule : str |
+|   : string  |  | - salaire : float |
++-------------+  +-------------------+
+| + getRole() |  | + getRole() : str |
+|   : string  |  | + getSalaire()    |
++-------------+  |   : float         |
+                 +-------------------+
+
+Client "1" ---- "0..*" Commande
+Commande "1" <*>---- "1..*" LigneCommande
+LigneCommande "*" ---- "1" Produit
+
++-------------------+   +-------------------+
+|    Commande       |   |  LigneCommande    |
++-------------------+   +-------------------+
+| - id : int        |   | - quantite : int  |
+| - date : DateTime |   | - prixUnitaire    |
+| - statut : string |   |   : float         |
++-------------------+   +-------------------+
+| + getTotal(): float|  | + getSousTotal()  |
++-------------------+   |   : float         |
+                        +-------------------+
+
++-------------------+
+|     Produit       |
++-------------------+
+| - id : int        |
+| - nom : string    |
+| - prix : float    |
++-------------------+
+| + getPrix(): float|
++-------------------+
+```
+
+**Traduction C# :**
+
+```csharp
+public abstract class Personne
+{
+    protected string nom;
+    protected string prenom;
+    protected DateTime dateNaissance;
+
+    public string GetNomComplet()
+    {
+        return prenom + " " + nom;
+    }
+
+    public abstract string GetRole();
+}
+
+public class Client : Personne
+{
+    private string numClient;
+    private List<Commande> commandes;
+
+    public Client()
+    {
+        commandes = new List<Commande>();
+    }
+
+    public override string GetRole()
+    {
+        return "Client";
+    }
+}
+
+public class Employe : Personne
+{
+    private string matricule;
+    private float salaire;
+
+    public override string GetRole()
+    {
+        return "Employe";
+    }
+
+    public float GetSalaire()
+    {
+        return salaire;
+    }
+}
+
+public class Commande
+{
+    private int id;
+    private DateTime date;
+    private string statut;
+    private Client client;                    // association 1
+    private List<LigneCommande> lignes;       // composition 1..*
+
+    public Commande(Client client)
+    {
+        this.client = client;
+        this.lignes = new List<LigneCommande>();
+    }
+
+    public void AjouterLigne(Produit produit, int quantite)
+    {
+        lignes.Add(new LigneCommande(produit, quantite, produit.GetPrix()));
+    }
+
+    public float GetTotal()
+    {
+        float total = 0;
+        foreach (LigneCommande ligne in lignes)
+        {
+            total += ligne.GetSousTotal();
+        }
+        return total;
+    }
+}
+
+public class LigneCommande
+{
+    private int quantite;
+    private float prixUnitaire;
+    private Produit produit;                  // association 1
+
+    public LigneCommande(Produit produit, int quantite, float prixUnitaire)
+    {
+        this.produit = produit;
+        this.quantite = quantite;
+        this.prixUnitaire = prixUnitaire;
+    }
+
+    public float GetSousTotal()
+    {
+        return quantite * prixUnitaire;
+    }
+}
+
+public class Produit
+{
+    private int id;
+    private string nom;
+    private float prix;
+
+    public float GetPrix()
+    {
+        return prix;
+    }
+}
+```
+
+### Diagramme de classes vers JavaScript
+
+```javascript
+// Pas de classe abstraite native en JS, on simule avec une erreur
+class Personne {
+    #nom;
+    #prenom;
+    #dateNaissance;
+
+    constructor(nom, prenom, dateNaissance) {
+        if (new.target === Personne) {
+            throw new Error("Personne est abstraite, ne pas instancier directement");
+        }
+        this.#nom = nom;
+        this.#prenom = prenom;
+        this.#dateNaissance = dateNaissance;
+    }
+
+    getNomComplet() {
+        return this.#prenom + " " + this.#nom;
+    }
+
+    getRole() {
+        throw new Error("Methode abstraite, a implementer dans la sous-classe");
+    }
+}
+
+class Client extends Personne {
+    #numClient;
+    #commandes;
+
+    constructor(nom, prenom, dateNaissance, numClient) {
+        super(nom, prenom, dateNaissance);
+        this.#numClient = numClient;
+        this.#commandes = [];
+    }
+
+    getRole() {
+        return "Client";
+    }
+}
+
+class Employe extends Personne {
+    #matricule;
+    #salaire;
+
+    constructor(nom, prenom, dateNaissance, matricule, salaire) {
+        super(nom, prenom, dateNaissance);
+        this.#matricule = matricule;
+        this.#salaire = salaire;
+    }
+
+    getRole() {
+        return "Employe";
+    }
+
+    getSalaire() {
+        return this.#salaire;
+    }
+}
+
+class Commande {
+    #id;
+    #date;
+    #statut;
+    #client;
+    #lignes;
+
+    constructor(id, client) {
+        this.#id = id;
+        this.#date = new Date();
+        this.#statut = "En attente";
+        this.#client = client;
+        this.#lignes = [];
+    }
+
+    ajouterLigne(produit, quantite) {
+        this.#lignes.push(new LigneCommande(produit, quantite, produit.getPrix()));
+    }
+
+    getTotal() {
+        let total = 0;
+        for (const ligne of this.#lignes) {
+            total += ligne.getSousTotal();
+        }
+        return total;
+    }
+}
+
+class LigneCommande {
+    #quantite;
+    #prixUnitaire;
+    #produit;
+
+    constructor(produit, quantite, prixUnitaire) {
+        this.#produit = produit;
+        this.#quantite = quantite;
+        this.#prixUnitaire = prixUnitaire;
+    }
+
+    getSousTotal() {
+        return this.#quantite * this.#prixUnitaire;
+    }
+}
+
+class Produit {
+    #id;
+    #nom;
+    #prix;
+
+    constructor(id, nom, prix) {
+        this.#id = id;
+        this.#nom = nom;
+        this.#prix = prix;
+    }
+
+    getPrix() {
+        return this.#prix;
+    }
+}
+```
+
+### Code vers diagramme de classes
+
+**Exercice : lire ce code et dessiner le diagramme**
+
+```csharp
+public interface INotifiable
+{
+    void EnvoyerNotification(string message);
+}
+
+public class Utilisateur : INotifiable
+{
+    private int id;
+    private string email;
+    private string motDePasse;
+    private List<Reservation> reservations;
+
+    public void EnvoyerNotification(string message)
+    {
+        // implementation
+    }
+
+    public Reservation Reserver(Salle salle, DateTime date)
+    {
+        // implementation
+    }
+}
+
+public class Salle
+{
+    private int numero;
+    private int capacite;
+    private string batiment;
+    private List<Equipement> equipements;
+}
+
+public class Equipement
+{
+    private string nom;
+    private string type;
+}
+
+public class Reservation
+{
+    private int id;
+    private DateTime dateReservation;
+    private DateTime dateDebut;
+    private DateTime dateFin;
+    private string statut;
+    private Utilisateur utilisateur;
+    private Salle salle;
+}
+```
+
+**Diagramme resultant :**
+
+```
++-------------------------+
+|    <<interface>>        |
+|     INotifiable         |
++-------------------------+
+| + EnvoyerNotification(  |
+|   message: string): void|
++-------------------------+
+          ^
+          : (realisation)
+          :
++-------------------------+    1     0..*   +------------------+
+|     Utilisateur         |  -------------- |   Reservation    |
++-------------------------+                 +------------------+
+| - id : int              |                 | - id : int       |
+| - email : string        |                 | - dateReservation|
+| - motDePasse : string   |                 |   : DateTime     |
++-------------------------+                 | - dateDebut      |
+| + EnvoyerNotification() |                 |   : DateTime     |
+| + Reserver(salle: Salle,|                 | - dateFin        |
+|   date: DateTime)       |                 |   : DateTime     |
+|   : Reservation         |                 | - statut : string|
++-------------------------+                 +------------------+
+                                                   |
+                                              *    |    1
+                                            +------+-----+
+                                            |            |
+                                      +----------+
+                                      |   Salle  |
+                                      +----------+
+                                      | - numero : int    |
+                                      | - capacite : int  |
+                                      | - batiment : str  |
+                                      +-------------------+
+                                            | 1
+                                            |
+                                            | 0..* (agregation)
+                                            <>
+                                      +-------------------+
+                                      |   Equipement      |
+                                      +-------------------+
+                                      | - nom : string    |
+                                      | - type : string   |
+                                      +-------------------+
+```
+
+### Diagramme de sequence vers code
+
+**Diagramme de sequence :**
+
+```
+  :Utilisateur     :AuthService     :BDD          :SessionManager
+       |                |              |                |
+       |-- login(email, |              |                |
+       |   mdp) ------->|              |                |
+       |                |-- findByEmail|                |
+       |                |   (email) -->|                |
+       |                |<-- user -----|                |
+       |                |              |                |
+       +---------------------------------------------------+
+       | alt [user != null ET mdp valide]                   |
+       |                |                                   |
+       |                |-- creerSession  |                 |
+       |                |   (user) ------>|                 |
+       |                |                 |-- genererToken()|
+       |                |<-- token -------|                 |
+       |                |                 |                 |
+       |<-- token ------|                 |                 |
+       |                |                                   |
+       |----------------------------------------------------|
+       | [sinon]                                            |
+       |                |                                   |
+       |<-- erreur -----|                                   |
+       +---------------------------------------------------+
+```
+
+**Code C# correspondant :**
+
+```csharp
+public class AuthService
+{
+    private BDD bdd;
+    private SessionManager sessionManager;
+
+    public string Login(string email, string mdp)
+    {
+        Utilisateur user = bdd.FindByEmail(email);
+
+        if (user != null && user.VerifierMotDePasse(mdp))
+        {
+            string token = sessionManager.CreerSession(user);
+            return token;
+        }
+        else
+        {
+            throw new AuthException("Identifiants invalides");
+        }
+    }
+}
+
+public class SessionManager
+{
+    public string CreerSession(Utilisateur user)
+    {
+        string token = GenererToken();
+        // sauvegarder la session
+        return token;
+    }
+
+    private string GenererToken()
+    {
+        return Guid.NewGuid().ToString();
+    }
+}
+```
+
+---
+
+## 8. Methodologie d'examen
+
+### Comment lire un sujet UML
+
+1. **Lire le sujet en entier** avant de commencer a dessiner. Souligner les elements cles.
+2. **Identifier le type de diagramme demande.** Ne pas dessiner un diagramme de classes quand on demande un diagramme de cas d'utilisation.
+3. **Identifier les elements principaux** (acteurs, classes, objets) AVANT de dessiner.
+4. **Dessiner au brouillon** puis reporter au propre.
+5. **Verifier la coherence** : relire le sujet et verifier que tous les elements mentionnes sont presents.
+
+### Les erreurs classiques
+
+**Erreur 1 : Cardinalites inversees**
+```
+FAUX :  Client 0..* ---------- 1 Commande
+        (un client est dans une commande ? non !)
+VRAI :  Client 1 ---------- 0..* Commande
+        (un client a 0 ou plusieurs commandes)
+```
+
+**Erreur 2 : Include et Extend confondus**
+```
+FAUX :  ( S'authentifier ) --<<include>>--> ( Passer commande )
+        (l'authentification inclut passer commande ? non !)
+VRAI :  ( Passer commande ) --<<include>>--> ( S'authentifier )
+        (passer commande inclut l'authentification)
+```
+
+**Erreur 3 : Sens des fleches include/extend**
+```
+Include : A -----> B   (A inclut B, fleche de A vers B)
+Extend  : B -----> A   (B etend A, fleche de B vers A)
+```
+
+**Erreur 4 : Oublier les types des attributs**
+```
+FAUX :  - nom
+        - prix
+VRAI :  - nom : string
+        - prix : float
+```
+
+**Erreur 5 : Oublier les visibilites**
+```
+FAUX :  nom : string
+VRAI :  - nom : string  (private)
+```
+
+**Erreur 6 : Oublier les cardinalites**
+```
+FAUX :  Client ---------- Commande  (combien ?)
+VRAI :  Client 1 -------- 0..* Commande
+```
+
+**Erreur 7 : Confondre agregation et composition**
+```
+Question : Un etudiant fait partie d'une universite.
+           Si l'universite ferme, l'etudiant existe-t-il toujours ?
+Reponse : OUI --> agregation (losange vide)
+```
+
+**Erreur 8 : Losange du mauvais cote**
+```
+FAUX :  LigneFacture <>---- Facture
+VRAI :  Facture <>---- LigneFacture
+        (le losange est du cote du TOUT)
+```
+
+**Erreur 9 : Acteur dans le rectangle systeme**
+```
+FAUX :  Les acteurs sont a l'interieur du systeme
+VRAI :  Les acteurs sont TOUJOURS a l'exterieur
+```
+
+**Erreur 10 : Cas d'utilisation sans verbe**
+```
+FAUX :  ( Commande )
+VRAI :  ( Passer commande )
+```
+
+### Checklist avant de rendre sa copie
+
+**Diagramme de cas d'utilisation :**
+- [ ] Les acteurs sont a l'exterieur du systeme
+- [ ] Le rectangle systeme est dessine et nomme
+- [ ] Les cas d'utilisation commencent par un verbe a l'infinitif
+- [ ] Les relations include/extend sont dans le bon sens
+- [ ] Les conditions d'extend sont precisees
+- [ ] Tous les acteurs du cahier des charges sont presents
+
+**Diagramme de classes :**
+- [ ] Chaque classe a : nom, attributs avec types et visibilites, methodes
+- [ ] Les cardinalites sont presentes sur chaque association
+- [ ] Les cardinalites sont dans le bon sens
+- [ ] Agregation vs composition est justifiable
+- [ ] Le losange est du cote du tout
+- [ ] L'heritage est dans le bon sens (fleche de l'enfant vers le parent)
+- [ ] Les classes abstraites sont marquees
+- [ ] Les interfaces sont marquees <<interface>>
+
+**Diagramme de sequence :**
+- [ ] Les lignes de vie sont identifiees (nom:Classe)
+- [ ] Les messages sont etiquetes (nom de la methode)
+- [ ] Les messages de retour sont en pointille
+- [ ] Les fragments alt/opt/loop ont des conditions entre crochets
+- [ ] L'ordre temporel est coherent (de haut en bas)
+
+**Diagramme d'activite :**
+- [ ] Noeud initial present
+- [ ] Noeud final present (au moins un)
+- [ ] Les decisions ont des conditions sur les branches
+- [ ] Les fork ont un join correspondant
+- [ ] Les swimlanes sont correctement attribuees
+
+---
+
+## 9. Exercices d'examen corriges
+
+### Exercice 1 : Cas d'utilisation -- Gestion d'un cabinet medical
+
+**Enonce :**
+Un cabinet medical souhaite informatiser son fonctionnement. Le patient peut prendre rendez-vous (il doit obligatoirement creer un compte ou se connecter). Il peut consulter ses rendez-vous et les annuler. Le medecin consulte son planning, enregistre une consultation et redige une ordonnance. Le secretaire gere les patients et les rendez-vous. Le systeme envoie un rappel SMS la veille du rendez-vous via un service SMS externe.
+
+**Correction :**
+
+Acteurs identifies :
+- Patient
+- Medecin
+- Secretaire
+- Service SMS (acteur secondaire)
+
+Cas d'utilisation :
+
+```
++-----------------------------------------------------------------+
+|                   Cabinet Medical                                |
+|                                                                 |
+|  ( Prendre RDV ) ---<<include>>---> ( Se connecter )            |
+|       ^                                                         |
+|       | <<extend>>                                              |
+|  ( Creer un compte )                                            |
+|                                                                 |
+|  ( Consulter ses RDV )                                          |
+|  ( Annuler un RDV )                                             |
+|                                                                 |
+|  ( Consulter planning )                                         |
+|  ( Enregistrer consultation )                                   |
+|  ( Rediger ordonnance )                                         |
+|                                                                 |
+|  ( Gerer les patients )                                         |
+|  ( Gerer les RDV )                                              |
+|                                                                 |
+|  ( Envoyer rappel SMS )                                         |
++-----------------------------------------------------------------+
+
+Patient ---- Prendre RDV
+Patient ---- Consulter ses RDV
+Patient ---- Annuler un RDV
+
+Medecin ---- Consulter planning
+Medecin ---- Enregistrer consultation
+Medecin ---- Rediger ordonnance
+
+Secretaire ---- Gerer les patients
+Secretaire ---- Gerer les RDV
+
+Service SMS ---- Envoyer rappel SMS
+```
+
+Notes :
+- "Se connecter" est un include de "Prendre RDV" car obligatoire
+- "Creer un compte" est un extend de "Prendre RDV" car optionnel (seulement si pas de compte)
+
+---
+
+### Exercice 2 : Diagramme de classes -- Gestion de bibliotheque
+
+**Enonce :**
+Une bibliotheque gere des ouvrages et des adherents. Un ouvrage a un titre, un auteur, un ISBN et un genre. Il existe des livres papier (avec un nombre de pages) et des livres numeriques (avec un format de fichier et une taille en Mo). Un adherent a un numero, un nom, un prenom et une date d'inscription. Un adherent peut emprunter plusieurs ouvrages. Un emprunt a une date de debut, une date de retour prevue et une date de retour effective (nulle si pas encore rendu). Un ouvrage peut etre emprunte par plusieurs adherents (au fil du temps).
+
+**Correction :**
+
+```
++------------------------------+
+|     {abstract}               |
+|      Ouvrage                 |
++------------------------------+
+| - titre : string             |
+| - auteur : string            |
+| - isbn : string              |
+| - genre : string             |
++------------------------------+
+| + getTitre() : string        |
+| + estDisponible() : boolean  |
++------------------------------+
+        ^            ^
+        |            |
++---------------+ +------------------+
+| LivrePapier  | | LivreNumerique   |
++---------------+ +------------------+
+| - nbPages:int | | - format : string|
++---------------+ | - tailleMo:float |
+                  +------------------+
+
++------------------------------+
+|        Adherent              |
++------------------------------+
+| - numero : string            |
+| - nom : string               |
+| - prenom : string            |
+| - dateInscription : DateTime |
++------------------------------+
+| + emprunter(o: Ouvrage): void|
+| + rendre(e: Emprunt) : void  |
++------------------------------+
+
++------------------------------+
+|         Emprunt              |
++------------------------------+
+| - dateDebut : DateTime       |
+| - dateRetourPrevue : DateTime|
+| - dateRetourEffective        |
+|   : DateTime                 |  (nullable)
++------------------------------+
+| + estEnRetard() : boolean    |
+| + dureeEmprunt() : int       |
++------------------------------+
+
+Adherent  1 --------- 0..*  Emprunt
+Ouvrage   1 --------- 0..*  Emprunt
+```
+
+L'Emprunt est une **classe d'association** entre Adherent et Ouvrage. Elle porte les informations propres a la relation (dates).
+
+---
+
+### Exercice 3 : Diagramme de sequence -- Retrait d'argent au distributeur
+
+**Enonce :**
+Un client insere sa carte dans le distributeur. Le distributeur demande le code PIN. Le client saisit son code. Le distributeur envoie le code au serveur bancaire pour verification. Si le code est correct, le distributeur demande le montant. Le client saisit le montant. Le distributeur verifie aupres du serveur bancaire que le solde est suffisant. Si oui, le distributeur distribue les billets et debite le compte via le serveur bancaire. Sinon, il affiche un message d'erreur. Si le code PIN est incorrect, le client a 3 tentatives avant que la carte soit avalee.
+
+**Correction :**
+
+```
+  :Client        :Distributeur      :ServeurBancaire
+     |                |                    |
+     |-- insererCarte |                    |
+     |   ------------>|                    |
+     |                |                    |
+     |<-- demanderPIN |                    |
+     |   -------------|                    |
+     |                |                    |
+     +--------------------------------------------------+
+     | loop [tentatives < 3]                             |
+     |   |                |                    |         |
+     |   |-- saisirPIN -->|                    |         |
+     |   |                |-- verifierPIN ---->|         |
+     |   |                |   (code)           |         |
+     |   |                |<-- resultat -------|         |
+     |   |                |                    |         |
+     |   +-----------------------------------------------+
+     |   | alt [code valide]                             |
+     |   |   |          |                    |           |
+     |   |   |          | (sortir de la boucle)          |
+     |   |   |          |                    |           |
+     |   |   |-------------------------------------------|
+     |   |   | [code invalide ET tentatives < 2]         |
+     |   |   |          |                    |           |
+     |   |   |<- "Code  |                    |           |
+     |   |   |  errone" |                    |           |
+     |   |   |          |                    |           |
+     |   |   |-------------------------------------------|
+     |   |   | [code invalide ET tentatives == 2]        |
+     |   |   |          |                    |           |
+     |   |   |          |-- avalerCarte()    |           |
+     |   |   |<- "Carte |                    |           |
+     |   |   | conservee"|                   |           |
+     |   |   |          |                    |           |
+     |   +-----------------------------------------------+
+     +--------------------------------------------------+
+     |                |                    |
+     |<-- demander    |                    |
+     |    Montant ----|                    |
+     |                |                    |
+     |-- saisir       |                    |
+     |   Montant ---->|                    |
+     |                |-- verifierSolde -->|
+     |                |   (montant)        |
+     |                |<-- resultat -------|
+     |                |                    |
+     +--------------------------------------------------+
+     | alt [solde suffisant]                             |
+     |   |                |                    |         |
+     |   |                |-- debiter -------->|         |
+     |   |                |   (montant)        |         |
+     |   |                |<-- confirmation ---|         |
+     |   |                |                    |         |
+     |   |                |-- distribuer       |         |
+     |   |                |   Billets()        |         |
+     |   |<-- billets +   |                    |         |
+     |   |    carte ------|                    |         |
+     |   |                |                    |         |
+     |   |-----------------------------------------------|
+     |   | [solde insuffisant]                           |
+     |   |                |                    |         |
+     |   |<-- "Solde      |                    |         |
+     |   |  insuffisant" -|                    |         |
+     |   |<-- carte ------|                    |         |
+     +--------------------------------------------------+
+     |                |                    |
+```
+
+---
+
+### Exercice 4 : Diagramme de classes depuis une description -- Site de petites annonces
+
+**Enonce :**
+Un site de petites annonces permet a des utilisateurs de publier des annonces. Un utilisateur a un pseudo, un email, un mot de passe et une date d'inscription. Il peut etre un particulier (avec nom et prenom) ou un professionnel (avec raison sociale et SIRET). Une annonce a un titre, une description, un prix, une date de publication et une categorie. Une annonce contient entre 1 et 5 photos (URL et description). Un utilisateur peut mettre en favoris des annonces d'autres utilisateurs. Un utilisateur peut envoyer un message a un autre a propos d'une annonce. Un message a un contenu, une date et un expediteur et un destinataire.
+
+**Correction :**
+
+```
++-----------------------------+
+|       Utilisateur           |
++-----------------------------+
+| - pseudo : string           |
+| - email : string            |
+| - motDePasse : string       |
+| - dateInscription : DateTime|
++-----------------------------+
+| + publierAnnonce() : void   |
+| + ajouterFavori() : void    |
+| + envoyerMessage() : void   |
++-----------------------------+
+        ^            ^
+        |            |
++---------------+ +---------------------+
+| Particulier   | | Professionnel       |
++---------------+ +---------------------+
+| - nom : string| | - raisonSociale: str|
+| - prenom: str | | - siret : string    |
++---------------+ +---------------------+
+
+Utilisateur 1 ---- 0..* Annonce          (publie)
+Utilisateur 0..* ---- 0..* Annonce       (favoris)
+
++-----------------------------+
+|         Annonce             |
++-----------------------------+
+| - titre : string            |
+| - description : string      |
+| - prix : float              |
+| - datePublication : DateTime|
+| - categorie : string        |
++-----------------------------+
+
+Annonce 1 <*>---- 1..5 Photo             (composition)
+
++-----------------------------+
+|          Photo              |
++-----------------------------+
+| - url : string              |
+| - description : string      |
++-----------------------------+
+
++-----------------------------+
+|         Message             |
++-----------------------------+
+| - contenu : string          |
+| - date : DateTime           |
++-----------------------------+
+
+Message 1 ---- 1 Utilisateur              (expediteur)
+Message 1 ---- 1 Utilisateur              (destinataire)
+Message 0..* ---- 1 Annonce               (a propos de)
+```
+
+Notes :
+- Il y a deux associations entre Utilisateur et Annonce : "publie" et "favoris". On les distingue par un nom de role.
+- Photo est en composition avec Annonce (une photo n'existe pas sans son annonce).
+- Message est une association ternaire simplifiee entre deux Utilisateurs et une Annonce.
+
+---
+
+### Exercice 5 : Diagramme d'activite -- Processus d'inscription en ligne
+
+**Enonce :**
+Un utilisateur remplit le formulaire d'inscription (pseudo, email, mot de passe). Le systeme verifie si l'email est deja utilise. Si oui, afficher un message d'erreur et retourner au formulaire. Sinon, le systeme verifie la complexite du mot de passe. Si le mot de passe est trop faible, afficher un avertissement et retourner au formulaire. Sinon, creer le compte, envoyer un mail de confirmation, et afficher la page de bienvenue.
+
+**Correction :**
+
+```
+  (*)
+   |
+   v
+/----------------------\
+| Remplir formulaire   |
+| (pseudo, email, mdp) |
+\----------------------/
+   |
+   v
+/---------------------\
+| Verifier email      |
+\---------------------/
+   |
+   v
+  < >
+  / \
+[email    [email
+ existe]   libre]
+  |           |
+  v           v
+/--------\  /------------------------\
+| Afficher| | Verifier complexite    |
+| erreur  | | mot de passe           |
+| email   | \------------------------/
+\--------/    |
+  |           v
+  |          < >
+  |          / \
+  |   [faible]  [fort]
+  |      |         |
+  |      v         v
+  |  /--------\  /--------------------\
+  |  | Afficher| | Creer le compte    |
+  |  | avertis.| \--------------------/
+  |  | mdp     |    |
+  |  \--------/     |
+  |      |      ==============  (fork)
+  |      |       |          |
+  +------+       v          v
+  |        /----------\  /-------------\
+  |        | Envoyer  |  | Afficher    |
+  |        | mail de  |  | page de     |
+  |        | confirm. |  | bienvenue   |
+  |        \----------/  \-------------/
+  |              |          |
+  |            ==============  (join)
+  |                  |
+  +--- (retour au   v
+  |     formulaire) (O)
+  |
+  +--- (boucle vers "Remplir formulaire")
+```
+
+---
+
+### Exercice 6 : Diagramme de sequence -- Recherche et emprunt dans une bibliotheque
+
+**Enonce :**
+Un adherent recherche un ouvrage par titre via l'interface. L'interface transmet la recherche au service de recherche qui interroge la base de donnees. Les resultats sont affiches. L'adherent selectionne un ouvrage et clique sur "Emprunter". Le systeme verifie que l'adherent n'a pas depasse son quota de 5 emprunts. Si ok, le systeme verifie la disponibilite de l'ouvrage. Si disponible, l'emprunt est enregistre en base, le stock est mis a jour et une confirmation est affichee.
+
+**Correction :**
+
+```
+  :Adherent    :Interface    :ServiceRecherche  :ServiceEmprunt  :BDD
+     |              |               |                |              |
+     |-- rechercher |               |                |              |
+     |  (titre) --->|               |                |              |
+     |              |-- chercher    |                |              |
+     |              |  (titre) ---->|                |              |
+     |              |               |-- SELECT * --->|              |
+     |              |               |   WHERE titre  |              |
+     |              |               |   LIKE ... ----|------------>|
+     |              |               |                |<-- resultats|
+     |              |               |<-- ouvrages ---|              |
+     |              |<-- afficher   |                |              |
+     |              |   resultats --|                |              |
+     |<-- liste     |               |                |              |
+     |   ouvrages --|               |                |              |
+     |              |               |                |              |
+     |-- selectionner               |                |              |
+     |   + emprunter -->|           |                |              |
+     |              |-- emprunter   |                |              |
+     |              |  (adherent,   |                |              |
+     |              |   ouvrage) ---|--------------->|              |
+     |              |               |                |              |
+     |              |               |  -- compterEmprunts -------->|
+     |              |               |                |<-- nb ------|
+     |              |               |                |              |
+     +------------------------------------------------------------------+
+     | alt [nb < 5]                                                      |
+     |              |               |                |              |    |
+     |              |               |  -- verifierDispo ---------->|    |
+     |              |               |                |<-- dispo ---|    |
+     |              |               |                |              |    |
+     |   +---------------------------------------------------------------+
+     |   | alt [disponible]                                              |
+     |   |              |               |                |              ||
+     |   |              |               |  -- INSERT emprunt --------->||
+     |   |              |               |                |<-- ok ------||
+     |   |              |               |  -- UPDATE stock ----------->||
+     |   |              |               |                |<-- ok ------||
+     |   |              |               |                |              ||
+     |   |              |<-- confirmation ---------------|              ||
+     |   |<-- "Emprunt  |               |                |              ||
+     |   |   enregistre"|               |                |              ||
+     |   |              |               |                |              ||
+     |   |--------------------------------------------------------------|
+     |   | [non disponible]                                              |
+     |   |              |               |                |              ||
+     |   |              |<-- erreur ----|                |              ||
+     |   |<-- "Ouvrage  |               |                |              ||
+     |   | indisponible"|               |                |              ||
+     |   +---------------------------------------------------------------+
+     |              |               |                |              |    |
+     |------------------------------------------------------------------|
+     | [nb >= 5]                                                        |
+     |              |               |                |              |    |
+     |              |<-- erreur ----|----------------|              |    |
+     |<-- "Quota    |               |                |              |    |
+     |  atteint" ---|               |                |              |    |
+     +------------------------------------------------------------------+
+     |              |               |                |              |
+```
+
+---
+
+### Exercice 7 : Completer un diagramme de classes existant
+
+**Enonce :**
+Voici un diagramme de classes partiel d'une application de gestion de formations. Completez-le avec les elements manquants decrits ci-dessous.
+
+Diagramme existant :
+```
++---------------------+              +---------------------+
+|     Formation       |              |      Session        |
++---------------------+              +---------------------+
+| - id : int          |              | - id : int          |
+| - titre : string    |              | - dateDebut : Date  |
+| - description : str |              | - dateFin : Date    |
+| - dureeHeures : int |              | - lieu : string     |
++---------------------+              +---------------------+
+```
+
+Elements a ajouter :
+- Une formation a plusieurs sessions. Une session appartient a une seule formation.
+- Un formateur anime les sessions. Un formateur a un nom, prenom, specialite et tarif journalier. Un formateur peut animer plusieurs sessions. Une session est animee par un seul formateur.
+- Des stagiaires participent aux sessions. Un stagiaire a un nom, prenom, email et entreprise. Un stagiaire peut participer a plusieurs sessions. Une session peut avoir de 3 a 15 stagiaires.
+- La participation d'un stagiaire a une session a une note d'evaluation (optionnelle) et un statut de presence (present, absent, excuse).
+
+**Correction :**
+
+```
++---------------------+  1     1..*  +---------------------+
+|     Formation       | ------------ |      Session        |
++---------------------+              +---------------------+
+| - id : int          |              | - id : int          |
+| - titre : string    |              | - dateDebut : Date  |
+| - description : str |              | - dateFin : Date    |
+| - dureeHeures : int |              | - lieu : string     |
++---------------------+              +---------------------+
+                                            |  1
+                                            |
+                                            | 0..*
+                                     +---------------------+
+                                     |    Formateur        |
+                                     +---------------------+
+                                     | - nom : string      |
+                                     | - prenom : string   |
+                                     | - specialite : str  |
+                                     | - tarifJour : float |
+                                     +---------------------+
+
+Session 1 ---- 1 Formateur    (anime)
+
+                            +---------------------+
+                            |   Participation     |
+                            | (classe association)|
+                            +---------------------+
+                            | - note : float      |  (0..1, optionnelle)
+                            | - statutPresence    |
+                            |   : string          |
+                            +---------------------+
+                                  /         \
+                          0..*  /             \  3..15
+                              /               \
+                +-------------+              +---------------------+
+                |  Stagiaire  |              |      Session        |
+                +-------------+              +---------------------+
+                | - nom : str |
+                | - prenom:str|
+                | - email: str|
+                | - entreprise|
+                |   : string  |
+                +-------------+
+
+Lecture des cardinalites :
+  - Un Stagiaire participe a 0..* Sessions
+  - Une Session a de 3 a 15 Stagiaires (cardinalite 3..15)
+  - La Participation porte la note et le statut
+```
+
+---
+
+### Exercice 8 : Diagramme d'etat -- Cycle de vie d'un billet d'avion
+
+**Enonce :**
+Modeliser les etats d'un billet d'avion : reserve, paye, enregistre (check-in), embarque, utilise, annule. Un billet peut etre annule tant qu'il n'est pas embarque. Un billet non paye dans les 48h est automatiquement annule.
+
+**Correction :**
+
+```
+                         (*)
+                          |
+                          | reserver()
+                          v
+                   +--------------+
+         +-------->|   Reserve    |<---------+
+         |         +--------------+          |
+         |              |     |              |
+         |   payer()    |     | [48h ecoulees] / annulationAuto()
+         |              |     |
+         |              v     +----------+
+         |       +--------------+        |
+         |       |     Paye     |        |
+         |       +--------------+        |
+         |              |                |
+         |  enregistrer()|               |
+         |  (check-in)   |               |
+         |              v                |
+         |       +--------------+        |
+         |       |  Enregistre  |        |
+         |       +--------------+        |
+         |              |                |
+         |   embarquer()|                |
+         |              v                |
+         |       +--------------+        |
+         |       |   Embarque   |        |
+         |       +--------------+        |
+         |              |                |
+         |    atterrir()|                |
+         |              v                v
+         |       +--------------+  +-----------+
+         |       |   Utilise    |  |  Annule   |
+         |       +--------------+  +-----------+
+         |              |                |
+         |              v                v
+         |             (O)              (O)
+         |
+         +--- annuler() depuis Reserve, Paye ou Enregistre
+              (transition vers Annule)
+```
+
+Transitions d'annulation (toutes vers l'etat Annule) :
+- Reserve --annuler()--> Annule
+- Paye --annuler()--> Annule
+- Enregistre --annuler()--> Annule
+- Reserve --[48h ecoulees]/annulationAuto()--> Annule
+
+L'etat Embarque ne permet PLUS l'annulation (le passager est dans l'avion).
+
+---
+
+### Exercice 9 (bonus) : Du code au diagramme de classes
+
+**Enonce :** Dessiner le diagramme de classes correspondant a ce code C#.
+
+```csharp
+public interface IExportable
+{
+    string ExporterPDF();
+    string ExporterCSV();
+}
+
+public abstract class Document
+{
+    protected int id;
+    protected string titre;
+    protected DateTime dateCreation;
+    protected Utilisateur auteur;
+
+    public abstract void Valider();
+    public string GetTitre() { return titre; }
+}
+
+public class Rapport : Document, IExportable
+{
+    private string contenu;
+    private List<Commentaire> commentaires;
+
+    public override void Valider() { /* ... */ }
+    public string ExporterPDF() { /* ... */ }
+    public string ExporterCSV() { /* ... */ }
+    public void AjouterCommentaire(Commentaire c) { commentaires.Add(c); }
+}
+
+public class Facture : Document, IExportable
+{
+    private float montantHT;
+    private float tauxTVA;
+    private List<LigneFacture> lignes;
+
+    public override void Valider() { /* ... */ }
+    public string ExporterPDF() { /* ... */ }
+    public string ExporterCSV() { /* ... */ }
+    public float GetMontantTTC() { return montantHT * (1 + tauxTVA); }
+}
+
+public class LigneFacture
+{
+    private string designation;
+    private int quantite;
+    private float prixUnitaire;
+}
+
+public class Commentaire
+{
+    private string texte;
+    private DateTime date;
+    private Utilisateur auteur;
+}
+
+public class Utilisateur
+{
+    private int id;
+    private string nom;
+    private string email;
+}
+```
+
+**Correction :**
+
+```
++---------------------------+
+|     <<interface>>         |
+|      IExportable          |
++---------------------------+
+| + ExporterPDF() : string  |
+| + ExporterCSV() : string  |
++---------------------------+
+        ^            ^
+        :            :  (realisation, pointille)
+        :            :
++---------------+  +-----------------+
+|   Rapport     |  |    Facture      |
++---------------+  +-----------------+
+| - contenu:str |  | - montantHT:    |
++---------------+  |   float         |
+| + Valider()   |  | - tauxTVA:float |
+| + ExporterPDF |  +-----------------+
+| + ExporterCSV |  | + Valider()     |
+| + AjouterCom  |  | + ExporterPDF() |
+|   mentaire()  |  | + ExporterCSV() |
++---------------+  | + GetMontantTTC |
+        |          |   () : float    |
+        |          +-----------------+
+        |               |
+        ^               ^
+        |               |    (heritage)
+        |               |
++----------------------------+
+|    {abstract}              |
+|     Document               |
++----------------------------+
+| # id : int                 |
+| # titre : string           |
+| # dateCreation : DateTime  |
++----------------------------+
+| + {abstract} Valider()     |
+| + GetTitre() : string      |
++----------------------------+
+        |  0..*
+        |
+        | 1 (auteur)
++----------------------------+
+|      Utilisateur           |
++----------------------------+
+| - id : int                 |
+| - nom : string             |
+| - email : string           |
++----------------------------+
+
+Rapport 1 <*>---- 0..* Commentaire       (composition)
+
++----------------------------+
+|      Commentaire           |
++----------------------------+
+| - texte : string           |
+| - date : DateTime          |
++----------------------------+
+        |  0..*
+        |
+        | 1 (auteur)
+        |
+   Utilisateur
+
+Facture 1 <*>---- 1..* LigneFacture      (composition)
+
++----------------------------+
+|     LigneFacture           |
++----------------------------+
+| - designation : string     |
+| - quantite : int           |
+| - prixUnitaire : float     |
++----------------------------+
+```
+
+Points cles de la correction :
+- Document est abstract (mot-cle `abstract`)
+- Rapport et Facture heritent de Document ET realisent IExportable (double relation)
+- Les List<> se traduisent en cardinalites 0..*
+- La creation interne (new dans Add ou constructeur) indique une composition
+- Commentaire et LigneFacture sont en composition (ils n'existent pas seuls)
+- L'attribut `auteur` de type Utilisateur devient une association
+
+---
+
+### Exercice 10 (bonus) : Cas d'utilisation -- Application de covoiturage
+
+**Enonce :**
+Une application de covoiturage permet aux conducteurs de publier des trajets et aux passagers de les rechercher et de les reserver. Tout utilisateur doit creer un compte pour utiliser l'application. Un conducteur publie un trajet (depart, arrivee, date, nombre de places, prix). Un passager recherche un trajet, consulte les details et peut reserver une place. La reservation necessite un paiement en ligne. Le conducteur peut accepter ou refuser une reservation. Apres le trajet, les deux parties peuvent se noter mutuellement. L'administrateur peut moderer les avis et suspendre des comptes.
+
+**Correction :**
+
+Acteurs :
+- Utilisateur (general)
+- Conducteur (herite d'Utilisateur)
+- Passager (herite d'Utilisateur)
+- Administrateur
+- Systeme de paiement (acteur secondaire)
+
+```
+Utilisateur <|---- Conducteur
+Utilisateur <|---- Passager
+
++------------------------------------------------------------------+
+|            Application de covoiturage                             |
+|                                                                  |
+|  ( Creer un compte )                                             |
+|                                                                  |
+|  ( Publier un trajet )                                           |
+|  ( Accepter reservation )                                        |
+|  ( Refuser reservation )                                         |
+|  ( Noter un passager )                                           |
+|                                                                  |
+|  ( Rechercher un trajet )                                        |
+|  ( Consulter details trajet )                                    |
+|  ( Reserver une place ) ---<<include>>---> ( Payer en ligne )    |
+|  ( Noter un conducteur )                                         |
+|                                                                  |
+|  ( Moderer les avis )                                            |
+|  ( Suspendre un compte )                                         |
++------------------------------------------------------------------+
+
+Utilisateur ---- Creer un compte
+
+Conducteur ---- Publier un trajet
+Conducteur ---- Accepter reservation
+Conducteur ---- Refuser reservation
+Conducteur ---- Noter un passager
+
+Passager ---- Rechercher un trajet
+Passager ---- Consulter details trajet
+Passager ---- Reserver une place
+
+Systeme de paiement ---- Payer en ligne
+
+Administrateur ---- Moderer les avis
+Administrateur ---- Suspendre un compte
+```
+
+Notes :
+- "Payer en ligne" est un include de "Reserver une place" (obligatoire)
+- Conducteur et Passager heritent d'Utilisateur (donc ils ont acces a "Creer un compte")
+- Le Systeme de paiement est un acteur secondaire (il ne declenche pas le cas, il y participe)
+
+---
+
+## Resume final -- Aide-memoire express
+
+```
+DIAGRAMME              | QUESTION CLE                | ELEMENTS PRINCIPAUX
+-----------------------|-----------------------------|---------------------------
+Cas d'utilisation      | Qui fait quoi ?             | Acteurs, cas, include/extend
+Classes                | De quoi c'est compose ?     | Classes, attributs, relations
+Sequence               | Comment ca se passe ?       | Lignes de vie, messages, fragments
+Activite               | Quelles etapes ?            | Actions, decisions, swimlanes
+Etat                   | Quels etats possibles ?     | Etats, transitions, evenements
+
+RELATIONS CLASSES      | SYMBOLE          | SIGNIFICATION
+-----------------------|------------------|---------------------------
+Association            | trait simple     | "est lie a"
+Agregation             | losange vide     | "a un" (faible)
+Composition            | losange plein    | "est compose de" (fort)
+Heritage               | triangle vide    | "est un type de"
+Realisation            | triangle pointille| "implemente"
+Dependance             | fleche pointillee | "utilise temporairement"
+
+CARDINALITES           | NOTATION
+-----------------------|------------------
+Exactement un          | 1
+Zero ou un             | 0..1
+Zero ou plusieurs      | * ou 0..*
+Un ou plusieurs        | 1..*
+
+VISIBILITES            | SYMBOLE
+-----------------------|------------------
+Public                 | +
+Prive                  | -
+Protege                | #
+
+INCLUDE vs EXTEND
+-----------------------
+Include  = obligatoire, fleche A -----> B (A inclut toujours B)
+Extend   = optionnel,   fleche B -----> A (B etend parfois A)
+```
+
+---
+
+Fin du playbook UML. Relire les exercices, refaire les diagrammes a la main, verifier les cardinalites. Pas de raccourci.

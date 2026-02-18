@@ -1,0 +1,1952 @@
+---
+title: "Procedures stockees et triggers"
+description: "Guide complet sur les procedures stockees et triggers MySQL"
+category: "Bases de donnees"
+tags: ["mysql", "procedures", "triggers", "plsql"]
+difficulty: "Avance"
+---
+
+# Procedures stockees et triggers (MySQL)
+
+---
+
+## Schema de reference
+
+Tous les exemples de ce playbook s'appuient sur le schema suivant. Creer ces tables avant de tester quoi que ce soit.
+
+```sql
+CREATE TABLE client (
+    id_client INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    email VARCHAR(255),
+    ville VARCHAR(100),
+    date_naissance DATE,
+    date_inscription DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE produit (
+    id_produit INT AUTO_INCREMENT PRIMARY KEY,
+    designation VARCHAR(200) NOT NULL,
+    prix_ht DECIMAL(10,2) NOT NULL,
+    stock INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE commande (
+    id_commande INT AUTO_INCREMENT PRIMARY KEY,
+    id_client INT NOT NULL,
+    date_commande DATETIME DEFAULT CURRENT_TIMESTAMP,
+    montant_total DECIMAL(10,2) DEFAULT 0,
+    FOREIGN KEY (id_client) REFERENCES client(id_client)
+);
+
+CREATE TABLE ligne_commande (
+    id_ligne INT AUTO_INCREMENT PRIMARY KEY,
+    id_commande INT NOT NULL,
+    id_produit INT NOT NULL,
+    quantite INT NOT NULL,
+    prix_unitaire DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (id_commande) REFERENCES commande(id_commande),
+    FOREIGN KEY (id_produit) REFERENCES produit(id_produit)
+);
+
+CREATE TABLE compte (
+    id_compte INT AUTO_INCREMENT PRIMARY KEY,
+    id_client INT NOT NULL,
+    solde DECIMAL(12,2) NOT NULL DEFAULT 0,
+    FOREIGN KEY (id_client) REFERENCES client(id_client)
+);
+
+CREATE TABLE historique_produit (
+    id_historique INT AUTO_INCREMENT PRIMARY KEY,
+    id_produit INT NOT NULL,
+    ancien_prix DECIMAL(10,2),
+    nouveau_prix DECIMAL(10,2),
+    ancien_stock INT,
+    nouveau_stock INT,
+    date_modification DATETIME DEFAULT CURRENT_TIMESTAMP,
+    utilisateur VARCHAR(100),
+    FOREIGN KEY (id_produit) REFERENCES produit(id_produit)
+);
+```
+
+---
+
+## 1. Pourquoi les procedures stockees ?
+
+### Le probleme
+
+Dans une application classique (PHP, Java, Python), le code SQL est ecrit directement dans le code applicatif. Quand une meme requete complexe est executee 100 fois par jour depuis differents endroits du programme, on obtient :
+
+- **Duplication** : la meme requete est copiee dans 15 fichiers differents. Si la structure de la table change, il faut modifier 15 fichiers.
+- **Risque d'erreur** : un developpeur modifie la requete dans un fichier mais oublie les 14 autres.
+- **Securite faible** : l'application doit avoir un acces direct aux tables (SELECT, INSERT, UPDATE, DELETE). Si l'application est compromise, l'attaquant a acces a tout.
+- **Performance sous-optimale** : chaque requete envoyee depuis l'application doit etre analysee, optimisee et compilee par MySQL a chaque execution.
+
+### La solution
+
+Stocker la logique SQL directement dans la base de donnees, sous forme de **procedures stockees**. L'application n'envoie plus la requete complete : elle appelle la procedure par son nom.
+
+Avant (code PHP) :
+```php
+// Fichier 1
+$sql = "SELECT * FROM client WHERE ville = 'Paris' ORDER BY nom";
+// Fichier 2 — meme requete, copiee
+$sql = "SELECT * FROM client WHERE ville = 'Paris' ORDER BY nom";
+// Fichier 3 — quelqu'un a oublie le ORDER BY
+$sql = "SELECT * FROM client WHERE ville = 'Paris'";
+```
+
+Apres (code PHP avec procedure stockee) :
+```php
+$sql = "CALL clients_par_ville('Paris')";
+```
+
+La requete n'existe qu'a un seul endroit : dans la base de donnees.
+
+### Les quatre avantages
+
+| Avantage | Explication |
+|---|---|
+| **Performance** | La procedure est analysee et compilee une seule fois par MySQL. Les appels suivants reutilisent le plan d'execution. |
+| **Securite** | On peut donner a l'application uniquement le droit EXECUTE sur les procedures, sans aucun droit direct sur les tables. |
+| **Maintenance** | Le code SQL existe a un seul endroit. Une modification se fait une fois, pas dans 15 fichiers. |
+| **Reutilisation** | Toute application (PHP, Java, Python) peut appeler la meme procedure. Le code SQL n'est pas lie a un langage. |
+
+---
+
+## 2. Syntaxe des procedures stockees
+
+### 2.1 DELIMITER : pourquoi changer le delimiteur
+
+C'est le point le plus deroutant pour les debutants. Voici l'explication complete.
+
+Par defaut, MySQL utilise le point-virgule `;` comme delimiteur : c'est le caractere qui indique a MySQL "cette instruction est terminee, execute-la".
+
+Le probleme : une procedure stockee **contient** des points-virgules a l'interieur de son corps. Exemple :
+
+```sql
+CREATE PROCEDURE test()
+BEGIN
+    SELECT * FROM client;   -- point-virgule ici
+    SELECT * FROM produit;  -- et ici
+END;                        -- et ici
+```
+
+Quand MySQL lit la premiere ligne `SELECT * FROM client;`, il pense que l'instruction est terminee et essaie de l'executer immediatement. Il ne comprend pas que c'est a l'interieur d'une procedure.
+
+**La solution** : on change temporairement le delimiteur pour que MySQL ne s'arrete plus au `;` mais a un autre caractere (par convention `//` ou `$$`).
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE test()
+BEGIN
+    SELECT * FROM client;   -- MySQL ne s'arrete plus ici
+    SELECT * FROM produit;  -- ni ici
+END //                      -- MAINTENANT MySQL sait que c'est fini
+
+DELIMITER ;                 -- on remet le delimiteur par defaut
+```
+
+**Regle** : toujours utiliser `DELIMITER //` avant `CREATE PROCEDURE` et `DELIMITER ;` apres.
+
+**Attention** : le `DELIMITER` est une commande du client MySQL (mysql en ligne de commande, phpMyAdmin). Ce n'est pas du SQL standard. Dans phpMyAdmin, on peut souvent omettre le `DELIMITER` car l'interface le gere automatiquement. En ligne de commande, c'est obligatoire.
+
+### 2.2 CREATE PROCEDURE : syntaxe complete
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE nom_procedure (
+    [IN | OUT | INOUT] param1 TYPE,
+    [IN | OUT | INOUT] param2 TYPE,
+    ...
+)
+BEGIN
+    -- corps de la procedure
+END //
+
+DELIMITER ;
+```
+
+- `nom_procedure` : nom unique dans la base de donnees.
+- Les parametres sont optionnels. Une procedure peut n'avoir aucun parametre.
+- Le corps est entre `BEGIN` et `END`.
+
+### 2.3 Parametres : IN, OUT, INOUT
+
+#### IN (par defaut)
+
+Le parametre est une **entree**. La procedure recoit une valeur mais ne peut pas la modifier pour l'appelant. Si on ne precise rien, le parametre est IN par defaut.
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE clients_par_ville(IN p_ville VARCHAR(100))
+BEGIN
+    SELECT id_client, nom, prenom, email
+    FROM client
+    WHERE ville = p_ville
+    ORDER BY nom, prenom;
+END //
+
+DELIMITER ;
+```
+
+Appel :
+```sql
+CALL clients_par_ville('Paris');
+CALL clients_par_ville('Lyon');
+```
+
+**Convention de nommage** : prefixer les parametres par `p_` pour les distinguer des colonnes. Sinon, si le parametre et la colonne ont le meme nom, MySQL utilise le parametre dans la clause WHERE, ce qui donne `WHERE ville = ville` (toujours vrai).
+
+#### OUT
+
+Le parametre est une **sortie**. La procedure y ecrit une valeur que l'appelant pourra lire apres l'appel.
+
+**Besoin** : calculer le montant total d'une commande et le recuperer dans une variable.
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE total_commande(
+    IN p_id_commande INT,
+    OUT p_total DECIMAL(10,2)
+)
+BEGIN
+    SELECT SUM(quantite * prix_unitaire)
+    INTO p_total
+    FROM ligne_commande
+    WHERE id_commande = p_id_commande;
+END //
+
+DELIMITER ;
+```
+
+Appel et recuperation :
+```sql
+CALL total_commande(1, @resultat);
+SELECT @resultat AS montant_total;
+```
+
+Explication : `@resultat` est une variable de session MySQL (prefixee par `@`). La procedure ecrit dans cette variable via le parametre OUT. Apres le CALL, on lit la variable avec SELECT.
+
+#### INOUT
+
+Le parametre est a la fois entree et sortie. La procedure recoit une valeur, la modifie, et la modification est visible par l'appelant.
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE appliquer_remise(INOUT p_prix DECIMAL(10,2), IN p_pourcentage INT)
+BEGIN
+    SET p_prix = p_prix - (p_prix * p_pourcentage / 100);
+END //
+
+DELIMITER ;
+```
+
+Appel :
+```sql
+SET @prix = 100.00;
+CALL appliquer_remise(@prix, 15);
+SELECT @prix;
+-- Resultat : 85.00
+```
+
+### 2.4 Variables locales : DECLARE et SET
+
+Les variables locales existent uniquement a l'interieur de la procedure. Elles sont declarees avec `DECLARE` et doivent etre placees **au debut du bloc BEGIN**, avant toute autre instruction.
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE stats_commande(IN p_id_commande INT)
+BEGIN
+    DECLARE v_nb_lignes INT DEFAULT 0;
+    DECLARE v_total DECIMAL(10,2) DEFAULT 0;
+    DECLARE v_moyenne DECIMAL(10,2);
+
+    SELECT COUNT(*), SUM(quantite * prix_unitaire)
+    INTO v_nb_lignes, v_total
+    FROM ligne_commande
+    WHERE id_commande = p_id_commande;
+
+    SET v_moyenne = v_total / v_nb_lignes;
+
+    SELECT v_nb_lignes AS nb_articles,
+           v_total AS total,
+           v_moyenne AS panier_moyen;
+END //
+
+DELIMITER ;
+```
+
+Points importants :
+- `DECLARE` est obligatoire pour les variables locales (prefixees par convention `v_`).
+- `DEFAULT` permet de donner une valeur initiale. Sans DEFAULT, la variable vaut NULL.
+- `SET` permet de modifier la valeur d'une variable.
+- `SELECT ... INTO` permet de stocker le resultat d'une requete dans des variables.
+- Les `DECLARE` doivent TOUS etre avant la premiere instruction executable.
+
+### 2.5 CALL : executer une procedure
+
+```sql
+CALL nom_procedure();
+CALL nom_procedure(valeur1, valeur2);
+CALL nom_procedure('Paris');
+CALL total_commande(1, @montant);
+```
+
+### 2.6 DROP PROCEDURE : supprimer une procedure
+
+```sql
+DROP PROCEDURE nom_procedure;
+DROP PROCEDURE IF EXISTS nom_procedure;
+```
+
+`IF EXISTS` evite une erreur si la procedure n'existe pas. Bonne pratique : toujours utiliser `DROP PROCEDURE IF EXISTS` avant `CREATE PROCEDURE` pour pouvoir recreer la procedure sans erreur.
+
+```sql
+DROP PROCEDURE IF EXISTS clients_par_ville;
+
+DELIMITER //
+
+CREATE PROCEDURE clients_par_ville(IN p_ville VARCHAR(100))
+BEGIN
+    SELECT * FROM client WHERE ville = p_ville;
+END //
+
+DELIMITER ;
+```
+
+### 2.7 Voir les procedures existantes
+
+```sql
+SHOW PROCEDURE STATUS WHERE Db = 'nom_base';
+SHOW CREATE PROCEDURE nom_procedure;
+```
+
+---
+
+## 3. Structures de controle dans les procedures
+
+### 3.1 IF ... THEN ... ELSEIF ... ELSE ... END IF
+
+**Besoin** : classer un client selon son nombre de commandes (nouveau, regulier, fidele).
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE classement_client(
+    IN p_id_client INT,
+    OUT p_categorie VARCHAR(50)
+)
+BEGIN
+    DECLARE v_nb_commandes INT;
+
+    SELECT COUNT(*)
+    INTO v_nb_commandes
+    FROM commande
+    WHERE id_client = p_id_client;
+
+    IF v_nb_commandes = 0 THEN
+        SET p_categorie = 'Prospect';
+    ELSEIF v_nb_commandes < 5 THEN
+        SET p_categorie = 'Nouveau';
+    ELSEIF v_nb_commandes < 20 THEN
+        SET p_categorie = 'Regulier';
+    ELSE
+        SET p_categorie = 'Fidele';
+    END IF;
+END //
+
+DELIMITER ;
+```
+
+Test :
+```sql
+CALL classement_client(1, @cat);
+SELECT @cat;
+```
+
+**Syntaxe a retenir** : `IF condition THEN ... ELSEIF condition THEN ... ELSE ... END IF;`
+
+Ne pas oublier le `THEN` apres chaque condition. Ne pas oublier le `END IF` a la fin (avec un point-virgule).
+
+### 3.2 CASE ... WHEN ... THEN ... END CASE
+
+Deux formes.
+
+**Forme 1 : CASE simple** (comparaison d'egalite)
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE libelle_jour(IN p_numero INT, OUT p_jour VARCHAR(20))
+BEGIN
+    CASE p_numero
+        WHEN 1 THEN SET p_jour = 'Lundi';
+        WHEN 2 THEN SET p_jour = 'Mardi';
+        WHEN 3 THEN SET p_jour = 'Mercredi';
+        WHEN 4 THEN SET p_jour = 'Jeudi';
+        WHEN 5 THEN SET p_jour = 'Vendredi';
+        WHEN 6 THEN SET p_jour = 'Samedi';
+        WHEN 7 THEN SET p_jour = 'Dimanche';
+        ELSE SET p_jour = 'Invalide';
+    END CASE;
+END //
+
+DELIMITER ;
+```
+
+**Forme 2 : CASE recherche** (conditions quelconques)
+
+```sql
+CASE
+    WHEN v_note >= 16 THEN SET v_mention = 'Tres bien';
+    WHEN v_note >= 14 THEN SET v_mention = 'Bien';
+    WHEN v_note >= 12 THEN SET v_mention = 'Assez bien';
+    WHEN v_note >= 10 THEN SET v_mention = 'Passable';
+    ELSE SET v_mention = 'Insuffisant';
+END CASE;
+```
+
+### 3.3 WHILE ... DO ... END WHILE
+
+La condition est testee **avant** chaque iteration. Si la condition est fausse des le depart, le corps n'est jamais execute.
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE inserer_produits_test(IN p_nombre INT)
+BEGIN
+    DECLARE v_compteur INT DEFAULT 1;
+
+    WHILE v_compteur <= p_nombre DO
+        INSERT INTO produit (designation, prix_ht, stock)
+        VALUES (CONCAT('Produit test ', v_compteur), v_compteur * 10.00, 100);
+
+        SET v_compteur = v_compteur + 1;
+    END WHILE;
+END //
+
+DELIMITER ;
+```
+
+Test :
+```sql
+CALL inserer_produits_test(5);
+SELECT * FROM produit WHERE designation LIKE 'Produit test%';
+```
+
+### 3.4 REPEAT ... UNTIL ... END REPEAT
+
+La condition est testee **apres** chaque iteration. Le corps est execute **au moins une fois**.
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE decompte(IN p_depart INT)
+BEGIN
+    DECLARE v_n INT DEFAULT p_depart;
+
+    REPEAT
+        SELECT v_n AS valeur;
+        SET v_n = v_n - 1;
+    UNTIL v_n < 0
+    END REPEAT;
+END //
+
+DELIMITER ;
+```
+
+**Attention** : pas de point-virgule apres la condition `UNTIL`. C'est `UNTIL condition END REPEAT;` (le `;` est apres `END REPEAT`).
+
+### 3.5 LOOP / LEAVE / ITERATE
+
+`LOOP` cree une boucle infinie. On en sort avec `LEAVE`. On passe a l'iteration suivante avec `ITERATE`. La boucle doit porter un **label** (etiquette).
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE somme_entiers(IN p_n INT, OUT p_somme INT)
+BEGIN
+    DECLARE v_i INT DEFAULT 1;
+    SET p_somme = 0;
+
+    boucle_somme: LOOP
+        IF v_i > p_n THEN
+            LEAVE boucle_somme;
+        END IF;
+
+        SET p_somme = p_somme + v_i;
+        SET v_i = v_i + 1;
+    END LOOP boucle_somme;
+END //
+
+DELIMITER ;
+```
+
+Test :
+```sql
+CALL somme_entiers(10, @s);
+SELECT @s;
+-- Resultat : 55
+```
+
+Exemple avec `ITERATE` (equivalent de `continue` dans les langages de programmation) :
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE somme_pairs(IN p_n INT, OUT p_somme INT)
+BEGIN
+    DECLARE v_i INT DEFAULT 0;
+    SET p_somme = 0;
+
+    boucle: LOOP
+        SET v_i = v_i + 1;
+
+        IF v_i > p_n THEN
+            LEAVE boucle;
+        END IF;
+
+        IF v_i % 2 != 0 THEN
+            ITERATE boucle;   -- sauter les impairs
+        END IF;
+
+        SET p_somme = p_somme + v_i;
+    END LOOP boucle;
+END //
+
+DELIMITER ;
+```
+
+### 3.6 Curseurs
+
+Un curseur permet de parcourir un jeu de resultats **ligne par ligne**. C'est necessaire quand on doit effectuer un traitement individuel sur chaque ligne (pas possible avec un simple SELECT).
+
+#### Principe
+
+1. **DECLARE** le curseur (associe a une requete SELECT).
+2. **DECLARE** un handler pour detecter la fin du resultat.
+3. **OPEN** le curseur (execute la requete).
+4. **FETCH** chaque ligne dans des variables.
+5. **CLOSE** le curseur.
+
+#### Ordre obligatoire des DECLARE
+
+Les `DECLARE` doivent respecter un ordre strict dans MySQL :
+1. Variables locales (`DECLARE v_xxx TYPE`)
+2. Curseurs (`DECLARE nom_curseur CURSOR FOR ...`)
+3. Handlers (`DECLARE CONTINUE HANDLER FOR ...`)
+
+Ne pas respecter cet ordre provoque une erreur de syntaxe.
+
+#### Exemple complet
+
+**Besoin** : pour chaque produit dont le stock est inferieur a 10, augmenter le stock de 50 unites et logger l'operation.
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE reapprovisionner_stock()
+BEGIN
+    DECLARE v_id INT;
+    DECLARE v_designation VARCHAR(200);
+    DECLARE v_stock INT;
+    DECLARE v_fini BOOLEAN DEFAULT FALSE;
+
+    -- 1. Declaration du curseur
+    DECLARE cur_produits CURSOR FOR
+        SELECT id_produit, designation, stock
+        FROM produit
+        WHERE stock < 10;
+
+    -- 2. Handler : quand il n'y a plus de lignes, mettre v_fini a TRUE
+    DECLARE CONTINUE HANDLER FOR NOT FOUND
+        SET v_fini = TRUE;
+
+    -- 3. Ouvrir le curseur
+    OPEN cur_produits;
+
+    -- 4. Boucle de lecture
+    boucle_lecture: LOOP
+        FETCH cur_produits INTO v_id, v_designation, v_stock;
+
+        IF v_fini THEN
+            LEAVE boucle_lecture;
+        END IF;
+
+        -- Traitement : augmenter le stock de 50
+        UPDATE produit
+        SET stock = stock + 50
+        WHERE id_produit = v_id;
+
+        -- Logger dans historique
+        INSERT INTO historique_produit
+            (id_produit, ancien_stock, nouveau_stock, utilisateur)
+        VALUES
+            (v_id, v_stock, v_stock + 50, CURRENT_USER());
+    END LOOP boucle_lecture;
+
+    -- 5. Fermer le curseur
+    CLOSE cur_produits;
+END //
+
+DELIMITER ;
+```
+
+Explication pas a pas :
+- `DECLARE cur_produits CURSOR FOR SELECT ...` : on associe le curseur a la requete.
+- `DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_fini = TRUE;` : quand FETCH ne trouve plus de ligne, MySQL declenche la condition NOT FOUND. Le handler met v_fini a TRUE. `CONTINUE` signifie que la procedure continue (ne s'arrete pas).
+- `OPEN cur_produits` : execute la requete et prepare le resultat.
+- `FETCH cur_produits INTO v_id, v_designation, v_stock` : lit la ligne suivante et stocke les valeurs dans les variables. L'ordre et le nombre de variables doivent correspondre exactement aux colonnes du SELECT.
+- Quand FETCH echoue (plus de lignes), le handler met v_fini a TRUE, et le IF suivant sort de la boucle.
+- `CLOSE cur_produits` : libere les ressources.
+
+Test :
+```sql
+-- Preparer des donnees de test
+INSERT INTO produit (designation, prix_ht, stock) VALUES
+    ('Clavier', 25.00, 3),
+    ('Souris', 15.00, 7),
+    ('Ecran', 200.00, 50);
+
+CALL reapprovisionner_stock();
+
+-- Verifier
+SELECT * FROM produit WHERE designation IN ('Clavier', 'Souris', 'Ecran');
+-- Clavier : stock = 53, Souris : stock = 57, Ecran : stock inchange (50 >= 10)
+
+SELECT * FROM historique_produit;
+-- Deux lignes : Clavier et Souris
+```
+
+---
+
+## 4. Fonctions stockees
+
+### 4.1 Difference entre procedure et fonction
+
+| Critere | Procedure | Fonction |
+|---|---|---|
+| Mot-cle de creation | `CREATE PROCEDURE` | `CREATE FUNCTION` |
+| Retourne une valeur | Non (utilise OUT) | Oui, obligatoirement (RETURN) |
+| Appel | `CALL nom(...)` | Utilisable dans un SELECT : `SELECT nom(...)` |
+| Utilisation dans une requete | Impossible | Possible (comme une fonction native : `NOW()`, `CONCAT()`) |
+| Peut retourner un jeu de resultats | Oui (SELECT dans le corps) | Non |
+
+**Regle simple** : si on a besoin d'une valeur calculee utilisable dans un SELECT, c'est une **fonction**. Sinon, c'est une **procedure**.
+
+### 4.2 CREATE FUNCTION : syntaxe
+
+```sql
+DELIMITER //
+
+CREATE FUNCTION nom_fonction (param1 TYPE, param2 TYPE, ...)
+RETURNS type_retour
+DETERMINISTIC    -- ou NOT DETERMINISTIC
+BEGIN
+    DECLARE v_resultat type_retour;
+    -- calculs
+    RETURN v_resultat;
+END //
+
+DELIMITER ;
+```
+
+Differences avec CREATE PROCEDURE :
+- Les parametres sont toujours en entree (pas de IN/OUT/INOUT).
+- `RETURNS type_retour` est obligatoire (indique le type de la valeur retournee).
+- Le corps doit contenir au moins un `RETURN`.
+- `DETERMINISTIC` ou `NOT DETERMINISTIC` est obligatoire en MySQL (sinon erreur si `log_bin_trust_function_creators` est desactive).
+
+### 4.3 DETERMINISTIC vs NOT DETERMINISTIC
+
+- **DETERMINISTIC** : pour les memes parametres en entree, la fonction retourne toujours le meme resultat. Exemple : calcul de TVA.
+- **NOT DETERMINISTIC** : le resultat peut varier meme avec les memes parametres. Exemple : une fonction qui utilise `NOW()` ou qui lit des donnees en base.
+
+En cas de doute, utiliser `DETERMINISTIC` si la fonction ne fait que des calculs mathematiques, `NOT DETERMINISTIC` si elle lit la base de donnees.
+
+### 4.4 Exemple : prix TTC a partir du HT
+
+**Besoin** : calculer le prix TTC (taux de TVA par defaut : 20%).
+
+```sql
+DELIMITER //
+
+CREATE FUNCTION prix_ttc(p_prix_ht DECIMAL(10,2), p_taux_tva DECIMAL(5,2))
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+    RETURN ROUND(p_prix_ht * (1 + p_taux_tva / 100), 2);
+END //
+
+DELIMITER ;
+```
+
+Utilisation :
+```sql
+SELECT designation, prix_ht, prix_ttc(prix_ht, 20) AS prix_ttc
+FROM produit;
+```
+
+La fonction s'utilise exactement comme `ROUND()` ou `CONCAT()` : directement dans un SELECT.
+
+### 4.5 Exemple : age a partir de la date de naissance
+
+```sql
+DELIMITER //
+
+CREATE FUNCTION calculer_age(p_date_naissance DATE)
+RETURNS INT
+DETERMINISTIC
+BEGIN
+    DECLARE v_age INT;
+
+    SET v_age = TIMESTAMPDIFF(YEAR, p_date_naissance, CURDATE());
+
+    RETURN v_age;
+END //
+
+DELIMITER ;
+```
+
+**Note** : cette fonction utilise `CURDATE()` qui change chaque jour. On pourrait argumenter qu'elle est NOT DETERMINISTIC. En pratique, pour l'examen BTS SIO, les deux sont acceptes. L'important est de justifier son choix.
+
+Utilisation :
+```sql
+SELECT nom, prenom, date_naissance, calculer_age(date_naissance) AS age
+FROM client
+ORDER BY age DESC;
+```
+
+### 4.6 DROP FUNCTION
+
+```sql
+DROP FUNCTION IF EXISTS prix_ttc;
+DROP FUNCTION IF EXISTS calculer_age;
+```
+
+---
+
+## 5. Triggers (declencheurs)
+
+### 5.1 Qu'est-ce qu'un trigger ?
+
+Un trigger est un bloc de code SQL qui s'execute **automatiquement** quand un evenement precis se produit sur une table : insertion, modification ou suppression d'une ligne.
+
+**Analogie** : une alarme de maison. On la configure une fois. Ensuite, a chaque fois que quelqu'un ouvre la porte (INSERT), l'alarme se declenche automatiquement, sans qu'on ait a intervenir. Le trigger fonctionne de la meme maniere : on le cree une fois, et il se declenche tout seul a chaque evenement.
+
+Le declenchement est **transparent** : le programme qui fait l'INSERT ne sait pas qu'un trigger existe. Il fait son INSERT normalement, et le trigger s'execute en arriere-plan.
+
+### 5.2 Les 6 moments possibles
+
+Chaque trigger est associe a :
+- Un **moment** : BEFORE (avant) ou AFTER (apres)
+- Un **evenement** : INSERT, UPDATE ou DELETE
+
+Ce qui donne 6 combinaisons :
+
+| Moment | INSERT | UPDATE | DELETE |
+|---|---|---|---|
+| **BEFORE** | BEFORE INSERT | BEFORE UPDATE | BEFORE DELETE |
+| **AFTER** | AFTER INSERT | AFTER UPDATE | AFTER DELETE |
+
+**Quand choisir BEFORE ?**
+- Pour **valider** ou **modifier** les donnees avant qu'elles soient ecrites.
+- Exemple : verifier qu'un prix n'est pas negatif avant insertion. Corriger automatiquement une valeur avant ecriture.
+
+**Quand choisir AFTER ?**
+- Pour **reagir** a une modification deja effectuee.
+- Exemple : mettre a jour un total, ecrire dans une table d'historique.
+
+### 5.3 NEW et OLD
+
+Dans le corps d'un trigger, on accede aux valeurs de la ligne concernee avec les mots-cles `NEW` et `OLD`.
+
+| Mot-cle | Signification | Disponible en |
+|---|---|---|
+| `NEW` | Les **nouvelles** valeurs (celles qu'on est en train d'ecrire) | INSERT, UPDATE |
+| `OLD` | Les **anciennes** valeurs (celles qui existaient avant) | UPDATE, DELETE |
+
+**Tableau recapitulatif complet :**
+
+| Evenement | OLD | NEW |
+|---|---|---|
+| **INSERT** | N'existe pas (il n'y avait pas de ligne avant) | Les valeurs inserees |
+| **UPDATE** | Les valeurs avant modification | Les valeurs apres modification |
+| **DELETE** | Les valeurs de la ligne supprimee | N'existe pas (la ligne va disparaitre) |
+
+Exemples d'acces :
+- `NEW.prix_ht` : le nouveau prix HT (en INSERT ou UPDATE).
+- `OLD.prix_ht` : l'ancien prix HT (en UPDATE ou DELETE).
+- En BEFORE INSERT ou BEFORE UPDATE, on peut **modifier** les valeurs de NEW : `SET NEW.prix_ht = 0;`
+- On ne peut **jamais** modifier OLD. OLD est en lecture seule.
+
+### 5.4 CREATE TRIGGER : syntaxe complete
+
+```sql
+DELIMITER //
+
+CREATE TRIGGER nom_trigger
+{BEFORE | AFTER} {INSERT | UPDATE | DELETE}
+ON nom_table
+FOR EACH ROW
+BEGIN
+    -- corps du trigger
+END //
+
+DELIMITER ;
+```
+
+- `nom_trigger` : nom unique dans la base.
+- `FOR EACH ROW` : obligatoire en MySQL. Le trigger s'execute pour **chaque ligne** affectee.
+- Le corps est entre `BEGIN` et `END` (sauf si une seule instruction, mais il est recommande de toujours utiliser BEGIN/END).
+
+### 5.5 Cas d'utilisation 1 : historique / audit
+
+**Besoin** : a chaque modification du prix d'un produit, enregistrer l'ancien et le nouveau prix dans la table `historique_produit`.
+
+**Table d'historique** : deja creee dans le schema de reference (voir debut du document).
+
+**Trigger :**
+
+```sql
+DELIMITER //
+
+CREATE TRIGGER trg_audit_prix_produit
+AFTER UPDATE
+ON produit
+FOR EACH ROW
+BEGIN
+    IF OLD.prix_ht != NEW.prix_ht THEN
+        INSERT INTO historique_produit
+            (id_produit, ancien_prix, nouveau_prix, utilisateur)
+        VALUES
+            (NEW.id_produit, OLD.prix_ht, NEW.prix_ht, CURRENT_USER());
+    END IF;
+END //
+
+DELIMITER ;
+```
+
+Explication :
+- `AFTER UPDATE` : le trigger se declenche apres chaque UPDATE sur la table `produit`.
+- `IF OLD.prix_ht != NEW.prix_ht` : on ne logue que si le prix a reellement change (un UPDATE peut modifier d'autres colonnes sans toucher au prix).
+- `OLD.prix_ht` : l'ancien prix (avant modification).
+- `NEW.prix_ht` : le nouveau prix (apres modification).
+- `CURRENT_USER()` : l'utilisateur MySQL qui a fait la modification.
+
+Test :
+```sql
+-- Inserer un produit
+INSERT INTO produit (designation, prix_ht, stock) VALUES ('Casque audio', 50.00, 20);
+
+-- Le modifier
+UPDATE produit SET prix_ht = 55.00 WHERE designation = 'Casque audio';
+
+-- Verifier l'historique
+SELECT * FROM historique_produit;
+-- On voit : ancien_prix = 50.00, nouveau_prix = 55.00
+
+-- Modifier le stock (pas le prix)
+UPDATE produit SET stock = 25 WHERE designation = 'Casque audio';
+
+-- Verifier : pas de nouvelle ligne dans l'historique (le prix n'a pas change)
+SELECT * FROM historique_produit;
+```
+
+### 5.6 Cas d'utilisation 2 : validation avec SIGNAL SQLSTATE
+
+**Besoin** : empecher l'insertion d'un produit avec un prix negatif ou un stock negatif.
+
+```sql
+DELIMITER //
+
+CREATE TRIGGER trg_valider_produit
+BEFORE INSERT
+ON produit
+FOR EACH ROW
+BEGIN
+    IF NEW.prix_ht < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Le prix HT ne peut pas etre negatif';
+    END IF;
+
+    IF NEW.stock < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Le stock ne peut pas etre negatif';
+    END IF;
+END //
+
+DELIMITER ;
+```
+
+Explication :
+- `BEFORE INSERT` : le trigger s'execute **avant** l'insertion. Si on declenche une erreur, l'insertion est annulee.
+- `SIGNAL SQLSTATE '45000'` : declenche une erreur utilisateur. Le code `'45000'` est le code standard pour les erreurs definies par l'utilisateur.
+- `MESSAGE_TEXT` : le message d'erreur retourne au programme appelant.
+
+Test :
+```sql
+-- Ceci doit reussir
+INSERT INTO produit (designation, prix_ht, stock) VALUES ('Clef USB', 10.00, 50);
+
+-- Ceci doit echouer
+INSERT INTO produit (designation, prix_ht, stock) VALUES ('Clef USB', -5.00, 50);
+-- Erreur : Le prix HT ne peut pas etre negatif
+
+-- Ceci doit echouer
+INSERT INTO produit (designation, prix_ht, stock) VALUES ('Clef USB', 10.00, -3);
+-- Erreur : Le stock ne peut pas etre negatif
+```
+
+**Important** : il faut aussi creer un trigger BEFORE UPDATE pour la meme validation, sinon un UPDATE pourrait mettre un prix negatif.
+
+```sql
+DELIMITER //
+
+CREATE TRIGGER trg_valider_produit_update
+BEFORE UPDATE
+ON produit
+FOR EACH ROW
+BEGIN
+    IF NEW.prix_ht < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Le prix HT ne peut pas etre negatif';
+    END IF;
+
+    IF NEW.stock < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Le stock ne peut pas etre negatif';
+    END IF;
+END //
+
+DELIMITER ;
+```
+
+### 5.7 Cas d'utilisation 3 : mise a jour automatique du stock
+
+**Besoin** : quand on ajoute une ligne de commande (INSERT dans `ligne_commande`), diminuer automatiquement le stock du produit concerne.
+
+```sql
+DELIMITER //
+
+CREATE TRIGGER trg_diminuer_stock
+AFTER INSERT
+ON ligne_commande
+FOR EACH ROW
+BEGIN
+    UPDATE produit
+    SET stock = stock - NEW.quantite
+    WHERE id_produit = NEW.id_produit;
+END //
+
+DELIMITER ;
+```
+
+Explication :
+- `AFTER INSERT ON ligne_commande` : se declenche apres chaque insertion dans `ligne_commande`.
+- `NEW.quantite` : la quantite commandee (valeur de la ligne inseree).
+- `NEW.id_produit` : le produit concerne.
+- Le stock du produit est diminue de la quantite commandee.
+
+Test :
+```sql
+-- Verifier le stock initial
+SELECT id_produit, designation, stock FROM produit WHERE id_produit = 1;
+-- Supposons stock = 100
+
+-- Inserer une ligne de commande
+INSERT INTO ligne_commande (id_commande, id_produit, quantite, prix_unitaire)
+VALUES (1, 1, 3, 25.00);
+
+-- Verifier le stock
+SELECT id_produit, designation, stock FROM produit WHERE id_produit = 1;
+-- stock = 97
+```
+
+### 5.8 Cas d'utilisation 4 : mise a jour du total de la commande
+
+**Besoin** : quand on ajoute une ligne de commande, mettre a jour automatiquement le `montant_total` dans la table `commande`.
+
+```sql
+DELIMITER //
+
+CREATE TRIGGER trg_maj_total_commande
+AFTER INSERT
+ON ligne_commande
+FOR EACH ROW
+BEGIN
+    UPDATE commande
+    SET montant_total = montant_total + (NEW.quantite * NEW.prix_unitaire)
+    WHERE id_commande = NEW.id_commande;
+END //
+
+DELIMITER ;
+```
+
+Test :
+```sql
+-- Creer une commande
+INSERT INTO commande (id_client) VALUES (1);
+-- montant_total = 0 par defaut
+
+SET @id_cmd = LAST_INSERT_ID();
+
+-- Ajouter des lignes
+INSERT INTO ligne_commande (id_commande, id_produit, quantite, prix_unitaire)
+VALUES (@id_cmd, 1, 2, 25.00);
+
+INSERT INTO ligne_commande (id_commande, id_produit, quantite, prix_unitaire)
+VALUES (@id_cmd, 2, 1, 15.00);
+
+-- Verifier le total
+SELECT id_commande, montant_total FROM commande WHERE id_commande = @id_cmd;
+-- montant_total = 65.00 (2*25 + 1*15)
+```
+
+### 5.9 Les pieges des triggers
+
+#### Piege 1 : boucle infinie entre triggers
+
+Si un trigger sur la table A modifie la table B, et qu'un trigger sur la table B modifie la table A, on obtient une boucle infinie. MySQL detecte cette situation et leve une erreur (profondeur maximale atteinte).
+
+Exemple dangereux :
+```
+Trigger sur table A → UPDATE table B
+Trigger sur table B → UPDATE table A → re-declenche le trigger sur A → boucle
+```
+
+**Solution** : concevoir les triggers pour eviter les modifications circulaires. En cas de doute, dessiner un schema des dependances entre triggers.
+
+#### Piege 2 : ordre d'execution avec plusieurs triggers
+
+Depuis MySQL 5.7, on peut avoir plusieurs triggers pour le meme evenement sur la meme table. L'ordre est controle par `FOLLOWS` et `PRECEDES` :
+
+```sql
+CREATE TRIGGER trg_second
+AFTER INSERT ON produit
+FOR EACH ROW
+FOLLOWS trg_premier
+BEGIN
+    -- s'execute apres trg_premier
+END;
+```
+
+Si on ne precise rien, l'ordre depend de l'ordre de creation. En examen, eviter d'avoir plusieurs triggers pour le meme evenement sauf si explicitement demande.
+
+#### Piege 3 : un trigger ne peut pas modifier sa propre table avec INSERT/UPDATE/DELETE
+
+En MySQL, un trigger sur la table X ne peut pas faire `INSERT INTO X`, `UPDATE X` ou `DELETE FROM X`. Cela provoque une erreur. Le seul moyen de modifier la ligne en cours est d'utiliser `SET NEW.colonne = valeur` dans un trigger BEFORE.
+
+#### Piege 4 : utiliser NEW dans DELETE ou OLD dans INSERT
+
+- `NEW` n'existe pas dans un trigger DELETE (il n'y a pas de nouvelle ligne).
+- `OLD` n'existe pas dans un trigger INSERT (il n'y avait pas d'ancienne ligne).
+
+Utiliser l'un ou l'autre dans le mauvais contexte provoque une erreur.
+
+### 5.10 DROP TRIGGER
+
+```sql
+DROP TRIGGER IF EXISTS trg_audit_prix_produit;
+```
+
+### 5.11 Voir les triggers existants
+
+```sql
+SHOW TRIGGERS;
+SHOW TRIGGERS FROM nom_base;
+SHOW CREATE TRIGGER nom_trigger;
+```
+
+---
+
+## 6. Transactions dans les procedures
+
+### 6.1 Pourquoi les transactions ?
+
+Une transaction garantit que **toutes les operations reussissent ou aucune**. C'est le principe du "tout ou rien".
+
+Exemple : un virement bancaire. On debite le compte A et on credite le compte B. Si le debit reussit mais le credit echoue (panne, erreur), le systeme est dans un etat incoherent : l'argent a disparu. La transaction empeche cela.
+
+### 6.2 Syntaxe
+
+```sql
+START TRANSACTION;
+-- operations
+COMMIT;     -- tout valider
+-- ou
+ROLLBACK;   -- tout annuler
+```
+
+### 6.3 Exemple : procedure de virement bancaire
+
+**Besoin** : transferer un montant du compte A vers le compte B. Si une erreur survient, annuler toute l'operation.
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE virement(
+    IN p_id_source INT,
+    IN p_id_destination INT,
+    IN p_montant DECIMAL(12,2),
+    OUT p_resultat VARCHAR(100)
+)
+BEGIN
+    DECLARE v_solde_source DECIMAL(12,2);
+
+    -- Handler : en cas d'erreur SQL, annuler la transaction
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_resultat = 'Erreur : transaction annulee';
+    END;
+
+    START TRANSACTION;
+
+    -- Verifier le solde du compte source
+    SELECT solde INTO v_solde_source
+    FROM compte
+    WHERE id_compte = p_id_source
+    FOR UPDATE;   -- verrouiller la ligne pour eviter les acces concurrents
+
+    IF v_solde_source < p_montant THEN
+        ROLLBACK;
+        SET p_resultat = 'Erreur : solde insuffisant';
+    ELSE
+        -- Debiter le compte source
+        UPDATE compte
+        SET solde = solde - p_montant
+        WHERE id_compte = p_id_source;
+
+        -- Crediter le compte destination
+        UPDATE compte
+        SET solde = solde + p_montant
+        WHERE id_compte = p_id_destination;
+
+        COMMIT;
+        SET p_resultat = 'Virement effectue avec succes';
+    END IF;
+END //
+
+DELIMITER ;
+```
+
+Explication :
+- `DECLARE EXIT HANDLER FOR SQLEXCEPTION` : si une erreur SQL survient (table inexistante, violation de contrainte, etc.), le handler s'execute. `EXIT` signifie que la procedure s'arrete apres le handler. Le handler fait un `ROLLBACK` pour annuler toutes les operations.
+- `START TRANSACTION` : debut de la transaction.
+- `FOR UPDATE` : verrouille la ligne lue pour empecher un autre utilisateur de la modifier en meme temps (acces concurrent).
+- `ROLLBACK` en cas de solde insuffisant : annule la transaction (meme si aucune modification n'a encore ete faite, c'est une bonne pratique).
+- `COMMIT` : valide les deux UPDATE (debit et credit). Les deux sont appliques ensemble.
+
+Test :
+```sql
+-- Creer des comptes
+INSERT INTO compte (id_client, solde) VALUES (1, 1000.00);
+INSERT INTO compte (id_client, solde) VALUES (2, 500.00);
+
+-- Virement reussi
+CALL virement(1, 2, 200.00, @res);
+SELECT @res;
+-- 'Virement effectue avec succes'
+
+SELECT * FROM compte;
+-- Compte 1 : 800.00, Compte 2 : 700.00
+
+-- Virement avec solde insuffisant
+CALL virement(1, 2, 5000.00, @res);
+SELECT @res;
+-- 'Erreur : solde insuffisant'
+
+SELECT * FROM compte;
+-- Compte 1 : 800.00 (inchange), Compte 2 : 700.00 (inchange)
+```
+
+---
+
+## 7. Methodologie d'examen
+
+### 7.1 Comment les procedures et triggers tombent a l'examen
+
+Les sujets de BTS SIO SLAM presentent generalement :
+- Un schema relationnel (MCD/MLD ou directement les tables SQL).
+- Un cahier des charges ou des regles de gestion.
+- Des questions du type : "Ecrire une procedure stockee qui..." ou "Ecrire un trigger qui...".
+
+Les formes les plus frequentes :
+1. **Ecrire une procedure stockee** a partir d'un besoin metier decrit en francais.
+2. **Ecrire un trigger** a partir d'une regle de gestion ("A chaque vente, le stock doit diminuer automatiquement").
+3. **Completer** une procedure ou un trigger dont une partie du code est fournie.
+4. **Identifier les erreurs** dans un code donne.
+5. **Expliquer** le comportement d'un trigger ou d'une procedure donne.
+
+### 7.2 Les erreurs classiques
+
+| Erreur | Consequence | Solution |
+|---|---|---|
+| Oublier `DELIMITER //` et `DELIMITER ;` | Erreur de syntaxe, la procedure n'est pas creee | Toujours ecrire DELIMITER avant et apres |
+| Confondre IN et OUT | Le parametre ne retourne pas la valeur attendue | IN = entree, OUT = sortie, toujours se poser la question : "qui fournit la valeur ?" |
+| Confondre NEW et OLD | Le trigger lit les mauvaises valeurs | NEW = nouvelles valeurs, OLD = anciennes. Tableau de reference au 5.3 |
+| Utiliser NEW dans un trigger DELETE | Erreur a l'execution | NEW n'existe pas en DELETE, utiliser OLD |
+| Utiliser OLD dans un trigger INSERT | Erreur a l'execution | OLD n'existe pas en INSERT, utiliser NEW |
+| Oublier `FOR EACH ROW` | Erreur de syntaxe | Toujours l'ecrire, c'est obligatoire en MySQL |
+| Oublier `RETURNS` dans CREATE FUNCTION | Erreur de syntaxe | Une fonction doit toujours declarer son type de retour |
+| Oublier `RETURN` dans le corps d'une fonction | Erreur a l'execution | Le corps doit contenir au moins un RETURN |
+| Nommer un parametre comme une colonne | La clause WHERE ne filtre plus correctement | Prefixer les parametres par `p_` |
+| Placer DECLARE apres une instruction | Erreur de syntaxe | Tous les DECLARE doivent etre au debut du bloc BEGIN |
+| Oublier `END IF`, `END LOOP`, `END WHILE` | Erreur de syntaxe | Chaque structure de controle a son END |
+
+### 7.3 Checklist avant de rendre sa copie
+
+1. Le `DELIMITER //` est present avant la creation, `DELIMITER ;` apres.
+2. Chaque parametre a le bon mode : IN, OUT ou INOUT.
+3. Les noms de parametres ne sont pas identiques aux noms de colonnes.
+4. Les `DECLARE` sont au debut du bloc BEGIN (variables, puis curseurs, puis handlers).
+5. Chaque IF a son `END IF`, chaque LOOP a son `END LOOP`, etc.
+6. Les triggers utilisent NEW et OLD correctement selon l'evenement.
+7. `FOR EACH ROW` est present dans le CREATE TRIGGER.
+8. Le SIGNAL SQLSTATE utilise le code `'45000'` (avec les apostrophes).
+9. Les transactions ont un COMMIT et un ROLLBACK.
+10. La procedure est testable : on peut ecrire un CALL avec des valeurs concretes.
+
+---
+
+## 8. Exercices d'examen corriges
+
+### Exercice 1 : procedure simple
+
+**Enonce** : Ecrire une procedure `rechercher_clients` qui prend en parametre un nom (recherche partielle) et retourne tous les clients dont le nom contient cette chaine.
+
+**Correction :**
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE rechercher_clients(IN p_recherche VARCHAR(100))
+BEGIN
+    SELECT id_client, nom, prenom, email, ville
+    FROM client
+    WHERE nom LIKE CONCAT('%', p_recherche, '%')
+    ORDER BY nom, prenom;
+END //
+
+DELIMITER ;
+```
+
+Test :
+```sql
+CALL rechercher_clients('Dupo');
+-- Retourne Dupont, Dupond, etc.
+```
+
+---
+
+### Exercice 2 : procedure avec OUT
+
+**Enonce** : Ecrire une procedure `nombre_commandes_client` qui prend en entree un identifiant client et retourne en sortie le nombre de commandes de ce client.
+
+**Correction :**
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE nombre_commandes_client(
+    IN p_id_client INT,
+    OUT p_nb_commandes INT
+)
+BEGIN
+    SELECT COUNT(*)
+    INTO p_nb_commandes
+    FROM commande
+    WHERE id_client = p_id_client;
+END //
+
+DELIMITER ;
+```
+
+Test :
+```sql
+CALL nombre_commandes_client(1, @nb);
+SELECT @nb AS nombre_commandes;
+```
+
+---
+
+### Exercice 3 : procedure avec IF
+
+**Enonce** : Ecrire une procedure `appliquer_augmentation` qui prend en entree un identifiant produit et un pourcentage. Si le pourcentage est superieur a 50, la procedure refuse l'augmentation (message d'erreur). Sinon, elle applique l'augmentation au prix HT.
+
+**Correction :**
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE appliquer_augmentation(
+    IN p_id_produit INT,
+    IN p_pourcentage DECIMAL(5,2),
+    OUT p_message VARCHAR(200)
+)
+BEGIN
+    DECLARE v_ancien_prix DECIMAL(10,2);
+
+    IF p_pourcentage > 50 THEN
+        SET p_message = 'Refus : augmentation superieure a 50%';
+    ELSEIF p_pourcentage <= 0 THEN
+        SET p_message = 'Refus : pourcentage invalide';
+    ELSE
+        SELECT prix_ht INTO v_ancien_prix
+        FROM produit
+        WHERE id_produit = p_id_produit;
+
+        IF v_ancien_prix IS NULL THEN
+            SET p_message = 'Erreur : produit inexistant';
+        ELSE
+            UPDATE produit
+            SET prix_ht = prix_ht * (1 + p_pourcentage / 100)
+            WHERE id_produit = p_id_produit;
+
+            SET p_message = CONCAT('Prix modifie de ', v_ancien_prix,
+                ' a ', ROUND(v_ancien_prix * (1 + p_pourcentage / 100), 2));
+        END IF;
+    END IF;
+END //
+
+DELIMITER ;
+```
+
+Test :
+```sql
+CALL appliquer_augmentation(1, 10, @msg);
+SELECT @msg;
+
+CALL appliquer_augmentation(1, 60, @msg);
+SELECT @msg;
+-- 'Refus : augmentation superieure a 50%'
+```
+
+---
+
+### Exercice 4 : fonction stockee
+
+**Enonce** : Ecrire une fonction `montant_ligne` qui prend en parametre un identifiant de ligne de commande et retourne le montant de cette ligne (quantite * prix unitaire).
+
+**Correction :**
+
+```sql
+DELIMITER //
+
+CREATE FUNCTION montant_ligne(p_id_ligne INT)
+RETURNS DECIMAL(10,2)
+NOT DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE v_montant DECIMAL(10,2);
+
+    SELECT quantite * prix_unitaire
+    INTO v_montant
+    FROM ligne_commande
+    WHERE id_ligne = p_id_ligne;
+
+    RETURN COALESCE(v_montant, 0);
+END //
+
+DELIMITER ;
+```
+
+Utilisation :
+```sql
+SELECT id_ligne, montant_ligne(id_ligne) AS montant
+FROM ligne_commande
+WHERE id_commande = 1;
+```
+
+Note : `READS SQL DATA` est une bonne pratique pour indiquer que la fonction lit des donnees en base sans les modifier. `COALESCE(v_montant, 0)` retourne 0 si la ligne n'existe pas (au lieu de NULL).
+
+---
+
+### Exercice 5 : trigger d'audit
+
+**Enonce** : Ecrire un trigger qui, a chaque suppression d'un client, enregistre l'evenement dans une table `journal_suppression(id_journal INT AUTO_INCREMENT, table_concernee VARCHAR(50), id_enregistrement INT, date_suppression DATETIME, utilisateur VARCHAR(100))`.
+
+**Correction :**
+
+D'abord, creer la table de journal si elle n'existe pas :
+
+```sql
+CREATE TABLE IF NOT EXISTS journal_suppression (
+    id_journal INT AUTO_INCREMENT PRIMARY KEY,
+    table_concernee VARCHAR(50),
+    id_enregistrement INT,
+    date_suppression DATETIME DEFAULT CURRENT_TIMESTAMP,
+    utilisateur VARCHAR(100)
+);
+```
+
+Le trigger :
+
+```sql
+DELIMITER //
+
+CREATE TRIGGER trg_journal_suppression_client
+AFTER DELETE
+ON client
+FOR EACH ROW
+BEGIN
+    INSERT INTO journal_suppression
+        (table_concernee, id_enregistrement, utilisateur)
+    VALUES
+        ('client', OLD.id_client, CURRENT_USER());
+END //
+
+DELIMITER ;
+```
+
+Test :
+```sql
+DELETE FROM client WHERE id_client = 5;
+
+SELECT * FROM journal_suppression;
+-- table_concernee = 'client', id_enregistrement = 5
+```
+
+---
+
+### Exercice 6 : trigger de validation
+
+**Enonce** : Ecrire un trigger qui empeche l'insertion d'une commande si le client n'existe pas dans la table `client`.
+
+**Correction :**
+
+```sql
+DELIMITER //
+
+CREATE TRIGGER trg_verifier_client_commande
+BEFORE INSERT
+ON commande
+FOR EACH ROW
+BEGIN
+    DECLARE v_existe INT;
+
+    SELECT COUNT(*) INTO v_existe
+    FROM client
+    WHERE id_client = NEW.id_client;
+
+    IF v_existe = 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Impossible de creer la commande : client inexistant';
+    END IF;
+END //
+
+DELIMITER ;
+```
+
+Note : en pratique, la cle etrangere `FOREIGN KEY (id_client) REFERENCES client(id_client)` fait deja cette verification. Mais l'exercice peut demander de le faire avec un trigger, par exemple pour afficher un message d'erreur personnalise.
+
+Test :
+```sql
+-- Client 999 n'existe pas
+INSERT INTO commande (id_client) VALUES (999);
+-- Erreur : Impossible de creer la commande : client inexistant
+```
+
+---
+
+### Exercice 7 : trigger de calcul automatique avec gestion du stock
+
+**Enonce** : Ecrire un trigger qui, a chaque insertion dans `ligne_commande`, verifie que le stock est suffisant. Si oui, diminue le stock. Si non, refuse l'insertion.
+
+**Correction :**
+
+```sql
+DELIMITER //
+
+CREATE TRIGGER trg_verifier_et_diminuer_stock
+BEFORE INSERT
+ON ligne_commande
+FOR EACH ROW
+BEGIN
+    DECLARE v_stock_actuel INT;
+
+    SELECT stock INTO v_stock_actuel
+    FROM produit
+    WHERE id_produit = NEW.id_produit;
+
+    IF v_stock_actuel IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Produit inexistant';
+    ELSEIF v_stock_actuel < NEW.quantite THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Stock insuffisant pour cette commande';
+    ELSE
+        UPDATE produit
+        SET stock = stock - NEW.quantite
+        WHERE id_produit = NEW.id_produit;
+    END IF;
+END //
+
+DELIMITER ;
+```
+
+**Attention** : on utilise ici `BEFORE INSERT` (et non `AFTER INSERT`) car on veut pouvoir refuser l'insertion. Un trigger AFTER ne peut pas annuler l'operation (la ligne est deja inseree).
+
+Note : ce trigger fait la verification ET la mise a jour du stock dans le meme trigger. C'est une bonne pratique car cela garantit l'atomicite.
+
+Test :
+```sql
+-- Supposons produit 1 avec stock = 10
+INSERT INTO ligne_commande (id_commande, id_produit, quantite, prix_unitaire)
+VALUES (1, 1, 5, 25.00);
+-- OK, stock passe a 5
+
+INSERT INTO ligne_commande (id_commande, id_produit, quantite, prix_unitaire)
+VALUES (1, 1, 8, 25.00);
+-- Erreur : Stock insuffisant pour cette commande
+```
+
+---
+
+### Exercice 8 : procedure avec curseur
+
+**Enonce** : Ecrire une procedure `rapport_clients_inactifs` qui parcourt tous les clients n'ayant passe aucune commande depuis plus de 6 mois et les insere dans une table `client_inactif(id_client INT, nom VARCHAR(100), prenom VARCHAR(100), derniere_commande DATE)`.
+
+**Correction :**
+
+```sql
+CREATE TABLE IF NOT EXISTS client_inactif (
+    id_client INT PRIMARY KEY,
+    nom VARCHAR(100),
+    prenom VARCHAR(100),
+    derniere_commande DATE
+);
+```
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE rapport_clients_inactifs()
+BEGIN
+    DECLARE v_id INT;
+    DECLARE v_nom VARCHAR(100);
+    DECLARE v_prenom VARCHAR(100);
+    DECLARE v_derniere DATE;
+    DECLARE v_fini BOOLEAN DEFAULT FALSE;
+
+    DECLARE cur_inactifs CURSOR FOR
+        SELECT c.id_client, c.nom, c.prenom, MAX(co.date_commande) AS derniere
+        FROM client c
+        LEFT JOIN commande co ON c.id_client = co.id_client
+        GROUP BY c.id_client, c.nom, c.prenom
+        HAVING derniere IS NULL
+            OR derniere < DATE_SUB(CURDATE(), INTERVAL 6 MONTH);
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND
+        SET v_fini = TRUE;
+
+    -- Vider la table avant de la remplir
+    DELETE FROM client_inactif;
+
+    OPEN cur_inactifs;
+
+    boucle: LOOP
+        FETCH cur_inactifs INTO v_id, v_nom, v_prenom, v_derniere;
+
+        IF v_fini THEN
+            LEAVE boucle;
+        END IF;
+
+        INSERT INTO client_inactif (id_client, nom, prenom, derniere_commande)
+        VALUES (v_id, v_nom, v_prenom, v_derniere);
+    END LOOP boucle;
+
+    CLOSE cur_inactifs;
+
+    -- Afficher le resultat
+    SELECT * FROM client_inactif;
+END //
+
+DELIMITER ;
+```
+
+Test :
+```sql
+CALL rapport_clients_inactifs();
+```
+
+---
+
+### Exercice 9 : procedure avec transaction
+
+**Enonce** : Ecrire une procedure `passer_commande` qui prend en parametre un identifiant client, un identifiant produit et une quantite. La procedure doit :
+1. Creer une commande.
+2. Creer une ligne de commande.
+3. Mettre a jour le stock.
+4. Mettre a jour le montant total de la commande.
+5. Si une erreur survient, tout annuler.
+
+**Correction :**
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE passer_commande(
+    IN p_id_client INT,
+    IN p_id_produit INT,
+    IN p_quantite INT,
+    OUT p_id_commande INT,
+    OUT p_message VARCHAR(200)
+)
+BEGIN
+    DECLARE v_prix DECIMAL(10,2);
+    DECLARE v_stock INT;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_id_commande = NULL;
+        SET p_message = 'Erreur technique : commande annulee';
+    END;
+
+    START TRANSACTION;
+
+    -- Recuperer le prix et le stock du produit (avec verrouillage)
+    SELECT prix_ht, stock INTO v_prix, v_stock
+    FROM produit
+    WHERE id_produit = p_id_produit
+    FOR UPDATE;
+
+    IF v_prix IS NULL THEN
+        ROLLBACK;
+        SET p_id_commande = NULL;
+        SET p_message = 'Erreur : produit inexistant';
+    ELSEIF v_stock < p_quantite THEN
+        ROLLBACK;
+        SET p_id_commande = NULL;
+        SET p_message = CONCAT('Erreur : stock insuffisant (disponible : ', v_stock, ')');
+    ELSE
+        -- 1. Creer la commande
+        INSERT INTO commande (id_client, montant_total)
+        VALUES (p_id_client, 0);
+
+        SET p_id_commande = LAST_INSERT_ID();
+
+        -- 2. Creer la ligne de commande
+        INSERT INTO ligne_commande (id_commande, id_produit, quantite, prix_unitaire)
+        VALUES (p_id_commande, p_id_produit, p_quantite, v_prix);
+
+        -- 3. Mettre a jour le stock
+        UPDATE produit
+        SET stock = stock - p_quantite
+        WHERE id_produit = p_id_produit;
+
+        -- 4. Mettre a jour le montant total
+        UPDATE commande
+        SET montant_total = p_quantite * v_prix
+        WHERE id_commande = p_id_commande;
+
+        COMMIT;
+        SET p_message = 'Commande creee avec succes';
+    END IF;
+END //
+
+DELIMITER ;
+```
+
+**Note** : dans cet exercice, on fait les mises a jour manuellement dans la procedure (stock, montant total). Si les triggers des exercices precedents sont actifs, il y aurait un double traitement. En examen, adapter selon le contexte : soit la procedure fait tout, soit les triggers font une partie du travail.
+
+Test :
+```sql
+CALL passer_commande(1, 1, 3, @id_cmd, @msg);
+SELECT @id_cmd, @msg;
+
+SELECT * FROM commande WHERE id_commande = @id_cmd;
+SELECT * FROM ligne_commande WHERE id_commande = @id_cmd;
+SELECT stock FROM produit WHERE id_produit = 1;
+```
+
+---
+
+### Exercice 10 : identifier les erreurs
+
+**Enonce** : Le code suivant contient 6 erreurs. Les identifier et les corriger.
+
+```sql
+CREATE PROCEDURE ajouter_produit(
+    nom VARCHAR(200),
+    prix DECIMAL(10,2),
+    OUT resultat VARCHAR(100)
+)
+BEGIN
+    INSERT INTO produit (designation, prix_ht, stock)
+    VALUES (nom, prix, 0)
+
+    SET resultat = 'Produit ajoute';
+    SELECT * FROM produit WHERE designation = nom;
+END;
+```
+
+**Correction :**
+
+Erreur 1 : `DELIMITER //` manquant avant la creation.
+
+Erreur 2 : le parametre `nom` n'a pas le mot-cle `IN` (meme si IN est le defaut, il est recommande de le preciser a l'examen). Surtout, `nom` est un nom de parametre qui peut entrer en conflit avec un mot reserve ou une colonne. Il faudrait ecrire `IN p_nom VARCHAR(200)`.
+
+Erreur 3 : le parametre `prix` a le meme probleme. Ecrire `IN p_prix DECIMAL(10,2)`.
+
+Erreur 4 : il manque un point-virgule apres la ligne `VALUES (nom, prix, 0)`.
+
+Erreur 5 : dans le WHERE, `designation = nom` risque de ne pas fonctionner correctement si `nom` est interprete comme la colonne et non le parametre. En renommant le parametre `p_nom`, on ecrit `WHERE designation = p_nom`.
+
+Erreur 6 : `DELIMITER ;` manquant apres la creation. Et le END doit etre suivi de `//`, pas de `;`.
+
+Code corrige :
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE ajouter_produit(
+    IN p_nom VARCHAR(200),
+    IN p_prix DECIMAL(10,2),
+    OUT p_resultat VARCHAR(100)
+)
+BEGIN
+    INSERT INTO produit (designation, prix_ht, stock)
+    VALUES (p_nom, p_prix, 0);
+
+    SET p_resultat = 'Produit ajoute';
+    SELECT * FROM produit WHERE designation = p_nom;
+END //
+
+DELIMITER ;
+```
+
+---
+
+### Exercice 11 : trigger avec UPDATE et OLD/NEW
+
+**Enonce** : Ecrire un trigger qui, lorsqu'on modifie le prix d'un produit, empeche une augmentation de plus de 25% en une seule fois.
+
+**Correction :**
+
+```sql
+DELIMITER //
+
+CREATE TRIGGER trg_limiter_augmentation_prix
+BEFORE UPDATE
+ON produit
+FOR EACH ROW
+BEGIN
+    IF NEW.prix_ht > OLD.prix_ht * 1.25 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Augmentation refusee : depassement de 25% du prix actuel';
+    END IF;
+END //
+
+DELIMITER ;
+```
+
+Test :
+```sql
+-- Supposons un produit avec prix_ht = 100.00
+UPDATE produit SET prix_ht = 120.00 WHERE id_produit = 1;
+-- OK (augmentation de 20%)
+
+UPDATE produit SET prix_ht = 200.00 WHERE id_produit = 1;
+-- Erreur : Augmentation refusee : depassement de 25% du prix actuel
+```
+
+---
+
+### Exercice 12 : procedure avec WHILE et calcul iteratif
+
+**Enonce** : Ecrire une procedure `simuler_interets` qui prend en parametre un capital initial, un taux annuel (en pourcentage) et un nombre d'annees, et affiche l'evolution du capital annee par annee (interets composes).
+
+**Correction :**
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE simuler_interets(
+    IN p_capital DECIMAL(12,2),
+    IN p_taux DECIMAL(5,2),
+    IN p_annees INT
+)
+BEGIN
+    DECLARE v_annee INT DEFAULT 0;
+    DECLARE v_capital_courant DECIMAL(12,2);
+
+    -- Table temporaire pour stocker les resultats
+    CREATE TEMPORARY TABLE IF NOT EXISTS tmp_simulation (
+        annee INT,
+        capital DECIMAL(12,2)
+    );
+
+    DELETE FROM tmp_simulation;
+
+    SET v_capital_courant = p_capital;
+
+    INSERT INTO tmp_simulation VALUES (0, v_capital_courant);
+
+    WHILE v_annee < p_annees DO
+        SET v_annee = v_annee + 1;
+        SET v_capital_courant = ROUND(v_capital_courant * (1 + p_taux / 100), 2);
+
+        INSERT INTO tmp_simulation VALUES (v_annee, v_capital_courant);
+    END WHILE;
+
+    SELECT * FROM tmp_simulation ORDER BY annee;
+
+    DROP TEMPORARY TABLE tmp_simulation;
+END //
+
+DELIMITER ;
+```
+
+Test :
+```sql
+CALL simuler_interets(10000, 5, 10);
+-- Affiche le capital de l'annee 0 a l'annee 10
+-- Annee 0 : 10000.00
+-- Annee 1 : 10500.00
+-- Annee 2 : 11025.00
+-- ...
+-- Annee 10 : 16288.95
+```
+
+---
+
+### Exercice 13 : completer une procedure
+
+**Enonce** : Completer la procedure suivante qui doit retourner le client ayant le plus gros chiffre d'affaires.
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE meilleur_client(
+    OUT p_id_client INT,
+    OUT p_nom VARCHAR(100),
+    OUT p_ca DECIMAL(12,2)
+)
+BEGIN
+    -- A COMPLETER
+END //
+
+DELIMITER ;
+```
+
+**Correction :**
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE meilleur_client(
+    OUT p_id_client INT,
+    OUT p_nom VARCHAR(100),
+    OUT p_ca DECIMAL(12,2)
+)
+BEGIN
+    SELECT c.id_client, c.nom, SUM(co.montant_total)
+    INTO p_id_client, p_nom, p_ca
+    FROM client c
+    INNER JOIN commande co ON c.id_client = co.id_client
+    GROUP BY c.id_client, c.nom
+    ORDER BY SUM(co.montant_total) DESC
+    LIMIT 1;
+END //
+
+DELIMITER ;
+```
+
+Test :
+```sql
+CALL meilleur_client(@id, @nom, @ca);
+SELECT @id AS id_client, @nom AS nom, @ca AS chiffre_affaires;
+```
+
+---
+
+## Resume des syntaxes
+
+### Procedure
+
+```sql
+DELIMITER //
+CREATE PROCEDURE nom(IN p1 TYPE, OUT p2 TYPE, INOUT p3 TYPE)
+BEGIN
+    DECLARE v_var TYPE [DEFAULT valeur];
+    -- instructions
+    SET v_var = expression;
+    SELECT ... INTO v_var FROM ...;
+END //
+DELIMITER ;
+
+CALL nom(valeur, @sortie, @entree_sortie);
+DROP PROCEDURE IF EXISTS nom;
+```
+
+### Fonction
+
+```sql
+DELIMITER //
+CREATE FUNCTION nom(p1 TYPE, p2 TYPE)
+RETURNS type_retour
+DETERMINISTIC
+BEGIN
+    DECLARE v_var TYPE;
+    -- calculs
+    RETURN v_var;
+END //
+DELIMITER ;
+
+SELECT nom(valeur1, valeur2);
+DROP FUNCTION IF EXISTS nom;
+```
+
+### Trigger
+
+```sql
+DELIMITER //
+CREATE TRIGGER nom
+{BEFORE|AFTER} {INSERT|UPDATE|DELETE}
+ON table
+FOR EACH ROW
+BEGIN
+    -- NEW.colonne (INSERT, UPDATE)
+    -- OLD.colonne (UPDATE, DELETE)
+    -- SET NEW.colonne = valeur (BEFORE seulement)
+    -- SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'message';
+END //
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS nom;
+```
+
+### Transaction
+
+```sql
+START TRANSACTION;
+-- operations
+COMMIT;   -- ou ROLLBACK;
+```
+
+### Curseur
+
+```sql
+DECLARE v_var TYPE;
+DECLARE nom_curseur CURSOR FOR SELECT ...;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_fini = TRUE;
+
+OPEN nom_curseur;
+boucle: LOOP
+    FETCH nom_curseur INTO v_var;
+    IF v_fini THEN LEAVE boucle; END IF;
+    -- traitement
+END LOOP boucle;
+CLOSE nom_curseur;
+```

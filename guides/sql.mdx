@@ -1,0 +1,3123 @@
+---
+title: "SQL"
+description: "Guide ultime SQL pour le BTS SIO SLAM"
+category: "Bases de donnees"
+tags: ["sql", "mysql", "requetes", "jointures"]
+difficulty: "Intermediaire"
+---
+
+# SQL -- Le guide ultime BTS SIO SLAM
+
+---
+
+## Table des matieres
+
+1. [Introduction aux bases de donnees relationnelles](#1-introduction-aux-bases-de-donnees-relationnelles)
+2. [Creation de base et de tables (DDL)](#2-creation-de-base-et-de-tables-ddl)
+3. [Insertion, modification, suppression (DML)](#3-insertion-modification-suppression-dml)
+4. [SELECT -- Les requetes de lecture](#4-select--les-requetes-de-lecture)
+5. [Jointures](#5-jointures)
+6. [Sous-requetes](#6-sous-requetes)
+7. [Vues](#7-vues)
+8. [Index](#8-index)
+9. [Transactions](#9-transactions)
+10. [Methodologie d'examen](#10-methodologie-dexamen)
+11. [Exercices d'examen corriges](#11-exercices-dexamen-corriges)
+
+---
+
+## 1. Introduction aux bases de donnees relationnelles
+
+### Pourquoi une base de donnees et pas un fichier Excel ?
+
+Un fichier Excel fonctionne pour 50 lignes et un seul utilisateur. Des que l'on depasse ce cadre, tout s'effondre. Voici pourquoi on utilise un Systeme de Gestion de Bases de Donnees (SGBD) :
+
+| Probleme avec Excel | Solution avec un SGBD |
+|---|---|
+| Deux personnes modifient le fichier en meme temps : donnees ecrasees | **Acces concurrent** : le SGBD gere les verrous, chaque utilisateur travaille sans ecraser l'autre |
+| Rien n'empeche d'ecrire "abc" dans une colonne age | **Integrite des donnees** : contraintes de type, de valeur, de cle etrangere |
+| Chercher tous les clients qui ont commande plus de 3 fois ce mois-ci : formule imbuvable | **Requetes complexes** : une seule instruction SQL suffit |
+| N'importe qui ouvre le fichier et voit tout | **Securite** : droits d'acces par utilisateur, par table, par operation |
+| Le fichier fait 500 Mo, Excel rame | **Performance** : index, optimiseur de requetes, cache |
+| Si le PC plante, le fichier est perdu | **Fiabilite** : sauvegardes, journaux de transactions, replication |
+
+### Le modele relationnel
+
+Le modele relationnel organise les donnees en **tables** (aussi appelees **relations**).
+
+- Une **table** represente un type d'entite (clients, produits, commandes).
+- Une **ligne** (ou **tuple**, ou **enregistrement**) represente une occurrence de cette entite (un client precis).
+- Une **colonne** (ou **attribut**) represente une propriete (le nom du client, son email).
+
+Exemple -- table `clients` :
+
+| id_client | nom | prenom | email | date_inscription |
+|---|---|---|---|---|
+| 1 | Dupont | Marie | marie@mail.fr | 2024-01-15 |
+| 2 | Martin | Lucas | lucas@mail.fr | 2024-02-20 |
+| 3 | Bernard | Sophie | sophie@mail.fr | 2024-03-10 |
+
+### Cle primaire et cle etrangere
+
+**Cle primaire (PRIMARY KEY)** : une colonne (ou un ensemble de colonnes) qui identifie de facon **unique** chaque ligne d'une table.
+
+Analogie : le numero de securite sociale identifie de facon unique chaque personne en France. Deux personnes peuvent s'appeler "Marie Dupont", mais elles n'ont jamais le meme numero de secu. La cle primaire, c'est pareil : elle garantit qu'on ne confond jamais deux lignes.
+
+Regles :
+- La cle primaire est **unique** : pas de doublons.
+- La cle primaire est **NOT NULL** : jamais vide.
+- Il n'y a qu'**une seule** cle primaire par table (mais elle peut porter sur plusieurs colonnes : cle composee).
+
+**Cle etrangere (FOREIGN KEY)** : une colonne qui fait reference a la cle primaire d'une **autre** table. Elle cree un **lien** entre deux tables.
+
+Analogie : sur un bulletin de notes, on ecrit le numero etudiant, pas le nom complet. Ce numero fait reference a la fiche etudiant. C'est une cle etrangere.
+
+Exemple :
+
+Table `commandes` :
+
+| id_commande | date_commande | id_client |
+|---|---|---|
+| 101 | 2024-04-01 | 1 |
+| 102 | 2024-04-03 | 3 |
+| 103 | 2024-04-05 | 1 |
+
+Ici, `id_client` dans la table `commandes` est une **cle etrangere** qui reference `id_client` dans la table `clients`. On sait que la commande 101 appartient a Marie Dupont (id_client = 1).
+
+### Les SGBD
+
+Un SGBD (Systeme de Gestion de Bases de Donnees) est le logiciel qui gere la base de donnees. Les principaux :
+
+| SGBD | Licence | Utilisation typique |
+|---|---|---|
+| **MySQL** | Open source (Oracle) | Web, PME, enseignement |
+| PostgreSQL | Open source | Projets complexes, geospatial |
+| SQL Server | Microsoft (payant) | Entreprises Microsoft |
+| Oracle DB | Oracle (payant) | Grandes entreprises |
+| MariaDB | Open source (fork MySQL) | Alternative a MySQL |
+| SQLite | Open source | Applications mobiles, embarque |
+
+**En BTS SIO SLAM, on utilise MySQL.** Toute la syntaxe de ce document est en MySQL.
+
+---
+
+## 2. Creation de base et de tables (DDL)
+
+DDL = Data Definition Language. C'est le langage pour **definir la structure** : creer des bases, des tables, modifier des colonnes.
+
+### CREATE DATABASE et USE
+
+Pour creer une base de donnees et la selectionner :
+
+```sql
+CREATE DATABASE IF NOT EXISTS boutique
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE boutique;
+```
+
+- `IF NOT EXISTS` evite une erreur si la base existe deja.
+- `utf8mb4` supporte tous les caracteres Unicode (accents, caracteres speciaux).
+- `COLLATE utf8mb4_unicode_ci` : tri insensible a la casse et aux accents.
+
+### CREATE TABLE -- syntaxe complete
+
+```sql
+CREATE TABLE nom_table (
+  nom_colonne TYPE [contraintes],
+  nom_colonne TYPE [contraintes],
+  ...
+  [contraintes de table]
+);
+```
+
+### Tous les types de donnees MySQL
+
+#### Types numeriques entiers
+
+| Type | Taille | Plage (signe) | Plage (non signe) | Utilisation |
+|---|---|---|---|---|
+| `TINYINT` | 1 octet | -128 a 127 | 0 a 255 | Age, note sur 20, boolean |
+| `SMALLINT` | 2 octets | -32 768 a 32 767 | 0 a 65 535 | Codes postaux courts |
+| `MEDIUMINT` | 3 octets | -8 388 608 a 8 388 607 | 0 a 16 777 215 | Rarement utilise |
+| `INT` | 4 octets | -2 147 483 648 a 2 147 483 647 | 0 a 4 294 967 295 | Cles primaires, quantites |
+| `BIGINT` | 8 octets | -9.2 * 10^18 a 9.2 * 10^18 | 0 a 1.8 * 10^19 | Identifiants tres grands |
+
+**BOOLEAN en MySQL** : `BOOLEAN` est un alias pour `TINYINT(1)`. Les valeurs `TRUE` et `FALSE` correspondent a `1` et `0`.
+
+```sql
+est_actif BOOLEAN DEFAULT TRUE
+-- equivalent a :
+est_actif TINYINT(1) DEFAULT 1
+```
+
+#### Types numeriques decimaux
+
+| Type | Description | Exemple | Utilisation |
+|---|---|---|---|
+| `DECIMAL(p, s)` | Precision exacte. `p` = chiffres totaux, `s` = chiffres apres la virgule | `DECIMAL(10, 2)` = jusqu'a 99 999 999,99 | **Prix, montants financiers** (toujours DECIMAL, jamais FLOAT) |
+| `FLOAT` | Virgule flottante simple precision | `FLOAT` | Calculs scientifiques approximatifs |
+| `DOUBLE` | Virgule flottante double precision | `DOUBLE` | Calculs scientifiques approximatifs |
+
+**PIEGE EXAMEN** : ne jamais utiliser `FLOAT` pour des prix. `FLOAT` est approximatif : `0.1 + 0.2` peut donner `0.30000000000000004`. Utiliser `DECIMAL(10, 2)`.
+
+#### Types chaine de caracteres
+
+| Type | Taille max | Description | Utilisation |
+|---|---|---|---|
+| `CHAR(n)` | 255 caracteres | Longueur **fixe**. Si on stocke 3 caracteres dans un CHAR(10), MySQL remplit avec des espaces | Codes fixes : code postal, code pays |
+| `VARCHAR(n)` | 65 535 caracteres | Longueur **variable**. Stocke uniquement ce qu'il faut | Noms, emails, adresses |
+| `TEXT` | 65 535 caracteres | Texte long | Descriptions, commentaires |
+| `MEDIUMTEXT` | 16 Mo | Texte tres long | Articles, contenus web |
+| `LONGTEXT` | 4 Go | Texte extremement long | Rarement utilise |
+
+**Difference CHAR vs VARCHAR** :
+- `CHAR(5)` stockant "AB" : stocke "AB   " (3 espaces ajoutes) -- 5 octets toujours.
+- `VARCHAR(5)` stockant "AB" : stocke "AB" -- 2 octets + 1 octet de longueur = 3 octets.
+
+Utiliser `CHAR` quand toutes les valeurs ont la meme longueur (code postal = 5 caracteres). Utiliser `VARCHAR` sinon.
+
+#### Types date et heure
+
+| Type | Format | Exemple | Utilisation |
+|---|---|---|---|
+| `DATE` | AAAA-MM-JJ | 2024-12-25 | Dates de naissance, dates de commande |
+| `TIME` | HH:MM:SS | 14:30:00 | Heures |
+| `DATETIME` | AAAA-MM-JJ HH:MM:SS | 2024-12-25 14:30:00 | Date et heure precise |
+| `TIMESTAMP` | AAAA-MM-JJ HH:MM:SS | 2024-12-25 14:30:00 | Date et heure avec fuseau horaire (stocke en UTC) |
+| `YEAR` | AAAA | 2024 | Annees |
+
+**Difference DATETIME vs TIMESTAMP** :
+- `DATETIME` stocke la date telle quelle. Si on stocke "2024-12-25 14:30:00", on retrouve exactement ca, quel que soit le fuseau horaire du serveur.
+- `TIMESTAMP` convertit en UTC au stockage et reconvertit au fuseau local a la lecture. Plage limitee : 1970-01-01 a 2038-01-19.
+
+#### Type ENUM
+
+`ENUM` limite les valeurs possibles d'une colonne a une liste predéfinie :
+
+```sql
+statut ENUM('en_attente', 'validee', 'expediee', 'livree', 'annulee') NOT NULL DEFAULT 'en_attente'
+```
+
+Avantage : impossible d'inserer une valeur non prevue. Inconvenient : modifier la liste necessite un `ALTER TABLE`.
+
+### Les contraintes
+
+Les contraintes garantissent l'integrite des donnees.
+
+#### PRIMARY KEY
+
+```sql
+CREATE TABLE clients (
+  id_client INT AUTO_INCREMENT,
+  nom VARCHAR(100) NOT NULL,
+  PRIMARY KEY (id_client)
+);
+
+-- Syntaxe alternative (contrainte en ligne) :
+CREATE TABLE clients (
+  id_client INT AUTO_INCREMENT PRIMARY KEY,
+  nom VARCHAR(100) NOT NULL
+);
+```
+
+#### Cle primaire composee
+
+Quand une seule colonne ne suffit pas a identifier une ligne :
+
+```sql
+CREATE TABLE ligne_commande (
+  id_commande INT,
+  id_produit INT,
+  quantite INT NOT NULL,
+  PRIMARY KEY (id_commande, id_produit)
+);
+```
+
+Ici, la combinaison (id_commande, id_produit) est unique. Une commande peut contenir plusieurs produits, et un produit peut apparaitre dans plusieurs commandes, mais un produit n'apparait qu'une fois par commande.
+
+#### FOREIGN KEY
+
+```sql
+CREATE TABLE commandes (
+  id_commande INT AUTO_INCREMENT PRIMARY KEY,
+  date_commande DATE NOT NULL,
+  id_client INT NOT NULL,
+  FOREIGN KEY (id_client) REFERENCES clients(id_client)
+);
+```
+
+La cle etrangere garantit que chaque `id_client` dans `commandes` existe bien dans la table `clients`. Tenter d'inserer un `id_client` inexistant provoque une erreur.
+
+#### NOT NULL
+
+La colonne ne peut pas etre vide :
+
+```sql
+nom VARCHAR(100) NOT NULL
+```
+
+#### DEFAULT
+
+Valeur par defaut si on ne precise rien a l'insertion :
+
+```sql
+date_inscription DATE DEFAULT (CURDATE()),
+est_actif BOOLEAN DEFAULT TRUE
+```
+
+#### UNIQUE
+
+Interdit les doublons dans la colonne (mais autorise NULL, sauf si NOT NULL est aussi present) :
+
+```sql
+email VARCHAR(255) UNIQUE
+```
+
+#### CHECK
+
+Verifie une condition sur la valeur :
+
+```sql
+prix DECIMAL(10, 2) CHECK (prix >= 0),
+age INT CHECK (age BETWEEN 0 AND 150)
+```
+
+**Attention** : MySQL 8.0.16+ supporte CHECK. Les versions anterieures l'acceptent syntaxiquement mais l'ignorent.
+
+#### AUTO_INCREMENT
+
+Genere automatiquement un entier incremental. Utilise pour les cles primaires :
+
+```sql
+id_client INT AUTO_INCREMENT PRIMARY KEY
+```
+
+- Commence a 1 par defaut.
+- Si on supprime la ligne id=5, l'id 5 n'est **pas** reutilise.
+
+### ON DELETE et ON UPDATE (actions referentielles)
+
+Quand on supprime ou modifie une ligne referencee par une cle etrangere, que fait-on des lignes qui la referencent ?
+
+```sql
+FOREIGN KEY (id_client) REFERENCES clients(id_client)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE
+```
+
+| Action | Comportement | Quand l'utiliser |
+|---|---|---|
+| `CASCADE` | Supprime/modifie automatiquement les lignes dependantes | Quand les lignes enfants n'ont pas de sens sans le parent. Ex : supprimer un client supprime ses commandes. |
+| `SET NULL` | Met la cle etrangere a NULL | Quand on veut garder la ligne enfant mais perdre le lien. Ex : supprimer un commercial met a NULL le commercial des clients. |
+| `RESTRICT` (defaut) | **Interdit** la suppression/modification si des lignes dependantes existent | Quand on veut empecher les suppressions accidentelles. Ex : on ne peut pas supprimer un client qui a des commandes. |
+| `SET DEFAULT` | Met la valeur par defaut | Non supporte par InnoDB (moteur par defaut de MySQL). A eviter. |
+| `NO ACTION` | Identique a RESTRICT en MySQL | Synonyme de RESTRICT. |
+
+**Conseil examen** : si l'enonce ne precise rien, utiliser `RESTRICT` (c'est le defaut et le plus prudent).
+
+### Exemple complet : tables d'une application e-commerce
+
+```sql
+CREATE DATABASE IF NOT EXISTS ecommerce
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE ecommerce;
+
+-- Table des categories de produits
+CREATE TABLE categories (
+  id_categorie INT AUTO_INCREMENT PRIMARY KEY,
+  nom VARCHAR(100) NOT NULL UNIQUE,
+  description TEXT
+);
+
+-- Table des produits
+CREATE TABLE produits (
+  id_produit INT AUTO_INCREMENT PRIMARY KEY,
+  nom VARCHAR(200) NOT NULL,
+  description TEXT,
+  prix DECIMAL(10, 2) NOT NULL CHECK (prix >= 0),
+  stock INT NOT NULL DEFAULT 0 CHECK (stock >= 0),
+  id_categorie INT,
+  date_ajout DATETIME DEFAULT CURRENT_TIMESTAMP,
+  est_actif BOOLEAN DEFAULT TRUE,
+  FOREIGN KEY (id_categorie) REFERENCES categories(id_categorie)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE
+);
+
+-- Table des clients
+CREATE TABLE clients (
+  id_client INT AUTO_INCREMENT PRIMARY KEY,
+  nom VARCHAR(100) NOT NULL,
+  prenom VARCHAR(100) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  telephone VARCHAR(20),
+  adresse TEXT,
+  date_inscription DATE DEFAULT (CURDATE()),
+  est_actif BOOLEAN DEFAULT TRUE
+);
+
+-- Table des commandes
+CREATE TABLE commandes (
+  id_commande INT AUTO_INCREMENT PRIMARY KEY,
+  date_commande DATETIME DEFAULT CURRENT_TIMESTAMP,
+  statut ENUM('en_attente', 'validee', 'expediee', 'livree', 'annulee')
+    NOT NULL DEFAULT 'en_attente',
+  id_client INT NOT NULL,
+  FOREIGN KEY (id_client) REFERENCES clients(id_client)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+);
+
+-- Table des lignes de commande (table associative)
+CREATE TABLE lignes_commande (
+  id_commande INT,
+  id_produit INT,
+  quantite INT NOT NULL CHECK (quantite > 0),
+  prix_unitaire DECIMAL(10, 2) NOT NULL CHECK (prix_unitaire >= 0),
+  PRIMARY KEY (id_commande, id_produit),
+  FOREIGN KEY (id_commande) REFERENCES commandes(id_commande)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  FOREIGN KEY (id_produit) REFERENCES produits(id_produit)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+);
+```
+
+**Pourquoi stocker `prix_unitaire` dans `lignes_commande` alors qu'il existe dans `produits` ?** Parce que le prix d'un produit peut changer. Si un client a achete un produit a 29,99 euros et que le prix passe a 34,99 euros, la commande doit garder le prix d'achat (29,99). C'est un piege classique de conception.
+
+### ALTER TABLE
+
+Modifier une table existante.
+
+**Ajouter une colonne :**
+
+```sql
+ALTER TABLE clients
+  ADD COLUMN ville VARCHAR(100) AFTER adresse;
+```
+
+**Modifier une colonne :**
+
+```sql
+ALTER TABLE clients
+  MODIFY COLUMN telephone VARCHAR(15);
+```
+
+**Supprimer une colonne :**
+
+```sql
+ALTER TABLE clients
+  DROP COLUMN telephone;
+```
+
+**Ajouter une contrainte :**
+
+```sql
+ALTER TABLE produits
+  ADD CONSTRAINT fk_produit_categorie
+  FOREIGN KEY (id_categorie) REFERENCES categories(id_categorie);
+```
+
+**Supprimer une contrainte (cle etrangere) :**
+
+```sql
+ALTER TABLE produits
+  DROP FOREIGN KEY fk_produit_categorie;
+```
+
+**Renommer une table :**
+
+```sql
+ALTER TABLE clients RENAME TO utilisateurs;
+```
+
+### DROP TABLE et TRUNCATE vs DELETE
+
+| Commande | Effet | Reinitialise AUTO_INCREMENT ? | Journalisation | Rollback possible ? |
+|---|---|---|---|---|
+| `DROP TABLE clients;` | Supprime la table **et sa structure** | Oui (la table n'existe plus) | Non | Non |
+| `TRUNCATE TABLE clients;` | Supprime **toutes les lignes** mais garde la structure | Oui | Non (DDL) | Non |
+| `DELETE FROM clients;` | Supprime **toutes les lignes** mais garde la structure | Non | Oui (DML, ligne par ligne) | Oui (dans une transaction) |
+
+**Quand utiliser quoi :**
+- `DROP` : on ne veut plus du tout cette table.
+- `TRUNCATE` : on veut vider la table rapidement et repartir a zero (compteur AUTO_INCREMENT remis a 1).
+- `DELETE` : on veut supprimer des lignes specifiques (avec WHERE) ou pouvoir annuler (ROLLBACK).
+
+---
+
+## 3. Insertion, modification, suppression (DML)
+
+DML = Data Manipulation Language. C'est le langage pour **manipuler les donnees** : inserer, modifier, supprimer des lignes.
+
+### INSERT INTO
+
+**Inserer une seule ligne :**
+
+On veut ajouter une categorie "Informatique" dans la table `categories`.
+
+```sql
+INSERT INTO categories (nom, description)
+VALUES ('Informatique', 'Materiel et accessoires informatiques');
+```
+
+Resultat dans `categories` :
+
+| id_categorie | nom | description |
+|---|---|---|
+| 1 | Informatique | Materiel et accessoires informatiques |
+
+`id_categorie` est genere automatiquement par AUTO_INCREMENT. On ne le precise pas.
+
+**Inserer plusieurs lignes en une seule requete :**
+
+On veut ajouter trois produits d'un coup.
+
+```sql
+INSERT INTO produits (nom, prix, stock, id_categorie)
+VALUES
+  ('Clavier mecanique', 89.99, 50, 1),
+  ('Souris sans fil', 45.50, 120, 1),
+  ('Ecran 27 pouces', 349.00, 25, 1);
+```
+
+Resultat dans `produits` :
+
+| id_produit | nom | prix | stock | id_categorie | date_ajout | est_actif |
+|---|---|---|---|---|---|---|
+| 1 | Clavier mecanique | 89.99 | 50 | 1 | 2024-04-01 10:00:00 | 1 |
+| 2 | Souris sans fil | 45.50 | 120 | 1 | 2024-04-01 10:00:00 | 1 |
+| 3 | Ecran 27 pouces | 349.00 | 25 | 1 | 2024-04-01 10:00:00 | 1 |
+
+Les colonnes `date_ajout` et `est_actif` prennent leurs valeurs par defaut.
+
+**Inserer toutes les colonnes (sans les nommer) :**
+
+```sql
+INSERT INTO categories
+VALUES (NULL, 'Bureautique', 'Fournitures de bureau');
+```
+
+On met `NULL` pour `id_categorie` car c'est AUTO_INCREMENT. MySQL genere la valeur.
+
+**ATTENTION** : cette syntaxe est fragile. Si on ajoute une colonne a la table, la requete plante. Toujours nommer les colonnes.
+
+### UPDATE
+
+**Modifier des lignes existantes :**
+
+On veut augmenter le prix du clavier mecanique de 10%.
+
+```sql
+UPDATE produits
+SET prix = prix * 1.10
+WHERE id_produit = 1;
+```
+
+Resultat :
+
+| id_produit | nom | prix |
+|---|---|---|
+| 1 | Clavier mecanique | 98.99 |
+
+**Modifier plusieurs colonnes :**
+
+On veut modifier le stock et le statut actif d'un produit.
+
+```sql
+UPDATE produits
+SET stock = 0, est_actif = FALSE
+WHERE id_produit = 3;
+```
+
+**DANGER -- UPDATE sans WHERE :**
+
+```sql
+-- NE JAMAIS FAIRE CA (sauf volontairement) :
+UPDATE produits SET prix = 0;
+-- TOUTES les lignes ont maintenant un prix de 0 !
+```
+
+**PIEGE EXAMEN** : si l'enonce demande "mettre a jour le prix du produit X", il faut **toujours** un WHERE. Oublier le WHERE = modifier toute la table = zero a l'exercice.
+
+### DELETE
+
+**Supprimer des lignes :**
+
+On veut supprimer le produit dont l'id est 3.
+
+```sql
+DELETE FROM produits
+WHERE id_produit = 3;
+```
+
+**DANGER -- DELETE sans WHERE :**
+
+```sql
+-- NE JAMAIS FAIRE CA (sauf volontairement) :
+DELETE FROM produits;
+-- TOUTES les lignes sont supprimees !
+```
+
+Meme piege que UPDATE : toujours mettre un WHERE.
+
+**Supprimer avec une condition complexe :**
+
+On veut supprimer tous les produits dont le stock est a 0 et qui ne sont plus actifs.
+
+```sql
+DELETE FROM produits
+WHERE stock = 0 AND est_actif = FALSE;
+```
+
+### REPLACE INTO
+
+`REPLACE` fonctionne comme `INSERT`, mais si la ligne existe deja (meme cle primaire ou meme valeur UNIQUE), elle est **supprimee puis reinseree**.
+
+```sql
+REPLACE INTO categories (id_categorie, nom, description)
+VALUES (1, 'Informatique', 'Tout le materiel informatique et les peripheriques');
+```
+
+Si `id_categorie = 1` existe, la ligne est supprimee puis reinseree avec les nouvelles valeurs.
+
+**Attention** : REPLACE supprime puis insere. Si d'autres tables ont des cles etrangeres avec ON DELETE CASCADE, les lignes dependantes seront supprimees.
+
+### INSERT ... ON DUPLICATE KEY UPDATE
+
+Plus sur que REPLACE : si la ligne existe, on la met a jour au lieu de la supprimer/reinserer.
+
+```sql
+INSERT INTO produits (id_produit, nom, prix, stock, id_categorie)
+VALUES (1, 'Clavier mecanique', 89.99, 50, 1)
+ON DUPLICATE KEY UPDATE
+  prix = VALUES(prix),
+  stock = VALUES(stock);
+```
+
+Si `id_produit = 1` existe deja : le prix et le stock sont mis a jour. Sinon : la ligne est inseree.
+
+**En MySQL 8.0.19+**, la syntaxe recommandee utilise un alias :
+
+```sql
+INSERT INTO produits (id_produit, nom, prix, stock, id_categorie)
+VALUES (1, 'Clavier mecanique', 89.99, 50, 1) AS nouveau
+ON DUPLICATE KEY UPDATE
+  prix = nouveau.prix,
+  stock = nouveau.stock;
+```
+
+### Exercices DML
+
+**Exercice 1** : Inserer trois clients dans la table `clients`.
+
+```sql
+INSERT INTO clients (nom, prenom, email, adresse)
+VALUES
+  ('Dupont', 'Marie', 'marie.dupont@mail.fr', '12 rue de Paris, 75001 Paris'),
+  ('Martin', 'Lucas', 'lucas.martin@mail.fr', '5 avenue Victor Hugo, 69002 Lyon'),
+  ('Bernard', 'Sophie', 'sophie.bernard@mail.fr', '8 boulevard Pasteur, 33000 Bordeaux');
+```
+
+**Exercice 2** : Augmenter le stock de 10 unites pour tous les produits de la categorie 1.
+
+```sql
+UPDATE produits
+SET stock = stock + 10
+WHERE id_categorie = 1;
+```
+
+**Exercice 3** : Supprimer toutes les commandes annulees.
+
+```sql
+DELETE FROM commandes
+WHERE statut = 'annulee';
+```
+
+---
+
+## 4. SELECT -- Les requetes de lecture
+
+C'est le coeur de SQL et de l'examen. La majorite des exercices portent sur SELECT.
+
+### 4.1 Les bases
+
+#### Donnees de reference
+
+Pour tous les exemples de cette section, on utilise ces tables et ces donnees :
+
+**Table `produits` :**
+
+| id_produit | nom | prix | stock | id_categorie | est_actif |
+|---|---|---|---|---|---|
+| 1 | Clavier mecanique | 89.99 | 50 | 1 | 1 |
+| 2 | Souris sans fil | 45.50 | 120 | 1 | 1 |
+| 3 | Ecran 27 pouces | 349.00 | 25 | 1 | 1 |
+| 4 | Cahier A4 | 3.50 | 500 | 2 | 1 |
+| 5 | Stylo bleu | 1.20 | 1000 | 2 | 1 |
+| 6 | Casque audio | 129.99 | 0 | 1 | 0 |
+| 7 | Webcam HD | 59.90 | 15 | 1 | 1 |
+| 8 | Tapis de souris | NULL | 200 | NULL | 1 |
+
+**Table `clients` :**
+
+| id_client | nom | prenom | email | date_inscription |
+|---|---|---|---|---|
+| 1 | Dupont | Marie | marie@mail.fr | 2024-01-15 |
+| 2 | Martin | Lucas | lucas@mail.fr | 2024-02-20 |
+| 3 | Bernard | Sophie | sophie@mail.fr | 2024-03-10 |
+| 4 | Petit | Thomas | thomas@mail.fr | 2024-03-10 |
+| 5 | Durand | Emma | emma@mail.fr | 2024-04-01 |
+
+**Table `commandes` :**
+
+| id_commande | date_commande | statut | id_client |
+|---|---|---|---|
+| 101 | 2024-04-01 | livree | 1 |
+| 102 | 2024-04-03 | livree | 3 |
+| 103 | 2024-04-05 | en_attente | 1 |
+| 104 | 2024-04-10 | expediee | 2 |
+| 105 | 2024-04-12 | annulee | 4 |
+
+**Table `lignes_commande` :**
+
+| id_commande | id_produit | quantite | prix_unitaire |
+|---|---|---|---|
+| 101 | 1 | 1 | 89.99 |
+| 101 | 2 | 2 | 45.50 |
+| 102 | 3 | 1 | 349.00 |
+| 102 | 4 | 10 | 3.50 |
+| 103 | 5 | 5 | 1.20 |
+| 103 | 7 | 1 | 59.90 |
+| 104 | 1 | 1 | 89.99 |
+| 104 | 4 | 20 | 3.50 |
+| 105 | 2 | 1 | 45.50 |
+
+**Table `categories` :**
+
+| id_categorie | nom | description |
+|---|---|---|
+| 1 | Informatique | Materiel et accessoires informatiques |
+| 2 | Bureautique | Fournitures de bureau |
+
+#### SELECT * et SELECT colonnes
+
+On veut afficher toutes les colonnes de tous les produits.
+
+```sql
+SELECT * FROM produits;
+```
+
+Resultat : les 8 lignes de la table produits avec toutes les colonnes.
+
+On veut afficher uniquement le nom et le prix des produits.
+
+```sql
+SELECT nom, prix FROM produits;
+```
+
+Resultat :
+
+| nom | prix |
+|---|---|
+| Clavier mecanique | 89.99 |
+| Souris sans fil | 45.50 |
+| Ecran 27 pouces | 349.00 |
+| Cahier A4 | 3.50 |
+| Stylo bleu | 1.20 |
+| Casque audio | 129.99 |
+| Webcam HD | 59.90 |
+| Tapis de souris | NULL |
+
+**Bonne pratique** : eviter `SELECT *` en production. Nommer les colonnes pour la clarte et la performance.
+
+#### WHERE -- filtrer les lignes
+
+On veut les produits dont le prix est superieur a 50 euros.
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE prix > 50;
+```
+
+Resultat :
+
+| nom | prix |
+|---|---|
+| Clavier mecanique | 89.99 |
+| Ecran 27 pouces | 349.00 |
+| Casque audio | 129.99 |
+| Webcam HD | 59.90 |
+
+**Attention** : le produit "Tapis de souris" (prix = NULL) n'apparait PAS. Toute comparaison avec NULL renvoie NULL (ni vrai ni faux). C'est un piege classique.
+
+#### Tous les operateurs de comparaison
+
+| Operateur | Signification | Exemple |
+|---|---|---|
+| `=` | Egal a | `WHERE prix = 89.99` |
+| `<>` ou `!=` | Different de | `WHERE statut <> 'annulee'` |
+| `<` | Inferieur a | `WHERE prix < 50` |
+| `>` | Superieur a | `WHERE prix > 100` |
+| `<=` | Inferieur ou egal a | `WHERE stock <= 25` |
+| `>=` | Superieur ou egal a | `WHERE stock >= 100` |
+| `BETWEEN a AND b` | Entre a et b (inclus) | `WHERE prix BETWEEN 10 AND 100` |
+| `IN (...)` | Dans la liste | `WHERE id_categorie IN (1, 2)` |
+| `LIKE` | Correspond au motif | `WHERE nom LIKE 'C%'` |
+| `IS NULL` | Est NULL | `WHERE prix IS NULL` |
+| `IS NOT NULL` | N'est pas NULL | `WHERE prix IS NOT NULL` |
+
+#### BETWEEN
+
+On veut les produits dont le prix est entre 40 et 100 euros (inclus).
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE prix BETWEEN 40 AND 100;
+```
+
+Resultat :
+
+| nom | prix |
+|---|---|
+| Clavier mecanique | 89.99 |
+| Souris sans fil | 45.50 |
+| Webcam HD | 59.90 |
+
+`BETWEEN 40 AND 100` est equivalent a `prix >= 40 AND prix <= 100`. Les bornes sont **incluses**.
+
+#### IN
+
+On veut les commandes dont le statut est "livree" ou "expediee".
+
+```sql
+SELECT id_commande, statut
+FROM commandes
+WHERE statut IN ('livree', 'expediee');
+```
+
+Resultat :
+
+| id_commande | statut |
+|---|---|
+| 101 | livree |
+| 102 | livree |
+| 104 | expediee |
+
+`IN` est equivalent a `statut = 'livree' OR statut = 'expediee'`, mais plus lisible.
+
+#### LIKE -- recherche par motif
+
+| Motif | Signification | Exemple | Correspond a |
+|---|---|---|---|
+| `%` | N'importe quelle sequence de caracteres (y compris vide) | `'C%'` | Clavier, Casque, Cahier |
+| `_` | Exactement un caractere | `'_a%'` | Cahier, Casque (2e lettre = a) |
+
+On veut les produits dont le nom commence par "C".
+
+```sql
+SELECT nom FROM produits
+WHERE nom LIKE 'C%';
+```
+
+Resultat :
+
+| nom |
+|---|
+| Clavier mecanique |
+| Cahier A4 |
+| Casque audio |
+
+On veut les produits dont le nom contient "souris".
+
+```sql
+SELECT nom FROM produits
+WHERE nom LIKE '%souris%';
+```
+
+Resultat :
+
+| nom |
+|---|
+| Souris sans fil |
+| Tapis de souris |
+
+**LIKE est insensible a la casse en MySQL** (avec la collation par defaut `utf8mb4_unicode_ci`). `LIKE '%souris%'` trouve aussi "Souris".
+
+#### IS NULL et IS NOT NULL
+
+On veut les produits dont le prix est inconnu (NULL).
+
+```sql
+SELECT nom, prix FROM produits
+WHERE prix IS NULL;
+```
+
+Resultat :
+
+| nom | prix |
+|---|---|
+| Tapis de souris | NULL |
+
+**PIEGE EXAMEN** : on n'ecrit JAMAIS `WHERE prix = NULL`. Ca ne fonctionne pas. NULL n'est pas une valeur, c'est l'**absence** de valeur. On utilise toujours `IS NULL` ou `IS NOT NULL`.
+
+```sql
+-- FAUX :
+SELECT * FROM produits WHERE prix = NULL;    -- renvoie 0 lignes (toujours)
+-- CORRECT :
+SELECT * FROM produits WHERE prix IS NULL;   -- renvoie les lignes ou prix est NULL
+```
+
+#### AND, OR, NOT -- operateurs logiques
+
+On veut les produits actifs dont le prix est inferieur a 50 euros.
+
+```sql
+SELECT nom, prix, est_actif
+FROM produits
+WHERE est_actif = TRUE AND prix < 50;
+```
+
+Resultat :
+
+| nom | prix | est_actif |
+|---|---|---|
+| Souris sans fil | 45.50 | 1 |
+| Cahier A4 | 3.50 | 1 |
+| Stylo bleu | 1.20 | 1 |
+
+**Priorite des operateurs** : `NOT` > `AND` > `OR`.
+
+Cela signifie que :
+
+```sql
+WHERE a = 1 OR b = 2 AND c = 3
+-- est interprete comme :
+WHERE a = 1 OR (b = 2 AND c = 3)
+-- et NON comme :
+WHERE (a = 1 OR b = 2) AND c = 3
+```
+
+**Conseil** : toujours utiliser des parentheses pour lever l'ambiguite.
+
+On veut les produits qui sont soit de la categorie 1 avec un prix > 100, soit de la categorie 2.
+
+```sql
+SELECT nom, prix, id_categorie
+FROM produits
+WHERE (id_categorie = 1 AND prix > 100) OR id_categorie = 2;
+```
+
+Resultat :
+
+| nom | prix | id_categorie |
+|---|---|---|
+| Ecran 27 pouces | 349.00 | 1 |
+| Casque audio | 129.99 | 1 |
+| Cahier A4 | 3.50 | 2 |
+| Stylo bleu | 1.20 | 2 |
+
+#### ORDER BY -- trier les resultats
+
+On veut les produits tries par prix decroissant.
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE prix IS NOT NULL
+ORDER BY prix DESC;
+```
+
+Resultat :
+
+| nom | prix |
+|---|---|
+| Ecran 27 pouces | 349.00 |
+| Casque audio | 129.99 |
+| Clavier mecanique | 89.99 |
+| Webcam HD | 59.90 |
+| Souris sans fil | 45.50 |
+| Cahier A4 | 3.50 |
+| Stylo bleu | 1.20 |
+
+**Tri multi-colonnes** : on veut trier par categorie (croissant), puis par prix (decroissant) a l'interieur de chaque categorie.
+
+```sql
+SELECT nom, prix, id_categorie
+FROM produits
+WHERE prix IS NOT NULL
+ORDER BY id_categorie ASC, prix DESC;
+```
+
+Resultat :
+
+| nom | prix | id_categorie |
+|---|---|---|
+| Ecran 27 pouces | 349.00 | 1 |
+| Casque audio | 129.99 | 1 |
+| Clavier mecanique | 89.99 | 1 |
+| Webcam HD | 59.90 | 1 |
+| Souris sans fil | 45.50 | 1 |
+| Cahier A4 | 3.50 | 2 |
+| Stylo bleu | 1.20 | 2 |
+
+**Note** : `ASC` est le tri par defaut. On peut l'omettre.
+
+#### LIMIT et OFFSET -- pagination
+
+On veut les 3 produits les plus chers.
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE prix IS NOT NULL
+ORDER BY prix DESC
+LIMIT 3;
+```
+
+Resultat :
+
+| nom | prix |
+|---|---|
+| Ecran 27 pouces | 349.00 |
+| Casque audio | 129.99 |
+| Clavier mecanique | 89.99 |
+
+On veut les produits 4 a 6 (page 2 avec 3 par page).
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE prix IS NOT NULL
+ORDER BY prix DESC
+LIMIT 3 OFFSET 3;
+```
+
+Resultat :
+
+| nom | prix |
+|---|---|
+| Webcam HD | 59.90 |
+| Souris sans fil | 45.50 |
+| Cahier A4 | 3.50 |
+
+`LIMIT 3 OFFSET 3` = sauter les 3 premieres lignes et prendre les 3 suivantes.
+
+Syntaxe alternative MySQL : `LIMIT 3, 3` (OFFSET en premier, puis LIMIT). **Attention a l'ordre inverse** : `LIMIT offset, count`.
+
+#### DISTINCT
+
+On veut la liste des categories presentes dans la table produits, sans doublons.
+
+```sql
+SELECT DISTINCT id_categorie
+FROM produits;
+```
+
+Resultat :
+
+| id_categorie |
+|---|
+| 1 |
+| 2 |
+| NULL |
+
+`DISTINCT` elimine les doublons. NULL est considere comme une valeur distincte.
+
+#### Alias (AS)
+
+On veut afficher le nom et le prix TTC (prix * 1.20) avec un nom de colonne lisible.
+
+```sql
+SELECT nom AS produit, prix * 1.20 AS prix_ttc
+FROM produits
+WHERE prix IS NOT NULL;
+```
+
+Resultat :
+
+| produit | prix_ttc |
+|---|---|
+| Clavier mecanique | 107.988 |
+| Souris sans fil | 54.600 |
+| Ecran 27 pouces | 418.800 |
+| Cahier A4 | 4.200 |
+| Stylo bleu | 1.440 |
+| Casque audio | 155.988 |
+| Webcam HD | 71.880 |
+
+Le mot-cle `AS` est optionnel en MySQL : `SELECT nom produit` fonctionne aussi. Mais `AS` est plus lisible.
+
+On peut aussi donner un alias a une table :
+
+```sql
+SELECT p.nom, p.prix
+FROM produits AS p
+WHERE p.est_actif = TRUE;
+```
+
+### 4.2 Fonctions
+
+#### Fonctions d'agregation
+
+Les fonctions d'agregation calculent une valeur a partir d'un **ensemble de lignes**.
+
+| Fonction | Description |
+|---|---|
+| `COUNT(...)` | Nombre de lignes |
+| `SUM(colonne)` | Somme |
+| `AVG(colonne)` | Moyenne |
+| `MIN(colonne)` | Valeur minimale |
+| `MAX(colonne)` | Valeur maximale |
+
+On veut le nombre total de produits, le prix moyen, le prix minimum et le prix maximum.
+
+```sql
+SELECT
+  COUNT(*) AS nb_produits,
+  AVG(prix) AS prix_moyen,
+  MIN(prix) AS prix_min,
+  MAX(prix) AS prix_max
+FROM produits;
+```
+
+Resultat :
+
+| nb_produits | prix_moyen | prix_min | prix_max |
+|---|---|---|---|
+| 8 | 111.297143 | 1.20 | 349.00 |
+
+#### COUNT(*) vs COUNT(colonne) vs COUNT(DISTINCT colonne)
+
+C'est une question **classique** a l'examen. Les trois ne font pas la meme chose.
+
+| Expression | Ce qu'elle compte | Resultat sur notre table `produits` |
+|---|---|---|
+| `COUNT(*)` | Toutes les lignes, y compris celles avec des NULL | 8 |
+| `COUNT(prix)` | Les lignes ou `prix` n'est PAS NULL | 7 (exclut Tapis de souris) |
+| `COUNT(DISTINCT id_categorie)` | Les valeurs distinctes non NULL de `id_categorie` | 2 (exclut NULL) |
+
+Demonstration :
+
+```sql
+SELECT
+  COUNT(*) AS total_lignes,
+  COUNT(prix) AS lignes_avec_prix,
+  COUNT(id_categorie) AS lignes_avec_categorie,
+  COUNT(DISTINCT id_categorie) AS nb_categories
+FROM produits;
+```
+
+Resultat :
+
+| total_lignes | lignes_avec_prix | lignes_avec_categorie | nb_categories |
+|---|---|---|---|
+| 8 | 7 | 7 | 2 |
+
+**Resume** :
+- `COUNT(*)` : compte les lignes. Ignore rien.
+- `COUNT(colonne)` : compte les lignes ou cette colonne n'est pas NULL.
+- `COUNT(DISTINCT colonne)` : compte les valeurs uniques non NULL.
+
+#### GROUP BY -- regrouper les lignes
+
+On veut savoir combien de produits il y a par categorie.
+
+```sql
+SELECT id_categorie, COUNT(*) AS nb_produits
+FROM produits
+GROUP BY id_categorie;
+```
+
+Resultat :
+
+| id_categorie | nb_produits |
+|---|---|
+| 1 | 5 |
+| 2 | 2 |
+| NULL | 1 |
+
+GROUP BY regroupe les lignes qui ont la meme valeur de `id_categorie`, puis applique `COUNT(*)` a chaque groupe.
+
+**Regle d'or du GROUP BY** : toute colonne dans le SELECT qui n'est **pas** dans une fonction d'agregation **DOIT** etre dans le GROUP BY.
+
+```sql
+-- FAUX (nom n'est ni dans une agregation ni dans le GROUP BY) :
+SELECT id_categorie, nom, COUNT(*)
+FROM produits
+GROUP BY id_categorie;
+
+-- CORRECT :
+SELECT id_categorie, COUNT(*) AS nb_produits
+FROM produits
+GROUP BY id_categorie;
+```
+
+MySQL en mode non strict accepte la requete fausse mais renvoie un resultat imprevisible. En mode `ONLY_FULL_GROUP_BY` (active par defaut depuis MySQL 5.7.5), c'est une erreur.
+
+**PIEGE EXAMEN** : c'est l'erreur la plus frequente dans les copies. Verifier systematiquement que chaque colonne du SELECT est soit dans GROUP BY, soit dans une fonction d'agregation.
+
+#### HAVING -- filtrer apres le regroupement
+
+On veut les categories qui ont plus de 2 produits.
+
+```sql
+SELECT id_categorie, COUNT(*) AS nb_produits
+FROM produits
+GROUP BY id_categorie
+HAVING COUNT(*) > 2;
+```
+
+Resultat :
+
+| id_categorie | nb_produits |
+|---|---|
+| 1 | 5 |
+
+**WHERE vs HAVING -- difference fondamentale** :
+
+| | WHERE | HAVING |
+|---|---|---|
+| Quand ? | **Avant** le GROUP BY | **Apres** le GROUP BY |
+| Filtre quoi ? | Les **lignes** individuelles | Les **groupes** |
+| Peut utiliser des fonctions d'agregation ? | **Non** | **Oui** |
+
+Exercice comparatif. On veut les categories qui ont plus de 2 produits **actifs**.
+
+```sql
+-- WHERE filtre les lignes AVANT le regroupement
+-- HAVING filtre les groupes APRES le regroupement
+SELECT id_categorie, COUNT(*) AS nb_produits_actifs
+FROM produits
+WHERE est_actif = TRUE        -- filtre : on ne garde que les produits actifs
+GROUP BY id_categorie          -- on regroupe par categorie
+HAVING COUNT(*) > 2;          -- on ne garde que les categories avec plus de 2
+```
+
+Etape par etape :
+1. WHERE `est_actif = TRUE` : on garde 7 lignes (le casque audio est exclus).
+2. GROUP BY `id_categorie` : 3 groupes (1 -> 4 produits, 2 -> 2 produits, NULL -> 1 produit).
+3. HAVING `COUNT(*) > 2` : seule la categorie 1 (4 produits) passe le filtre.
+
+Resultat :
+
+| id_categorie | nb_produits_actifs |
+|---|---|
+| 1 | 4 |
+
+**Ordre d'execution d'une requete SELECT** (a memoriser) :
+
+1. `FROM` (et jointures)
+2. `WHERE`
+3. `GROUP BY`
+4. `HAVING`
+5. `SELECT`
+6. `DISTINCT`
+7. `ORDER BY`
+8. `LIMIT`
+
+#### Fonctions de chaine de caracteres
+
+| Fonction | Description | Exemple | Resultat |
+|---|---|---|---|
+| `CONCAT(a, b, ...)` | Concatenation | `CONCAT('Bon', 'jour')` | `Bonjour` |
+| `CONCAT_WS(sep, a, b)` | Concatenation avec separateur | `CONCAT_WS(' ', 'Marie', 'Dupont')` | `Marie Dupont` |
+| `SUBSTRING(str, pos, len)` | Extraire une sous-chaine | `SUBSTRING('Bonjour', 1, 3)` | `Bon` |
+| `LENGTH(str)` | Longueur en octets | `LENGTH('cafe')` | `4` |
+| `CHAR_LENGTH(str)` | Longueur en caracteres | `CHAR_LENGTH('cafe')` | `4` |
+| `UPPER(str)` | Majuscules | `UPPER('bonjour')` | `BONJOUR` |
+| `LOWER(str)` | Minuscules | `LOWER('BONJOUR')` | `bonjour` |
+| `TRIM(str)` | Supprimer les espaces de debut et fin | `TRIM('  abc  ')` | `abc` |
+| `LTRIM(str)` | Supprimer les espaces de debut | `LTRIM('  abc')` | `abc` |
+| `RTRIM(str)` | Supprimer les espaces de fin | `RTRIM('abc  ')` | `abc` |
+| `REPLACE(str, old, new)` | Remplacer | `REPLACE('Bonjour', 'jour', 'soir')` | `Bonsoir` |
+| `LEFT(str, n)` | n premiers caracteres | `LEFT('Bonjour', 3)` | `Bon` |
+| `RIGHT(str, n)` | n derniers caracteres | `RIGHT('Bonjour', 4)` | `jour` |
+| `LPAD(str, len, pad)` | Remplir a gauche | `LPAD('42', 5, '0')` | `00042` |
+| `RPAD(str, len, pad)` | Remplir a droite | `RPAD('AB', 5, '-')` | `AB---` |
+
+On veut afficher le nom complet des clients en majuscules.
+
+```sql
+SELECT CONCAT(UPPER(prenom), ' ', UPPER(nom)) AS nom_complet
+FROM clients;
+```
+
+Resultat :
+
+| nom_complet |
+|---|
+| MARIE DUPONT |
+| LUCAS MARTIN |
+| SOPHIE BERNARD |
+| THOMAS PETIT |
+| EMMA DURAND |
+
+#### Fonctions de date
+
+| Fonction | Description | Exemple | Resultat |
+|---|---|---|---|
+| `NOW()` | Date et heure actuelles | `NOW()` | `2024-04-15 14:30:00` |
+| `CURDATE()` | Date actuelle | `CURDATE()` | `2024-04-15` |
+| `CURTIME()` | Heure actuelle | `CURTIME()` | `14:30:00` |
+| `DATE_FORMAT(d, fmt)` | Formater une date | `DATE_FORMAT(NOW(), '%d/%m/%Y')` | `15/04/2024` |
+| `DATEDIFF(d1, d2)` | Difference en jours (d1 - d2) | `DATEDIFF('2024-04-15', '2024-04-01')` | `14` |
+| `DATE_ADD(d, INTERVAL n unit)` | Ajouter un intervalle | `DATE_ADD('2024-04-01', INTERVAL 30 DAY)` | `2024-05-01` |
+| `DATE_SUB(d, INTERVAL n unit)` | Soustraire un intervalle | `DATE_SUB('2024-04-01', INTERVAL 1 MONTH)` | `2024-03-01` |
+| `YEAR(d)` | Extraire l'annee | `YEAR('2024-04-15')` | `2024` |
+| `MONTH(d)` | Extraire le mois | `MONTH('2024-04-15')` | `4` |
+| `DAY(d)` | Extraire le jour | `DAY('2024-04-15')` | `15` |
+| `DAYNAME(d)` | Nom du jour | `DAYNAME('2024-04-15')` | `Monday` |
+| `LAST_DAY(d)` | Dernier jour du mois | `LAST_DAY('2024-04-15')` | `2024-04-30` |
+
+Formats courants pour `DATE_FORMAT` :
+
+| Code | Signification | Exemple |
+|---|---|---|
+| `%d` | Jour (01-31) | 15 |
+| `%m` | Mois (01-12) | 04 |
+| `%Y` | Annee (4 chiffres) | 2024 |
+| `%y` | Annee (2 chiffres) | 24 |
+| `%H` | Heure (00-23) | 14 |
+| `%i` | Minutes (00-59) | 30 |
+| `%s` | Secondes (00-59) | 00 |
+| `%W` | Nom du jour | Monday |
+| `%M` | Nom du mois | April |
+
+On veut les clients inscrits depuis plus de 60 jours (par rapport au 15 avril 2024).
+
+```sql
+SELECT nom, prenom, date_inscription,
+       DATEDIFF('2024-04-15', date_inscription) AS jours_depuis_inscription
+FROM clients
+WHERE DATEDIFF('2024-04-15', date_inscription) > 60;
+```
+
+Resultat :
+
+| nom | prenom | date_inscription | jours_depuis_inscription |
+|---|---|---|---|
+| Dupont | Marie | 2024-01-15 | 91 |
+| Martin | Lucas | 2024-02-20 | 55 |
+
+Seule Marie Dupont (91 jours) depasse 60 jours. Lucas Martin (55 jours) ne depasse pas.
+
+Correction : `DATEDIFF('2024-04-15', '2024-02-20')` = 55, ce qui n'est pas > 60.
+
+Resultat corrige :
+
+| nom | prenom | date_inscription | jours_depuis_inscription |
+|---|---|---|---|
+| Dupont | Marie | 2024-01-15 | 91 |
+
+#### Fonctions numeriques
+
+| Fonction | Description | Exemple | Resultat |
+|---|---|---|---|
+| `ROUND(n, d)` | Arrondir a d decimales | `ROUND(3.14159, 2)` | `3.14` |
+| `ROUND(n)` | Arrondir a l'entier | `ROUND(3.7)` | `4` |
+| `CEIL(n)` | Arrondir au superieur | `CEIL(3.1)` | `4` |
+| `FLOOR(n)` | Arrondir a l'inferieur | `FLOOR(3.9)` | `3` |
+| `ABS(n)` | Valeur absolue | `ABS(-5)` | `5` |
+| `MOD(a, b)` | Modulo (reste de la division) | `MOD(10, 3)` | `1` |
+| `POWER(a, b)` | Puissance | `POWER(2, 3)` | `8` |
+| `SQRT(n)` | Racine carree | `SQRT(16)` | `4` |
+
+On veut le prix TTC arrondi a 2 decimales.
+
+```sql
+SELECT nom, prix, ROUND(prix * 1.20, 2) AS prix_ttc
+FROM produits
+WHERE prix IS NOT NULL;
+```
+
+Resultat :
+
+| nom | prix | prix_ttc |
+|---|---|---|
+| Clavier mecanique | 89.99 | 107.99 |
+| Souris sans fil | 45.50 | 54.60 |
+| Ecran 27 pouces | 349.00 | 418.80 |
+| Cahier A4 | 3.50 | 4.20 |
+| Stylo bleu | 1.20 | 1.44 |
+| Casque audio | 129.99 | 155.99 |
+| Webcam HD | 59.90 | 71.88 |
+
+#### CASE WHEN
+
+Equivalent d'un if/else dans une requete SQL.
+
+On veut classer les produits par gamme de prix.
+
+```sql
+SELECT nom, prix,
+  CASE
+    WHEN prix IS NULL THEN 'Prix inconnu'
+    WHEN prix < 10 THEN 'Bas de gamme'
+    WHEN prix < 100 THEN 'Milieu de gamme'
+    ELSE 'Haut de gamme'
+  END AS gamme
+FROM produits;
+```
+
+Resultat :
+
+| nom | prix | gamme |
+|---|---|---|
+| Clavier mecanique | 89.99 | Milieu de gamme |
+| Souris sans fil | 45.50 | Milieu de gamme |
+| Ecran 27 pouces | 349.00 | Haut de gamme |
+| Cahier A4 | 3.50 | Bas de gamme |
+| Stylo bleu | 1.20 | Bas de gamme |
+| Casque audio | 129.99 | Haut de gamme |
+| Webcam HD | 59.90 | Milieu de gamme |
+| Tapis de souris | NULL | Prix inconnu |
+
+L'ordre des WHEN est important : MySQL evalue de haut en bas et s'arrete au premier WHEN vrai.
+
+#### IFNULL, COALESCE, NULLIF
+
+| Fonction | Description | Exemple | Resultat |
+|---|---|---|---|
+| `IFNULL(expr, valeur_si_null)` | Si expr est NULL, renvoie la valeur de remplacement | `IFNULL(NULL, 0)` | `0` |
+| `COALESCE(a, b, c, ...)` | Renvoie la premiere valeur non NULL | `COALESCE(NULL, NULL, 'abc')` | `abc` |
+| `NULLIF(a, b)` | Renvoie NULL si a = b, sinon renvoie a | `NULLIF(5, 5)` | `NULL` |
+
+On veut afficher les produits avec "Non categorise" quand la categorie est NULL, et un prix de 0 quand le prix est NULL.
+
+```sql
+SELECT nom,
+       IFNULL(prix, 0) AS prix,
+       COALESCE(id_categorie, 0) AS id_categorie
+FROM produits;
+```
+
+`COALESCE` est plus puissant que `IFNULL` car il accepte plusieurs arguments. `COALESCE(a, b, c)` renvoie la premiere valeur non NULL parmi a, b, c.
+
+#### Exercices progressifs (15 requetes)
+
+**Exercice 1** : Afficher tous les produits actifs, tries par nom alphabetique.
+
+```sql
+SELECT nom, prix, stock
+FROM produits
+WHERE est_actif = TRUE
+ORDER BY nom ASC;
+```
+
+**Exercice 2** : Afficher les produits dont le prix est entre 10 et 100 euros.
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE prix BETWEEN 10 AND 100;
+```
+
+**Exercice 3** : Afficher les produits dont le nom contient "souris" (insensible a la casse).
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE nom LIKE '%souris%';
+```
+
+**Exercice 4** : Compter le nombre de produits par categorie, en affichant aussi les categories sans produits (NULL).
+
+```sql
+SELECT id_categorie, COUNT(*) AS nb_produits
+FROM produits
+GROUP BY id_categorie;
+```
+
+**Exercice 5** : Afficher le prix moyen des produits par categorie, uniquement pour les categories avec un prix moyen superieur a 50 euros.
+
+```sql
+SELECT id_categorie, ROUND(AVG(prix), 2) AS prix_moyen
+FROM produits
+WHERE prix IS NOT NULL
+GROUP BY id_categorie
+HAVING AVG(prix) > 50;
+```
+
+Resultat :
+
+| id_categorie | prix_moyen |
+|---|---|
+| 1 | 134.88 |
+
+**Exercice 6** : Afficher les 3 produits les moins chers (hors NULL).
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE prix IS NOT NULL
+ORDER BY prix ASC
+LIMIT 3;
+```
+
+**Exercice 7** : Afficher les commandes du mois d'avril 2024.
+
+```sql
+SELECT id_commande, date_commande, statut
+FROM commandes
+WHERE YEAR(date_commande) = 2024 AND MONTH(date_commande) = 4;
+```
+
+**Exercice 8** : Compter le nombre de commandes par statut.
+
+```sql
+SELECT statut, COUNT(*) AS nb_commandes
+FROM commandes
+GROUP BY statut;
+```
+
+Resultat :
+
+| statut | nb_commandes |
+|---|---|
+| livree | 2 |
+| en_attente | 1 |
+| expediee | 1 |
+| annulee | 1 |
+
+**Exercice 9** : Afficher les produits avec leur prix TTC arrondi, et la mention "Gratuit" si le prix est NULL.
+
+```sql
+SELECT nom,
+  CASE
+    WHEN prix IS NULL THEN 'Gratuit'
+    ELSE CAST(ROUND(prix * 1.20, 2) AS CHAR)
+  END AS prix_ttc
+FROM produits;
+```
+
+**Exercice 10** : Afficher la valeur totale du stock (prix * stock) par produit, triee par valeur decroissante.
+
+```sql
+SELECT nom, prix, stock, ROUND(prix * stock, 2) AS valeur_stock
+FROM produits
+WHERE prix IS NOT NULL
+ORDER BY valeur_stock DESC;
+```
+
+Resultat :
+
+| nom | prix | stock | valeur_stock |
+|---|---|---|---|
+| Ecran 27 pouces | 349.00 | 25 | 8725.00 |
+| Souris sans fil | 45.50 | 120 | 5460.00 |
+| Clavier mecanique | 89.99 | 50 | 4499.50 |
+| Cahier A4 | 3.50 | 500 | 1750.00 |
+| Stylo bleu | 1.20 | 1000 | 1200.00 |
+| Webcam HD | 59.90 | 15 | 898.50 |
+| Casque audio | 129.99 | 0 | 0.00 |
+
+**Exercice 11** : Afficher le stock total et la valeur totale du stock pour l'ensemble des produits.
+
+```sql
+SELECT SUM(stock) AS stock_total,
+       ROUND(SUM(prix * stock), 2) AS valeur_totale
+FROM produits;
+```
+
+Resultat :
+
+| stock_total | valeur_totale |
+|---|---|
+| 1910 | 22533.00 |
+
+**Exercice 12** : Afficher les produits dont le nom fait plus de 15 caracteres.
+
+```sql
+SELECT nom, CHAR_LENGTH(nom) AS longueur
+FROM produits
+WHERE CHAR_LENGTH(nom) > 15;
+```
+
+Resultat :
+
+| nom | longueur |
+|---|---|
+| Clavier mecanique | 17 |
+| Ecran 27 pouces | 15 |
+
+Correction : "Ecran 27 pouces" fait exactement 15, pas > 15.
+
+Resultat corrige :
+
+| nom | longueur |
+|---|---|
+| Clavier mecanique | 17 |
+
+**Exercice 13** : Afficher la date d'inscription formatee en francais (JJ/MM/AAAA).
+
+```sql
+SELECT nom, prenom,
+       DATE_FORMAT(date_inscription, '%d/%m/%Y') AS date_fr
+FROM clients;
+```
+
+Resultat :
+
+| nom | prenom | date_fr |
+|---|---|---|
+| Dupont | Marie | 15/01/2024 |
+| Martin | Lucas | 20/02/2024 |
+| Bernard | Sophie | 10/03/2024 |
+| Petit | Thomas | 10/03/2024 |
+| Durand | Emma | 01/04/2024 |
+
+**Exercice 14** : Afficher les clients inscrits le meme jour que Sophie Bernard (10 mars 2024), sans coder la date en dur.
+
+```sql
+SELECT nom, prenom, date_inscription
+FROM clients
+WHERE date_inscription = (
+  SELECT date_inscription FROM clients
+  WHERE nom = 'Bernard' AND prenom = 'Sophie'
+);
+```
+
+Resultat :
+
+| nom | prenom | date_inscription |
+|---|---|---|
+| Bernard | Sophie | 2024-03-10 |
+| Petit | Thomas | 2024-03-10 |
+
+**Exercice 15** : Pour chaque client, afficher le nombre de commandes et le nombre de commandes livrees.
+
+```sql
+SELECT c.nom, c.prenom,
+       COUNT(co.id_commande) AS nb_commandes,
+       SUM(CASE WHEN co.statut = 'livree' THEN 1 ELSE 0 END) AS nb_livrees
+FROM clients c
+LEFT JOIN commandes co ON c.id_client = co.id_client
+GROUP BY c.id_client, c.nom, c.prenom;
+```
+
+Resultat :
+
+| nom | prenom | nb_commandes | nb_livrees |
+|---|---|---|---|
+| Dupont | Marie | 2 | 1 |
+| Martin | Lucas | 1 | 0 |
+| Bernard | Sophie | 1 | 1 |
+| Petit | Thomas | 1 | 0 |
+| Durand | Emma | 0 | 0 |
+
+---
+
+## 5. Jointures
+
+C'est **LE** chapitre le plus important pour l'examen. La quasi-totalite des exercices de requetes impliquent au moins une jointure.
+
+### Pourquoi joindre ?
+
+Les donnees sont reparties dans plusieurs tables pour eviter la redondance (normalisation). Pour reconstituer l'information complete, on doit **joindre** les tables.
+
+Exemple : pour savoir quels produits a commande Marie Dupont, on a besoin de croiser 4 tables : `clients`, `commandes`, `lignes_commande`, `produits`.
+
+### INNER JOIN -- jointure interne
+
+L'INNER JOIN ne garde que les lignes qui ont une correspondance dans **les deux** tables.
+
+Analogie : des invites qui ont une place a table ET une invitation. Ceux qui n'ont pas d'invitation ne viennent pas, et les places sans invite restent vides.
+
+On veut la liste des produits avec le nom de leur categorie.
+
+```sql
+SELECT p.nom AS produit, p.prix, c.nom AS categorie
+FROM produits p
+INNER JOIN categories c ON p.id_categorie = c.id_categorie;
+```
+
+Resultat :
+
+| produit | prix | categorie |
+|---|---|---|
+| Clavier mecanique | 89.99 | Informatique |
+| Souris sans fil | 45.50 | Informatique |
+| Ecran 27 pouces | 349.00 | Informatique |
+| Cahier A4 | 3.50 | Bureautique |
+| Stylo bleu | 1.20 | Bureautique |
+| Casque audio | 129.99 | Informatique |
+| Webcam HD | 59.90 | Informatique |
+
+**Attention** : "Tapis de souris" (id_categorie = NULL) n'apparait pas car il n'a pas de correspondance dans `categories`. C'est le comportement de l'INNER JOIN.
+
+**Schemas visuels des jointures** (diagrammes de Venn textuels) :
+
+```
+INNER JOIN :        LEFT JOIN :         RIGHT JOIN :        CROSS JOIN :
+   ___  ___           ___  ___           ___  ___
+  /   \/   \         /####\   \         /   /####\         Chaque ligne
+ | A  |##| B |      |#A##|##| B |      | A |##|##B#|       de A combinee
+  \___/\___/         \####/___/         \___\####/          avec chaque
+                                                            ligne de B
+   ## = resultat     #### = resultat    #### = resultat
+```
+
+### LEFT JOIN -- jointure externe gauche
+
+Le LEFT JOIN garde **toutes** les lignes de la table de gauche, meme si elles n'ont pas de correspondance dans la table de droite. Les colonnes de droite sont remplies avec NULL.
+
+Analogie : la liste de tous les invites, meme ceux qui n'ont pas de place de parking. Ceux sans parking ont "NULL" dans la colonne parking.
+
+On veut la liste de tous les produits avec le nom de leur categorie, y compris ceux sans categorie.
+
+```sql
+SELECT p.nom AS produit, p.prix, c.nom AS categorie
+FROM produits p
+LEFT JOIN categories c ON p.id_categorie = c.id_categorie;
+```
+
+Resultat :
+
+| produit | prix | categorie |
+|---|---|---|
+| Clavier mecanique | 89.99 | Informatique |
+| Souris sans fil | 45.50 | Informatique |
+| Ecran 27 pouces | 349.00 | Informatique |
+| Cahier A4 | 3.50 | Bureautique |
+| Stylo bleu | 1.20 | Bureautique |
+| Casque audio | 129.99 | Informatique |
+| Webcam HD | 59.90 | Informatique |
+| Tapis de souris | NULL | NULL |
+
+Cette fois, "Tapis de souris" apparait avec NULL pour la categorie.
+
+**Astuce** : pour trouver les lignes **sans** correspondance, on filtre avec `WHERE c.id_categorie IS NULL`.
+
+On veut les produits qui n'ont pas de categorie.
+
+```sql
+SELECT p.nom
+FROM produits p
+LEFT JOIN categories c ON p.id_categorie = c.id_categorie
+WHERE c.id_categorie IS NULL;
+```
+
+Resultat :
+
+| nom |
+|---|
+| Tapis de souris |
+
+### RIGHT JOIN -- jointure externe droite
+
+Le RIGHT JOIN garde **toutes** les lignes de la table de droite, meme sans correspondance a gauche. C'est le miroir du LEFT JOIN.
+
+On veut toutes les categories, meme celles sans produit.
+
+```sql
+SELECT c.nom AS categorie, p.nom AS produit
+FROM produits p
+RIGHT JOIN categories c ON p.id_categorie = c.id_categorie;
+```
+
+En pratique, on utilise rarement RIGHT JOIN. On reecrit la requete avec un LEFT JOIN en inversant l'ordre des tables :
+
+```sql
+-- Equivalent avec LEFT JOIN :
+SELECT c.nom AS categorie, p.nom AS produit
+FROM categories c
+LEFT JOIN produits p ON c.id_categorie = p.id_categorie;
+```
+
+### CROSS JOIN -- produit cartesien
+
+Le CROSS JOIN combine **chaque** ligne de la premiere table avec **chaque** ligne de la deuxieme table. Pas de condition de jointure.
+
+Si la table A a 5 lignes et la table B a 3 lignes, le resultat a 5 * 3 = 15 lignes.
+
+```sql
+SELECT c.nom AS categorie, p.nom AS produit
+FROM categories c
+CROSS JOIN produits p;
+```
+
+Resultat : 2 categories * 8 produits = 16 lignes. Chaque categorie est associee a chaque produit.
+
+**Utilite** : generer toutes les combinaisons possibles. Par exemple, tous les couples (taille, couleur) pour un configurateur de produit.
+
+**PIEGE** : oublier la condition ON dans un INNER JOIN revient a faire un CROSS JOIN involontaire. C'est une erreur grave qui renvoie un nombre enorme de lignes.
+
+```sql
+-- ERREUR : cross join involontaire
+SELECT p.nom, c.nom
+FROM produits p, categories c;
+-- Pas de condition de jointure !
+-- Resultat : 16 lignes au lieu de 7
+```
+
+### Self JOIN -- jointure reflexive
+
+Une table jointe avec elle-meme. Utile quand une ligne reference une autre ligne de la meme table.
+
+Exemple classique : un employe et son manager (le manager est aussi un employe).
+
+Table `employes` :
+
+| id_employe | nom | id_manager |
+|---|---|---|
+| 1 | Dupont | NULL |
+| 2 | Martin | 1 |
+| 3 | Bernard | 1 |
+| 4 | Petit | 2 |
+| 5 | Durand | 2 |
+
+On veut afficher chaque employe avec le nom de son manager.
+
+```sql
+SELECT e.nom AS employe, m.nom AS manager
+FROM employes e
+LEFT JOIN employes m ON e.id_manager = m.id_employe;
+```
+
+Resultat :
+
+| employe | manager |
+|---|---|
+| Dupont | NULL |
+| Martin | Dupont |
+| Bernard | Dupont |
+| Petit | Martin |
+| Durand | Martin |
+
+On utilise LEFT JOIN pour inclure Dupont (qui n'a pas de manager, id_manager = NULL).
+
+**Explication** : on donne deux alias differents a la meme table (`e` pour l'employe, `m` pour le manager). La condition de jointure `e.id_manager = m.id_employe` fait correspondre chaque employe avec la ligne du manager.
+
+### Jointure sur plusieurs tables (3, 4 tables)
+
+C'est la ou l'examen devient serieux. Methodologie pour ecrire une jointure multi-tables :
+
+**Etape 1** : identifier les tables necessaires.
+**Etape 2** : identifier les liens (cles etrangeres) entre les tables.
+**Etape 3** : ecrire les jointures une par une.
+**Etape 4** : ajouter les conditions WHERE, GROUP BY, etc.
+
+**Exercice** : On veut afficher le nom du client, la date de la commande, le nom du produit et la quantite pour chaque ligne de commande.
+
+Tables necessaires : `clients`, `commandes`, `lignes_commande`, `produits`.
+
+Liens :
+- `clients.id_client` = `commandes.id_client`
+- `commandes.id_commande` = `lignes_commande.id_commande`
+- `lignes_commande.id_produit` = `produits.id_produit`
+
+```sql
+SELECT
+  cl.nom AS client,
+  cl.prenom,
+  co.date_commande,
+  p.nom AS produit,
+  lc.quantite,
+  lc.prix_unitaire,
+  lc.quantite * lc.prix_unitaire AS total_ligne
+FROM clients cl
+INNER JOIN commandes co ON cl.id_client = co.id_client
+INNER JOIN lignes_commande lc ON co.id_commande = lc.id_commande
+INNER JOIN produits p ON lc.id_produit = p.id_produit
+ORDER BY co.date_commande, cl.nom;
+```
+
+Resultat :
+
+| client | prenom | date_commande | produit | quantite | prix_unitaire | total_ligne |
+|---|---|---|---|---|---|---|
+| Dupont | Marie | 2024-04-01 | Clavier mecanique | 1 | 89.99 | 89.99 |
+| Dupont | Marie | 2024-04-01 | Souris sans fil | 2 | 45.50 | 91.00 |
+| Bernard | Sophie | 2024-04-03 | Ecran 27 pouces | 1 | 349.00 | 349.00 |
+| Bernard | Sophie | 2024-04-03 | Cahier A4 | 10 | 3.50 | 35.00 |
+| Dupont | Marie | 2024-04-05 | Stylo bleu | 5 | 1.20 | 6.00 |
+| Dupont | Marie | 2024-04-05 | Webcam HD | 1 | 59.90 | 59.90 |
+| Martin | Lucas | 2024-04-10 | Clavier mecanique | 1 | 89.99 | 89.99 |
+| Martin | Lucas | 2024-04-10 | Cahier A4 | 20 | 3.50 | 70.00 |
+| Petit | Thomas | 2024-04-12 | Souris sans fil | 1 | 45.50 | 45.50 |
+
+### Les erreurs classiques en jointures
+
+**Erreur 1 : oublier la condition de jointure**
+
+```sql
+-- FAUX : cross join involontaire
+SELECT c.nom, p.nom
+FROM clients c, commandes co, produits p;
+-- Resultat : 5 * 5 * 8 = 200 lignes au lieu de 9 !
+```
+
+**Erreur 2 : confondre INNER JOIN et LEFT JOIN**
+
+Si l'enonce dit "tous les clients, meme ceux qui n'ont pas commande", c'est un LEFT JOIN. Si l'enonce dit "les clients qui ont commande", c'est un INNER JOIN.
+
+**Erreur 3 : mettre la condition de jointure dans le WHERE au lieu du ON**
+
+Avec INNER JOIN, le resultat est identique. Mais avec LEFT JOIN, c'est different :
+
+```sql
+-- Correct : condition dans le ON
+SELECT c.nom, co.id_commande
+FROM clients c
+LEFT JOIN commandes co ON c.id_client = co.id_client AND co.statut = 'livree';
+
+-- DIFFERENT : condition dans le WHERE (transforme le LEFT JOIN en INNER JOIN de facto)
+SELECT c.nom, co.id_commande
+FROM clients c
+LEFT JOIN commandes co ON c.id_client = co.id_client
+WHERE co.statut = 'livree';
+```
+
+La premiere requete renvoie TOUS les clients (meme sans commande livree). La deuxieme ne renvoie que les clients avec une commande livree (le WHERE exclut les NULL).
+
+### Exercices de jointures (10 exercices progressifs)
+
+**Exercice J1** : Afficher les produits avec le nom de leur categorie (tous les produits, meme sans categorie).
+
+```sql
+SELECT p.nom AS produit, p.prix, IFNULL(c.nom, 'Sans categorie') AS categorie
+FROM produits p
+LEFT JOIN categories c ON p.id_categorie = c.id_categorie;
+```
+
+**Exercice J2** : Afficher les noms des clients qui ont passe au moins une commande.
+
+```sql
+SELECT DISTINCT cl.nom, cl.prenom
+FROM clients cl
+INNER JOIN commandes co ON cl.id_client = co.id_client;
+```
+
+Resultat :
+
+| nom | prenom |
+|---|---|
+| Dupont | Marie |
+| Bernard | Sophie |
+| Martin | Lucas |
+| Petit | Thomas |
+
+Emma Durand n'apparait pas car elle n'a pas de commande.
+
+**Exercice J3** : Afficher les clients qui n'ont **jamais** commande.
+
+```sql
+SELECT cl.nom, cl.prenom
+FROM clients cl
+LEFT JOIN commandes co ON cl.id_client = co.id_client
+WHERE co.id_commande IS NULL;
+```
+
+Resultat :
+
+| nom | prenom |
+|---|---|
+| Durand | Emma |
+
+**Exercice J4** : Afficher le montant total de chaque commande.
+
+```sql
+SELECT co.id_commande, co.date_commande,
+       SUM(lc.quantite * lc.prix_unitaire) AS montant_total
+FROM commandes co
+INNER JOIN lignes_commande lc ON co.id_commande = lc.id_commande
+GROUP BY co.id_commande, co.date_commande;
+```
+
+Resultat :
+
+| id_commande | date_commande | montant_total |
+|---|---|---|
+| 101 | 2024-04-01 | 180.99 |
+| 102 | 2024-04-03 | 384.00 |
+| 103 | 2024-04-05 | 65.90 |
+| 104 | 2024-04-10 | 159.99 |
+| 105 | 2024-04-12 | 45.50 |
+
+**Exercice J5** : Afficher le montant total depense par chaque client.
+
+```sql
+SELECT cl.nom, cl.prenom,
+       ROUND(SUM(lc.quantite * lc.prix_unitaire), 2) AS total_depense
+FROM clients cl
+INNER JOIN commandes co ON cl.id_client = co.id_client
+INNER JOIN lignes_commande lc ON co.id_commande = lc.id_commande
+GROUP BY cl.id_client, cl.nom, cl.prenom
+ORDER BY total_depense DESC;
+```
+
+Resultat :
+
+| nom | prenom | total_depense |
+|---|---|---|
+| Bernard | Sophie | 384.00 |
+| Dupont | Marie | 246.89 |
+| Martin | Lucas | 159.99 |
+| Petit | Thomas | 45.50 |
+
+**Exercice J6** : Afficher les produits qui n'ont jamais ete commandes.
+
+```sql
+SELECT p.nom
+FROM produits p
+LEFT JOIN lignes_commande lc ON p.id_produit = lc.id_produit
+WHERE lc.id_commande IS NULL;
+```
+
+Resultat :
+
+| nom |
+|---|
+| Ecran 27 pouces |
+| Casque audio |
+| Tapis de souris |
+
+Correction : l'ecran 27 pouces est dans la commande 102. Verifions.
+
+Lignes_commande : id_produit 3 = ecran 27 pouces apparait dans la commande 102.
+
+Resultat corrige :
+
+| nom |
+|---|
+| Casque audio |
+| Tapis de souris |
+
+**Exercice J7** : Afficher le produit le plus commande (en quantite totale).
+
+```sql
+SELECT p.nom, SUM(lc.quantite) AS quantite_totale
+FROM produits p
+INNER JOIN lignes_commande lc ON p.id_produit = lc.id_produit
+GROUP BY p.id_produit, p.nom
+ORDER BY quantite_totale DESC
+LIMIT 1;
+```
+
+Resultat :
+
+| nom | quantite_totale |
+|---|---|
+| Cahier A4 | 30 |
+
+**Exercice J8** : Afficher les clients avec le nombre de commandes et le montant total, y compris ceux sans commande (montant = 0).
+
+```sql
+SELECT cl.nom, cl.prenom,
+       COUNT(DISTINCT co.id_commande) AS nb_commandes,
+       IFNULL(ROUND(SUM(lc.quantite * lc.prix_unitaire), 2), 0) AS montant_total
+FROM clients cl
+LEFT JOIN commandes co ON cl.id_client = co.id_client
+LEFT JOIN lignes_commande lc ON co.id_commande = lc.id_commande
+GROUP BY cl.id_client, cl.nom, cl.prenom
+ORDER BY montant_total DESC;
+```
+
+Resultat :
+
+| nom | prenom | nb_commandes | montant_total |
+|---|---|---|---|
+| Bernard | Sophie | 1 | 384.00 |
+| Dupont | Marie | 2 | 246.89 |
+| Martin | Lucas | 1 | 159.99 |
+| Petit | Thomas | 1 | 45.50 |
+| Durand | Emma | 0 | 0 |
+
+**Exercice J9** : Afficher la commande la plus chere avec les details du client.
+
+```sql
+SELECT cl.nom, cl.prenom, co.id_commande, co.date_commande,
+       SUM(lc.quantite * lc.prix_unitaire) AS montant
+FROM clients cl
+INNER JOIN commandes co ON cl.id_client = co.id_client
+INNER JOIN lignes_commande lc ON co.id_commande = lc.id_commande
+GROUP BY co.id_commande, cl.nom, cl.prenom, co.date_commande
+ORDER BY montant DESC
+LIMIT 1;
+```
+
+Resultat :
+
+| nom | prenom | id_commande | date_commande | montant |
+|---|---|---|---|---|
+| Bernard | Sophie | 102 | 2024-04-03 | 384.00 |
+
+**Exercice J10** : Afficher pour chaque categorie le nombre de produits commandes et le chiffre d'affaires genere.
+
+```sql
+SELECT cat.nom AS categorie,
+       COUNT(DISTINCT p.id_produit) AS nb_produits_commandes,
+       ROUND(SUM(lc.quantite * lc.prix_unitaire), 2) AS chiffre_affaires
+FROM categories cat
+INNER JOIN produits p ON cat.id_categorie = p.id_categorie
+INNER JOIN lignes_commande lc ON p.id_produit = lc.id_produit
+GROUP BY cat.id_categorie, cat.nom;
+```
+
+Resultat :
+
+| categorie | nb_produits_commandes | chiffre_affaires |
+|---|---|---|
+| Informatique | 4 | 736.37 |
+| Bureautique | 2 | 111.00 |
+
+Verification : Informatique -> clavier (89.99 + 89.99), souris (91.00 + 45.50), ecran (349.00), webcam (59.90) = 725.38. Corrigeons.
+
+Clavier : commandes 101 (1 * 89.99) + 104 (1 * 89.99) = 179.98
+Souris : commandes 101 (2 * 45.50) + 105 (1 * 45.50) = 136.50
+Ecran : commande 102 (1 * 349.00) = 349.00
+Webcam : commande 103 (1 * 59.90) = 59.90
+Total Informatique = 179.98 + 136.50 + 349.00 + 59.90 = 725.38
+
+Cahier : commandes 102 (10 * 3.50) + 104 (20 * 3.50) = 35.00 + 70.00 = 105.00
+Stylo : commande 103 (5 * 1.20) = 6.00
+Total Bureautique = 111.00
+
+Resultat corrige :
+
+| categorie | nb_produits_commandes | chiffre_affaires |
+|---|---|---|
+| Informatique | 4 | 725.38 |
+| Bureautique | 2 | 111.00 |
+
+---
+
+## 6. Sous-requetes
+
+Une sous-requete est une requete imbriquee dans une autre requete. Elle est executee en premier, et son resultat est utilise par la requete principale.
+
+### Sous-requete scalaire dans WHERE
+
+La sous-requete renvoie une seule valeur.
+
+On veut les produits dont le prix est superieur au prix moyen.
+
+Explication : d'abord, on calcule le prix moyen de tous les produits. Ensuite, on affiche ceux qui depassent cette moyenne.
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE prix > (SELECT AVG(prix) FROM produits);
+```
+
+La sous-requete `SELECT AVG(prix) FROM produits` renvoie environ 111.30.
+
+Resultat :
+
+| nom | prix |
+|---|---|
+| Ecran 27 pouces | 349.00 |
+| Casque audio | 129.99 |
+
+### Sous-requete avec IN
+
+La sous-requete renvoie une liste de valeurs.
+
+On veut les clients qui ont passe au moins une commande.
+
+```sql
+SELECT nom, prenom
+FROM clients
+WHERE id_client IN (SELECT DISTINCT id_client FROM commandes);
+```
+
+La sous-requete renvoie les id_client : 1, 2, 3, 4.
+
+Resultat :
+
+| nom | prenom |
+|---|---|
+| Dupont | Marie |
+| Martin | Lucas |
+| Bernard | Sophie |
+| Petit | Thomas |
+
+On veut les clients qui n'ont **jamais** commande.
+
+```sql
+SELECT nom, prenom
+FROM clients
+WHERE id_client NOT IN (SELECT DISTINCT id_client FROM commandes);
+```
+
+Resultat :
+
+| nom | prenom |
+|---|---|
+| Durand | Emma |
+
+**PIEGE avec NOT IN et NULL** : si la sous-requete renvoie un NULL dans la liste, `NOT IN` ne renvoie **aucune** ligne. En effet, `x NOT IN (1, 2, NULL)` est equivalent a `x <> 1 AND x <> 2 AND x <> NULL`, et `x <> NULL` donne toujours NULL (ni vrai ni faux), donc tout le AND echoue.
+
+Solution : filtrer les NULL dans la sous-requete ou utiliser NOT EXISTS.
+
+### Sous-requete correlee
+
+Une sous-requete correlee reference une colonne de la requete externe. Elle est executee **une fois pour chaque ligne** de la requete externe.
+
+On veut les produits dont le prix est superieur au prix moyen de **leur categorie**.
+
+```sql
+SELECT p.nom, p.prix, p.id_categorie
+FROM produits p
+WHERE p.prix > (
+  SELECT AVG(p2.prix)
+  FROM produits p2
+  WHERE p2.id_categorie = p.id_categorie
+);
+```
+
+Pour chaque produit `p`, la sous-requete calcule le prix moyen de la meme categorie. Si le produit depasse cette moyenne, il est affiche.
+
+Prix moyen categorie 1 (Informatique) : (89.99 + 45.50 + 349.00 + 129.99 + 59.90) / 5 = 134.876
+Prix moyen categorie 2 (Bureautique) : (3.50 + 1.20) / 2 = 2.35
+
+Resultat :
+
+| nom | prix | id_categorie |
+|---|---|---|
+| Ecran 27 pouces | 349.00 | 1 |
+| Cahier A4 | 3.50 | 2 |
+
+### EXISTS et NOT EXISTS
+
+`EXISTS` renvoie TRUE si la sous-requete renvoie **au moins une ligne**, FALSE sinon. C'est souvent plus performant que `IN` avec de grandes tables.
+
+On veut les clients qui ont au moins une commande livree.
+
+```sql
+SELECT cl.nom, cl.prenom
+FROM clients cl
+WHERE EXISTS (
+  SELECT 1
+  FROM commandes co
+  WHERE co.id_client = cl.id_client AND co.statut = 'livree'
+);
+```
+
+Resultat :
+
+| nom | prenom |
+|---|---|
+| Dupont | Marie |
+| Bernard | Sophie |
+
+`SELECT 1` est une convention. On ne s'interesse pas au contenu de la sous-requete, seulement a son existence.
+
+On veut les clients qui n'ont **aucune** commande (alternative a NOT IN sans le piege du NULL).
+
+```sql
+SELECT cl.nom, cl.prenom
+FROM clients cl
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM commandes co
+  WHERE co.id_client = cl.id_client
+);
+```
+
+Resultat :
+
+| nom | prenom |
+|---|---|
+| Durand | Emma |
+
+### Sous-requete dans FROM (table derivee)
+
+On peut utiliser le resultat d'une sous-requete comme une table temporaire dans le FROM.
+
+On veut afficher les clients dont le montant total des commandes est superieur a 200 euros.
+
+```sql
+SELECT cl.nom, cl.prenom, totaux.montant_total
+FROM clients cl
+INNER JOIN (
+  SELECT co.id_client, SUM(lc.quantite * lc.prix_unitaire) AS montant_total
+  FROM commandes co
+  INNER JOIN lignes_commande lc ON co.id_commande = lc.id_commande
+  GROUP BY co.id_client
+) AS totaux ON cl.id_client = totaux.id_client
+WHERE totaux.montant_total > 200;
+```
+
+La sous-requete dans le FROM (appelee **table derivee** ou **sous-requete en ligne**) calcule le montant total par client. On joint ensuite ce resultat avec la table clients.
+
+Resultat :
+
+| nom | prenom | montant_total |
+|---|---|---|
+| Dupont | Marie | 246.89 |
+| Bernard | Sophie | 384.00 |
+
+**En MySQL, toute table derivee doit avoir un alias** (ici `AS totaux`). Oublier l'alias provoque une erreur.
+
+### Quand utiliser une sous-requete vs une jointure ?
+
+| Situation | Recommandation |
+|---|---|
+| On veut une liste de valeurs pour filtrer | `IN` ou `EXISTS` |
+| On veut croiser des colonnes de plusieurs tables | Jointure |
+| On veut comparer a un agregat de la meme table | Sous-requete correlee |
+| On veut un calcul intermediaire reutilise | Table derivee (sous-requete dans FROM) |
+| Performance sur de grandes tables | `EXISTS` est souvent plus rapide que `IN` |
+
+En general, si on peut ecrire la meme chose avec une jointure et une sous-requete, la jointure est preferee car elle est plus lisible et souvent plus performante.
+
+### Exercices sur les sous-requetes
+
+**Exercice S1** : Afficher les produits plus chers que le produit le plus cher de la categorie "Bureautique".
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE prix > (
+  SELECT MAX(p.prix)
+  FROM produits p
+  INNER JOIN categories c ON p.id_categorie = c.id_categorie
+  WHERE c.nom = 'Bureautique'
+);
+```
+
+Max Bureautique = 3.50.
+
+Resultat :
+
+| nom | prix |
+|---|---|
+| Clavier mecanique | 89.99 |
+| Souris sans fil | 45.50 |
+| Ecran 27 pouces | 349.00 |
+| Casque audio | 129.99 |
+| Webcam HD | 59.90 |
+
+**Exercice S2** : Afficher les produits qui ont ete commandes au moins 2 fois (en nombre de commandes, pas en quantite).
+
+```sql
+SELECT p.nom, COUNT(*) AS nb_commandes
+FROM produits p
+INNER JOIN lignes_commande lc ON p.id_produit = lc.id_produit
+GROUP BY p.id_produit, p.nom
+HAVING COUNT(*) >= 2;
+```
+
+Resultat :
+
+| nom | nb_commandes |
+|---|---|
+| Clavier mecanique | 2 |
+| Souris sans fil | 2 |
+| Cahier A4 | 2 |
+
+**Exercice S3** : Afficher le deuxieme produit le plus cher.
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE prix IS NOT NULL
+ORDER BY prix DESC
+LIMIT 1 OFFSET 1;
+```
+
+Resultat :
+
+| nom | prix |
+|---|---|
+| Casque audio | 129.99 |
+
+Methode alternative avec sous-requete :
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE prix = (
+  SELECT DISTINCT prix
+  FROM produits
+  WHERE prix IS NOT NULL
+  ORDER BY prix DESC
+  LIMIT 1 OFFSET 1
+);
+```
+
+---
+
+## 7. Vues
+
+### Qu'est-ce qu'une vue ?
+
+Une vue est une **requete sauvegardee** sous un nom. Elle se comporte comme une table virtuelle : on peut faire un SELECT dessus, mais les donnees ne sont pas stockees en double. A chaque appel, la requete sous-jacente est executee.
+
+### Creer une vue
+
+On veut creer une vue qui affiche les produits actifs avec le nom de leur categorie.
+
+```sql
+CREATE VIEW v_produits_actifs AS
+SELECT p.id_produit, p.nom AS produit, p.prix, p.stock,
+       IFNULL(c.nom, 'Sans categorie') AS categorie
+FROM produits p
+LEFT JOIN categories c ON p.id_categorie = c.id_categorie
+WHERE p.est_actif = TRUE;
+```
+
+On peut maintenant l'utiliser comme une table :
+
+```sql
+SELECT * FROM v_produits_actifs WHERE prix > 50;
+```
+
+Resultat :
+
+| id_produit | produit | prix | stock | categorie |
+|---|---|---|---|---|
+| 1 | Clavier mecanique | 89.99 | 50 | Informatique |
+| 3 | Ecran 27 pouces | 349.00 | 25 | Informatique |
+| 7 | Webcam HD | 59.90 | 15 | Informatique |
+
+### Pourquoi utiliser des vues ?
+
+1. **Simplifier les requetes complexes** : une jointure de 4 tables est ecrite une fois dans la vue, puis on fait un simple SELECT dessus.
+2. **Securite** : on peut donner acces a une vue (qui ne montre que certaines colonnes) sans donner acces a la table complete.
+3. **Abstraction** : si la structure des tables change, on modifie la vue et les requetes qui l'utilisent continuent de fonctionner.
+
+### Mise a jour a travers une vue
+
+On peut faire un INSERT, UPDATE ou DELETE a travers une vue **seulement si** :
+- La vue porte sur une seule table.
+- La vue ne contient pas de GROUP BY, HAVING, DISTINCT, fonctions d'agregation, UNION.
+- Toutes les colonnes NOT NULL de la table sont dans la vue (pour INSERT).
+
+En pratique, les vues "mettables a jour" sont simples. Les vues avec jointures sont generalement en lecture seule.
+
+### Modifier et supprimer une vue
+
+```sql
+-- Modifier une vue existante :
+CREATE OR REPLACE VIEW v_produits_actifs AS
+SELECT p.id_produit, p.nom AS produit, p.prix, p.stock,
+       IFNULL(c.nom, 'Sans categorie') AS categorie
+FROM produits p
+LEFT JOIN categories c ON p.id_categorie = c.id_categorie
+WHERE p.est_actif = TRUE AND p.stock > 0;
+
+-- Supprimer une vue :
+DROP VIEW IF EXISTS v_produits_actifs;
+```
+
+---
+
+## 8. Index
+
+### Qu'est-ce qu'un index ?
+
+Un index accelere les recherches dans une table, exactement comme l'index d'un livre : au lieu de lire toutes les pages pour trouver un mot, on consulte l'index qui indique directement la bonne page.
+
+Sans index, MySQL fait un **full table scan** : il lit chaque ligne de la table pour trouver celles qui correspondent a la condition WHERE. Avec un index sur la colonne recherchee, MySQL trouve les lignes directement.
+
+### Creer un index
+
+```sql
+-- Index simple :
+CREATE INDEX idx_produits_nom ON produits(nom);
+
+-- Index unique (empeche aussi les doublons) :
+CREATE UNIQUE INDEX idx_clients_email ON clients(email);
+
+-- Index composite (sur plusieurs colonnes) :
+CREATE INDEX idx_commandes_client_date ON commandes(id_client, date_commande);
+
+-- Index FULLTEXT (pour la recherche textuelle) :
+CREATE FULLTEXT INDEX idx_produits_description ON produits(description);
+```
+
+### Types d'index en MySQL
+
+| Type | Description | Utilisation |
+|---|---|---|
+| **B-tree** (defaut) | Arbre equilibre, supporte =, <, >, BETWEEN, LIKE 'abc%' | Colonnes de recherche courantes |
+| **UNIQUE** | B-tree avec contrainte d'unicite | Emails, codes uniques |
+| **FULLTEXT** | Recherche textuelle (MATCH AGAINST) | Descriptions, articles |
+| **SPATIAL** | Donnees geographiques | Coordonnees GPS |
+
+### Quand indexer
+
+**Indexer :**
+- Les colonnes utilisees dans WHERE frequemment.
+- Les colonnes de jointure (cles etrangeres).
+- Les colonnes utilisees dans ORDER BY.
+- Les colonnes utilisees dans GROUP BY.
+
+**Ne PAS indexer :**
+- Les petites tables (quelques dizaines de lignes) -- le full scan est plus rapide.
+- Les colonnes avec tres peu de valeurs distinctes (ex : BOOLEAN).
+- Les colonnes modifiees tres frequemment (chaque INSERT/UPDATE doit aussi mettre a jour l'index).
+
+### EXPLAIN pour analyser les performances
+
+`EXPLAIN` montre comment MySQL execute une requete : quels index sont utilises, combien de lignes sont examinees.
+
+```sql
+EXPLAIN SELECT * FROM produits WHERE nom = 'Clavier mecanique';
+```
+
+Resultat (simplifie) :
+
+| id | select_type | table | type | possible_keys | key | rows | Extra |
+|---|---|---|---|---|---|---|---|
+| 1 | SIMPLE | produits | ref | idx_produits_nom | idx_produits_nom | 1 | NULL |
+
+- `type = ref` : MySQL utilise un index (bon).
+- `type = ALL` : full table scan (mauvais sur une grande table).
+- `key` : l'index utilise.
+- `rows` : nombre de lignes examinees (moins = mieux).
+
+### Supprimer un index
+
+```sql
+DROP INDEX idx_produits_nom ON produits;
+```
+
+Les cles primaires et les contraintes UNIQUE creent automatiquement un index. On ne les supprime pas avec DROP INDEX mais avec ALTER TABLE.
+
+---
+
+## 9. Transactions
+
+### Qu'est-ce qu'une transaction ?
+
+Une transaction est un **ensemble d'operations** qui doivent etre executees **en tout ou rien**. Si une des operations echoue, toutes les modifications sont annulees.
+
+### BEGIN, COMMIT, ROLLBACK
+
+```sql
+-- Demarrer une transaction :
+BEGIN;
+-- ou : START TRANSACTION;
+
+-- Executer des operations :
+UPDATE comptes SET solde = solde - 100 WHERE id_compte = 1;
+UPDATE comptes SET solde = solde + 100 WHERE id_compte = 2;
+
+-- Si tout va bien, valider :
+COMMIT;
+
+-- Si quelque chose a echoue, annuler :
+ROLLBACK;
+```
+
+### Exemple concret : virement bancaire
+
+Table `comptes` :
+
+| id_compte | titulaire | solde |
+|---|---|---|
+| 1 | Dupont | 1000.00 |
+| 2 | Martin | 500.00 |
+
+On veut transferer 200 euros du compte de Dupont vers celui de Martin.
+
+```sql
+BEGIN;
+
+-- Debiter Dupont
+UPDATE comptes SET solde = solde - 200 WHERE id_compte = 1;
+
+-- Crediter Martin
+UPDATE comptes SET solde = solde + 200 WHERE id_compte = 2;
+
+-- Verifier que Dupont n'est pas a decouvert
+-- (cette verification peut etre faite par l'application ou par un CHECK)
+
+COMMIT;
+```
+
+Resultat apres COMMIT :
+
+| id_compte | titulaire | solde |
+|---|---|---|
+| 1 | Dupont | 800.00 |
+| 2 | Martin | 700.00 |
+
+Si le serveur plante entre les deux UPDATE (Dupont est debite mais Martin n'est pas credite), le ROLLBACK automatique annule tout. Dupont retrouve ses 1000 euros.
+
+**Sans transaction** : si le serveur plante entre les deux UPDATE, Dupont a perdu 200 euros et Martin ne les a pas recus. 200 euros ont disparu.
+
+### Proprietes ACID
+
+Les transactions garantissent les proprietes ACID :
+
+| Propriete | Signification | Explication simple |
+|---|---|---|
+| **A**tomicite | Tout ou rien | Soit les deux UPDATE passent, soit aucun. |
+| **C**oherence | La base reste dans un etat valide | Avant et apres la transaction, les contraintes sont respectees (pas de solde negatif, etc.). |
+| **I**solation | Les transactions ne se voient pas entre elles | Si deux personnes font un virement en meme temps, chacune voit un etat coherent. |
+| **D**urabilite | Une fois commis, c'est permanent | Meme si le serveur plante juste apres le COMMIT, les donnees sont sauvegardees. |
+
+**Moyens mnemotechniques** : ACID = Atomicite, Coherence, Isolation, Durabilite.
+
+### AUTO_COMMIT
+
+Par defaut en MySQL, chaque requete est une transaction a elle seule (`AUTOCOMMIT = 1`). Chaque INSERT, UPDATE, DELETE est immediatement commis.
+
+Pour desactiver et gerer manuellement :
+
+```sql
+SET AUTOCOMMIT = 0;
+-- Maintenant il faut COMMIT manuellement
+```
+
+Ou utiliser `BEGIN` / `START TRANSACTION` qui desactive temporairement l'autocommit pour cette transaction.
+
+---
+
+## 10. Methodologie d'examen
+
+### Comment aborder un sujet SQL a l'examen
+
+**Etape 1 : Lire la question en francais.** Comprendre ce qu'on demande avant d'ecrire quoi que ce soit.
+
+**Etape 2 : Identifier les tables necessaires.** Lire le schema de la base de donnees fourni dans le sujet. Reperer quelles tables contiennent les colonnes mentionnees dans la question.
+
+**Etape 3 : Identifier les jointures.** Si les donnees viennent de plusieurs tables, reperer les liens entre elles (cles etrangeres). Dessiner un petit schema si necessaire :
+
+```
+clients ---[id_client]--- commandes ---[id_commande]--- lignes_commande ---[id_produit]--- produits
+```
+
+**Etape 4 : Determiner le type de jointure.** "Tous les clients" = LEFT JOIN. "Les clients qui ont commande" = INNER JOIN.
+
+**Etape 5 : Ecrire la requete morceau par morceau.**
+1. FROM et jointures
+2. WHERE (filtres sur les lignes)
+3. GROUP BY (si agregation)
+4. HAVING (filtres sur les groupes)
+5. SELECT (colonnes a afficher)
+6. ORDER BY (tri)
+7. LIMIT (pagination)
+
+**Etape 6 : Relire et verifier.**
+- Chaque colonne du SELECT est dans GROUP BY ou dans une agregation ?
+- Le WHERE ne filtre pas sur une agregation (utiliser HAVING) ?
+- Les alias de table sont coherents ?
+- Pas de virgule en trop ou en moins ?
+
+### Les pieges classiques
+
+| Piege | Erreur | Correction |
+|---|---|---|
+| UPDATE/DELETE sans WHERE | Modifie/supprime TOUTES les lignes | Toujours verifier le WHERE |
+| `WHERE colonne = NULL` | Ne renvoie jamais rien | `WHERE colonne IS NULL` |
+| NOT IN avec des NULL | Ne renvoie rien si la sous-requete contient NULL | Utiliser NOT EXISTS ou filtrer les NULL |
+| Colonne hors GROUP BY/agregation | Erreur en mode strict, resultat aleatoire sinon | Mettre dans GROUP BY ou dans une agregation |
+| Confondre WHERE et HAVING | WHERE rejette le HAVING, HAVING ne filtre pas les lignes | WHERE = lignes, HAVING = groupes |
+| Oublier ON dans un JOIN | Cross join involontaire (explosion de lignes) | Toujours verifier la condition ON |
+| Confondre LEFT et INNER JOIN | Perd des lignes (INNER) ou en ajoute (LEFT) | Relire l'enonce : "tous" = LEFT, "ceux qui" = INNER |
+| LIKE sans % | `LIKE 'abc'` est identique a `= 'abc'` | `LIKE '%abc%'` pour "contient" |
+| COUNT(*) vs COUNT(col) | COUNT(col) ignore les NULL | Choisir selon le besoin |
+| BETWEEN avec des dates | `BETWEEN '2024-01-01' AND '2024-01-31'` exclut les heures du 31 | Utiliser `< '2024-02-01'` |
+| Division par zero | Erreur ou NULL | Utiliser NULLIF dans le denominateur |
+| Oublier DISTINCT | Doublons dans le resultat | Ajouter DISTINCT si necessaire |
+
+### Checklist avant de rendre la copie
+
+1. La requete repond bien a la question posee ?
+2. Toutes les colonnes du SELECT sont justifiees (GROUP BY ou agregation) ?
+3. Les jointures ont toutes une condition ON ?
+4. Le type de jointure est correct (INNER vs LEFT) ?
+5. Les filtres sont au bon endroit (WHERE vs HAVING) ?
+6. Les alias sont coherents et lisibles ?
+7. Pas d'erreur de syntaxe (virgules, parentheses, guillemets) ?
+8. Les valeurs de chaine sont entre guillemets simples ('abc'), pas doubles ?
+9. Les noms de table et de colonne sont corrects (verifier le schema fourni) ?
+10. Le ORDER BY est present si l'enonce demande un tri ?
+
+---
+
+## 11. Exercices d'examen corriges
+
+### Schema de la base de donnees
+
+Pour tous les exercices, on utilise le schema e-commerce defini plus haut :
+
+```
+categories (id_categorie PK, nom, description)
+produits (id_produit PK, nom, description, prix, stock, id_categorie FK, date_ajout, est_actif)
+clients (id_client PK, nom, prenom, email, telephone, adresse, date_inscription, est_actif)
+commandes (id_commande PK, date_commande, statut, id_client FK)
+lignes_commande (id_commande PK/FK, id_produit PK/FK, quantite, prix_unitaire)
+```
+
+### Donnees
+
+Les donnees sont celles definies dans la section 4.1 (tables `produits`, `clients`, `commandes`, `lignes_commande`, `categories`).
+
+---
+
+### Exercice 1
+
+**Question** : Afficher la liste de tous les produits (nom et prix) tries du plus cher au moins cher. Exclure les produits dont le prix est inconnu.
+
+**Analyse** : une seule table (`produits`), filtre sur NULL, tri decroissant.
+
+```sql
+SELECT nom, prix
+FROM produits
+WHERE prix IS NOT NULL
+ORDER BY prix DESC;
+```
+
+Resultat :
+
+| nom | prix |
+|---|---|
+| Ecran 27 pouces | 349.00 |
+| Casque audio | 129.99 |
+| Clavier mecanique | 89.99 |
+| Webcam HD | 59.90 |
+| Souris sans fil | 45.50 |
+| Cahier A4 | 3.50 |
+| Stylo bleu | 1.20 |
+
+---
+
+### Exercice 2
+
+**Question** : Afficher le nombre de clients inscrits par mois en 2024, trie par mois.
+
+**Analyse** : table `clients`, extraction du mois, comptage, regroupement.
+
+```sql
+SELECT MONTH(date_inscription) AS mois,
+       COUNT(*) AS nb_inscrits
+FROM clients
+WHERE YEAR(date_inscription) = 2024
+GROUP BY MONTH(date_inscription)
+ORDER BY mois;
+```
+
+Resultat :
+
+| mois | nb_inscrits |
+|---|---|
+| 1 | 1 |
+| 2 | 1 |
+| 3 | 2 |
+| 4 | 1 |
+
+---
+
+### Exercice 3
+
+**Question** : Afficher les produits de la categorie "Informatique" dont le stock est inferieur a 30.
+
+**Analyse** : deux tables (`produits`, `categories`), jointure sur id_categorie, filtre sur nom de categorie et stock.
+
+```sql
+SELECT p.nom, p.prix, p.stock
+FROM produits p
+INNER JOIN categories c ON p.id_categorie = c.id_categorie
+WHERE c.nom = 'Informatique' AND p.stock < 30;
+```
+
+Resultat :
+
+| nom | prix | stock |
+|---|---|---|
+| Ecran 27 pouces | 349.00 | 25 |
+| Casque audio | 129.99 | 0 |
+| Webcam HD | 59.90 | 15 |
+
+---
+
+### Exercice 4
+
+**Question** : Afficher le nom et le prenom des clients qui ont passe une commande en avril 2024, sans doublons.
+
+**Analyse** : deux tables (`clients`, `commandes`), jointure, filtre sur la date, DISTINCT.
+
+```sql
+SELECT DISTINCT cl.nom, cl.prenom
+FROM clients cl
+INNER JOIN commandes co ON cl.id_client = co.id_client
+WHERE YEAR(co.date_commande) = 2024 AND MONTH(co.date_commande) = 4;
+```
+
+Resultat :
+
+| nom | prenom |
+|---|---|
+| Dupont | Marie |
+| Bernard | Sophie |
+| Martin | Lucas |
+| Petit | Thomas |
+
+---
+
+### Exercice 5
+
+**Question** : Afficher le montant total de chaque commande, avec le nom du client et la date, trie par montant decroissant.
+
+**Analyse** : trois tables (`clients`, `commandes`, `lignes_commande`), jointures, agregation SUM, GROUP BY.
+
+```sql
+SELECT cl.nom, cl.prenom, co.id_commande, co.date_commande,
+       ROUND(SUM(lc.quantite * lc.prix_unitaire), 2) AS montant_total
+FROM clients cl
+INNER JOIN commandes co ON cl.id_client = co.id_client
+INNER JOIN lignes_commande lc ON co.id_commande = lc.id_commande
+GROUP BY co.id_commande, cl.nom, cl.prenom, co.date_commande
+ORDER BY montant_total DESC;
+```
+
+Resultat :
+
+| nom | prenom | id_commande | date_commande | montant_total |
+|---|---|---|---|---|
+| Bernard | Sophie | 102 | 2024-04-03 | 384.00 |
+| Dupont | Marie | 101 | 2024-04-01 | 180.99 |
+| Martin | Lucas | 104 | 2024-04-10 | 159.99 |
+| Dupont | Marie | 103 | 2024-04-05 | 65.90 |
+| Petit | Thomas | 105 | 2024-04-12 | 45.50 |
+
+---
+
+### Exercice 6
+
+**Question** : Afficher les clients qui ont depense plus de 150 euros au total.
+
+**Analyse** : trois tables, jointures, agregation SUM, GROUP BY, HAVING.
+
+```sql
+SELECT cl.nom, cl.prenom,
+       ROUND(SUM(lc.quantite * lc.prix_unitaire), 2) AS total_depense
+FROM clients cl
+INNER JOIN commandes co ON cl.id_client = co.id_client
+INNER JOIN lignes_commande lc ON co.id_commande = lc.id_commande
+GROUP BY cl.id_client, cl.nom, cl.prenom
+HAVING SUM(lc.quantite * lc.prix_unitaire) > 150;
+```
+
+Resultat :
+
+| nom | prenom | total_depense |
+|---|---|---|
+| Dupont | Marie | 246.89 |
+| Bernard | Sophie | 384.00 |
+| Martin | Lucas | 159.99 |
+
+---
+
+### Exercice 7
+
+**Question** : Afficher les produits qui n'ont jamais ete commandes.
+
+**Analyse** : deux tables (`produits`, `lignes_commande`), LEFT JOIN, filtre IS NULL.
+
+```sql
+SELECT p.nom, p.prix
+FROM produits p
+LEFT JOIN lignes_commande lc ON p.id_produit = lc.id_produit
+WHERE lc.id_commande IS NULL;
+```
+
+Resultat :
+
+| nom | prix |
+|---|---|
+| Casque audio | 129.99 |
+| Tapis de souris | NULL |
+
+Methode alternative avec NOT EXISTS :
+
+```sql
+SELECT p.nom, p.prix
+FROM produits p
+WHERE NOT EXISTS (
+  SELECT 1 FROM lignes_commande lc
+  WHERE lc.id_produit = p.id_produit
+);
+```
+
+Meme resultat.
+
+---
+
+### Exercice 8
+
+**Question** : Afficher le nombre de produits distincts commandes par chaque client, y compris les clients qui n'ont rien commande (afficher 0).
+
+**Analyse** : quatre tables, LEFT JOIN (pour inclure les clients sans commande), COUNT DISTINCT.
+
+```sql
+SELECT cl.nom, cl.prenom,
+       COUNT(DISTINCT lc.id_produit) AS nb_produits_distincts
+FROM clients cl
+LEFT JOIN commandes co ON cl.id_client = co.id_client
+LEFT JOIN lignes_commande lc ON co.id_commande = lc.id_commande
+GROUP BY cl.id_client, cl.nom, cl.prenom
+ORDER BY nb_produits_distincts DESC;
+```
+
+Resultat :
+
+| nom | prenom | nb_produits_distincts |
+|---|---|---|
+| Dupont | Marie | 4 |
+| Bernard | Sophie | 2 |
+| Martin | Lucas | 2 |
+| Petit | Thomas | 1 |
+| Durand | Emma | 0 |
+
+---
+
+### Exercice 9
+
+**Question** : Afficher le produit le plus vendu (en quantite totale) et sa quantite.
+
+**Analyse** : deux tables, jointure, SUM, GROUP BY, ORDER BY DESC LIMIT 1.
+
+```sql
+SELECT p.nom, SUM(lc.quantite) AS quantite_totale
+FROM produits p
+INNER JOIN lignes_commande lc ON p.id_produit = lc.id_produit
+GROUP BY p.id_produit, p.nom
+ORDER BY quantite_totale DESC
+LIMIT 1;
+```
+
+Resultat :
+
+| nom | quantite_totale |
+|---|---|
+| Cahier A4 | 30 |
+
+---
+
+### Exercice 10
+
+**Question** : Afficher le chiffre d'affaires par categorie, trie par chiffre d'affaires decroissant.
+
+**Analyse** : quatre tables (`categories`, `produits`, `lignes_commande`), jointures, SUM, GROUP BY.
+
+```sql
+SELECT c.nom AS categorie,
+       ROUND(SUM(lc.quantite * lc.prix_unitaire), 2) AS chiffre_affaires
+FROM categories c
+INNER JOIN produits p ON c.id_categorie = p.id_categorie
+INNER JOIN lignes_commande lc ON p.id_produit = lc.id_produit
+GROUP BY c.id_categorie, c.nom
+ORDER BY chiffre_affaires DESC;
+```
+
+Resultat :
+
+| categorie | chiffre_affaires |
+|---|---|
+| Informatique | 725.38 |
+| Bureautique | 111.00 |
+
+---
+
+### Exercice 11
+
+**Question** : Afficher les commandes qui contiennent plus de 2 produits differents.
+
+**Analyse** : table `lignes_commande`, COUNT DISTINCT, GROUP BY, HAVING.
+
+```sql
+SELECT lc.id_commande, COUNT(DISTINCT lc.id_produit) AS nb_produits
+FROM lignes_commande lc
+GROUP BY lc.id_commande
+HAVING COUNT(DISTINCT lc.id_produit) > 2;
+```
+
+Resultat : aucune commande ne contient plus de 2 produits dans nos donnees. Toutes ont 1 ou 2 produits.
+
+Verifions : commande 101 = 2 produits, 102 = 2, 103 = 2, 104 = 2, 105 = 1.
+
+Resultat : table vide (aucune ligne). Si la condition etait `>= 2` :
+
+```sql
+SELECT lc.id_commande, COUNT(DISTINCT lc.id_produit) AS nb_produits
+FROM lignes_commande lc
+GROUP BY lc.id_commande
+HAVING COUNT(DISTINCT lc.id_produit) >= 2;
+```
+
+Resultat :
+
+| id_commande | nb_produits |
+|---|---|
+| 101 | 2 |
+| 102 | 2 |
+| 103 | 2 |
+| 104 | 2 |
+
+---
+
+### Exercice 12
+
+**Question** : Pour chaque produit, afficher le nombre de fois qu'il a ete commande et le prix moyen auquel il a ete vendu.
+
+**Analyse** : deux tables, jointure, agregations multiples.
+
+```sql
+SELECT p.nom,
+       COUNT(*) AS nb_fois_commande,
+       ROUND(AVG(lc.prix_unitaire), 2) AS prix_moyen_vente
+FROM produits p
+INNER JOIN lignes_commande lc ON p.id_produit = lc.id_produit
+GROUP BY p.id_produit, p.nom
+ORDER BY nb_fois_commande DESC;
+```
+
+Resultat :
+
+| nom | nb_fois_commande | prix_moyen_vente |
+|---|---|---|
+| Clavier mecanique | 2 | 89.99 |
+| Souris sans fil | 2 | 45.50 |
+| Cahier A4 | 2 | 3.50 |
+| Ecran 27 pouces | 1 | 349.00 |
+| Stylo bleu | 1 | 1.20 |
+| Webcam HD | 1 | 59.90 |
+
+---
+
+### Exercice 13
+
+**Question** : Afficher les clients qui ont commande le meme produit que Marie Dupont (hors Marie Dupont elle-meme).
+
+**Analyse** : d'abord trouver les produits commandes par Marie Dupont, puis trouver les autres clients qui ont commande ces produits. Sous-requete avec IN.
+
+```sql
+SELECT DISTINCT cl.nom, cl.prenom
+FROM clients cl
+INNER JOIN commandes co ON cl.id_client = co.id_client
+INNER JOIN lignes_commande lc ON co.id_commande = lc.id_commande
+WHERE lc.id_produit IN (
+  SELECT lc2.id_produit
+  FROM clients cl2
+  INNER JOIN commandes co2 ON cl2.id_client = co2.id_client
+  INNER JOIN lignes_commande lc2 ON co2.id_commande = lc2.id_commande
+  WHERE cl2.nom = 'Dupont' AND cl2.prenom = 'Marie'
+)
+AND NOT (cl.nom = 'Dupont' AND cl.prenom = 'Marie');
+```
+
+Produits de Marie Dupont : id_produit 1, 2, 5, 7.
+
+Autres clients ayant commande ces produits :
+- Produit 1 (Clavier) : Martin Lucas (commande 104)
+- Produit 2 (Souris) : Petit Thomas (commande 105)
+
+Resultat :
+
+| nom | prenom |
+|---|---|
+| Martin | Lucas |
+| Petit | Thomas |
+
+---
+
+### Exercice 14
+
+**Question** : Afficher le pourcentage du chiffre d'affaires de chaque categorie par rapport au chiffre d'affaires total.
+
+**Analyse** : sous-requete pour le total general, jointure pour le total par categorie, division.
+
+```sql
+SELECT c.nom AS categorie,
+       ROUND(SUM(lc.quantite * lc.prix_unitaire), 2) AS ca,
+       ROUND(
+         SUM(lc.quantite * lc.prix_unitaire) * 100.0
+         / (SELECT SUM(lc2.quantite * lc2.prix_unitaire) FROM lignes_commande lc2),
+         2
+       ) AS pourcentage
+FROM categories c
+INNER JOIN produits p ON c.id_categorie = p.id_categorie
+INNER JOIN lignes_commande lc ON p.id_produit = lc.id_produit
+GROUP BY c.id_categorie, c.nom
+ORDER BY pourcentage DESC;
+```
+
+Total general : 725.38 + 111.00 = 836.38.
+
+Resultat :
+
+| categorie | ca | pourcentage |
+|---|---|---|
+| Informatique | 725.38 | 86.73 |
+| Bureautique | 111.00 | 13.27 |
+
+---
+
+### Exercice 15
+
+**Question** : Creer une vue `v_recapitulatif_commandes` qui affiche pour chaque commande : le numero, la date, le nom du client, le nombre de produits, et le montant total. Puis utiliser cette vue pour afficher les commandes de plus de 100 euros.
+
+**Analyse** : CREATE VIEW avec jointures et agregations, puis SELECT sur la vue.
+
+```sql
+CREATE VIEW v_recapitulatif_commandes AS
+SELECT co.id_commande,
+       co.date_commande,
+       CONCAT(cl.prenom, ' ', cl.nom) AS client,
+       co.statut,
+       COUNT(lc.id_produit) AS nb_produits,
+       ROUND(SUM(lc.quantite * lc.prix_unitaire), 2) AS montant_total
+FROM commandes co
+INNER JOIN clients cl ON co.id_client = cl.id_client
+INNER JOIN lignes_commande lc ON co.id_commande = lc.id_commande
+GROUP BY co.id_commande, co.date_commande, cl.prenom, cl.nom, co.statut;
+```
+
+Utilisation de la vue :
+
+```sql
+SELECT * FROM v_recapitulatif_commandes
+WHERE montant_total > 100
+ORDER BY montant_total DESC;
+```
+
+Resultat :
+
+| id_commande | date_commande | client | statut | nb_produits | montant_total |
+|---|---|---|---|---|---|
+| 102 | 2024-04-03 | Sophie Bernard | livree | 2 | 384.00 |
+| 101 | 2024-04-01 | Marie Dupont | livree | 2 | 180.99 |
+| 104 | 2024-04-10 | Lucas Martin | expediee | 2 | 159.99 |
+
+---
+
+## Resume final
+
+L'essentiel a retenir pour le jour de l'examen :
+
+1. **DDL** : CREATE TABLE avec les bons types et contraintes. Connaitre PRIMARY KEY, FOREIGN KEY, NOT NULL, DEFAULT, CHECK, AUTO_INCREMENT, ON DELETE CASCADE/SET NULL/RESTRICT.
+
+2. **DML** : INSERT, UPDATE (toujours avec WHERE), DELETE (toujours avec WHERE).
+
+3. **SELECT** : maitriser WHERE, ORDER BY, LIMIT, DISTINCT, les alias.
+
+4. **Fonctions** : COUNT(*) vs COUNT(col) vs COUNT(DISTINCT col). SUM, AVG, MIN, MAX.
+
+5. **GROUP BY** : toute colonne non agregee doit etre dans le GROUP BY. HAVING filtre les groupes (apres GROUP BY), WHERE filtre les lignes (avant GROUP BY).
+
+6. **Jointures** : INNER JOIN (correspondances uniquement), LEFT JOIN (tout a gauche), la condition ON ne s'oublie jamais. Savoir joindre 3 ou 4 tables.
+
+7. **Sous-requetes** : dans WHERE (scalaire, IN, EXISTS), dans FROM (table derivee). Attention au piege NOT IN avec NULL.
+
+8. **Vues** : requete sauvegardee, CREATE VIEW, utilisation comme une table.
+
+9. **Index** : accelerer les recherches, CREATE INDEX, EXPLAIN.
+
+10. **Transactions** : BEGIN, COMMIT, ROLLBACK, proprietes ACID.
+
+Fin du document.

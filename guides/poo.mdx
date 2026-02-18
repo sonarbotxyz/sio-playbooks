@@ -1,0 +1,3582 @@
+---
+title: "Programmation Orientee Objet (POO)"
+description: "Bible complete de la POO illustree en JavaScript et C#"
+category: "Programmation"
+tags: ["poo", "javascript", "csharp", "classes", "heritage"]
+difficulty: "Intermediaire"
+---
+
+# Programmation Orientee Objet (POO)
+
+> Bible complete pour le BTS SIO SLAM. Concepts illustres en JavaScript et C#.
+
+---
+
+## Table des matieres
+
+1. [Pourquoi la POO ?](#pourquoi-la-poo)
+2. [Classes et Objets](#classes-et-objets)
+3. [Encapsulation](#encapsulation)
+4. [Heritage](#heritage)
+5. [Polymorphisme](#polymorphisme)
+6. [Abstraction](#abstraction)
+7. [Relations entre objets](#relations-entre-objets)
+8. [Collections d'objets](#collections-dobjets)
+9. [Design patterns simples](#design-patterns-simples)
+10. [Exercices d'examen corriges](#exercices-dexamen-corriges)
+
+---
+
+## Pourquoi la POO ?
+
+### Les limites du procedural
+
+Quand on ecrit du code procedural (une suite d'instructions, des fonctions, des variables globales), tout fonctionne tant que le programme est petit. Mais des que le projet grandit, les problemes apparaissent :
+
+**1. Les variables globales polluent tout.**
+
+En procedural, on a tendance a declarer des variables accessibles partout. N'importe quelle fonction peut les modifier, et on perd le controle.
+
+```js
+// JavaScript procedural -- cauchemar de maintenance
+let nomEtudiant = "Alice";
+let noteEtudiant = 15;
+let nomEtudiant2 = "Bob";
+let noteEtudiant2 = 12;
+// ... et s'il y a 200 etudiants ?
+```
+
+```csharp
+// C# procedural -- meme probleme
+string nomEtudiant = "Alice";
+int noteEtudiant = 15;
+string nomEtudiant2 = "Bob";
+int noteEtudiant2 = 12;
+```
+
+**2. La duplication de code.**
+
+Sans structure, on copie-colle les memes blocs de logique. Si on decouvre un bug, il faut le corriger a 15 endroits differents.
+
+**3. Le couplage fort.**
+
+Chaque fonction depend de variables globales et d'autres fonctions. Modifier une partie du programme casse tout le reste. C'est le fameux "code spaghetti".
+
+**4. Impossible de modeliser des entites complexes.**
+
+Comment representer un etudiant avec son nom, ses notes, son adresse, ses absences, dans de simples variables ? On finit avec des tableaux paralleles illisibles.
+
+### L'idee de la POO
+
+La programmation orientee objet propose une solution : **regrouper les donnees et les traitements qui vont ensemble dans des objets**.
+
+Au lieu de :
+- une variable `nomEtudiant`
+- une variable `noteEtudiant`
+- une fonction `calculerMoyenne()`
+
+On cree un objet `Etudiant` qui contient son nom, ses notes, et sait calculer sa propre moyenne.
+
+La POO modelise le monde reel. Dans la vraie vie, un etudiant est une entite qui a des proprietes (nom, age) et qui sait faire des choses (s'inscrire, passer un examen). La POO reproduit exactement cette logique dans le code.
+
+### Analogie fondamentale
+
+Pensez a un **formulaire papier vierge** : c'est la **classe**. Il definit les champs (nom, prenom, date de naissance) et les regles (le champ "age" doit etre un nombre positif).
+
+Un **formulaire rempli** : c'est l'**objet** (ou instance). C'est un exemplaire concret du formulaire, avec des valeurs reelles.
+
+On peut imprimer autant de formulaires qu'on veut a partir du meme modele. De meme, on peut creer autant d'objets qu'on veut a partir d'une meme classe.
+
+---
+
+## Classes et Objets
+
+### Definitions
+
+| Terme | Definition | Analogie |
+|-------|-----------|----------|
+| Classe | Un plan de construction. Elle definit les attributs et les methodes. | Le plan d'architecte d'une maison. |
+| Objet (instance) | Une realisation concrete d'une classe, avec des valeurs propres. | La maison construite a partir du plan. |
+| Attribut (propriete) | Une donnee stockee dans l'objet. | La couleur de la maison, le nombre d'etages. |
+| Methode | Une action que l'objet peut effectuer. | Ouvrir la porte, allumer la lumiere. |
+| Constructeur | Une methode speciale appelee a la creation de l'objet. | Le moment ou on pose les fondations. |
+
+### Syntaxe de base
+
+**JavaScript :**
+
+```js
+class Voiture {
+  constructor(couleur, marque) {
+    this.couleur = couleur;
+    this.marque = marque;
+    this.vitesse = 0;
+  }
+
+  accelerer(increment) {
+    this.vitesse += increment;
+  }
+
+  freiner() {
+    this.vitesse = 0;
+  }
+
+  decrire() {
+    return this.marque + " " + this.couleur + " a " + this.vitesse + " km/h";
+  }
+}
+```
+
+**C# :**
+
+```csharp
+class Voiture
+{
+    public string Couleur;
+    public string Marque;
+    public int Vitesse;
+
+    public Voiture(string couleur, string marque)
+    {
+        Couleur = couleur;
+        Marque = marque;
+        Vitesse = 0;
+    }
+
+    public void Accelerer(int increment)
+    {
+        Vitesse += increment;
+    }
+
+    public void Freiner()
+    {
+        Vitesse = 0;
+    }
+
+    public string Decrire()
+    {
+        return Marque + " " + Couleur + " a " + Vitesse + " km/h";
+    }
+}
+```
+
+### Instanciation
+
+Creer un objet a partir d'une classe s'appelle **instancier**. On utilise le mot-cle `new`.
+
+**JavaScript :**
+
+```js
+let maVoiture = new Voiture("Rouge", "Tesla");
+maVoiture.accelerer(80);
+console.log(maVoiture.decrire()); // "Tesla Rouge a 80 km/h"
+
+let autreVoiture = new Voiture("Blanche", "Renault");
+console.log(autreVoiture.decrire()); // "Renault Blanche a 0 km/h"
+```
+
+**C# :**
+
+```csharp
+Voiture maVoiture = new Voiture("Rouge", "Tesla");
+maVoiture.Accelerer(80);
+Console.WriteLine(maVoiture.Decrire()); // "Tesla Rouge a 80 km/h"
+
+Voiture autreVoiture = new Voiture("Blanche", "Renault");
+Console.WriteLine(autreVoiture.Decrire()); // "Renault Blanche a 0 km/h"
+```
+
+Chaque objet est **independant**. Modifier `maVoiture` ne change rien a `autreVoiture`.
+
+### Le mot-cle this
+
+`this` fait reference a **l'objet courant**, celui sur lequel on travaille.
+
+Dans le constructeur, `this.couleur = couleur` signifie : "l'attribut `couleur` de cet objet prend la valeur du parametre `couleur`".
+
+C'est identique en JavaScript et en C# (meme mot-cle, meme logique). En C#, on ecrit souvent `this.Couleur` pour lever l'ambiguite entre le parametre et l'attribut, mais quand les noms sont differents (majuscule/minuscule), le `this` est facultatif.
+
+**JavaScript :**
+
+```js
+class Personne {
+  constructor(nom) {
+    this.nom = nom; // this.nom = attribut, nom = parametre
+  }
+
+  sePresenter() {
+    return "Je suis " + this.nom;
+  }
+}
+```
+
+**C# :**
+
+```csharp
+class Personne
+{
+    public string Nom;
+
+    public Personne(string nom)
+    {
+        this.Nom = nom; // this.Nom = attribut, nom = parametre
+    }
+
+    public string SePresenter()
+    {
+        return "Je suis " + this.Nom;
+    }
+}
+```
+
+### Les constructeurs en detail
+
+Le constructeur est appele automatiquement quand on fait `new`. Il sert a initialiser l'objet dans un etat coherent.
+
+**Regles :**
+- En JS, le constructeur s'appelle toujours `constructor`.
+- En C#, le constructeur porte le meme nom que la classe et n'a pas de type de retour.
+- On peut avoir un constructeur sans parametre (constructeur par defaut).
+- En C#, on peut avoir **plusieurs constructeurs** avec des signatures differentes (surcharge). En JS, on ne peut avoir qu'un seul `constructor` (on gere les cas avec des valeurs par defaut).
+
+**Plusieurs constructeurs en C# :**
+
+```csharp
+class Produit
+{
+    public string Nom;
+    public double Prix;
+
+    // Constructeur complet
+    public Produit(string nom, double prix)
+    {
+        Nom = nom;
+        Prix = prix;
+    }
+
+    // Constructeur avec prix par defaut
+    public Produit(string nom)
+    {
+        Nom = nom;
+        Prix = 0;
+    }
+}
+```
+
+**Valeurs par defaut en JS :**
+
+```js
+class Produit {
+  constructor(nom, prix = 0) {
+    this.nom = nom;
+    this.prix = prix;
+  }
+}
+```
+
+### Exercice 1 : Classe Etudiant
+
+Creer une classe `Etudiant` avec :
+- Attributs : nom, prenom, notes (tableau de nombres)
+- Methodes : ajouterNote(note), calculerMoyenne(), afficher()
+
+**Solution JavaScript :**
+
+```js
+class Etudiant {
+  constructor(nom, prenom) {
+    this.nom = nom;
+    this.prenom = prenom;
+    this.notes = [];
+  }
+
+  ajouterNote(note) {
+    if (note >= 0 && note <= 20) {
+      this.notes.push(note);
+    }
+  }
+
+  calculerMoyenne() {
+    if (this.notes.length === 0) return 0;
+    let somme = 0;
+    for (let note of this.notes) {
+      somme += note;
+    }
+    return somme / this.notes.length;
+  }
+
+  afficher() {
+    return this.prenom + " " + this.nom + " - Moyenne : " + this.calculerMoyenne().toFixed(2);
+  }
+}
+
+let e = new Etudiant("Dupont", "Marie");
+e.ajouterNote(14);
+e.ajouterNote(16);
+e.ajouterNote(12);
+console.log(e.afficher()); // "Marie Dupont - Moyenne : 14.00"
+```
+
+**Solution C# :**
+
+```csharp
+class Etudiant
+{
+    public string Nom;
+    public string Prenom;
+    public List<double> Notes;
+
+    public Etudiant(string nom, string prenom)
+    {
+        Nom = nom;
+        Prenom = prenom;
+        Notes = new List<double>();
+    }
+
+    public void AjouterNote(double note)
+    {
+        if (note >= 0 && note <= 20)
+        {
+            Notes.Add(note);
+        }
+    }
+
+    public double CalculerMoyenne()
+    {
+        if (Notes.Count == 0) return 0;
+        double somme = 0;
+        foreach (double note in Notes)
+        {
+            somme += note;
+        }
+        return somme / Notes.Count;
+    }
+
+    public string Afficher()
+    {
+        return Prenom + " " + Nom + " - Moyenne : " + CalculerMoyenne().ToString("F2");
+    }
+}
+```
+
+### Exercice 2 : Classe CompteBancaire
+
+Creer une classe `CompteBancaire` avec :
+- Attributs : titulaire, solde
+- Methodes : deposer(montant), retirer(montant), afficherSolde()
+- Le retrait ne doit pas autoriser un solde negatif.
+
+**Solution JavaScript :**
+
+```js
+class CompteBancaire {
+  constructor(titulaire, soldeInitial = 0) {
+    this.titulaire = titulaire;
+    this.solde = soldeInitial;
+  }
+
+  deposer(montant) {
+    if (montant > 0) {
+      this.solde += montant;
+    }
+  }
+
+  retirer(montant) {
+    if (montant > 0 && montant <= this.solde) {
+      this.solde -= montant;
+      return true;
+    }
+    return false;
+  }
+
+  afficherSolde() {
+    return "Compte de " + this.titulaire + " : " + this.solde.toFixed(2) + " EUR";
+  }
+}
+```
+
+**Solution C# :**
+
+```csharp
+class CompteBancaire
+{
+    public string Titulaire;
+    public double Solde;
+
+    public CompteBancaire(string titulaire, double soldeInitial = 0)
+    {
+        Titulaire = titulaire;
+        Solde = soldeInitial;
+    }
+
+    public void Deposer(double montant)
+    {
+        if (montant > 0)
+        {
+            Solde += montant;
+        }
+    }
+
+    public bool Retirer(double montant)
+    {
+        if (montant > 0 && montant <= Solde)
+        {
+            Solde -= montant;
+            return true;
+        }
+        return false;
+    }
+
+    public string AfficherSolde()
+    {
+        return "Compte de " + Titulaire + " : " + Solde.ToString("F2") + " EUR";
+    }
+}
+```
+
+---
+
+## Encapsulation
+
+### Pourquoi cacher les donnees ?
+
+**Analogie : le tableau de bord d'une voiture.**
+
+Quand vous conduisez, vous voyez la vitesse, le niveau d'essence, la temperature du moteur. Mais vous n'avez pas acces directement aux pistons, aux injecteurs, au circuit electrique. Et c'est heureux : si n'importe qui pouvait modifier directement la pression d'huile du moteur, on provoquerait des catastrophes.
+
+En POO, c'est pareil. Si n'importe quel code peut modifier directement les attributs d'un objet, on perd tout controle :
+
+```js
+// Sans encapsulation -- danger
+let compte = new CompteBancaire("Alice", 1000);
+compte.solde = -999999; // Rien ne l'empeche !
+```
+
+L'encapsulation consiste a :
+1. **Rendre les attributs prives** (inaccessibles de l'exterieur).
+2. **Fournir des methodes controlees** (getters/setters) pour y acceder.
+3. **Valider les donnees** dans ces methodes.
+
+### Modificateurs d'acces
+
+**En C# :**
+
+| Modificateur | Acces |
+|-------------|-------|
+| `public` | Accessible de partout |
+| `private` | Accessible uniquement dans la classe |
+| `protected` | Accessible dans la classe et ses classes filles |
+| `internal` | Accessible dans le meme assembly (projet) |
+
+**En JavaScript :**
+
+JavaScript n'a pas de vrais modificateurs d'acces. Historiquement, on utilise la convention du underscore `_` pour indiquer qu'un attribut est "prive" (c'est une convention, pas une contrainte du langage). Depuis ES2022, on peut utiliser le prefixe `#` pour de vrais champs prives.
+
+### Implementation de l'encapsulation
+
+**C# -- avec proprietes :**
+
+```csharp
+class CompteBancaire
+{
+    private string titulaire;
+    private double solde;
+
+    public CompteBancaire(string titulaire, double soldeInitial)
+    {
+        this.titulaire = titulaire;
+        this.solde = soldeInitial;
+    }
+
+    // Propriete en lecture seule
+    public string Titulaire
+    {
+        get { return titulaire; }
+    }
+
+    // Propriete avec validation
+    public double Solde
+    {
+        get { return solde; }
+        private set
+        {
+            if (value >= 0)
+                solde = value;
+        }
+    }
+
+    public void Deposer(double montant)
+    {
+        if (montant > 0)
+            Solde = solde + montant;
+    }
+
+    public bool Retirer(double montant)
+    {
+        if (montant > 0 && montant <= solde)
+        {
+            Solde = solde - montant;
+            return true;
+        }
+        return false;
+    }
+}
+```
+
+En C#, les **proprietes** (avec `get` et `set`) sont le mecanisme standard pour l'encapsulation. On ne cree presque jamais d'attributs publics directement.
+
+**Syntaxe abregee en C# (auto-implemented properties) :**
+
+```csharp
+class Produit
+{
+    public string Nom { get; set; }
+    public double Prix { get; private set; }
+
+    public Produit(string nom, double prix)
+    {
+        Nom = nom;
+        Prix = prix;
+    }
+}
+```
+
+`{ get; set; }` cree automatiquement un champ prive en arriere-plan. `{ get; private set; }` signifie que la lecture est publique mais l'ecriture n'est possible que depuis l'interieur de la classe.
+
+**JavaScript -- avec getters et setters :**
+
+```js
+class CompteBancaire {
+  #titulaire;
+  #solde;
+
+  constructor(titulaire, soldeInitial) {
+    this.#titulaire = titulaire;
+    this.#solde = soldeInitial;
+  }
+
+  get titulaire() {
+    return this.#titulaire;
+  }
+
+  get solde() {
+    return this.#solde;
+  }
+
+  deposer(montant) {
+    if (montant > 0) {
+      this.#solde += montant;
+    }
+  }
+
+  retirer(montant) {
+    if (montant > 0 && montant <= this.#solde) {
+      this.#solde -= montant;
+      return true;
+    }
+    return false;
+  }
+}
+
+let compte = new CompteBancaire("Alice", 1000);
+console.log(compte.titulaire); // "Alice" (passe par le getter)
+console.log(compte.solde);     // 1000
+// compte.#solde = -999; // ERREUR : champ prive, inaccessible
+```
+
+### Validation dans les setters
+
+L'interet principal des setters est de **valider les donnees avant de les accepter**.
+
+**C# :**
+
+```csharp
+class Personne
+{
+    private int age;
+
+    public int Age
+    {
+        get { return age; }
+        set
+        {
+            if (value >= 0 && value <= 150)
+                age = value;
+            else
+                throw new ArgumentException("Age invalide : " + value);
+        }
+    }
+}
+```
+
+**JavaScript :**
+
+```js
+class Personne {
+  #age;
+
+  get age() {
+    return this.#age;
+  }
+
+  set age(valeur) {
+    if (valeur >= 0 && valeur <= 150) {
+      this.#age = valeur;
+    } else {
+      throw new Error("Age invalide : " + valeur);
+    }
+  }
+
+  constructor(nom, age) {
+    this.nom = nom;
+    this.age = age; // passe par le setter, donc valide
+  }
+}
+```
+
+### Exercice 3 : Encapsulation d'une classe Produit
+
+Creer une classe `Produit` encapsulee :
+- Attributs prives : nom, prix, quantiteEnStock
+- Le prix ne peut pas etre negatif
+- La quantite ne peut pas etre negative
+- Methodes : acheter(quantite), reapprovisionner(quantite)
+
+**Solution C# :**
+
+```csharp
+class Produit
+{
+    private string nom;
+    private double prix;
+    private int quantiteEnStock;
+
+    public string Nom
+    {
+        get { return nom; }
+    }
+
+    public double Prix
+    {
+        get { return prix; }
+        set
+        {
+            if (value >= 0)
+                prix = value;
+        }
+    }
+
+    public int QuantiteEnStock
+    {
+        get { return quantiteEnStock; }
+    }
+
+    public Produit(string nom, double prix, int quantite)
+    {
+        this.nom = nom;
+        Prix = prix;         // passe par le setter
+        quantiteEnStock = quantite >= 0 ? quantite : 0;
+    }
+
+    public bool Acheter(int quantite)
+    {
+        if (quantite > 0 && quantite <= quantiteEnStock)
+        {
+            quantiteEnStock -= quantite;
+            return true;
+        }
+        return false;
+    }
+
+    public void Reapprovisionner(int quantite)
+    {
+        if (quantite > 0)
+            quantiteEnStock += quantite;
+    }
+
+    public string Afficher()
+    {
+        return Nom + " - " + Prix + " EUR - Stock : " + QuantiteEnStock;
+    }
+}
+```
+
+**Solution JavaScript :**
+
+```js
+class Produit {
+  #nom;
+  #prix;
+  #quantiteEnStock;
+
+  constructor(nom, prix, quantite) {
+    this.#nom = nom;
+    this.#prix = prix >= 0 ? prix : 0;
+    this.#quantiteEnStock = quantite >= 0 ? quantite : 0;
+  }
+
+  get nom() { return this.#nom; }
+
+  get prix() { return this.#prix; }
+  set prix(valeur) {
+    if (valeur >= 0) this.#prix = valeur;
+  }
+
+  get quantiteEnStock() { return this.#quantiteEnStock; }
+
+  acheter(quantite) {
+    if (quantite > 0 && quantite <= this.#quantiteEnStock) {
+      this.#quantiteEnStock -= quantite;
+      return true;
+    }
+    return false;
+  }
+
+  reapprovisionner(quantite) {
+    if (quantite > 0) {
+      this.#quantiteEnStock += quantite;
+    }
+  }
+
+  afficher() {
+    return this.#nom + " - " + this.#prix + " EUR - Stock : " + this.#quantiteEnStock;
+  }
+}
+```
+
+---
+
+## Heritage
+
+### Pourquoi l'heritage ?
+
+**Le probleme : la duplication de code.**
+
+Imaginons qu'on doit modeliser des employes dans une entreprise. Il y a des developpeurs, des managers, des designers. Ils ont tous un nom, un prenom, un salaire. Mais chacun a aussi des specificites : le developpeur a un langage de predilection, le manager a une equipe, le designer a un portfolio.
+
+Sans heritage, on ecrirait trois classes qui repetent le meme code pour le nom, le prenom, le salaire. Si on corrige un bug dans le calcul du salaire, il faut le corriger dans les trois classes.
+
+**La solution : l'heritage.**
+
+On cree une classe `Employe` (classe mere ou classe parente) qui contient tout ce qui est commun. Puis on cree des classes `Developpeur`, `Manager`, `Designer` (classes filles ou classes enfants) qui heritent de `Employe` et ajoutent leurs specificites.
+
+**Analogie : la biologie.**
+
+Tous les animaux respirent, mangent, bougent. Mais un chien aboie, un chat miaule, un oiseau vole. On ne va pas redecrire "manger" pour chaque animal. On definit `Animal` avec les comportements communs, puis `Chien`, `Chat`, `Oiseau` heritent d'`Animal` et ajoutent leurs comportements propres.
+
+### Syntaxe
+
+**JavaScript -- mot-cle extends :**
+
+```js
+class Animal {
+  constructor(nom, age) {
+    this.nom = nom;
+    this.age = age;
+  }
+
+  manger() {
+    return this.nom + " mange.";
+  }
+
+  sePresenter() {
+    return this.nom + ", " + this.age + " ans";
+  }
+}
+
+class Chien extends Animal {
+  constructor(nom, age, race) {
+    super(nom, age);  // appelle le constructeur de Animal
+    this.race = race;
+  }
+
+  aboyer() {
+    return this.nom + " aboie !";
+  }
+}
+
+class Chat extends Animal {
+  constructor(nom, age, estInterieur) {
+    super(nom, age);
+    this.estInterieur = estInterieur;
+  }
+
+  miauler() {
+    return this.nom + " miaule.";
+  }
+}
+```
+
+**C# -- operateur : (deux points) :**
+
+```csharp
+class Animal
+{
+    public string Nom;
+    public int Age;
+
+    public Animal(string nom, int age)
+    {
+        Nom = nom;
+        Age = age;
+    }
+
+    public string Manger()
+    {
+        return Nom + " mange.";
+    }
+
+    public virtual string SePresenter()
+    {
+        return Nom + ", " + Age + " ans";
+    }
+}
+
+class Chien : Animal
+{
+    public string Race;
+
+    public Chien(string nom, int age, string race) : base(nom, age)
+    {
+        Race = race;
+    }
+
+    public string Aboyer()
+    {
+        return Nom + " aboie !";
+    }
+}
+
+class Chat : Animal
+{
+    public bool EstInterieur;
+
+    public Chat(string nom, int age, bool estInterieur) : base(nom, age)
+    {
+        EstInterieur = estInterieur;
+    }
+
+    public string Miauler()
+    {
+        return Nom + " miaule.";
+    }
+}
+```
+
+### super (JS) et base (C#)
+
+Quand une classe fille a un constructeur, elle **doit** appeler le constructeur de la classe mere pour initialiser les attributs herites.
+
+- En JS : `super(arguments)` dans le constructeur, **obligatoirement avant tout usage de `this`**.
+- En C# : `: base(arguments)` apres la signature du constructeur.
+
+On peut aussi appeler des methodes de la classe mere :
+
+```js
+// JavaScript
+class Chien extends Animal {
+  sePresenter() {
+    return super.sePresenter() + " (race : " + this.race + ")";
+  }
+}
+```
+
+```csharp
+// C#
+class Chien : Animal
+{
+    public override string SePresenter()
+    {
+        return base.SePresenter() + " (race : " + Race + ")";
+    }
+}
+```
+
+### Surcharge (override) de methodes
+
+Une classe fille peut **redefinir** une methode heritee pour modifier son comportement.
+
+**En C# :**
+- La methode de la classe mere doit etre declaree `virtual`.
+- La classe fille utilise le mot-cle `override`.
+
+**En JavaScript :**
+- Pas de mot-cle special. On redeclare simplement la methode dans la classe fille.
+
+```js
+// JavaScript
+class Animal {
+  constructor(nom) {
+    this.nom = nom;
+  }
+
+  parler() {
+    return this.nom + " fait un bruit.";
+  }
+}
+
+class Chien extends Animal {
+  parler() {
+    return this.nom + " aboie.";
+  }
+}
+
+class Chat extends Animal {
+  parler() {
+    return this.nom + " miaule.";
+  }
+}
+
+let a = new Chien("Rex");
+console.log(a.parler()); // "Rex aboie."
+```
+
+```csharp
+// C#
+class Animal
+{
+    public string Nom;
+
+    public Animal(string nom)
+    {
+        Nom = nom;
+    }
+
+    public virtual string Parler()
+    {
+        return Nom + " fait un bruit.";
+    }
+}
+
+class Chien : Animal
+{
+    public Chien(string nom) : base(nom) { }
+
+    public override string Parler()
+    {
+        return Nom + " aboie.";
+    }
+}
+
+class Chat : Animal
+{
+    public Chat(string nom) : base(nom) { }
+
+    public override string Parler()
+    {
+        return Nom + " miaule.";
+    }
+}
+```
+
+### Heritage simple vs heritage multiple
+
+**En C# comme en JavaScript, l'heritage multiple est interdit.** Une classe ne peut heriter que d'une seule classe.
+
+Pourquoi ? L'heritage multiple cause le **probleme du diamant** : si une classe herite de deux classes qui ont chacune une methode `afficher()`, laquelle est utilisee ? Cela cree des ambiguites insolubles.
+
+Pour contourner cette limitation :
+- En C# : on utilise les **interfaces** (une classe peut implementer plusieurs interfaces).
+- En JS/TS : on utilise les **interfaces** (en TypeScript) ou la **composition**.
+
+### Exercice 4 : Hierarchie de formes geometriques
+
+Creer :
+- Classe mere `Forme` avec un attribut `couleur` et une methode `calculerAire()` qui retourne 0.
+- Classe `Cercle` qui herite de `Forme`, avec un attribut `rayon`. `calculerAire()` retourne PI * r^2.
+- Classe `Rectangle` qui herite de `Forme`, avec `largeur` et `hauteur`. `calculerAire()` retourne largeur * hauteur.
+- Classe `Triangle` qui herite de `Forme`, avec `base` et `hauteur`. `calculerAire()` retourne base * hauteur / 2.
+
+**Solution JavaScript :**
+
+```js
+class Forme {
+  constructor(couleur) {
+    this.couleur = couleur;
+  }
+
+  calculerAire() {
+    return 0;
+  }
+
+  decrire() {
+    return "Forme " + this.couleur + ", aire = " + this.calculerAire().toFixed(2);
+  }
+}
+
+class Cercle extends Forme {
+  constructor(couleur, rayon) {
+    super(couleur);
+    this.rayon = rayon;
+  }
+
+  calculerAire() {
+    return Math.PI * this.rayon * this.rayon;
+  }
+}
+
+class Rectangle extends Forme {
+  constructor(couleur, largeur, hauteur) {
+    super(couleur);
+    this.largeur = largeur;
+    this.hauteur = hauteur;
+  }
+
+  calculerAire() {
+    return this.largeur * this.hauteur;
+  }
+}
+
+class Triangle extends Forme {
+  constructor(couleur, base, hauteur) {
+    super(couleur);
+    this.base = base;
+    this.hauteur = hauteur;
+  }
+
+  calculerAire() {
+    return (this.base * this.hauteur) / 2;
+  }
+}
+
+let c = new Cercle("rouge", 5);
+let r = new Rectangle("bleu", 4, 6);
+let t = new Triangle("vert", 3, 8);
+
+console.log(c.decrire()); // "Forme rouge, aire = 78.54"
+console.log(r.decrire()); // "Forme bleu, aire = 24.00"
+console.log(t.decrire()); // "Forme vert, aire = 12.00"
+```
+
+**Solution C# :**
+
+```csharp
+class Forme
+{
+    public string Couleur;
+
+    public Forme(string couleur)
+    {
+        Couleur = couleur;
+    }
+
+    public virtual double CalculerAire()
+    {
+        return 0;
+    }
+
+    public string Decrire()
+    {
+        return "Forme " + Couleur + ", aire = " + CalculerAire().ToString("F2");
+    }
+}
+
+class Cercle : Forme
+{
+    public double Rayon;
+
+    public Cercle(string couleur, double rayon) : base(couleur)
+    {
+        Rayon = rayon;
+    }
+
+    public override double CalculerAire()
+    {
+        return Math.PI * Rayon * Rayon;
+    }
+}
+
+class Rectangle : Forme
+{
+    public double Largeur;
+    public double Hauteur;
+
+    public Rectangle(string couleur, double largeur, double hauteur) : base(couleur)
+    {
+        Largeur = largeur;
+        Hauteur = hauteur;
+    }
+
+    public override double CalculerAire()
+    {
+        return Largeur * Hauteur;
+    }
+}
+
+class Triangle : Forme
+{
+    public double Base;
+    public double Hauteur;
+
+    public Triangle(string couleur, double baseT, double hauteur) : base(couleur)
+    {
+        Base = baseT;
+        Hauteur = hauteur;
+    }
+
+    public override double CalculerAire()
+    {
+        return Base * Hauteur / 2;
+    }
+}
+```
+
+### Exercice 5 : Hierarchie d'employes
+
+Creer :
+- Classe `Employe` : nom, salaire, methode `calculerPrime()` qui retourne 5% du salaire.
+- Classe `Manager` : bonus supplementaire de 10%, plus une liste de membres d'equipe.
+- Classe `Developpeur` : langage favori, prime de 8% du salaire.
+
+**Solution JavaScript :**
+
+```js
+class Employe {
+  constructor(nom, salaire) {
+    this.nom = nom;
+    this.salaire = salaire;
+  }
+
+  calculerPrime() {
+    return this.salaire * 0.05;
+  }
+
+  afficher() {
+    return this.nom + " - Salaire : " + this.salaire + " EUR - Prime : " + this.calculerPrime() + " EUR";
+  }
+}
+
+class Manager extends Employe {
+  constructor(nom, salaire) {
+    super(nom, salaire);
+    this.equipe = [];
+  }
+
+  ajouterMembre(employe) {
+    this.equipe.push(employe);
+  }
+
+  calculerPrime() {
+    return this.salaire * 0.10;
+  }
+}
+
+class Developpeur extends Employe {
+  constructor(nom, salaire, langage) {
+    super(nom, salaire);
+    this.langage = langage;
+  }
+
+  calculerPrime() {
+    return this.salaire * 0.08;
+  }
+}
+```
+
+**Solution C# :**
+
+```csharp
+class Employe
+{
+    public string Nom;
+    public double Salaire;
+
+    public Employe(string nom, double salaire)
+    {
+        Nom = nom;
+        Salaire = salaire;
+    }
+
+    public virtual double CalculerPrime()
+    {
+        return Salaire * 0.05;
+    }
+
+    public string Afficher()
+    {
+        return Nom + " - Salaire : " + Salaire + " EUR - Prime : " + CalculerPrime() + " EUR";
+    }
+}
+
+class Manager : Employe
+{
+    public List<Employe> Equipe;
+
+    public Manager(string nom, double salaire) : base(nom, salaire)
+    {
+        Equipe = new List<Employe>();
+    }
+
+    public void AjouterMembre(Employe employe)
+    {
+        Equipe.Add(employe);
+    }
+
+    public override double CalculerPrime()
+    {
+        return Salaire * 0.10;
+    }
+}
+
+class Developpeur : Employe
+{
+    public string Langage;
+
+    public Developpeur(string nom, double salaire, string langage) : base(nom, salaire)
+    {
+        Langage = langage;
+    }
+
+    public override double CalculerPrime()
+    {
+        return Salaire * 0.08;
+    }
+}
+```
+
+---
+
+## Polymorphisme
+
+### Definition
+
+Le mot "polymorphisme" vient du grec : "poly" (plusieurs) et "morphe" (formes). En POO, cela signifie qu'**un meme nom de methode peut avoir des comportements differents selon l'objet qui l'appelle**.
+
+**Analogie : le bouton "demarrer".**
+
+Sur une voiture, le bouton "demarrer" lance le moteur. Sur un ordinateur, il allume le systeme. Sur un lave-linge, il lance un cycle de lavage. Le nom est le meme ("demarrer"), mais l'action depend de l'objet.
+
+### Les deux types de polymorphisme
+
+**1. Polymorphisme de surcharge (overloading)**
+
+Plusieurs methodes portent le meme nom mais avec des **signatures differentes** (nombre ou types de parametres differents). Tres courant en C#, impossible en JavaScript (une fonction ecrase l'ancienne si elle porte le meme nom).
+
+```csharp
+// C# uniquement
+class Calculatrice
+{
+    public int Additionner(int a, int b)
+    {
+        return a + b;
+    }
+
+    public double Additionner(double a, double b)
+    {
+        return a + b;
+    }
+
+    public int Additionner(int a, int b, int c)
+    {
+        return a + b + c;
+    }
+}
+
+Calculatrice calc = new Calculatrice();
+Console.WriteLine(calc.Additionner(2, 3));        // 5 (int, int)
+Console.WriteLine(calc.Additionner(2.5, 3.1));    // 5.6 (double, double)
+Console.WriteLine(calc.Additionner(1, 2, 3));     // 6 (int, int, int)
+```
+
+En JavaScript, on simule la surcharge avec des parametres optionnels ou en verifiant les types :
+
+```js
+class Calculatrice {
+  additionner(a, b, c) {
+    if (c !== undefined) {
+      return a + b + c;
+    }
+    return a + b;
+  }
+}
+```
+
+**2. Polymorphisme de redefinition (overriding)**
+
+Une classe fille **redefinit** une methode de sa classe mere. C'est le polymorphisme le plus important en POO. Il fonctionne en JavaScript et en C#.
+
+Nous l'avons deja vu avec les exemples d'heritage. Voici un exemple plus complet qui montre sa puissance :
+
+```js
+// JavaScript
+class Forme {
+  constructor(nom) {
+    this.nom = nom;
+  }
+
+  calculerAire() {
+    return 0;
+  }
+
+  afficher() {
+    return this.nom + " : aire = " + this.calculerAire().toFixed(2);
+  }
+}
+
+class Cercle extends Forme {
+  constructor(rayon) {
+    super("Cercle");
+    this.rayon = rayon;
+  }
+
+  calculerAire() {
+    return Math.PI * this.rayon * this.rayon;
+  }
+}
+
+class Rectangle extends Forme {
+  constructor(largeur, hauteur) {
+    super("Rectangle");
+    this.largeur = largeur;
+    this.hauteur = hauteur;
+  }
+
+  calculerAire() {
+    return this.largeur * this.hauteur;
+  }
+}
+
+class Triangle extends Forme {
+  constructor(base, hauteur) {
+    super("Triangle");
+    this.base = base;
+    this.hauteur = hauteur;
+  }
+
+  calculerAire() {
+    return (this.base * this.hauteur) / 2;
+  }
+}
+
+// La puissance du polymorphisme : un tableau de Formes
+let formes = [
+  new Cercle(5),
+  new Rectangle(4, 6),
+  new Triangle(3, 8)
+];
+
+for (let forme of formes) {
+  console.log(forme.afficher());
+}
+// Cercle : aire = 78.54
+// Rectangle : aire = 24.00
+// Triangle : aire = 12.00
+```
+
+```csharp
+// C#
+Forme[] formes = new Forme[]
+{
+    new Cercle("rouge", 5),
+    new Rectangle("bleu", 4, 6),
+    new Triangle("vert", 3, 8)
+};
+
+foreach (Forme forme in formes)
+{
+    Console.WriteLine(forme.Decrire());
+}
+// Forme rouge, aire = 78.54
+// Forme bleu, aire = 24.00
+// Forme vert, aire = 12.00
+```
+
+### Liaison dynamique (late binding)
+
+Dans l'exemple ci-dessus, le compilateur (ou l'interpreteur) ne sait pas a l'avance quelle version de `calculerAire()` sera appelee. C'est au **moment de l'execution** que le systeme regarde le type reel de l'objet et appelle la bonne methode. C'est la **liaison dynamique**.
+
+C'est ce qui rend le polymorphisme puissant : on peut ecrire du code generique qui manipule des objets de la classe mere, et le comportement s'adapte automatiquement au type reel de chaque objet.
+
+```csharp
+// C# -- on recoit un Forme, mais c'est peut-etre un Cercle, un Rectangle...
+public void AfficherAire(Forme f)
+{
+    // Appelle automatiquement la bonne version de CalculerAire()
+    Console.WriteLine("Aire : " + f.CalculerAire());
+}
+```
+
+### Exercice 6 : Polymorphisme avec des vehicules
+
+Creer :
+- Classe `Vehicule` avec `nom` et methode `demarrer()` qui retourne "Le vehicule demarre."
+- Classe `Voiture` : `demarrer()` retourne "La voiture demarre avec le contact."
+- Classe `Moto` : `demarrer()` retourne "La moto demarre au kick."
+- Classe `VehiculeElectrique` : `demarrer()` retourne "Le vehicule electrique demarre silencieusement."
+- Creer un tableau de vehicules et afficher le resultat de `demarrer()` pour chacun.
+
+**Solution JavaScript :**
+
+```js
+class Vehicule {
+  constructor(nom) {
+    this.nom = nom;
+  }
+
+  demarrer() {
+    return "Le vehicule demarre.";
+  }
+}
+
+class Voiture extends Vehicule {
+  demarrer() {
+    return this.nom + " demarre avec le contact.";
+  }
+}
+
+class Moto extends Vehicule {
+  demarrer() {
+    return this.nom + " demarre au kick.";
+  }
+}
+
+class VehiculeElectrique extends Vehicule {
+  demarrer() {
+    return this.nom + " demarre silencieusement.";
+  }
+}
+
+let vehicules = [
+  new Voiture("Peugeot 308"),
+  new Moto("Yamaha MT-07"),
+  new VehiculeElectrique("Tesla Model 3")
+];
+
+for (let v of vehicules) {
+  console.log(v.demarrer());
+}
+```
+
+**Solution C# :**
+
+```csharp
+class Vehicule
+{
+    public string Nom;
+
+    public Vehicule(string nom)
+    {
+        Nom = nom;
+    }
+
+    public virtual string Demarrer()
+    {
+        return "Le vehicule demarre.";
+    }
+}
+
+class Voiture : Vehicule
+{
+    public Voiture(string nom) : base(nom) { }
+
+    public override string Demarrer()
+    {
+        return Nom + " demarre avec le contact.";
+    }
+}
+
+class Moto : Vehicule
+{
+    public Moto(string nom) : base(nom) { }
+
+    public override string Demarrer()
+    {
+        return Nom + " demarre au kick.";
+    }
+}
+
+class VehiculeElectrique : Vehicule
+{
+    public VehiculeElectrique(string nom) : base(nom) { }
+
+    public override string Demarrer()
+    {
+        return Nom + " demarre silencieusement.";
+    }
+}
+
+// Utilisation
+List<Vehicule> vehicules = new List<Vehicule>
+{
+    new Voiture("Peugeot 308"),
+    new Moto("Yamaha MT-07"),
+    new VehiculeElectrique("Tesla Model 3")
+};
+
+foreach (Vehicule v in vehicules)
+{
+    Console.WriteLine(v.Demarrer());
+}
+```
+
+---
+
+## Abstraction
+
+### Pourquoi l'abstraction ?
+
+Parfois, une classe mere n'a pas de sens a etre instanciee directement. Personne ne veut creer un objet "Forme" tout court -- on veut un Cercle, un Rectangle, un Triangle. La classe `Forme` existe uniquement comme **modele** pour ses classes filles.
+
+**Analogie : le concept de "vehicule".**
+
+"Vehicule" est un concept abstrait. Vous ne pouvez pas acheter un "vehicule" chez un concessionnaire. Vous achetez une voiture, une moto, un camion. Mais le concept de vehicule definit ce que tous ont en commun (des roues, un moteur, la capacite de se deplacer).
+
+### Classes abstraites
+
+Une classe abstraite :
+- **Ne peut pas etre instanciee** (on ne peut pas faire `new Forme()`).
+- **Peut contenir des methodes abstraites** (sans corps) que les classes filles **doivent** implementer.
+- **Peut contenir des methodes normales** (avec un corps) que les classes filles heritent directement.
+
+**C# :**
+
+```csharp
+abstract class Forme
+{
+    public string Couleur;
+
+    public Forme(string couleur)
+    {
+        Couleur = couleur;
+    }
+
+    // Methode abstraite : pas de corps, les filles DOIVENT l'implementer
+    public abstract double CalculerAire();
+
+    // Methode abstraite
+    public abstract double CalculerPerimetre();
+
+    // Methode concrete : les filles en heritent telle quelle
+    public string Decrire()
+    {
+        return "Forme " + Couleur + " | Aire = " + CalculerAire().ToString("F2")
+            + " | Perimetre = " + CalculerPerimetre().ToString("F2");
+    }
+}
+
+class Cercle : Forme
+{
+    public double Rayon;
+
+    public Cercle(string couleur, double rayon) : base(couleur)
+    {
+        Rayon = rayon;
+    }
+
+    public override double CalculerAire()
+    {
+        return Math.PI * Rayon * Rayon;
+    }
+
+    public override double CalculerPerimetre()
+    {
+        return 2 * Math.PI * Rayon;
+    }
+}
+
+class Rectangle : Forme
+{
+    public double Largeur;
+    public double Hauteur;
+
+    public Rectangle(string couleur, double largeur, double hauteur) : base(couleur)
+    {
+        Largeur = largeur;
+        Hauteur = hauteur;
+    }
+
+    public override double CalculerAire()
+    {
+        return Largeur * Hauteur;
+    }
+
+    public override double CalculerPerimetre()
+    {
+        return 2 * (Largeur + Hauteur);
+    }
+}
+
+// Forme f = new Forme("bleu"); // ERREUR : impossible d'instancier une classe abstraite
+Cercle c = new Cercle("rouge", 5);
+Console.WriteLine(c.Decrire());
+```
+
+**JavaScript :**
+
+JavaScript n'a pas de mot-cle `abstract`. On simule le comportement :
+
+```js
+class Forme {
+  constructor(couleur) {
+    if (new.target === Forme) {
+      throw new Error("Impossible d'instancier Forme directement.");
+    }
+    this.couleur = couleur;
+  }
+
+  calculerAire() {
+    throw new Error("Methode calculerAire() non implementee.");
+  }
+
+  calculerPerimetre() {
+    throw new Error("Methode calculerPerimetre() non implementee.");
+  }
+
+  decrire() {
+    return "Forme " + this.couleur + " | Aire = " + this.calculerAire().toFixed(2)
+      + " | Perimetre = " + this.calculerPerimetre().toFixed(2);
+  }
+}
+
+class Cercle extends Forme {
+  constructor(couleur, rayon) {
+    super(couleur);
+    this.rayon = rayon;
+  }
+
+  calculerAire() {
+    return Math.PI * this.rayon * this.rayon;
+  }
+
+  calculerPerimetre() {
+    return 2 * Math.PI * this.rayon;
+  }
+}
+
+// let f = new Forme("bleu"); // ERREUR a l'execution
+let c = new Cercle("rouge", 5);
+console.log(c.decrire());
+```
+
+### Interfaces
+
+Une interface est un **contrat**. Elle definit les methodes qu'une classe **doit** implementer, sans fournir d'implementation.
+
+**Difference avec une classe abstraite :**
+
+| | Classe abstraite | Interface |
+|---|-----------------|-----------|
+| Peut contenir du code (methodes concretes) | Oui | Non (en C# classique) |
+| Peut avoir un constructeur | Oui | Non |
+| Peut avoir des attributs | Oui | Non (proprietes uniquement en C#) |
+| Heritage multiple | Non (une seule classe mere) | Oui (plusieurs interfaces) |
+| Quand l'utiliser | Quand les classes filles partagent du code commun | Quand on veut definir un contrat sans imposer d'implementation |
+
+**Regle pratique :** utilisez une classe abstraite quand les classes filles partagent du code. Utilisez une interface quand vous voulez que des classes sans lien de parente puissent toutes "savoir faire" la meme chose.
+
+**C# :**
+
+```csharp
+interface IAffichable
+{
+    string Afficher();
+}
+
+interface ISerialisable
+{
+    string Serialiser();
+}
+
+// Une classe peut implementer plusieurs interfaces
+class Produit : IAffichable, ISerialisable
+{
+    public string Nom;
+    public double Prix;
+
+    public Produit(string nom, double prix)
+    {
+        Nom = nom;
+        Prix = prix;
+    }
+
+    public string Afficher()
+    {
+        return Nom + " - " + Prix + " EUR";
+    }
+
+    public string Serialiser()
+    {
+        return "{\"nom\":\"" + Nom + "\",\"prix\":" + Prix + "}";
+    }
+}
+```
+
+En C#, par convention, les noms d'interfaces commencent par la lettre `I` majuscule (IAffichable, ISerialisable, IComparable).
+
+**TypeScript (car les interfaces JS n'existent qu'en TypeScript) :**
+
+```ts
+interface IAffichable {
+  afficher(): string;
+}
+
+interface ISerialisable {
+  serialiser(): string;
+}
+
+class Produit implements IAffichable, ISerialisable {
+  constructor(public nom: string, public prix: number) {}
+
+  afficher(): string {
+    return this.nom + " - " + this.prix + " EUR";
+  }
+
+  serialiser(): string {
+    return JSON.stringify({ nom: this.nom, prix: this.prix });
+  }
+}
+```
+
+En JavaScript pur, il n'y a pas d'interfaces. On se repose sur le "duck typing" : si un objet a la methode attendue, il est accepte.
+
+### Exercice 7 : Classes abstraites et interfaces
+
+Creer :
+- Interface `IPayable` avec une methode `calculerPaiement() : double`
+- Classe abstraite `Employe` avec nom, prenom, et methode abstraite `getDescription() : string`
+- Classe `Salarie` qui herite d'Employe et implemente IPayable (salaire mensuel fixe)
+- Classe `Freelance` qui herite d'Employe et implemente IPayable (taux journalier * nombre de jours)
+
+**Solution C# :**
+
+```csharp
+interface IPayable
+{
+    double CalculerPaiement();
+}
+
+abstract class Employe
+{
+    public string Nom;
+    public string Prenom;
+
+    public Employe(string nom, string prenom)
+    {
+        Nom = nom;
+        Prenom = prenom;
+    }
+
+    public abstract string GetDescription();
+}
+
+class Salarie : Employe, IPayable
+{
+    public double SalaireMensuel;
+
+    public Salarie(string nom, string prenom, double salaire) : base(nom, prenom)
+    {
+        SalaireMensuel = salaire;
+    }
+
+    public override string GetDescription()
+    {
+        return "Salarie : " + Prenom + " " + Nom;
+    }
+
+    public double CalculerPaiement()
+    {
+        return SalaireMensuel;
+    }
+}
+
+class Freelance : Employe, IPayable
+{
+    public double TauxJournalier;
+    public int NombreJours;
+
+    public Freelance(string nom, string prenom, double taux, int jours) : base(nom, prenom)
+    {
+        TauxJournalier = taux;
+        NombreJours = jours;
+    }
+
+    public override string GetDescription()
+    {
+        return "Freelance : " + Prenom + " " + Nom;
+    }
+
+    public double CalculerPaiement()
+    {
+        return TauxJournalier * NombreJours;
+    }
+}
+
+// Utilisation avec polymorphisme
+List<IPayable> employes = new List<IPayable>
+{
+    new Salarie("Dupont", "Marie", 2500),
+    new Freelance("Martin", "Lucas", 350, 15)
+};
+
+foreach (IPayable e in employes)
+{
+    Console.WriteLine("Paiement : " + e.CalculerPaiement() + " EUR");
+}
+```
+
+---
+
+## Relations entre objets
+
+### Les trois types de relations
+
+En POO, les objets ne vivent pas seuls. Ils sont lies entre eux. Il existe trois types de relations, du plus faible au plus fort :
+
+### 1. Association
+
+**Definition :** Deux objets sont lies mais existent independamment l'un de l'autre.
+
+**Analogie :** Un professeur enseigne a des etudiants. Si le professeur quitte l'universite, les etudiants existent toujours. Si un etudiant part, le professeur existe toujours.
+
+```js
+// JavaScript
+class Professeur {
+  constructor(nom) {
+    this.nom = nom;
+    this.etudiants = [];
+  }
+
+  ajouterEtudiant(etudiant) {
+    this.etudiants.push(etudiant);
+  }
+}
+
+class Etudiant {
+  constructor(nom) {
+    this.nom = nom;
+  }
+}
+
+let prof = new Professeur("M. Durand");
+let e1 = new Etudiant("Alice");
+let e2 = new Etudiant("Bob");
+prof.ajouterEtudiant(e1);
+prof.ajouterEtudiant(e2);
+// e1 et e2 existent independamment de prof
+```
+
+```csharp
+// C#
+class Professeur
+{
+    public string Nom;
+    public List<Etudiant> Etudiants;
+
+    public Professeur(string nom)
+    {
+        Nom = nom;
+        Etudiants = new List<Etudiant>();
+    }
+
+    public void AjouterEtudiant(Etudiant e)
+    {
+        Etudiants.Add(e);
+    }
+}
+
+class Etudiant
+{
+    public string Nom;
+
+    public Etudiant(string nom)
+    {
+        Nom = nom;
+    }
+}
+```
+
+### 2. Agregation
+
+**Definition :** Un objet "contient" d'autres objets, mais les objets contenus **peuvent exister sans le conteneur**.
+
+**Analogie :** Une voiture a des roues. Si on detruit la voiture, les roues existent toujours (on peut les remonter sur une autre voiture).
+
+En code, la difference avec l'association est surtout conceptuelle. L'objet contenu est **cree a l'exterieur** et passe en parametre.
+
+```js
+// JavaScript -- agregation
+class Roue {
+  constructor(taille) {
+    this.taille = taille;
+  }
+}
+
+class Voiture {
+  constructor(marque) {
+    this.marque = marque;
+    this.roues = [];
+  }
+
+  ajouterRoue(roue) {
+    this.roues.push(roue); // la roue est creee dehors, passee en parametre
+  }
+}
+
+let r1 = new Roue(17);
+let r2 = new Roue(17);
+let voiture = new Voiture("Peugeot");
+voiture.ajouterRoue(r1);
+voiture.ajouterRoue(r2);
+// Si voiture est detruite, r1 et r2 existent toujours
+```
+
+### 3. Composition
+
+**Definition :** Un objet "contient" d'autres objets qui **ne peuvent pas exister sans le conteneur**. Si le conteneur est detruit, les objets contenus le sont aussi.
+
+**Analogie :** Une maison a des pieces. Si on detruit la maison, les pieces n'existent plus. Une piece n'a aucun sens en dehors de sa maison.
+
+En code, l'objet contenu est **cree a l'interieur** du conteneur.
+
+```js
+// JavaScript -- composition
+class Piece {
+  constructor(nom, surface) {
+    this.nom = nom;
+    this.surface = surface;
+  }
+}
+
+class Maison {
+  constructor(adresse) {
+    this.adresse = adresse;
+    // Les pieces sont creees PAR la maison, elles n'existent pas sans elle
+    this.pieces = [
+      new Piece("Salon", 30),
+      new Piece("Cuisine", 15),
+      new Piece("Chambre", 20)
+    ];
+  }
+
+  getSurfaceTotale() {
+    let total = 0;
+    for (let piece of this.pieces) {
+      total += piece.surface;
+    }
+    return total;
+  }
+}
+```
+
+```csharp
+// C# -- composition
+class Piece
+{
+    public string Nom;
+    public double Surface;
+
+    public Piece(string nom, double surface)
+    {
+        Nom = nom;
+        Surface = surface;
+    }
+}
+
+class Maison
+{
+    public string Adresse;
+    public List<Piece> Pieces;
+
+    public Maison(string adresse)
+    {
+        Adresse = adresse;
+        Pieces = new List<Piece>
+        {
+            new Piece("Salon", 30),
+            new Piece("Cuisine", 15),
+            new Piece("Chambre", 20)
+        };
+    }
+
+    public double GetSurfaceTotale()
+    {
+        double total = 0;
+        foreach (Piece p in Pieces)
+        {
+            total += p.Surface;
+        }
+        return total;
+    }
+}
+```
+
+### Resume des relations
+
+| Relation | Force | Duree de vie | Exemple |
+|----------|-------|-------------|---------|
+| Association | Faible | Independante | Professeur -- Etudiant |
+| Agregation | Moyenne | Le contenu survit au conteneur | Voiture -- Roue |
+| Composition | Forte | Le contenu meurt avec le conteneur | Maison -- Piece |
+
+---
+
+## Collections d'objets
+
+### Pourquoi des collections ?
+
+Dans la plupart des applications reelles, on ne manipule pas un seul objet mais des **collections** : une liste d'etudiants, un catalogue de produits, un ensemble de commandes. Il faut savoir creer, parcourir, filtrer et trier ces collections.
+
+### Tableau d'objets
+
+Le plus simple : un tableau (array).
+
+**JavaScript :**
+
+```js
+let etudiants = [
+  new Etudiant("Dupont", "Alice"),
+  new Etudiant("Martin", "Bob"),
+  new Etudiant("Durand", "Claire")
+];
+```
+
+**C# :**
+
+```csharp
+Etudiant[] etudiants = new Etudiant[]
+{
+    new Etudiant("Dupont", "Alice"),
+    new Etudiant("Martin", "Bob"),
+    new Etudiant("Durand", "Claire")
+};
+```
+
+### List en C#, Array en JS
+
+En C#, on prefere generalement `List<T>` au tableau classique car la taille est dynamique :
+
+```csharp
+List<Etudiant> etudiants = new List<Etudiant>();
+etudiants.Add(new Etudiant("Dupont", "Alice"));
+etudiants.Add(new Etudiant("Martin", "Bob"));
+
+// Nombre d'elements
+Console.WriteLine(etudiants.Count);
+
+// Acces par index
+Console.WriteLine(etudiants[0].Nom);
+
+// Suppression
+etudiants.RemoveAt(1);
+```
+
+En JavaScript, les tableaux sont deja dynamiques :
+
+```js
+let etudiants = [];
+etudiants.push(new Etudiant("Dupont", "Alice"));
+etudiants.push(new Etudiant("Martin", "Bob"));
+
+console.log(etudiants.length);
+console.log(etudiants[0].nom);
+
+etudiants.splice(1, 1); // supprime 1 element a l'index 1
+```
+
+### Parcourir une collection
+
+**JavaScript :**
+
+```js
+// for classique
+for (let i = 0; i < etudiants.length; i++) {
+  console.log(etudiants[i].afficher());
+}
+
+// for...of (plus lisible)
+for (let e of etudiants) {
+  console.log(e.afficher());
+}
+
+// forEach
+etudiants.forEach(function(e) {
+  console.log(e.afficher());
+});
+```
+
+**C# :**
+
+```csharp
+// for classique
+for (int i = 0; i < etudiants.Count; i++)
+{
+    Console.WriteLine(etudiants[i].Afficher());
+}
+
+// foreach (plus lisible)
+foreach (Etudiant e in etudiants)
+{
+    Console.WriteLine(e.Afficher());
+}
+```
+
+### Filtrer
+
+**JavaScript -- filter() :**
+
+```js
+// Etudiants avec une moyenne superieure a 12
+let bonsEtudiants = etudiants.filter(e => e.calculerMoyenne() > 12);
+```
+
+**C# -- LINQ Where() :**
+
+```csharp
+using System.Linq;
+
+List<Etudiant> bonsEtudiants = etudiants.Where(e => e.CalculerMoyenne() > 12).ToList();
+```
+
+### Trier
+
+**JavaScript -- sort() :**
+
+```js
+// Trier par moyenne decroissante
+etudiants.sort((a, b) => b.calculerMoyenne() - a.calculerMoyenne());
+```
+
+Attention : `sort()` modifie le tableau original en JavaScript.
+
+**C# -- LINQ OrderBy() :**
+
+```csharp
+// Trier par moyenne croissante
+List<Etudiant> tries = etudiants.OrderBy(e => e.CalculerMoyenne()).ToList();
+
+// Trier par moyenne decroissante
+List<Etudiant> triesDesc = etudiants.OrderByDescending(e => e.CalculerMoyenne()).ToList();
+```
+
+### Transformer (map / Select)
+
+**JavaScript -- map() :**
+
+```js
+// Obtenir un tableau de noms
+let noms = etudiants.map(e => e.nom);
+
+// Obtenir un tableau de moyennes
+let moyennes = etudiants.map(e => e.calculerMoyenne());
+```
+
+**C# -- LINQ Select() :**
+
+```csharp
+// Obtenir une liste de noms
+List<string> noms = etudiants.Select(e => e.Nom).ToList();
+
+// Obtenir une liste de moyennes
+List<double> moyennes = etudiants.Select(e => e.CalculerMoyenne()).ToList();
+```
+
+### LINQ -- resume des methodes essentielles (C#)
+
+| Methode LINQ | Equivalent JS | Description |
+|-------------|---------------|-------------|
+| `Where(predicate)` | `filter()` | Filtrer les elements |
+| `Select(selector)` | `map()` | Transformer chaque element |
+| `OrderBy(key)` | `sort()` | Trier par cle croissante |
+| `OrderByDescending(key)` | `sort()` (inverse) | Trier par cle decroissante |
+| `First()` | `[0]` ou `find()` | Premier element |
+| `FirstOrDefault()` | `find()` | Premier element ou valeur par defaut |
+| `Count()` | `.length` | Nombre d'elements |
+| `Any(predicate)` | `some()` | Au moins un element correspond |
+| `All(predicate)` | `every()` | Tous les elements correspondent |
+| `Sum(selector)` | `reduce()` | Somme |
+| `Average(selector)` | `reduce()` / `.length` | Moyenne |
+
+**Exemple complet LINQ :**
+
+```csharp
+List<Produit> produits = new List<Produit>
+{
+    new Produit("Clavier", 49.99, 100),
+    new Produit("Souris", 29.99, 50),
+    new Produit("Ecran", 299.99, 20),
+    new Produit("Casque", 79.99, 35)
+};
+
+// Produits a moins de 100 EUR, tries par prix
+var prodsAbordables = produits
+    .Where(p => p.Prix < 100)
+    .OrderBy(p => p.Prix)
+    .ToList();
+
+// Somme totale du stock (prix * quantite)
+double valeurStock = produits.Sum(p => p.Prix * p.QuantiteEnStock);
+
+// Noms des produits en stock
+List<string> nomsEnStock = produits
+    .Where(p => p.QuantiteEnStock > 0)
+    .Select(p => p.Nom)
+    .ToList();
+```
+
+**Equivalent JavaScript :**
+
+```js
+let produits = [
+  new Produit("Clavier", 49.99, 100),
+  new Produit("Souris", 29.99, 50),
+  new Produit("Ecran", 299.99, 20),
+  new Produit("Casque", 79.99, 35)
+];
+
+let prodsAbordables = produits
+  .filter(p => p.prix < 100)
+  .sort((a, b) => a.prix - b.prix);
+
+let valeurStock = produits.reduce((total, p) => total + p.prix * p.quantiteEnStock, 0);
+
+let nomsEnStock = produits
+  .filter(p => p.quantiteEnStock > 0)
+  .map(p => p.nom);
+```
+
+---
+
+## Design patterns simples
+
+Un **design pattern** (patron de conception) est une solution eprouvee a un probleme recurrent de conception logicielle. Ce ne sont pas des morceaux de code a copier-coller, mais des **schemas de pensee** qui guident la structure du code.
+
+### Singleton
+
+**Probleme :** Certains objets ne doivent exister qu'en un seul exemplaire dans tout le programme. Par exemple : la connexion a la base de donnees, le fichier de configuration, le gestionnaire de logs.
+
+**Solution :** Le pattern Singleton garantit qu'une classe n'a qu'une seule instance et fournit un point d'acces global a cette instance.
+
+**C# :**
+
+```csharp
+class ConnexionBDD
+{
+    private static ConnexionBDD instance = null;
+    private string chaineConnexion;
+
+    // Constructeur prive : personne ne peut faire "new ConnexionBDD()"
+    private ConnexionBDD(string chaineConnexion)
+    {
+        this.chaineConnexion = chaineConnexion;
+        Console.WriteLine("Connexion ouverte.");
+    }
+
+    // Methode statique pour obtenir l'unique instance
+    public static ConnexionBDD GetInstance(string chaineConnexion = "")
+    {
+        if (instance == null)
+        {
+            instance = new ConnexionBDD(chaineConnexion);
+        }
+        return instance;
+    }
+
+    public void Executer(string requete)
+    {
+        Console.WriteLine("Execution : " + requete);
+    }
+}
+
+// Utilisation
+ConnexionBDD db1 = ConnexionBDD.GetInstance("Server=localhost;Database=ecole");
+ConnexionBDD db2 = ConnexionBDD.GetInstance();
+// db1 et db2 sont le MEME objet
+Console.WriteLine(db1 == db2); // True
+```
+
+**JavaScript :**
+
+```js
+class ConnexionBDD {
+  static #instance = null;
+
+  #chaineConnexion;
+
+  constructor(chaineConnexion) {
+    if (ConnexionBDD.#instance !== null) {
+      throw new Error("Utilisez ConnexionBDD.getInstance()");
+    }
+    this.#chaineConnexion = chaineConnexion;
+    ConnexionBDD.#instance = this;
+  }
+
+  static getInstance(chaineConnexion = "") {
+    if (ConnexionBDD.#instance === null) {
+      new ConnexionBDD(chaineConnexion);
+    }
+    return ConnexionBDD.#instance;
+  }
+
+  executer(requete) {
+    console.log("Execution : " + requete);
+  }
+}
+
+let db1 = ConnexionBDD.getInstance("localhost");
+let db2 = ConnexionBDD.getInstance();
+console.log(db1 === db2); // true
+```
+
+### Observer
+
+**Probleme :** Un objet change d'etat, et d'autres objets doivent etre automatiquement informes de ce changement. Par exemple : quand un utilisateur clique sur un bouton (WinForms, React), les composants concernes doivent reagir.
+
+**Solution :** Le pattern Observer definit une relation un-a-plusieurs : un "sujet" (subject) maintient une liste d'"observateurs" (observers). Quand le sujet change, il notifie tous ses observateurs.
+
+**C# :**
+
+```csharp
+// Interface pour les observateurs
+interface IObservateur
+{
+    void Reagir(string evenement);
+}
+
+// Le sujet (celui qui est observe)
+class Boutique
+{
+    private List<IObservateur> observateurs = new List<IObservateur>();
+    private string dernierProduit;
+
+    public void Abonner(IObservateur obs)
+    {
+        observateurs.Add(obs);
+    }
+
+    public void Desabonner(IObservateur obs)
+    {
+        observateurs.Remove(obs);
+    }
+
+    private void Notifier(string evenement)
+    {
+        foreach (IObservateur obs in observateurs)
+        {
+            obs.Reagir(evenement);
+        }
+    }
+
+    public void AjouterProduit(string produit)
+    {
+        dernierProduit = produit;
+        Notifier("Nouveau produit : " + produit);
+    }
+}
+
+// Un observateur concret
+class Client : IObservateur
+{
+    public string Nom;
+
+    public Client(string nom)
+    {
+        Nom = nom;
+    }
+
+    public void Reagir(string evenement)
+    {
+        Console.WriteLine(Nom + " a recu : " + evenement);
+    }
+}
+
+// Utilisation
+Boutique boutique = new Boutique();
+Client c1 = new Client("Alice");
+Client c2 = new Client("Bob");
+
+boutique.Abonner(c1);
+boutique.Abonner(c2);
+boutique.AjouterProduit("iPhone 15");
+// Alice a recu : Nouveau produit : iPhone 15
+// Bob a recu : Nouveau produit : iPhone 15
+```
+
+**JavaScript :**
+
+```js
+class Boutique {
+  #observateurs = [];
+
+  abonner(observateur) {
+    this.#observateurs.push(observateur);
+  }
+
+  desabonner(observateur) {
+    this.#observateurs = this.#observateurs.filter(o => o !== observateur);
+  }
+
+  #notifier(evenement) {
+    for (let obs of this.#observateurs) {
+      obs.reagir(evenement);
+    }
+  }
+
+  ajouterProduit(produit) {
+    this.#notifier("Nouveau produit : " + produit);
+  }
+}
+
+class Client {
+  constructor(nom) {
+    this.nom = nom;
+  }
+
+  reagir(evenement) {
+    console.log(this.nom + " a recu : " + evenement);
+  }
+}
+
+let boutique = new Boutique();
+let c1 = new Client("Alice");
+let c2 = new Client("Bob");
+
+boutique.abonner(c1);
+boutique.abonner(c2);
+boutique.ajouterProduit("iPhone 15");
+```
+
+Ce pattern est fondamental : les evenements de WinForms (`button.Click += ...`) et les listeners de React/JS (`addEventListener`) sont des implementations du pattern Observer.
+
+### MVC (Model-View-Controller)
+
+Le pattern MVC est un pattern architectural qui separe une application en trois composants :
+
+- **Model (Modele)** : les donnees et la logique metier (les classes qu'on a appris a creer).
+- **View (Vue)** : l'interface utilisateur (ce que l'utilisateur voit).
+- **Controller (Controleur)** : fait le lien entre le modele et la vue. Recoit les actions de l'utilisateur, interroge le modele, met a jour la vue.
+
+Ce pattern est traite en detail dans le playbook dedie a l'architecture MVC. L'essentiel a retenir pour la POO : les classes metier (Etudiant, Produit, Commande) sont le **Modele**. Elles ne doivent pas contenir de code d'affichage ni de code de gestion d'interface.
+
+---
+
+## Exercices d'examen corriges
+
+### Exercice 8 : Diagramme de classes vers code
+
+**Enonce :**
+
+Le diagramme de classes suivant decrit un systeme de gestion de bibliotheque :
+
+```
++---------------------+
+|       Livre          |
++---------------------+
+| - titre : string     |
+| - auteur : string    |
+| - isbn : string      |
+| - estEmprunte : bool |
++---------------------+
+| + emprunter() : bool |
+| + rendre() : void    |
+| + afficher() : string|
++---------------------+
+
++-------------------------+
+|      Bibliotheque        |
++-------------------------+
+| - nom : string           |
+| - livres : List<Livre>   |
++-------------------------+
+| + ajouterLivre(l) : void |
+| + rechercherParTitre(t)  |
+|   : Livre                |
+| + livresDisponibles()    |
+|   : List<Livre>          |
++-------------------------+
+```
+
+Traduire en code C# et JavaScript.
+
+**Solution C# :**
+
+```csharp
+class Livre
+{
+    private string titre;
+    private string auteur;
+    private string isbn;
+    private bool estEmprunte;
+
+    public string Titre { get { return titre; } }
+    public string Auteur { get { return auteur; } }
+    public string Isbn { get { return isbn; } }
+    public bool EstEmprunte { get { return estEmprunte; } }
+
+    public Livre(string titre, string auteur, string isbn)
+    {
+        this.titre = titre;
+        this.auteur = auteur;
+        this.isbn = isbn;
+        this.estEmprunte = false;
+    }
+
+    public bool Emprunter()
+    {
+        if (!estEmprunte)
+        {
+            estEmprunte = true;
+            return true;
+        }
+        return false;
+    }
+
+    public void Rendre()
+    {
+        estEmprunte = false;
+    }
+
+    public string Afficher()
+    {
+        string statut = estEmprunte ? "Emprunte" : "Disponible";
+        return titre + " de " + auteur + " (" + isbn + ") - " + statut;
+    }
+}
+
+class Bibliotheque
+{
+    private string nom;
+    private List<Livre> livres;
+
+    public string Nom { get { return nom; } }
+
+    public Bibliotheque(string nom)
+    {
+        this.nom = nom;
+        this.livres = new List<Livre>();
+    }
+
+    public void AjouterLivre(Livre livre)
+    {
+        livres.Add(livre);
+    }
+
+    public Livre RechercherParTitre(string titre)
+    {
+        foreach (Livre l in livres)
+        {
+            if (l.Titre.ToLower() == titre.ToLower())
+                return l;
+        }
+        return null;
+    }
+
+    public List<Livre> LivresDisponibles()
+    {
+        List<Livre> disponibles = new List<Livre>();
+        foreach (Livre l in livres)
+        {
+            if (!l.EstEmprunte)
+                disponibles.Add(l);
+        }
+        return disponibles;
+    }
+}
+```
+
+**Solution JavaScript :**
+
+```js
+class Livre {
+  #titre;
+  #auteur;
+  #isbn;
+  #estEmprunte;
+
+  constructor(titre, auteur, isbn) {
+    this.#titre = titre;
+    this.#auteur = auteur;
+    this.#isbn = isbn;
+    this.#estEmprunte = false;
+  }
+
+  get titre() { return this.#titre; }
+  get auteur() { return this.#auteur; }
+  get isbn() { return this.#isbn; }
+  get estEmprunte() { return this.#estEmprunte; }
+
+  emprunter() {
+    if (!this.#estEmprunte) {
+      this.#estEmprunte = true;
+      return true;
+    }
+    return false;
+  }
+
+  rendre() {
+    this.#estEmprunte = false;
+  }
+
+  afficher() {
+    let statut = this.#estEmprunte ? "Emprunte" : "Disponible";
+    return this.#titre + " de " + this.#auteur + " (" + this.#isbn + ") - " + statut;
+  }
+}
+
+class Bibliotheque {
+  #nom;
+  #livres;
+
+  constructor(nom) {
+    this.#nom = nom;
+    this.#livres = [];
+  }
+
+  get nom() { return this.#nom; }
+
+  ajouterLivre(livre) {
+    this.#livres.push(livre);
+  }
+
+  rechercherParTitre(titre) {
+    return this.#livres.find(l => l.titre.toLowerCase() === titre.toLowerCase()) || null;
+  }
+
+  livresDisponibles() {
+    return this.#livres.filter(l => !l.estEmprunte);
+  }
+}
+```
+
+---
+
+### Exercice 9 : Code vers diagramme de classes
+
+**Enonce :**
+
+A partir du code suivant, dessiner le diagramme de classes (avec attributs, methodes, relations) :
+
+```csharp
+class Adresse
+{
+    public string Rue;
+    public string Ville;
+    public string CodePostal;
+
+    public Adresse(string rue, string ville, string cp)
+    {
+        Rue = rue;
+        Ville = ville;
+        CodePostal = cp;
+    }
+
+    public string Afficher()
+    {
+        return Rue + ", " + CodePostal + " " + Ville;
+    }
+}
+
+class Personne
+{
+    public string Nom;
+    public Adresse Adresse;
+
+    public Personne(string nom, Adresse adresse)
+    {
+        Nom = nom;
+        Adresse = adresse;
+    }
+}
+
+class Etudiant : Personne
+{
+    public string NumeroEtudiant;
+    public List<double> Notes;
+
+    public Etudiant(string nom, Adresse adresse, string numero) : base(nom, adresse)
+    {
+        NumeroEtudiant = numero;
+        Notes = new List<double>();
+    }
+
+    public double CalculerMoyenne()
+    {
+        if (Notes.Count == 0) return 0;
+        return Notes.Sum() / Notes.Count;
+    }
+}
+
+class Professeur : Personne
+{
+    public string Matiere;
+
+    public Professeur(string nom, Adresse adresse, string matiere) : base(nom, adresse)
+    {
+        Matiere = matiere;
+    }
+}
+```
+
+**Solution (diagramme textuel) :**
+
+```
++---------------------+
+|      Adresse         |
++---------------------+
+| + Rue : string       |
+| + Ville : string     |
+| + CodePostal : string|
++---------------------+
+| + Afficher() : string|
++---------------------+
+
++---------------------+
+|     Personne         |
++---------------------+
+| + Nom : string       |
+| + Adresse : Adresse  |  ---- association ----> Adresse
++---------------------+
+
+         ^
+         | heritage
+    +---------+--------+
+    |                   |
++-------------------+ +-------------------+
+|    Etudiant        | |   Professeur       |
++-------------------+ +-------------------+
+| + NumeroEtudiant   | | + Matiere : string |
+| + Notes : List     | +-------------------+
++-------------------+  
+| + CalculerMoyenne()| 
++-------------------+
+```
+
+Relations identifiees :
+- `Etudiant` herite de `Personne`
+- `Professeur` herite de `Personne`
+- `Personne` a une association avec `Adresse` (agregation : l'adresse peut exister sans la personne, car elle est passee en parametre du constructeur)
+
+---
+
+### Exercice 10 : Completer une classe
+
+**Enonce :**
+
+Completer la classe `Panier` pour qu'elle fonctionne correctement. Les commentaires indiquent ce que chaque methode doit faire.
+
+```csharp
+class Article
+{
+    public string Nom;
+    public double Prix;
+
+    public Article(string nom, double prix)
+    {
+        Nom = nom;
+        Prix = prix;
+    }
+}
+
+class Panier
+{
+    private List<Article> articles;
+
+    public Panier()
+    {
+        // TODO : initialiser la liste
+    }
+
+    public void Ajouter(Article article)
+    {
+        // TODO : ajouter l'article a la liste
+    }
+
+    public void Supprimer(string nomArticle)
+    {
+        // TODO : supprimer le premier article qui porte ce nom
+    }
+
+    public double CalculerTotal()
+    {
+        // TODO : retourner la somme des prix de tous les articles
+    }
+
+    public string Afficher()
+    {
+        // TODO : retourner une chaine avec chaque article sur une ligne
+        // Format : "- NomArticle : Prix EUR"
+        // Derniere ligne : "Total : XX.XX EUR"
+    }
+}
+```
+
+**Solution :**
+
+```csharp
+class Panier
+{
+    private List<Article> articles;
+
+    public Panier()
+    {
+        articles = new List<Article>();
+    }
+
+    public void Ajouter(Article article)
+    {
+        articles.Add(article);
+    }
+
+    public void Supprimer(string nomArticle)
+    {
+        for (int i = 0; i < articles.Count; i++)
+        {
+            if (articles[i].Nom == nomArticle)
+            {
+                articles.RemoveAt(i);
+                return; // on supprime seulement le premier trouve
+            }
+        }
+    }
+
+    public double CalculerTotal()
+    {
+        double total = 0;
+        foreach (Article a in articles)
+        {
+            total += a.Prix;
+        }
+        return total;
+    }
+
+    public string Afficher()
+    {
+        string resultat = "";
+        foreach (Article a in articles)
+        {
+            resultat += "- " + a.Nom + " : " + a.Prix.ToString("F2") + " EUR\n";
+        }
+        resultat += "Total : " + CalculerTotal().ToString("F2") + " EUR";
+        return resultat;
+    }
+}
+```
+
+---
+
+### Exercice 11 : Identifier les erreurs
+
+**Enonce :**
+
+Le code suivant contient 6 erreurs. Les identifier et les corriger.
+
+```csharp
+abstract class Vehicule
+{
+    public string Marque;
+
+    public Vehicule(string marque)
+    {
+        Marque = marque;
+    }
+
+    public abstract void Demarrer();
+}
+
+class Voiture : Vehicule
+{
+    public int NombrePortes;
+
+    public Voiture(string marque, int nbPortes)
+    {
+        NombrePortes = nbPortes;
+    }
+
+    public void Demarrer()
+    {
+        Console.WriteLine(Marque + " demarre.");
+    }
+}
+
+class Programme
+{
+    static void Main()
+    {
+        Vehicule v = new Vehicule("Generique");
+        Voiture voiture = new Voiture("Peugeot", 5);
+        voiture.demarrer();
+    }
+}
+```
+
+**Solution -- les 6 erreurs :**
+
+**Erreur 1 :** Le constructeur de `Voiture` n'appelle pas le constructeur de `Vehicule`.
+
+```csharp
+// Faux :
+public Voiture(string marque, int nbPortes)
+{
+    NombrePortes = nbPortes;
+}
+
+// Correct :
+public Voiture(string marque, int nbPortes) : base(marque)
+{
+    NombrePortes = nbPortes;
+}
+```
+
+**Erreur 2 :** La methode `Demarrer()` dans `Voiture` doit utiliser le mot-cle `override`.
+
+```csharp
+// Faux :
+public void Demarrer()
+
+// Correct :
+public override void Demarrer()
+```
+
+**Erreur 3 :** On essaie d'instancier une classe abstraite.
+
+```csharp
+// Faux :
+Vehicule v = new Vehicule("Generique"); // ERREUR : classe abstraite
+
+// Correct : supprimer cette ligne ou utiliser une classe concrete
+Vehicule v = new Voiture("Generique", 4);
+```
+
+**Erreur 4 :** L'appel de methode utilise une minuscule.
+
+```csharp
+// Faux :
+voiture.demarrer(); // C# est sensible a la casse
+
+// Correct :
+voiture.Demarrer();
+```
+
+**Erreur 5 :** La methode abstraite `Demarrer()` retourne `void` mais le type de retour doit correspondre. C'est coherent ici, mais la methode abstraite devrait idealement retourner `string` si on veut utiliser le resultat. (Note : dans ce cas precis, le code utilise `Console.WriteLine` directement, donc `void` est correct. L'erreur potentielle est plus subtile : on ne peut pas capturer le resultat.)
+
+**Erreur 6 :** Il manque `using System;` et `using System.Collections.Generic;` en haut du fichier (necessaire pour `Console.WriteLine`).
+
+---
+
+### Exercice 12 : Concevoir une hierarchie -- Systeme de reservation
+
+**Enonce :**
+
+Un hotel veut un systeme de reservation. Il existe trois types de chambres :
+- Chambre Standard : prix fixe par nuit.
+- Suite : prix fixe + supplement pour le minibar.
+- Chambre Familiale : prix fixe + supplement par enfant.
+
+Toutes les chambres ont un numero, un prix par nuit et un statut (libre/occupee). On doit pouvoir reserver une chambre, la liberer, et calculer le prix total pour un nombre de nuits donne.
+
+Concevoir la hierarchie de classes et la coder.
+
+**Solution C# :**
+
+```csharp
+abstract class Chambre
+{
+    public int Numero;
+    public double PrixParNuit;
+    public bool EstOccupee;
+
+    public Chambre(int numero, double prixParNuit)
+    {
+        Numero = numero;
+        PrixParNuit = prixParNuit;
+        EstOccupee = false;
+    }
+
+    public bool Reserver()
+    {
+        if (!EstOccupee)
+        {
+            EstOccupee = true;
+            return true;
+        }
+        return false;
+    }
+
+    public void Liberer()
+    {
+        EstOccupee = false;
+    }
+
+    public abstract double CalculerPrixTotal(int nbNuits);
+
+    public virtual string Afficher()
+    {
+        string statut = EstOccupee ? "Occupee" : "Libre";
+        return "Chambre " + Numero + " - " + statut;
+    }
+}
+
+class ChambreStandard : Chambre
+{
+    public ChambreStandard(int numero, double prixParNuit) : base(numero, prixParNuit) { }
+
+    public override double CalculerPrixTotal(int nbNuits)
+    {
+        return PrixParNuit * nbNuits;
+    }
+
+    public override string Afficher()
+    {
+        return base.Afficher() + " (Standard - " + PrixParNuit + " EUR/nuit)";
+    }
+}
+
+class Suite : Chambre
+{
+    public double SupplementMinibar;
+
+    public Suite(int numero, double prixParNuit, double supplementMinibar) : base(numero, prixParNuit)
+    {
+        SupplementMinibar = supplementMinibar;
+    }
+
+    public override double CalculerPrixTotal(int nbNuits)
+    {
+        return (PrixParNuit + SupplementMinibar) * nbNuits;
+    }
+
+    public override string Afficher()
+    {
+        return base.Afficher() + " (Suite - " + PrixParNuit + " EUR/nuit + minibar)";
+    }
+}
+
+class ChambreFamiliale : Chambre
+{
+    public int NombreEnfants;
+    public double SupplementParEnfant;
+
+    public ChambreFamiliale(int numero, double prixParNuit, int nbEnfants, double supplementParEnfant)
+        : base(numero, prixParNuit)
+    {
+        NombreEnfants = nbEnfants;
+        SupplementParEnfant = supplementParEnfant;
+    }
+
+    public override double CalculerPrixTotal(int nbNuits)
+    {
+        return (PrixParNuit + NombreEnfants * SupplementParEnfant) * nbNuits;
+    }
+
+    public override string Afficher()
+    {
+        return base.Afficher() + " (Familiale - " + NombreEnfants + " enfants)";
+    }
+}
+
+// Utilisation
+class Hotel
+{
+    public string Nom;
+    public List<Chambre> Chambres;
+
+    public Hotel(string nom)
+    {
+        Nom = nom;
+        Chambres = new List<Chambre>();
+    }
+
+    public void AjouterChambre(Chambre c)
+    {
+        Chambres.Add(c);
+    }
+
+    public List<Chambre> ChambresDisponibles()
+    {
+        return Chambres.Where(c => !c.EstOccupee).ToList();
+    }
+
+    public void AfficherToutes()
+    {
+        foreach (Chambre c in Chambres)
+        {
+            Console.WriteLine(c.Afficher());
+        }
+    }
+}
+```
+
+**Solution JavaScript :**
+
+```js
+class Chambre {
+  constructor(numero, prixParNuit) {
+    if (new.target === Chambre) {
+      throw new Error("Impossible d'instancier Chambre directement.");
+    }
+    this.numero = numero;
+    this.prixParNuit = prixParNuit;
+    this.estOccupee = false;
+  }
+
+  reserver() {
+    if (!this.estOccupee) {
+      this.estOccupee = true;
+      return true;
+    }
+    return false;
+  }
+
+  liberer() {
+    this.estOccupee = false;
+  }
+
+  calculerPrixTotal(nbNuits) {
+    throw new Error("Methode non implementee.");
+  }
+
+  afficher() {
+    let statut = this.estOccupee ? "Occupee" : "Libre";
+    return "Chambre " + this.numero + " - " + statut;
+  }
+}
+
+class ChambreStandard extends Chambre {
+  constructor(numero, prixParNuit) {
+    super(numero, prixParNuit);
+  }
+
+  calculerPrixTotal(nbNuits) {
+    return this.prixParNuit * nbNuits;
+  }
+
+  afficher() {
+    return super.afficher() + " (Standard - " + this.prixParNuit + " EUR/nuit)";
+  }
+}
+
+class Suite extends Chambre {
+  constructor(numero, prixParNuit, supplementMinibar) {
+    super(numero, prixParNuit);
+    this.supplementMinibar = supplementMinibar;
+  }
+
+  calculerPrixTotal(nbNuits) {
+    return (this.prixParNuit + this.supplementMinibar) * nbNuits;
+  }
+
+  afficher() {
+    return super.afficher() + " (Suite - " + this.prixParNuit + " EUR/nuit + minibar)";
+  }
+}
+
+class ChambreFamiliale extends Chambre {
+  constructor(numero, prixParNuit, nbEnfants, supplementParEnfant) {
+    super(numero, prixParNuit);
+    this.nombreEnfants = nbEnfants;
+    this.supplementParEnfant = supplementParEnfant;
+  }
+
+  calculerPrixTotal(nbNuits) {
+    return (this.prixParNuit + this.nombreEnfants * this.supplementParEnfant) * nbNuits;
+  }
+
+  afficher() {
+    return super.afficher() + " (Familiale - " + this.nombreEnfants + " enfants)";
+  }
+}
+```
+
+---
+
+### Exercice 13 : QCM et questions de cours
+
+**Question 1 :** Quelle est la difference entre une classe et un objet ?
+
+**Reponse :** Une classe est un modele (plan de construction) qui definit les attributs et methodes. Un objet est une instance concrete de cette classe, avec des valeurs propres. On peut creer plusieurs objets a partir d'une meme classe.
+
+**Question 2 :** Pourquoi l'encapsulation est-elle importante ?
+
+**Reponse :** L'encapsulation protege les donnees internes d'un objet en les rendant privees. On controle l'acces via des getters et setters, ce qui permet de valider les donnees et d'empecher les etats incoherents. Cela facilite aussi la maintenance : on peut modifier l'implementation interne sans affecter le code qui utilise la classe.
+
+**Question 3 :** Que signifie le mot-cle `virtual` en C# ?
+
+**Reponse :** `virtual` indique qu'une methode peut etre redefinie (overridden) par une classe fille. Sans `virtual`, une classe fille ne peut pas utiliser `override` sur cette methode.
+
+**Question 4 :** Pourquoi l'heritage multiple est-il interdit en C# et en JavaScript ?
+
+**Reponse :** L'heritage multiple cause le probleme du diamant : si une classe herite de deux classes qui definissent la meme methode, le compilateur ne sait pas laquelle utiliser. Pour eviter cette ambiguite, C# et JavaScript n'autorisent que l'heritage simple. On utilise les interfaces pour qu'une classe puisse adopter plusieurs contrats.
+
+**Question 5 :** Quelle est la difference entre une classe abstraite et une interface ?
+
+**Reponse :** Une classe abstraite peut contenir du code (methodes concretes) et des attributs. Elle represente un concept avec une implementation partielle. Une interface ne definit que des signatures de methodes (un contrat). Une classe ne peut heriter que d'une seule classe abstraite, mais peut implementer plusieurs interfaces.
+
+**Question 6 :** Qu'est-ce que la liaison dynamique ?
+
+**Reponse :** La liaison dynamique (late binding) signifie que le choix de la methode a executer se fait au moment de l'execution, pas a la compilation. Quand on appelle une methode virtuelle sur une variable de type classe mere, c'est la version de la classe fille (le type reel de l'objet) qui est executee.
+
+---
+
+### Exercice 14 : Systeme de gestion de notes
+
+**Enonce complet :**
+
+Creer un systeme de gestion de notes avec les classes suivantes :
+- `Matiere` : nom, coefficient
+- `Note` : valeur (0-20), matiere associee
+- `Etudiant` : nom, prenom, liste de notes
+  - `ajouterNote(valeur, matiere)` : ajoute une note
+  - `calculerMoyenne()` : moyenne simple
+  - `calculerMoyennePonderee()` : moyenne ponderee par les coefficients
+  - `afficherBulletin()` : affiche toutes les notes et la moyenne
+
+**Solution C# :**
+
+```csharp
+class Matiere
+{
+    public string Nom;
+    public int Coefficient;
+
+    public Matiere(string nom, int coefficient)
+    {
+        Nom = nom;
+        Coefficient = coefficient;
+    }
+}
+
+class Note
+{
+    public double Valeur;
+    public Matiere Matiere;
+
+    public Note(double valeur, Matiere matiere)
+    {
+        if (valeur < 0) valeur = 0;
+        if (valeur > 20) valeur = 20;
+        Valeur = valeur;
+        Matiere = matiere;
+    }
+}
+
+class Etudiant
+{
+    public string Nom;
+    public string Prenom;
+    private List<Note> notes;
+
+    public Etudiant(string nom, string prenom)
+    {
+        Nom = nom;
+        Prenom = prenom;
+        notes = new List<Note>();
+    }
+
+    public void AjouterNote(double valeur, Matiere matiere)
+    {
+        notes.Add(new Note(valeur, matiere));
+    }
+
+    public double CalculerMoyenne()
+    {
+        if (notes.Count == 0) return 0;
+        double somme = 0;
+        foreach (Note n in notes)
+        {
+            somme += n.Valeur;
+        }
+        return somme / notes.Count;
+    }
+
+    public double CalculerMoyennePonderee()
+    {
+        if (notes.Count == 0) return 0;
+        double sommeValeurs = 0;
+        int sommeCoeffs = 0;
+        foreach (Note n in notes)
+        {
+            sommeValeurs += n.Valeur * n.Matiere.Coefficient;
+            sommeCoeffs += n.Matiere.Coefficient;
+        }
+        if (sommeCoeffs == 0) return 0;
+        return sommeValeurs / sommeCoeffs;
+    }
+
+    public string AfficherBulletin()
+    {
+        string resultat = "Bulletin de " + Prenom + " " + Nom + "\n";
+        resultat += "--------------------------------\n";
+        foreach (Note n in notes)
+        {
+            resultat += n.Matiere.Nom + " (coeff " + n.Matiere.Coefficient + ") : "
+                + n.Valeur.ToString("F1") + "/20\n";
+        }
+        resultat += "--------------------------------\n";
+        resultat += "Moyenne simple : " + CalculerMoyenne().ToString("F2") + "/20\n";
+        resultat += "Moyenne ponderee : " + CalculerMoyennePonderee().ToString("F2") + "/20";
+        return resultat;
+    }
+}
+
+// Utilisation
+Matiere maths = new Matiere("Mathematiques", 4);
+Matiere francais = new Matiere("Francais", 3);
+Matiere info = new Matiere("Informatique", 5);
+
+Etudiant e = new Etudiant("Dupont", "Alice");
+e.AjouterNote(15, maths);
+e.AjouterNote(12, francais);
+e.AjouterNote(18, info);
+
+Console.WriteLine(e.AfficherBulletin());
+```
+
+**Solution JavaScript :**
+
+```js
+class Matiere {
+  constructor(nom, coefficient) {
+    this.nom = nom;
+    this.coefficient = coefficient;
+  }
+}
+
+class Note {
+  constructor(valeur, matiere) {
+    this.valeur = Math.max(0, Math.min(20, valeur));
+    this.matiere = matiere;
+  }
+}
+
+class Etudiant {
+  #notes;
+
+  constructor(nom, prenom) {
+    this.nom = nom;
+    this.prenom = prenom;
+    this.#notes = [];
+  }
+
+  ajouterNote(valeur, matiere) {
+    this.#notes.push(new Note(valeur, matiere));
+  }
+
+  calculerMoyenne() {
+    if (this.#notes.length === 0) return 0;
+    let somme = this.#notes.reduce((acc, n) => acc + n.valeur, 0);
+    return somme / this.#notes.length;
+  }
+
+  calculerMoyennePonderee() {
+    if (this.#notes.length === 0) return 0;
+    let sommeValeurs = this.#notes.reduce((acc, n) => acc + n.valeur * n.matiere.coefficient, 0);
+    let sommeCoeffs = this.#notes.reduce((acc, n) => acc + n.matiere.coefficient, 0);
+    if (sommeCoeffs === 0) return 0;
+    return sommeValeurs / sommeCoeffs;
+  }
+
+  afficherBulletin() {
+    let resultat = "Bulletin de " + this.prenom + " " + this.nom + "\n";
+    resultat += "--------------------------------\n";
+    for (let n of this.#notes) {
+      resultat += n.matiere.nom + " (coeff " + n.matiere.coefficient + ") : "
+        + n.valeur.toFixed(1) + "/20\n";
+    }
+    resultat += "--------------------------------\n";
+    resultat += "Moyenne simple : " + this.calculerMoyenne().toFixed(2) + "/20\n";
+    resultat += "Moyenne ponderee : " + this.calculerMoyennePonderee().toFixed(2) + "/20";
+    return resultat;
+  }
+}
+
+let maths = new Matiere("Mathematiques", 4);
+let francais = new Matiere("Francais", 3);
+let info = new Matiere("Informatique", 5);
+
+let e = new Etudiant("Dupont", "Alice");
+e.ajouterNote(15, maths);
+e.ajouterNote(12, francais);
+e.ajouterNote(18, info);
+
+console.log(e.afficherBulletin());
+```
+
+---
+
+### Exercice 15 : Systeme de commande e-commerce
+
+**Enonce :**
+
+Modeliser un systeme de commande simplifie :
+- `Produit` : nom, prix unitaire
+- `LigneCommande` : produit, quantite, methode `calculerSousTotal()`
+- `Commande` : numero, date, liste de lignes, methode `calculerTotal()`, methode `afficher()`
+
+C'est un exemple de **composition** : les lignes de commande n'existent pas sans la commande.
+
+**Solution C# :**
+
+```csharp
+class Produit
+{
+    public string Nom { get; }
+    public double PrixUnitaire { get; }
+
+    public Produit(string nom, double prix)
+    {
+        Nom = nom;
+        PrixUnitaire = prix;
+    }
+}
+
+class LigneCommande
+{
+    public Produit Produit { get; }
+    public int Quantite { get; }
+
+    public LigneCommande(Produit produit, int quantite)
+    {
+        Produit = produit;
+        Quantite = quantite;
+    }
+
+    public double CalculerSousTotal()
+    {
+        return Produit.PrixUnitaire * Quantite;
+    }
+
+    public string Afficher()
+    {
+        return Produit.Nom + " x" + Quantite + " = " + CalculerSousTotal().ToString("F2") + " EUR";
+    }
+}
+
+class Commande
+{
+    public int Numero { get; }
+    public DateTime Date { get; }
+    private List<LigneCommande> lignes;
+
+    public Commande(int numero)
+    {
+        Numero = numero;
+        Date = DateTime.Now;
+        lignes = new List<LigneCommande>();
+    }
+
+    public void AjouterLigne(Produit produit, int quantite)
+    {
+        lignes.Add(new LigneCommande(produit, quantite));
+    }
+
+    public double CalculerTotal()
+    {
+        double total = 0;
+        foreach (LigneCommande l in lignes)
+        {
+            total += l.CalculerSousTotal();
+        }
+        return total;
+    }
+
+    public string Afficher()
+    {
+        string resultat = "Commande n." + Numero + " du " + Date.ToString("dd/MM/yyyy") + "\n";
+        foreach (LigneCommande l in lignes)
+        {
+            resultat += "  " + l.Afficher() + "\n";
+        }
+        resultat += "TOTAL : " + CalculerTotal().ToString("F2") + " EUR";
+        return resultat;
+    }
+}
+
+// Utilisation
+Produit p1 = new Produit("Clavier", 49.99);
+Produit p2 = new Produit("Souris", 29.99);
+Produit p3 = new Produit("Ecran 27 pouces", 299.99);
+
+Commande cmd = new Commande(1001);
+cmd.AjouterLigne(p1, 2);
+cmd.AjouterLigne(p2, 1);
+cmd.AjouterLigne(p3, 1);
+
+Console.WriteLine(cmd.Afficher());
+```
+
+**Solution JavaScript :**
+
+```js
+class Produit {
+  constructor(nom, prixUnitaire) {
+    this.nom = nom;
+    this.prixUnitaire = prixUnitaire;
+  }
+}
+
+class LigneCommande {
+  constructor(produit, quantite) {
+    this.produit = produit;
+    this.quantite = quantite;
+  }
+
+  calculerSousTotal() {
+    return this.produit.prixUnitaire * this.quantite;
+  }
+
+  afficher() {
+    return this.produit.nom + " x" + this.quantite + " = " + this.calculerSousTotal().toFixed(2) + " EUR";
+  }
+}
+
+class Commande {
+  #lignes;
+
+  constructor(numero) {
+    this.numero = numero;
+    this.date = new Date();
+    this.#lignes = [];
+  }
+
+  ajouterLigne(produit, quantite) {
+    this.#lignes.push(new LigneCommande(produit, quantite));
+  }
+
+  calculerTotal() {
+    return this.#lignes.reduce((total, l) => total + l.calculerSousTotal(), 0);
+  }
+
+  afficher() {
+    let dateStr = this.date.toLocaleDateString("fr-FR");
+    let resultat = "Commande n." + this.numero + " du " + dateStr + "\n";
+    for (let l of this.#lignes) {
+      resultat += "  " + l.afficher() + "\n";
+    }
+    resultat += "TOTAL : " + this.calculerTotal().toFixed(2) + " EUR";
+    return resultat;
+  }
+}
+```
+
+---
+
+## Resume des concepts cles
+
+| Concept | Definition courte | Mot-cle C# | Mot-cle JS |
+|---------|-------------------|-------------|------------|
+| Classe | Plan de construction d'objets | `class` | `class` |
+| Objet | Instance concrete d'une classe | `new` | `new` |
+| Constructeur | Methode d'initialisation | Nom de la classe | `constructor` |
+| Encapsulation | Cacher les donnees internes | `private`, `get`, `set` | `#`, `get`, `set` |
+| Heritage | Une classe herite d'une autre | `:` | `extends` |
+| Appel parent | Appeler la classe mere | `base` | `super` |
+| Polymorphisme | Meme methode, comportements differents | `virtual` / `override` | Redeclaration directe |
+| Surcharge | Meme nom, signatures differentes | Surcharge native | Parametres optionnels |
+| Classe abstraite | Classe non instanciable | `abstract class` | Verification `new.target` |
+| Methode abstraite | Methode sans corps a implementer | `abstract` | Lever une erreur |
+| Interface | Contrat de methodes a implementer | `interface` (prefixe I) | TypeScript : `interface` |
+| Association | Lien faible entre objets | Reference en attribut | Reference en attribut |
+| Agregation | Contenant/contenu independants | Objet passe en parametre | Objet passe en parametre |
+| Composition | Contenant/contenu lies | Objet cree dans le constructeur | Objet cree dans le constructeur |
+
+---
+
+## Erreurs frequentes a l'examen
+
+1. **Oublier `base()` / `super()`** dans le constructeur d'une classe fille.
+2. **Oublier `virtual`** sur la methode de la classe mere en C# (sans `virtual`, pas d'`override` possible).
+3. **Instancier une classe abstraite** : `new Forme()` est interdit si `Forme` est abstraite.
+4. **Confondre surcharge et redefinition** : surcharge = meme nom, parametres differents (dans la meme classe). Redefinition = meme signature, classe fille qui remplace le comportement de la mere.
+5. **Laisser les attributs publics** au lieu d'utiliser l'encapsulation avec des proprietes.
+6. **Confondre association, agregation et composition** : la cle est la duree de vie des objets contenus.
+7. **Ne pas utiliser `override`** en C# quand on redefinit une methode virtuelle (le code compile mais n'utilise pas la liaison dynamique).
+8. **Oublier `this`** en JavaScript dans une methode pour acceder aux attributs de l'objet.

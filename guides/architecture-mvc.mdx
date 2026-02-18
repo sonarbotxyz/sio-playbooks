@@ -1,0 +1,2777 @@
+---
+title: "Architecture MVC"
+description: "Guide complet de l'architecture MVC pour le BTS SIO SLAM"
+category: "Architecture"
+tags: ["mvc", "architecture", "design pattern"]
+difficulty: "Intermediaire"
+---
+
+# Architecture MVC — Le guide complet BTS SIO SLAM
+
+---
+
+## Table des matieres
+
+1. Pourquoi une architecture ?
+2. Les 3 couches MVC
+3. Le flux MVC pas a pas
+4. MVC en pratique : application Web (Express.js)
+5. MVC en pratique : application Desktop (C# WinForms)
+6. Le pattern DAO (Data Access Object)
+7. Variantes de MVC
+8. Avantages et inconvenients
+9. Methodologie d'examen
+10. Exercices d'examen corriges
+
+---
+
+## 1. Pourquoi une architecture ?
+
+### Le probleme : le code spaghetti
+
+Imaginons une application de gestion de produits. Un developpeur debutant ecrit tout dans un seul fichier. Connexion a la base de donnees, requetes SQL, logique metier, affichage HTML, gestion des formulaires : tout melange dans 3000 lignes de code.
+
+Voici a quoi ca ressemble en JavaScript (Express.js) :
+
+```javascript
+// app.js — TOUT dans un seul fichier (MAUVAISE PRATIQUE)
+const express = require('express');
+const mysql = require('mysql2');
+const app = express();
+
+app.use(express.urlencoded({ extended: true }));
+
+// Connexion BDD directement dans le fichier principal
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'motdepasse',
+    database: 'magasin'
+});
+
+db.connect((err) => {
+    if (err) throw err;
+    console.log('Connecte a MySQL');
+});
+
+// Route qui melange requete SQL + logique + HTML
+app.get('/produits', (req, res) => {
+    db.query('SELECT * FROM produits', (err, results) => {
+        if (err) {
+            res.send('<h1>Erreur</h1><p>' + err.message + '</p>');
+            return;
+        }
+        // Generation de HTML directement dans la route
+        let html = '<html><head><title>Produits</title></head><body>';
+        html += '<h1>Liste des produits</h1>';
+        html += '<table border="1"><tr><th>ID</th><th>Nom</th><th>Prix</th></tr>';
+        for (let produit of results) {
+            html += '<tr>';
+            html += '<td>' + produit.id + '</td>';
+            html += '<td>' + produit.nom + '</td>';
+            html += '<td>' + produit.prix + ' EUR</td>';
+            html += '</tr>';
+        }
+        html += '</table>';
+        html += '<h2>Ajouter un produit</h2>';
+        html += '<form method="POST" action="/produits">';
+        html += '<input type="text" name="nom" placeholder="Nom">';
+        html += '<input type="number" name="prix" placeholder="Prix">';
+        html += '<button type="submit">Ajouter</button>';
+        html += '</form>';
+        html += '</body></html>';
+        res.send(html);
+    });
+});
+
+app.post('/produits', (req, res) => {
+    const nom = req.body.nom;
+    const prix = req.body.prix;
+    // Validation melangee avec la requete SQL
+    if (!nom || nom.length < 2) {
+        res.send('<h1>Erreur</h1><p>Nom invalide</p><a href="/produits">Retour</a>');
+        return;
+    }
+    if (!prix || prix <= 0) {
+        res.send('<h1>Erreur</h1><p>Prix invalide</p><a href="/produits">Retour</a>');
+        return;
+    }
+    db.query('INSERT INTO produits (nom, prix) VALUES (?, ?)', [nom, prix], (err) => {
+        if (err) {
+            res.send('<h1>Erreur</h1><p>' + err.message + '</p>');
+            return;
+        }
+        res.redirect('/produits');
+    });
+});
+
+app.get('/produits/:id/supprimer', (req, res) => {
+    db.query('DELETE FROM produits WHERE id = ?', [req.params.id], (err) => {
+        if (err) {
+            res.send('<h1>Erreur</h1><p>' + err.message + '</p>');
+            return;
+        }
+        res.redirect('/produits');
+    });
+});
+
+app.listen(3000);
+```
+
+Et voici le meme probleme en C# WinForms :
+
+```csharp
+// Form1.cs — TOUT dans un seul fichier (MAUVAISE PRATIQUE)
+using System;
+using System.Data;
+using System.Windows.Forms;
+using MySql.Data.MySqlClient;
+
+namespace GestionProduits
+{
+    public partial class Form1 : Form
+    {
+        // Connexion BDD directement dans le formulaire
+        private string connectionString = "Server=localhost;Database=magasin;Uid=root;Pwd=motdepasse;";
+
+        public Form1()
+        {
+            InitializeComponent();
+            ChargerProduits();
+        }
+
+        private void ChargerProduits()
+        {
+            // Requete SQL directement dans le code du formulaire
+            using (MySqlConnection conn = new MySqlConnection(connectionString))
+            {
+                conn.Open();
+                string sql = "SELECT * FROM produits";
+                MySqlDataAdapter adapter = new MySqlDataAdapter(sql, conn);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                dataGridView1.DataSource = dt;
+            }
+        }
+
+        private void btnAjouter_Click(object sender, EventArgs e)
+        {
+            // Validation + SQL + logique metier dans le gestionnaire d'evenement
+            string nom = txtNom.Text;
+            decimal prix;
+
+            if (string.IsNullOrWhiteSpace(nom) || nom.Length < 2)
+            {
+                MessageBox.Show("Nom invalide");
+                return;
+            }
+
+            if (!decimal.TryParse(txtPrix.Text, out prix) || prix <= 0)
+            {
+                MessageBox.Show("Prix invalide");
+                return;
+            }
+
+            using (MySqlConnection conn = new MySqlConnection(connectionString))
+            {
+                conn.Open();
+                string sql = "INSERT INTO produits (nom, prix) VALUES (@nom, @prix)";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@nom", nom);
+                cmd.Parameters.AddWithValue("@prix", prix);
+                cmd.ExecuteNonQuery();
+            }
+
+            txtNom.Clear();
+            txtPrix.Clear();
+            ChargerProduits(); // Rafraichir l'affichage
+        }
+
+        private void btnSupprimer_Click(object sender, EventArgs e)
+        {
+            if (dataGridView1.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Selectionnez un produit");
+                return;
+            }
+
+            int id = Convert.ToInt32(dataGridView1.SelectedRows[0].Cells["id"].Value);
+
+            using (MySqlConnection conn = new MySqlConnection(connectionString))
+            {
+                conn.Open();
+                string sql = "DELETE FROM produits WHERE id = @id";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.ExecuteNonQuery();
+            }
+
+            ChargerProduits();
+        }
+    }
+}
+```
+
+### Pourquoi c'est un probleme ?
+
+Les consequences sont concretes et immediates :
+
+**Maintenance impossible.** Quand un bug apparait dans l'affichage, il faut chercher dans 3000 lignes qui melangent SQL, HTML et logique. Modifier une requete SQL risque de casser l'affichage. Modifier l'affichage risque de casser la logique.
+
+**Travail en equipe impossible.** Si deux developpeurs modifient le meme fichier en meme temps, les conflits sont constants. L'un travaille sur l'interface pendant que l'autre modifie les requetes SQL : le merge sera un cauchemar.
+
+**Tests impossibles.** Comment tester la logique metier (par exemple, "un prix doit etre positif") quand elle est melangee avec du code d'affichage HTML et des connexions a la base de donnees ?
+
+**Reutilisation impossible.** La meme requete SQL est copiee-collee a plusieurs endroits. Si la structure de la table change, il faut modifier chaque copie.
+
+### L'analogie du restaurant
+
+Pour comprendre MVC, pensons a un restaurant :
+
+- **Le client** est assis a sa table. Il regarde le menu, passe sa commande, et recoit son plat. Il ne va jamais en cuisine. C'est la **Vue**.
+
+- **Le serveur** fait le lien. Il prend la commande du client, la transmet au chef, recupere le plat, et le rapporte au client. Il ne cuisine pas lui-meme. C'est le **Controleur**.
+
+- **Le chef** est en cuisine. Il recoit la commande, prepare le plat avec les ingredients (les donnees), et le donne au serveur. Il ne sait pas qui est le client, il ne va pas en salle. C'est le **Modele**.
+
+Regle fondamentale : le chef ne parle JAMAIS directement au client. Le client ne va JAMAIS en cuisine. Tout passe par le serveur.
+
+### La separation des responsabilites (Separation of Concerns)
+
+C'est le principe fondamental de toute architecture logicielle : chaque partie du code a une responsabilite unique et bien definie. Un module qui gere les donnees ne doit pas se preoccuper de l'affichage. Un module qui gere l'affichage ne doit pas contenir de SQL.
+
+Ce principe porte un nom en anglais : **Separation of Concerns** (SoC). MVC est une application directe de ce principe.
+
+---
+
+## 2. Les 3 couches MVC
+
+MVC signifie **Modele - Vue - Controleur** (Model - View - Controller en anglais). C'est un patron d'architecture (design pattern architectural) qui decoupe une application en trois parties distinctes.
+
+### 2.1. Le Modele (Model)
+
+**Responsabilite** : les donnees et la logique metier. Le Modele represente les donnees de l'application et les regles qui s'y appliquent.
+
+Le Modele contient :
+- Les classes qui representent les entites (Produit, Client, Commande)
+- La connexion a la base de donnees
+- Les requetes SQL (CRUD : Create, Read, Update, Delete)
+- La validation metier (un prix doit etre positif, un email doit etre valide)
+- Les calculs metier (calculer un total TTC, appliquer une remise)
+
+Le Modele ne contient JAMAIS :
+- Du code HTML ou d'affichage
+- Des references a des composants graphiques (TextBox, Button)
+- Du code de gestion de requetes HTTP (req, res)
+- Des messages destines a l'utilisateur ("Erreur : nom invalide")
+
+**En JavaScript (classe Produit)** :
+
+```javascript
+// models/Produit.js
+const db = require('../config/database');
+
+class Produit {
+    constructor(id, nom, prix, description) {
+        this.id = id;
+        this.nom = nom;
+        this.prix = prix;
+        this.description = description;
+    }
+
+    // Validation metier : les regles sont dans le modele
+    estValide() {
+        if (!this.nom || this.nom.trim().length < 2) {
+            return { valide: false, message: 'Le nom doit contenir au moins 2 caracteres' };
+        }
+        if (!this.prix || this.prix <= 0) {
+            return { valide: false, message: 'Le prix doit etre positif' };
+        }
+        return { valide: true, message: '' };
+    }
+
+    // Calcul metier
+    prixTTC(tauxTVA = 20) {
+        return this.prix * (1 + tauxTVA / 100);
+    }
+}
+
+module.exports = Produit;
+```
+
+**En C# (classe Produit)** :
+
+```csharp
+// Models/Produit.cs
+namespace GestionProduits.Models
+{
+    public class Produit
+    {
+        public int Id { get; set; }
+        public string Nom { get; set; }
+        public decimal Prix { get; set; }
+        public string Description { get; set; }
+
+        public Produit() { }
+
+        public Produit(int id, string nom, decimal prix, string description)
+        {
+            Id = id;
+            Nom = nom;
+            Prix = prix;
+            Description = description;
+        }
+
+        // Validation metier
+        public bool EstValide(out string messageErreur)
+        {
+            if (string.IsNullOrWhiteSpace(Nom) || Nom.Trim().Length < 2)
+            {
+                messageErreur = "Le nom doit contenir au moins 2 caracteres";
+                return false;
+            }
+
+            if (Prix <= 0)
+            {
+                messageErreur = "Le prix doit etre positif";
+                return false;
+            }
+
+            messageErreur = "";
+            return true;
+        }
+
+        // Calcul metier
+        public decimal PrixTTC(decimal tauxTVA = 20m)
+        {
+            return Prix * (1 + tauxTVA / 100m);
+        }
+    }
+}
+```
+
+### 2.2. La Vue (View)
+
+**Responsabilite** : l'interface utilisateur. La Vue affiche les donnees et recueille les actions de l'utilisateur.
+
+La Vue contient :
+- L'affichage des donnees (pages HTML, formulaires, tableaux)
+- Les composants graphiques (en WinForms : TextBox, Button, DataGridView, Label)
+- La mise en forme (CSS, couleurs, disposition)
+- Les templates HTML (EJS, Pug, Handlebars en Express.js)
+
+La Vue ne contient JAMAIS :
+- De requetes SQL ou d'acces a la base de donnees
+- De logique metier complexe (calculs, validations)
+- De traitement des donnees
+
+**En JavaScript (template EJS)** :
+
+```html
+<!-- views/produits/liste.ejs -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des produits</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1>Liste des produits</h1>
+
+    <!-- Affichage d'un message si present -->
+    <% if (typeof message !== 'undefined' && message) { %>
+        <p class="message"><%= message %></p>
+    <% } %>
+
+    <!-- Affichage des erreurs si presentes -->
+    <% if (typeof erreur !== 'undefined' && erreur) { %>
+        <p class="erreur"><%= erreur %></p>
+    <% } %>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Prix HT</th>
+                <th>Prix TTC</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% for (let produit of produits) { %>
+                <tr>
+                    <td><%= produit.id %></td>
+                    <td><%= produit.nom %></td>
+                    <td><%= produit.prix.toFixed(2) %> EUR</td>
+                    <td><%= produit.prixTTC().toFixed(2) %> EUR</td>
+                    <td>
+                        <a href="/produits/<%= produit.id %>/modifier">Modifier</a>
+                        <a href="/produits/<%= produit.id %>/supprimer"
+                           onclick="return confirm('Confirmer la suppression ?')">
+                            Supprimer
+                        </a>
+                    </td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+
+    <h2>Ajouter un produit</h2>
+    <form method="POST" action="/produits">
+        <label for="nom">Nom :</label>
+        <input type="text" id="nom" name="nom" required>
+
+        <label for="prix">Prix HT :</label>
+        <input type="number" id="prix" name="prix" step="0.01" min="0.01" required>
+
+        <label for="description">Description :</label>
+        <textarea id="description" name="description"></textarea>
+
+        <button type="submit">Ajouter</button>
+    </form>
+</body>
+</html>
+```
+
+**En C# WinForms** :
+
+En WinForms, la Vue est le fichier `.Designer.cs` genere automatiquement par Visual Studio, ainsi que la partie visuelle du formulaire. Les controles (TextBox, Button, DataGridView) constituent la Vue.
+
+```csharp
+// Views/FormProduits.Designer.cs (genere par Visual Studio, simplifie ici)
+namespace GestionProduits.Views
+{
+    partial class FormProduits
+    {
+        private System.ComponentModel.IContainer components = null;
+
+        // Controles de la vue
+        public DataGridView dgvProduits;
+        public TextBox txtNom;
+        public TextBox txtPrix;
+        public TextBox txtDescription;
+        public Button btnAjouter;
+        public Button btnModifier;
+        public Button btnSupprimer;
+        public Label lblMessage;
+
+        private void InitializeComponent()
+        {
+            this.dgvProduits = new DataGridView();
+            this.txtNom = new TextBox();
+            this.txtPrix = new TextBox();
+            this.txtDescription = new TextBox();
+            this.btnAjouter = new Button();
+            this.btnModifier = new Button();
+            this.btnSupprimer = new Button();
+            this.lblMessage = new Label();
+
+            // Configuration du DataGridView
+            this.dgvProduits.Location = new System.Drawing.Point(12, 12);
+            this.dgvProduits.Size = new System.Drawing.Size(560, 250);
+            this.dgvProduits.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            this.dgvProduits.ReadOnly = true;
+
+            // Configuration des champs de saisie
+            this.txtNom.Location = new System.Drawing.Point(100, 280);
+            this.txtNom.Size = new System.Drawing.Size(200, 23);
+
+            this.txtPrix.Location = new System.Drawing.Point(100, 310);
+            this.txtPrix.Size = new System.Drawing.Size(200, 23);
+
+            this.txtDescription.Location = new System.Drawing.Point(100, 340);
+            this.txtDescription.Size = new System.Drawing.Size(200, 23);
+
+            // Configuration des boutons
+            this.btnAjouter.Location = new System.Drawing.Point(100, 380);
+            this.btnAjouter.Text = "Ajouter";
+
+            this.btnModifier.Location = new System.Drawing.Point(200, 380);
+            this.btnModifier.Text = "Modifier";
+
+            this.btnSupprimer.Location = new System.Drawing.Point(300, 380);
+            this.btnSupprimer.Text = "Supprimer";
+
+            this.lblMessage.Location = new System.Drawing.Point(100, 420);
+            this.lblMessage.Size = new System.Drawing.Size(400, 23);
+
+            // Labels
+            Label lblNom = new Label { Text = "Nom :", Location = new System.Drawing.Point(12, 283) };
+            Label lblPrix = new Label { Text = "Prix :", Location = new System.Drawing.Point(12, 313) };
+            Label lblDesc = new Label { Text = "Description :", Location = new System.Drawing.Point(12, 343) };
+
+            // Ajout des controles au formulaire
+            this.Controls.Add(this.dgvProduits);
+            this.Controls.Add(lblNom);
+            this.Controls.Add(this.txtNom);
+            this.Controls.Add(lblPrix);
+            this.Controls.Add(this.txtPrix);
+            this.Controls.Add(lblDesc);
+            this.Controls.Add(this.txtDescription);
+            this.Controls.Add(this.btnAjouter);
+            this.Controls.Add(this.btnModifier);
+            this.Controls.Add(this.btnSupprimer);
+            this.Controls.Add(this.lblMessage);
+
+            this.Text = "Gestion des produits";
+            this.Size = new System.Drawing.Size(600, 480);
+        }
+    }
+}
+```
+
+### 2.3. Le Controleur (Controller)
+
+**Responsabilite** : la coordination. Le Controleur recoit les actions de l'utilisateur, interroge le Modele, et met a jour la Vue.
+
+Le Controleur contient :
+- La reception des actions utilisateur (requetes HTTP en web, evenements de clics en desktop)
+- L'appel aux methodes du Modele
+- La transmission des resultats a la Vue
+- La gestion du flux de l'application (redirections, navigation)
+
+Le Controleur ne contient JAMAIS :
+- De requetes SQL
+- De code HTML ou de mise en forme
+- De logique metier complexe (c'est le role du Modele)
+
+**En JavaScript (Express.js)** :
+
+```javascript
+// controllers/produitController.js
+const ProduitDAO = require('../models/ProduitDAO');
+const Produit = require('../models/Produit');
+
+// Afficher la liste des produits
+exports.listerProduits = async (req, res) => {
+    try {
+        const produits = await ProduitDAO.trouverTous();
+        res.render('produits/liste', {
+            produits: produits,
+            message: req.query.message || null,
+            erreur: null
+        });
+    } catch (err) {
+        res.render('produits/liste', {
+            produits: [],
+            message: null,
+            erreur: 'Erreur lors du chargement des produits'
+        });
+    }
+};
+
+// Ajouter un produit
+exports.ajouterProduit = async (req, res) => {
+    const { nom, prix, description } = req.body;
+    const produit = new Produit(null, nom, parseFloat(prix), description);
+
+    // Demander au modele de valider
+    const validation = produit.estValide();
+    if (!validation.valide) {
+        const produits = await ProduitDAO.trouverTous();
+        return res.render('produits/liste', {
+            produits: produits,
+            message: null,
+            erreur: validation.message
+        });
+    }
+
+    try {
+        await ProduitDAO.creer(produit);
+        res.redirect('/produits?message=Produit ajoute avec succes');
+    } catch (err) {
+        const produits = await ProduitDAO.trouverTous();
+        res.render('produits/liste', {
+            produits: produits,
+            message: null,
+            erreur: 'Erreur lors de l\'ajout du produit'
+        });
+    }
+};
+
+// Afficher le formulaire de modification
+exports.afficherModification = async (req, res) => {
+    try {
+        const produit = await ProduitDAO.trouverParId(req.params.id);
+        if (!produit) {
+            return res.redirect('/produits?message=Produit introuvable');
+        }
+        res.render('produits/modifier', { produit: produit, erreur: null });
+    } catch (err) {
+        res.redirect('/produits?message=Erreur');
+    }
+};
+
+// Modifier un produit
+exports.modifierProduit = async (req, res) => {
+    const { nom, prix, description } = req.body;
+    const produit = new Produit(parseInt(req.params.id), nom, parseFloat(prix), description);
+
+    const validation = produit.estValide();
+    if (!validation.valide) {
+        return res.render('produits/modifier', {
+            produit: produit,
+            erreur: validation.message
+        });
+    }
+
+    try {
+        await ProduitDAO.modifier(produit);
+        res.redirect('/produits?message=Produit modifie avec succes');
+    } catch (err) {
+        res.render('produits/modifier', {
+            produit: produit,
+            erreur: 'Erreur lors de la modification'
+        });
+    }
+};
+
+// Supprimer un produit
+exports.supprimerProduit = async (req, res) => {
+    try {
+        await ProduitDAO.supprimer(req.params.id);
+        res.redirect('/produits?message=Produit supprime');
+    } catch (err) {
+        res.redirect('/produits?message=Erreur lors de la suppression');
+    }
+};
+```
+
+**En C# WinForms** :
+
+```csharp
+// Controllers/ProduitController.cs
+using GestionProduits.Models;
+using GestionProduits.Views;
+using System;
+using System.Collections.Generic;
+using System.Windows.Forms;
+
+namespace GestionProduits.Controllers
+{
+    public class ProduitController
+    {
+        private readonly FormProduits vue;
+        private readonly ProduitDAO dao;
+
+        public ProduitController(FormProduits vue)
+        {
+            this.vue = vue;
+            this.dao = new ProduitDAO();
+
+            // Lier les evenements de la vue aux methodes du controleur
+            this.vue.btnAjouter.Click += BtnAjouter_Click;
+            this.vue.btnModifier.Click += BtnModifier_Click;
+            this.vue.btnSupprimer.Click += BtnSupprimer_Click;
+
+            // Charger les donnees au demarrage
+            ChargerProduits();
+        }
+
+        private void ChargerProduits()
+        {
+            try
+            {
+                List<Produit> produits = dao.TrouverTous();
+                vue.dgvProduits.DataSource = null;
+                vue.dgvProduits.DataSource = produits;
+                vue.lblMessage.Text = produits.Count + " produit(s) charge(s)";
+            }
+            catch (Exception ex)
+            {
+                vue.lblMessage.Text = "Erreur de chargement : " + ex.Message;
+            }
+        }
+
+        private void BtnAjouter_Click(object sender, EventArgs e)
+        {
+            Produit produit = new Produit
+            {
+                Nom = vue.txtNom.Text,
+                Description = vue.txtDescription.Text
+            };
+
+            // Tenter de convertir le prix
+            if (!decimal.TryParse(vue.txtPrix.Text, out decimal prix))
+            {
+                vue.lblMessage.Text = "Le prix doit etre un nombre valide";
+                return;
+            }
+            produit.Prix = prix;
+
+            // Demander au modele de valider
+            if (!produit.EstValide(out string messageErreur))
+            {
+                vue.lblMessage.Text = messageErreur;
+                return;
+            }
+
+            try
+            {
+                dao.Creer(produit);
+                vue.lblMessage.Text = "Produit ajoute avec succes";
+                ViderChamps();
+                ChargerProduits();
+            }
+            catch (Exception ex)
+            {
+                vue.lblMessage.Text = "Erreur : " + ex.Message;
+            }
+        }
+
+        private void BtnModifier_Click(object sender, EventArgs e)
+        {
+            if (vue.dgvProduits.SelectedRows.Count == 0)
+            {
+                vue.lblMessage.Text = "Selectionnez un produit a modifier";
+                return;
+            }
+
+            Produit produit = (Produit)vue.dgvProduits.SelectedRows[0].DataBoundItem;
+            produit.Nom = vue.txtNom.Text;
+            produit.Description = vue.txtDescription.Text;
+
+            if (!decimal.TryParse(vue.txtPrix.Text, out decimal prix))
+            {
+                vue.lblMessage.Text = "Le prix doit etre un nombre valide";
+                return;
+            }
+            produit.Prix = prix;
+
+            if (!produit.EstValide(out string messageErreur))
+            {
+                vue.lblMessage.Text = messageErreur;
+                return;
+            }
+
+            try
+            {
+                dao.Modifier(produit);
+                vue.lblMessage.Text = "Produit modifie avec succes";
+                ViderChamps();
+                ChargerProduits();
+            }
+            catch (Exception ex)
+            {
+                vue.lblMessage.Text = "Erreur : " + ex.Message;
+            }
+        }
+
+        private void BtnSupprimer_Click(object sender, EventArgs e)
+        {
+            if (vue.dgvProduits.SelectedRows.Count == 0)
+            {
+                vue.lblMessage.Text = "Selectionnez un produit a supprimer";
+                return;
+            }
+
+            Produit produit = (Produit)vue.dgvProduits.SelectedRows[0].DataBoundItem;
+
+            DialogResult confirmation = MessageBox.Show(
+                "Supprimer le produit \"" + produit.Nom + "\" ?",
+                "Confirmation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question
+            );
+
+            if (confirmation == DialogResult.Yes)
+            {
+                try
+                {
+                    dao.Supprimer(produit.Id);
+                    vue.lblMessage.Text = "Produit supprime";
+                    ViderChamps();
+                    ChargerProduits();
+                }
+                catch (Exception ex)
+                {
+                    vue.lblMessage.Text = "Erreur : " + ex.Message;
+                }
+            }
+        }
+
+        private void ViderChamps()
+        {
+            vue.txtNom.Clear();
+            vue.txtPrix.Clear();
+            vue.txtDescription.Clear();
+        }
+    }
+}
+```
+
+### Tableau recapitulatif des responsabilites
+
+```
++-------------------+-----------------------------------+------------------------------------+
+|     Couche        |     Ce qu'elle FAIT               |     Ce qu'elle ne fait JAMAIS       |
++-------------------+-----------------------------------+------------------------------------+
+|     Modele        | - Represente les donnees          | - Afficher quoi que ce soit        |
+|                   | - Requetes SQL (CRUD)             | - Gerer les requetes HTTP          |
+|                   | - Validation metier               | - Manipuler des composants UI      |
+|                   | - Calculs metier                  | - Connaitre l'existence de la Vue  |
++-------------------+-----------------------------------+------------------------------------+
+|     Vue           | - Affiche les donnees             | - Contenir du SQL                  |
+|                   | - Recueille les saisies           | - Faire des calculs metier         |
+|                   | - Met en forme (CSS, layout)      | - Acceder a la BDD                 |
+|                   | - Formulaires, boutons            | - Traiter la logique               |
++-------------------+-----------------------------------+------------------------------------+
+|     Controleur    | - Recoit les actions utilisateur  | - Contenir du SQL                  |
+|                   | - Appelle le Modele               | - Generer du HTML                  |
+|                   | - Met a jour la Vue               | - Faire de la logique metier       |
+|                   | - Gere le flux (redirections)     | - Acceder directement a la BDD     |
++-------------------+-----------------------------------+------------------------------------+
+```
+
+---
+
+## 3. Le flux MVC pas a pas
+
+### Deroulement d'une action utilisateur
+
+Prenons un exemple concret : l'utilisateur veut ajouter un produit.
+
+```
+  UTILISATEUR                VUE                 CONTROLEUR              MODELE               BDD
+      |                       |                       |                    |                    |
+      | 1. Remplit le         |                       |                    |                    |
+      |    formulaire et      |                       |                    |                    |
+      |    clique "Ajouter"   |                       |                    |                    |
+      |---------------------->|                       |                    |                    |
+      |                       | 2. Transmet l'action  |                    |                    |
+      |                       |    (POST /produits    |                    |                    |
+      |                       |     ou Click event)   |                    |                    |
+      |                       |---------------------->|                    |                    |
+      |                       |                       | 3. Cree un objet   |                    |
+      |                       |                       |    Produit et      |                    |
+      |                       |                       |    demande la      |                    |
+      |                       |                       |    validation      |                    |
+      |                       |                       |------------------->|                    |
+      |                       |                       |                    | 4. Valide les      |
+      |                       |                       |                    |    donnees         |
+      |                       |                       |<-------------------| (OK ou erreur)     |
+      |                       |                       |                    |                    |
+      |                       |                       | 5. Si valide,      |                    |
+      |                       |                       |    appelle         |                    |
+      |                       |                       |    dao.creer()     |                    |
+      |                       |                       |------------------->|                    |
+      |                       |                       |                    | 6. INSERT INTO     |
+      |                       |                       |                    |------------------->|
+      |                       |                       |                    |<-------------------|
+      |                       |                       |<-------------------| (succes)           |
+      |                       |                       |                    |                    |
+      |                       | 7. Le controleur      |                    |                    |
+      |                       |    met a jour la vue  |                    |                    |
+      |                       |    (redirect ou       |                    |                    |
+      |                       |     message)          |                    |                    |
+      |                       |<----------------------|                    |                    |
+      |                       |                       |                    |                    |
+      | 8. La vue affiche     |                       |                    |                    |
+      |    le resultat        |                       |                    |                    |
+      |<----------------------|                       |                    |                    |
+```
+
+### Diagramme simplifie
+
+```
++---------------+          +------------------+          +---------------+
+|               |  action  |                  |  requete |               |
+|     VUE       |--------->|   CONTROLEUR     |--------->|    MODELE     |
+|               |          |                  |          |               |
+|  (affichage)  |<---------|  (coordination)  |<---------|  (donnees +   |
+|               |  donnees |                  |  resultat|   logique)    |
++---------------+          +------------------+          +---------------+
+```
+
+### Les regles du flux
+
+1. La Vue ne communique JAMAIS directement avec le Modele.
+2. Le Modele ne communique JAMAIS directement avec la Vue.
+3. Tout passe par le Controleur.
+4. Le Modele ne sait pas qu'il est utilise par un Controleur. Il fait son travail et retourne un resultat. On pourrait l'utiliser dans un autre contexte (API, script batch) sans rien changer.
+
+---
+
+## 4. MVC en pratique : application Web (Express.js)
+
+### Structure de dossiers
+
+```
+gestion-produits/
+|-- app.js                      <- Point d'entree de l'application
+|-- config/
+|   |-- database.js             <- Configuration de la connexion BDD
+|-- models/
+|   |-- Produit.js              <- Classe metier Produit
+|   |-- ProduitDAO.js           <- Acces aux donnees (requetes SQL)
+|-- controllers/
+|   |-- produitController.js    <- Logique de coordination
+|-- routes/
+|   |-- produitRoutes.js        <- Definition des routes HTTP
+|-- views/
+|   |-- produits/
+|   |   |-- liste.ejs           <- Page de liste des produits
+|   |   |-- modifier.ejs        <- Page de modification
+|-- public/
+|   |-- css/
+|   |   |-- style.css           <- Feuille de style
+|-- package.json
+```
+
+### Code complet
+
+**config/database.js** :
+
+```javascript
+// config/database.js
+// Responsabilite : configurer et exporter la connexion a la base de donnees
+const mysql = require('mysql2/promise');
+
+const pool = mysql.createPool({
+    host: 'localhost',
+    user: 'root',
+    password: 'motdepasse',
+    database: 'magasin',
+    waitForConnections: true,
+    connectionLimit: 10
+});
+
+module.exports = pool;
+```
+
+**models/Produit.js** :
+
+```javascript
+// models/Produit.js
+// Responsabilite : representer un produit et sa logique metier
+class Produit {
+    constructor(id, nom, prix, description) {
+        this.id = id;
+        this.nom = nom;
+        this.prix = prix;
+        this.description = description || '';
+    }
+
+    // Validation metier
+    estValide() {
+        if (!this.nom || this.nom.trim().length < 2) {
+            return { valide: false, message: 'Le nom doit contenir au moins 2 caracteres' };
+        }
+        if (this.nom.trim().length > 100) {
+            return { valide: false, message: 'Le nom ne peut pas depasser 100 caracteres' };
+        }
+        if (typeof this.prix !== 'number' || isNaN(this.prix)) {
+            return { valide: false, message: 'Le prix doit etre un nombre' };
+        }
+        if (this.prix <= 0) {
+            return { valide: false, message: 'Le prix doit etre strictement positif' };
+        }
+        if (this.prix > 999999.99) {
+            return { valide: false, message: 'Le prix ne peut pas depasser 999 999,99' };
+        }
+        return { valide: true, message: '' };
+    }
+
+    // Calcul metier
+    prixTTC(tauxTVA = 20) {
+        return Math.round(this.prix * (1 + tauxTVA / 100) * 100) / 100;
+    }
+}
+
+module.exports = Produit;
+```
+
+**models/ProduitDAO.js** :
+
+```javascript
+// models/ProduitDAO.js
+// Responsabilite : acces aux donnees (requetes SQL pour les produits)
+const db = require('../config/database');
+const Produit = require('./Produit');
+
+class ProduitDAO {
+
+    // Recuperer tous les produits
+    static async trouverTous() {
+        const [rows] = await db.query('SELECT id, nom, prix, description FROM produits ORDER BY nom');
+        // Transformer chaque ligne en objet Produit
+        return rows.map(row => new Produit(row.id, row.nom, row.prix, row.description));
+    }
+
+    // Recuperer un produit par son ID
+    static async trouverParId(id) {
+        const [rows] = await db.query('SELECT id, nom, prix, description FROM produits WHERE id = ?', [id]);
+        if (rows.length === 0) {
+            return null;
+        }
+        const row = rows[0];
+        return new Produit(row.id, row.nom, row.prix, row.description);
+    }
+
+    // Creer un nouveau produit
+    static async creer(produit) {
+        const [result] = await db.query(
+            'INSERT INTO produits (nom, prix, description) VALUES (?, ?, ?)',
+            [produit.nom, produit.prix, produit.description]
+        );
+        produit.id = result.insertId;
+        return produit;
+    }
+
+    // Modifier un produit existant
+    static async modifier(produit) {
+        await db.query(
+            'UPDATE produits SET nom = ?, prix = ?, description = ? WHERE id = ?',
+            [produit.nom, produit.prix, produit.description, produit.id]
+        );
+        return produit;
+    }
+
+    // Supprimer un produit par son ID
+    static async supprimer(id) {
+        const [result] = await db.query('DELETE FROM produits WHERE id = ?', [id]);
+        return result.affectedRows > 0;
+    }
+
+    // Rechercher des produits par nom
+    static async rechercherParNom(terme) {
+        const [rows] = await db.query(
+            'SELECT id, nom, prix, description FROM produits WHERE nom LIKE ? ORDER BY nom',
+            ['%' + terme + '%']
+        );
+        return rows.map(row => new Produit(row.id, row.nom, row.prix, row.description));
+    }
+}
+
+module.exports = ProduitDAO;
+```
+
+**controllers/produitController.js** :
+
+```javascript
+// controllers/produitController.js
+// Responsabilite : recevoir les requetes, appeler le modele, transmettre a la vue
+const ProduitDAO = require('../models/ProduitDAO');
+const Produit = require('../models/Produit');
+
+// GET /produits — Afficher la liste
+exports.listerProduits = async (req, res) => {
+    try {
+        const produits = await ProduitDAO.trouverTous();
+        res.render('produits/liste', {
+            produits: produits,
+            message: req.query.message || null,
+            erreur: null
+        });
+    } catch (err) {
+        console.error('Erreur listerProduits:', err);
+        res.render('produits/liste', {
+            produits: [],
+            message: null,
+            erreur: 'Impossible de charger les produits'
+        });
+    }
+};
+
+// POST /produits — Ajouter un produit
+exports.ajouterProduit = async (req, res) => {
+    const { nom, prix, description } = req.body;
+    const produit = new Produit(null, nom, parseFloat(prix), description);
+
+    // Le controleur demande au modele de valider
+    const validation = produit.estValide();
+    if (!validation.valide) {
+        const produits = await ProduitDAO.trouverTous();
+        return res.render('produits/liste', {
+            produits: produits,
+            message: null,
+            erreur: validation.message
+        });
+    }
+
+    try {
+        await ProduitDAO.creer(produit);
+        res.redirect('/produits?message=Produit ajoute avec succes');
+    } catch (err) {
+        console.error('Erreur ajouterProduit:', err);
+        const produits = await ProduitDAO.trouverTous();
+        res.render('produits/liste', {
+            produits: produits,
+            message: null,
+            erreur: 'Erreur lors de l\'ajout'
+        });
+    }
+};
+
+// GET /produits/:id/modifier — Afficher le formulaire de modification
+exports.afficherModification = async (req, res) => {
+    try {
+        const produit = await ProduitDAO.trouverParId(req.params.id);
+        if (!produit) {
+            return res.redirect('/produits?message=Produit introuvable');
+        }
+        res.render('produits/modifier', { produit: produit, erreur: null });
+    } catch (err) {
+        console.error('Erreur afficherModification:', err);
+        res.redirect('/produits?message=Erreur');
+    }
+};
+
+// POST /produits/:id/modifier — Enregistrer la modification
+exports.modifierProduit = async (req, res) => {
+    const { nom, prix, description } = req.body;
+    const produit = new Produit(parseInt(req.params.id), nom, parseFloat(prix), description);
+
+    const validation = produit.estValide();
+    if (!validation.valide) {
+        return res.render('produits/modifier', {
+            produit: produit,
+            erreur: validation.message
+        });
+    }
+
+    try {
+        await ProduitDAO.modifier(produit);
+        res.redirect('/produits?message=Produit modifie avec succes');
+    } catch (err) {
+        console.error('Erreur modifierProduit:', err);
+        res.render('produits/modifier', {
+            produit: produit,
+            erreur: 'Erreur lors de la modification'
+        });
+    }
+};
+
+// GET /produits/:id/supprimer — Supprimer un produit
+exports.supprimerProduit = async (req, res) => {
+    try {
+        const supprime = await ProduitDAO.supprimer(req.params.id);
+        if (supprime) {
+            res.redirect('/produits?message=Produit supprime');
+        } else {
+            res.redirect('/produits?message=Produit introuvable');
+        }
+    } catch (err) {
+        console.error('Erreur supprimerProduit:', err);
+        res.redirect('/produits?message=Erreur lors de la suppression');
+    }
+};
+```
+
+**routes/produitRoutes.js** :
+
+```javascript
+// routes/produitRoutes.js
+// Responsabilite : definir les routes et les associer aux methodes du controleur
+const express = require('express');
+const router = express.Router();
+const produitController = require('../controllers/produitController');
+
+// Liste des produits
+router.get('/produits', produitController.listerProduits);
+
+// Ajouter un produit (traitement du formulaire)
+router.post('/produits', produitController.ajouterProduit);
+
+// Afficher le formulaire de modification
+router.get('/produits/:id/modifier', produitController.afficherModification);
+
+// Enregistrer la modification
+router.post('/produits/:id/modifier', produitController.modifierProduit);
+
+// Supprimer un produit
+router.get('/produits/:id/supprimer', produitController.supprimerProduit);
+
+module.exports = router;
+```
+
+**views/produits/modifier.ejs** :
+
+```html
+<!-- views/produits/modifier.ejs -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Modifier un produit</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1>Modifier le produit</h1>
+
+    <% if (erreur) { %>
+        <p class="erreur"><%= erreur %></p>
+    <% } %>
+
+    <form method="POST" action="/produits/<%= produit.id %>/modifier">
+        <label for="nom">Nom :</label>
+        <input type="text" id="nom" name="nom" value="<%= produit.nom %>" required>
+
+        <label for="prix">Prix HT :</label>
+        <input type="number" id="prix" name="prix" step="0.01"
+               value="<%= produit.prix %>" min="0.01" required>
+
+        <label for="description">Description :</label>
+        <textarea id="description" name="description"><%= produit.description %></textarea>
+
+        <button type="submit">Enregistrer</button>
+        <a href="/produits">Annuler</a>
+    </form>
+</body>
+</html>
+```
+
+**app.js** :
+
+```javascript
+// app.js
+// Point d'entree de l'application
+const express = require('express');
+const path = require('path');
+const produitRoutes = require('./routes/produitRoutes');
+
+const app = express();
+
+// Configuration du moteur de templates
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Middleware pour parser les donnees des formulaires
+app.use(express.urlencoded({ extended: true }));
+
+// Fichiers statiques (CSS, images)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Routes
+app.use('/', produitRoutes);
+
+// Redirection de la racine vers /produits
+app.get('/', (req, res) => {
+    res.redirect('/produits');
+});
+
+// Demarrage du serveur
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log('Serveur demarre sur http://localhost:' + PORT);
+});
+```
+
+**Script SQL pour la base de donnees** :
+
+```sql
+-- Script de creation de la base de donnees
+CREATE DATABASE IF NOT EXISTS magasin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE magasin;
+
+CREATE TABLE IF NOT EXISTS produits (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    prix DECIMAL(10, 2) NOT NULL,
+    description TEXT,
+    date_creation DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Donnees de test
+INSERT INTO produits (nom, prix, description) VALUES
+('Clavier mecanique', 89.99, 'Clavier mecanique RGB avec switches Cherry MX'),
+('Souris sans fil', 45.50, 'Souris ergonomique sans fil 2.4GHz'),
+('Ecran 27 pouces', 349.00, 'Ecran IPS 27 pouces 2560x1440');
+```
+
+---
+
+## 5. MVC en pratique : application Desktop (C# WinForms)
+
+### Adaptation de MVC a WinForms
+
+WinForms n'est pas concu pour MVC pur. Par defaut, Visual Studio genere du code ou tout est dans le fichier `Form1.cs`. L'adaptation consiste a extraire la logique dans des couches separees.
+
+La difference principale avec le web : en web, le Controleur recoit des requetes HTTP. En WinForms, le Controleur s'abonne aux evenements des controles de la Vue (Click, TextChanged, etc.).
+
+### Structure de dossiers
+
+```
+GestionProduits/
+|-- Program.cs                      <- Point d'entree
+|-- Config/
+|   |-- Database.cs                 <- Configuration connexion BDD
+|-- Models/
+|   |-- Produit.cs                  <- Classe metier
+|   |-- ProduitDAO.cs               <- Acces aux donnees
+|-- Views/
+|   |-- FormProduits.cs             <- Code du formulaire (logique de la vue)
+|   |-- FormProduits.Designer.cs    <- Composants graphiques (genere par VS)
+|-- Controllers/
+|   |-- ProduitController.cs        <- Logique de coordination
+```
+
+### Code complet
+
+**Config/Database.cs** :
+
+```csharp
+// Config/Database.cs
+// Responsabilite : fournir la chaine de connexion et gerer la connexion BDD
+using MySql.Data.MySqlClient;
+
+namespace GestionProduits.Config
+{
+    public static class Database
+    {
+        private static readonly string connectionString =
+            "Server=localhost;Database=magasin;Uid=root;Pwd=motdepasse;";
+
+        public static MySqlConnection GetConnection()
+        {
+            return new MySqlConnection(connectionString);
+        }
+    }
+}
+```
+
+**Models/Produit.cs** :
+
+```csharp
+// Models/Produit.cs
+// Responsabilite : representer un produit et sa logique metier
+namespace GestionProduits.Models
+{
+    public class Produit
+    {
+        public int Id { get; set; }
+        public string Nom { get; set; }
+        public decimal Prix { get; set; }
+        public string Description { get; set; }
+
+        public Produit() { }
+
+        public Produit(int id, string nom, decimal prix, string description)
+        {
+            Id = id;
+            Nom = nom;
+            Prix = prix;
+            Description = description;
+        }
+
+        // Validation metier — aucune reference a l'interface
+        public bool EstValide(out string messageErreur)
+        {
+            if (string.IsNullOrWhiteSpace(Nom) || Nom.Trim().Length < 2)
+            {
+                messageErreur = "Le nom doit contenir au moins 2 caracteres";
+                return false;
+            }
+
+            if (Nom.Trim().Length > 100)
+            {
+                messageErreur = "Le nom ne peut pas depasser 100 caracteres";
+                return false;
+            }
+
+            if (Prix <= 0)
+            {
+                messageErreur = "Le prix doit etre strictement positif";
+                return false;
+            }
+
+            if (Prix > 999999.99m)
+            {
+                messageErreur = "Le prix ne peut pas depasser 999 999,99";
+                return false;
+            }
+
+            messageErreur = "";
+            return true;
+        }
+
+        // Calcul metier
+        public decimal PrixTTC(decimal tauxTVA = 20m)
+        {
+            return Math.Round(Prix * (1 + tauxTVA / 100m), 2);
+        }
+
+        // Pour l'affichage dans les listes (optionnel)
+        public override string ToString()
+        {
+            return Nom + " - " + Prix.ToString("F2") + " EUR";
+        }
+    }
+}
+```
+
+**Models/ProduitDAO.cs** :
+
+```csharp
+// Models/ProduitDAO.cs
+// Responsabilite : toutes les operations de base de donnees pour les produits
+using System;
+using System.Collections.Generic;
+using MySql.Data.MySqlClient;
+using GestionProduits.Config;
+
+namespace GestionProduits.Models
+{
+    public class ProduitDAO
+    {
+        // Recuperer tous les produits
+        public List<Produit> TrouverTous()
+        {
+            List<Produit> produits = new List<Produit>();
+
+            using (MySqlConnection conn = Database.GetConnection())
+            {
+                conn.Open();
+                string sql = "SELECT id, nom, prix, description FROM produits ORDER BY nom";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                MySqlDataReader reader = cmd.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    Produit p = new Produit
+                    {
+                        Id = reader.GetInt32("id"),
+                        Nom = reader.GetString("nom"),
+                        Prix = reader.GetDecimal("prix"),
+                        Description = reader.IsDBNull(reader.GetOrdinal("description"))
+                            ? ""
+                            : reader.GetString("description")
+                    };
+                    produits.Add(p);
+                }
+            }
+
+            return produits;
+        }
+
+        // Recuperer un produit par son ID
+        public Produit TrouverParId(int id)
+        {
+            using (MySqlConnection conn = Database.GetConnection())
+            {
+                conn.Open();
+                string sql = "SELECT id, nom, prix, description FROM produits WHERE id = @id";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@id", id);
+                MySqlDataReader reader = cmd.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    return new Produit
+                    {
+                        Id = reader.GetInt32("id"),
+                        Nom = reader.GetString("nom"),
+                        Prix = reader.GetDecimal("prix"),
+                        Description = reader.IsDBNull(reader.GetOrdinal("description"))
+                            ? ""
+                            : reader.GetString("description")
+                    };
+                }
+            }
+
+            return null;
+        }
+
+        // Creer un nouveau produit
+        public int Creer(Produit produit)
+        {
+            using (MySqlConnection conn = Database.GetConnection())
+            {
+                conn.Open();
+                string sql = "INSERT INTO produits (nom, prix, description) VALUES (@nom, @prix, @description)";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@nom", produit.Nom);
+                cmd.Parameters.AddWithValue("@prix", produit.Prix);
+                cmd.Parameters.AddWithValue("@description", produit.Description ?? "");
+                cmd.ExecuteNonQuery();
+
+                // Recuperer l'ID genere
+                produit.Id = (int)cmd.LastInsertedId;
+                return produit.Id;
+            }
+        }
+
+        // Modifier un produit existant
+        public bool Modifier(Produit produit)
+        {
+            using (MySqlConnection conn = Database.GetConnection())
+            {
+                conn.Open();
+                string sql = "UPDATE produits SET nom = @nom, prix = @prix, description = @description WHERE id = @id";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@id", produit.Id);
+                cmd.Parameters.AddWithValue("@nom", produit.Nom);
+                cmd.Parameters.AddWithValue("@prix", produit.Prix);
+                cmd.Parameters.AddWithValue("@description", produit.Description ?? "");
+                int lignesAffectees = cmd.ExecuteNonQuery();
+                return lignesAffectees > 0;
+            }
+        }
+
+        // Supprimer un produit
+        public bool Supprimer(int id)
+        {
+            using (MySqlConnection conn = Database.GetConnection())
+            {
+                conn.Open();
+                string sql = "DELETE FROM produits WHERE id = @id";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@id", id);
+                int lignesAffectees = cmd.ExecuteNonQuery();
+                return lignesAffectees > 0;
+            }
+        }
+    }
+}
+```
+
+**Views/FormProduits.cs** :
+
+```csharp
+// Views/FormProduits.cs
+// Responsabilite : le formulaire en tant que Vue. Il expose ses controles
+// mais ne contient PAS de logique metier ni d'acces aux donnees.
+using System.Windows.Forms;
+
+namespace GestionProduits.Views
+{
+    public partial class FormProduits : Form
+    {
+        public FormProduits()
+        {
+            InitializeComponent();
+        }
+
+        // La vue fournit une methode pour afficher un message
+        public void AfficherMessage(string texte)
+        {
+            lblMessage.Text = texte;
+        }
+
+        // La vue fournit une methode pour vider les champs
+        public void ViderChamps()
+        {
+            txtNom.Clear();
+            txtPrix.Clear();
+            txtDescription.Clear();
+        }
+
+        // La vue fournit une methode pour remplir les champs
+        // (quand on selectionne une ligne dans le tableau)
+        public void RemplirChamps(string nom, string prix, string description)
+        {
+            txtNom.Text = nom;
+            txtPrix.Text = prix;
+            txtDescription.Text = description;
+        }
+    }
+}
+```
+
+**Controllers/ProduitController.cs** :
+
+```csharp
+// Controllers/ProduitController.cs
+// Responsabilite : coordonner la Vue et le Modele.
+// Recoit les evenements de la Vue, appelle le Modele, met a jour la Vue.
+using System;
+using System.Collections.Generic;
+using System.Windows.Forms;
+using GestionProduits.Models;
+using GestionProduits.Views;
+
+namespace GestionProduits.Controllers
+{
+    public class ProduitController
+    {
+        private readonly FormProduits vue;
+        private readonly ProduitDAO dao;
+
+        public ProduitController(FormProduits vue)
+        {
+            this.vue = vue;
+            this.dao = new ProduitDAO();
+
+            // Le controleur s'abonne aux evenements de la vue
+            this.vue.btnAjouter.Click += BtnAjouter_Click;
+            this.vue.btnModifier.Click += BtnModifier_Click;
+            this.vue.btnSupprimer.Click += BtnSupprimer_Click;
+            this.vue.dgvProduits.SelectionChanged += DgvProduits_SelectionChanged;
+
+            // Chargement initial
+            ChargerProduits();
+        }
+
+        // Charger et afficher tous les produits
+        private void ChargerProduits()
+        {
+            try
+            {
+                List<Produit> produits = dao.TrouverTous();
+                vue.dgvProduits.DataSource = null;
+                vue.dgvProduits.DataSource = produits;
+                vue.AfficherMessage(produits.Count + " produit(s) affiche(s)");
+            }
+            catch (Exception ex)
+            {
+                vue.AfficherMessage("Erreur de chargement : " + ex.Message);
+            }
+        }
+
+        // Quand l'utilisateur selectionne une ligne, remplir les champs
+        private void DgvProduits_SelectionChanged(object sender, EventArgs e)
+        {
+            if (vue.dgvProduits.SelectedRows.Count > 0)
+            {
+                Produit p = (Produit)vue.dgvProduits.SelectedRows[0].DataBoundItem;
+                vue.RemplirChamps(p.Nom, p.Prix.ToString(), p.Description);
+            }
+        }
+
+        // Ajouter un produit
+        private void BtnAjouter_Click(object sender, EventArgs e)
+        {
+            // Lire les donnees depuis la vue
+            Produit produit = new Produit();
+            produit.Nom = vue.txtNom.Text;
+            produit.Description = vue.txtDescription.Text;
+
+            if (!decimal.TryParse(vue.txtPrix.Text, out decimal prix))
+            {
+                vue.AfficherMessage("Le prix doit etre un nombre valide");
+                return;
+            }
+            produit.Prix = prix;
+
+            // Demander au modele de valider
+            if (!produit.EstValide(out string erreur))
+            {
+                vue.AfficherMessage(erreur);
+                return;
+            }
+
+            // Demander au DAO de sauvegarder
+            try
+            {
+                dao.Creer(produit);
+                vue.AfficherMessage("Produit \"" + produit.Nom + "\" ajoute (ID: " + produit.Id + ")");
+                vue.ViderChamps();
+                ChargerProduits();
+            }
+            catch (Exception ex)
+            {
+                vue.AfficherMessage("Erreur lors de l'ajout : " + ex.Message);
+            }
+        }
+
+        // Modifier un produit
+        private void BtnModifier_Click(object sender, EventArgs e)
+        {
+            if (vue.dgvProduits.SelectedRows.Count == 0)
+            {
+                vue.AfficherMessage("Selectionnez un produit a modifier");
+                return;
+            }
+
+            Produit produit = (Produit)vue.dgvProduits.SelectedRows[0].DataBoundItem;
+            produit.Nom = vue.txtNom.Text;
+            produit.Description = vue.txtDescription.Text;
+
+            if (!decimal.TryParse(vue.txtPrix.Text, out decimal prix))
+            {
+                vue.AfficherMessage("Le prix doit etre un nombre valide");
+                return;
+            }
+            produit.Prix = prix;
+
+            if (!produit.EstValide(out string erreur))
+            {
+                vue.AfficherMessage(erreur);
+                return;
+            }
+
+            try
+            {
+                dao.Modifier(produit);
+                vue.AfficherMessage("Produit modifie avec succes");
+                vue.ViderChamps();
+                ChargerProduits();
+            }
+            catch (Exception ex)
+            {
+                vue.AfficherMessage("Erreur lors de la modification : " + ex.Message);
+            }
+        }
+
+        // Supprimer un produit
+        private void BtnSupprimer_Click(object sender, EventArgs e)
+        {
+            if (vue.dgvProduits.SelectedRows.Count == 0)
+            {
+                vue.AfficherMessage("Selectionnez un produit a supprimer");
+                return;
+            }
+
+            Produit produit = (Produit)vue.dgvProduits.SelectedRows[0].DataBoundItem;
+
+            DialogResult confirmation = MessageBox.Show(
+                "Voulez-vous vraiment supprimer \"" + produit.Nom + "\" ?",
+                "Confirmation de suppression",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning
+            );
+
+            if (confirmation == DialogResult.Yes)
+            {
+                try
+                {
+                    dao.Supprimer(produit.Id);
+                    vue.AfficherMessage("Produit supprime");
+                    vue.ViderChamps();
+                    ChargerProduits();
+                }
+                catch (Exception ex)
+                {
+                    vue.AfficherMessage("Erreur : " + ex.Message);
+                }
+            }
+        }
+    }
+}
+```
+
+**Program.cs** :
+
+```csharp
+// Program.cs
+// Point d'entree : on cree la Vue, puis le Controleur qui prend en charge la Vue
+using System;
+using System.Windows.Forms;
+using GestionProduits.Views;
+using GestionProduits.Controllers;
+
+namespace GestionProduits
+{
+    static class Program
+    {
+        [STAThread]
+        static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            // Creer la vue
+            FormProduits vue = new FormProduits();
+
+            // Creer le controleur en lui passant la vue
+            ProduitController controller = new ProduitController(vue);
+
+            // Lancer l'application avec la vue
+            Application.Run(vue);
+        }
+    }
+}
+```
+
+### Comparaison du flux entre Web et Desktop
+
+```
++----------------------------+-----------------------------------+-----------------------------------+
+|    Etape                   |    Web (Express.js)               |    Desktop (WinForms)             |
++----------------------------+-----------------------------------+-----------------------------------+
+| Action utilisateur         | Requete HTTP (GET, POST)          | Evenement (Click, TextChanged)    |
+| Reception par le           | Fonction de route                 | Gestionnaire d'evenement          |
+|   controleur               | (req, res) => { ... }             | BtnAjouter_Click(sender, e)       |
+| Appel au modele            | await ProduitDAO.creer(produit)   | dao.Creer(produit)                |
+| Mise a jour de la vue      | res.render() ou res.redirect()    | vue.dgvProduits.DataSource = ...  |
++----------------------------+-----------------------------------+-----------------------------------+
+```
+
+---
+
+## 6. Le pattern DAO (Data Access Object)
+
+### Principe
+
+Le DAO est un sous-pattern du Modele. Son role est d'isoler completement l'acces aux donnees du reste du code.
+
+Sans DAO, les requetes SQL sont dispersees partout dans le code. Avec DAO, toutes les requetes SQL pour une entite sont regroupees dans une seule classe.
+
+L'avantage principal : si on change de base de donnees (de MySQL a PostgreSQL, ou de SQL a MongoDB), on ne modifie QUE le DAO. Le reste du code (Controleur, Vue, classe metier) ne change pas.
+
+### Structure du DAO
+
+```
+Modele = Classe metier (Produit) + DAO (ProduitDAO)
+
+Produit       : represente un produit, contient la validation et les calculs
+ProduitDAO    : contient TOUTES les requetes SQL pour les produits
+```
+
+### Le DAO en JavaScript
+
+Le DAO a deja ete presente dans la section precedente (models/ProduitDAO.js). Voici un exemple avec une interface plus formalisee :
+
+```javascript
+// models/dao/IProduitDAO.js
+// En JavaScript, on n'a pas d'interfaces comme en C#.
+// On documente le contrat que tout DAO de produits doit respecter.
+
+/**
+ * Interface (conceptuelle) pour le DAO des produits.
+ * Toute implementation doit fournir ces methodes :
+ *
+ * trouverTous()          -> Promise<Produit[]>
+ * trouverParId(id)       -> Promise<Produit|null>
+ * creer(produit)         -> Promise<Produit>
+ * modifier(produit)      -> Promise<Produit>
+ * supprimer(id)          -> Promise<boolean>
+ */
+```
+
+```javascript
+// models/dao/ProduitDAOMySQL.js
+// Implementation du DAO pour MySQL
+const db = require('../../config/database');
+const Produit = require('../Produit');
+
+class ProduitDAOMySQL {
+
+    async trouverTous() {
+        const [rows] = await db.query('SELECT * FROM produits ORDER BY nom');
+        return rows.map(row => new Produit(row.id, row.nom, row.prix, row.description));
+    }
+
+    async trouverParId(id) {
+        const [rows] = await db.query('SELECT * FROM produits WHERE id = ?', [id]);
+        if (rows.length === 0) return null;
+        const r = rows[0];
+        return new Produit(r.id, r.nom, r.prix, r.description);
+    }
+
+    async creer(produit) {
+        const [result] = await db.query(
+            'INSERT INTO produits (nom, prix, description) VALUES (?, ?, ?)',
+            [produit.nom, produit.prix, produit.description]
+        );
+        produit.id = result.insertId;
+        return produit;
+    }
+
+    async modifier(produit) {
+        await db.query(
+            'UPDATE produits SET nom = ?, prix = ?, description = ? WHERE id = ?',
+            [produit.nom, produit.prix, produit.description, produit.id]
+        );
+        return produit;
+    }
+
+    async supprimer(id) {
+        const [result] = await db.query('DELETE FROM produits WHERE id = ?', [id]);
+        return result.affectedRows > 0;
+    }
+}
+
+module.exports = ProduitDAOMySQL;
+```
+
+### Le DAO en C# avec interface
+
+En C#, on peut definir une vraie interface :
+
+```csharp
+// Models/DAO/IProduitDAO.cs
+// Interface que toute implementation de DAO pour les produits doit respecter
+using System.Collections.Generic;
+
+namespace GestionProduits.Models.DAO
+{
+    public interface IProduitDAO
+    {
+        List<Produit> TrouverTous();
+        Produit TrouverParId(int id);
+        int Creer(Produit produit);
+        bool Modifier(Produit produit);
+        bool Supprimer(int id);
+    }
+}
+```
+
+```csharp
+// Models/DAO/ProduitDAOMySQL.cs
+// Implementation du DAO pour MySQL
+using System;
+using System.Collections.Generic;
+using MySql.Data.MySqlClient;
+using GestionProduits.Config;
+
+namespace GestionProduits.Models.DAO
+{
+    public class ProduitDAOMySQL : IProduitDAO
+    {
+        public List<Produit> TrouverTous()
+        {
+            List<Produit> produits = new List<Produit>();
+            using (MySqlConnection conn = Database.GetConnection())
+            {
+                conn.Open();
+                string sql = "SELECT id, nom, prix, description FROM produits ORDER BY nom";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                MySqlDataReader reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    produits.Add(new Produit
+                    {
+                        Id = reader.GetInt32("id"),
+                        Nom = reader.GetString("nom"),
+                        Prix = reader.GetDecimal("prix"),
+                        Description = reader.IsDBNull(reader.GetOrdinal("description"))
+                            ? "" : reader.GetString("description")
+                    });
+                }
+            }
+            return produits;
+        }
+
+        public Produit TrouverParId(int id)
+        {
+            using (MySqlConnection conn = Database.GetConnection())
+            {
+                conn.Open();
+                string sql = "SELECT id, nom, prix, description FROM produits WHERE id = @id";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@id", id);
+                MySqlDataReader reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    return new Produit
+                    {
+                        Id = reader.GetInt32("id"),
+                        Nom = reader.GetString("nom"),
+                        Prix = reader.GetDecimal("prix"),
+                        Description = reader.IsDBNull(reader.GetOrdinal("description"))
+                            ? "" : reader.GetString("description")
+                    };
+                }
+            }
+            return null;
+        }
+
+        public int Creer(Produit produit)
+        {
+            using (MySqlConnection conn = Database.GetConnection())
+            {
+                conn.Open();
+                string sql = "INSERT INTO produits (nom, prix, description) VALUES (@nom, @prix, @desc)";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@nom", produit.Nom);
+                cmd.Parameters.AddWithValue("@prix", produit.Prix);
+                cmd.Parameters.AddWithValue("@desc", produit.Description ?? "");
+                cmd.ExecuteNonQuery();
+                produit.Id = (int)cmd.LastInsertedId;
+                return produit.Id;
+            }
+        }
+
+        public bool Modifier(Produit produit)
+        {
+            using (MySqlConnection conn = Database.GetConnection())
+            {
+                conn.Open();
+                string sql = "UPDATE produits SET nom=@nom, prix=@prix, description=@desc WHERE id=@id";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@id", produit.Id);
+                cmd.Parameters.AddWithValue("@nom", produit.Nom);
+                cmd.Parameters.AddWithValue("@prix", produit.Prix);
+                cmd.Parameters.AddWithValue("@desc", produit.Description ?? "");
+                return cmd.ExecuteNonQuery() > 0;
+            }
+        }
+
+        public bool Supprimer(int id)
+        {
+            using (MySqlConnection conn = Database.GetConnection())
+            {
+                conn.Open();
+                string sql = "DELETE FROM produits WHERE id = @id";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@id", id);
+                return cmd.ExecuteNonQuery() > 0;
+            }
+        }
+    }
+}
+```
+
+L'avantage de l'interface : le Controleur depend de `IProduitDAO`, pas de `ProduitDAOMySQL`. Pour changer de base de donnees, on cree une nouvelle classe `ProduitDAOPostgreSQL` qui implemente la meme interface. Le Controleur ne change pas.
+
+```csharp
+// Dans le controleur, on utilise l'interface :
+private readonly IProduitDAO dao;
+
+public ProduitController(FormProduits vue)
+{
+    this.vue = vue;
+    // On peut changer l'implementation ici sans toucher au reste
+    this.dao = new ProduitDAOMySQL();
+    // Demain : this.dao = new ProduitDAOPostgreSQL();
+}
+```
+
+---
+
+## 7. Variantes de MVC
+
+### MVP (Model-View-Presenter)
+
+MVP est une variante de MVC souvent utilisee en WinForms. La difference principale : dans MVP, le **Presenter** (equivalent du Controleur) a une reference directe vers la Vue via une interface.
+
+```
+MVC :    Vue <---> Controleur <---> Modele
+MVP :    Vue <---> Presenter  <---> Modele
+               ^
+               |
+         La Vue implemente
+         une interface (IVue)
+```
+
+En pratique, la difference est subtile. En MVP :
+- La Vue implemente une interface (par exemple `IFormProduits`)
+- Le Presenter connait la Vue uniquement via cette interface
+- Cela facilite les tests : on peut remplacer la Vue reelle par une fausse Vue (mock) dans les tests
+
+```csharp
+// Exemple MVP : interface de la Vue
+public interface IFormProduits
+{
+    string Nom { get; set; }
+    string Prix { get; set; }
+    string Description { get; set; }
+    void AfficherMessage(string texte);
+    void AfficherProduits(List<Produit> produits);
+    event EventHandler AjouterClique;
+    event EventHandler SupprimerClique;
+}
+```
+
+### MVVM (Model-View-ViewModel)
+
+MVVM est utilise avec WPF (Windows Presentation Foundation) et les frameworks mobiles (Xamarin, MAUI). La difference principale : le **ViewModel** expose des proprietes et des commandes auxquelles la Vue se lie (binding) automatiquement.
+
+```
+MVVM :   Vue <--- binding ---> ViewModel <---> Modele
+```
+
+La Vue ne contient quasiment aucun code. Elle est entierement declarative (XAML en WPF). Quand une propriete du ViewModel change, la Vue se met a jour automatiquement grace au data binding.
+
+### MVC cote client
+
+Dans les applications web modernes (React, Vue.js, Angular), le MVC est adapte cote client :
+- Le **Modele** est l'etat de l'application (state, store)
+- La **Vue** est le composant qui affiche les donnees
+- Le **Controleur** est la logique qui gere les actions (handlers, hooks)
+
+En React par exemple, un composant combine souvent la Vue et le Controleur. L'etat (state) joue le role du Modele.
+
+### Tableau comparatif
+
+```
++----------+---------------------+-----------------------+---------------------------+
+| Pattern  | Contexte typique    | Comment la Vue        | Facilite de test          |
+|          |                     | est mise a jour       |                           |
++----------+---------------------+-----------------------+---------------------------+
+| MVC      | Web (Express, ASP)  | Le Controleur met     | Moyenne                   |
+|          |                     | a jour la Vue         |                           |
++----------+---------------------+-----------------------+---------------------------+
+| MVP      | WinForms, Android   | Le Presenter met      | Bonne (Vue = interface)   |
+|          |                     | a jour via interface  |                           |
++----------+---------------------+-----------------------+---------------------------+
+| MVVM     | WPF, Xamarin, MAUI  | Data binding          | Tres bonne                |
+|          |                     | automatique           |                           |
++----------+---------------------+-----------------------+---------------------------+
+```
+
+---
+
+## 8. Avantages et inconvenients
+
+### Avantages de MVC
+
+**Maintenance facilitee.** Chaque couche est independante. Un bug d'affichage ? On cherche dans la Vue. Un bug de donnees ? On cherche dans le Modele. On ne parcourt plus 3000 lignes de code melange.
+
+**Travail en equipe.** Un developpeur travaille sur la Vue (CSS, HTML), un autre sur le Modele (SQL, logique metier), un troisieme sur le Controleur. Ils ne se marchent pas dessus.
+
+**Testabilite.** Le Modele peut etre teste independamment de l'interface. On ecrit des tests unitaires pour la validation, les calculs, les requetes, sans lancer l'application.
+
+**Reutilisation.** Le meme Modele peut etre utilise par une application web ET une application mobile. Seules les Vues et les Controleurs changent.
+
+**Evolutivite.** Ajouter une fonctionnalite (par exemple, l'export PDF des produits) ne necessite pas de modifier le code existant. On ajoute un controleur et une vue.
+
+### Inconvenients de MVC
+
+**Complexite initiale.** Pour une application simple (un formulaire, une table), MVC ajoute des fichiers et de la structure qui semblent excessifs. Au lieu d'un fichier, on en a six ou sept.
+
+**Courbe d'apprentissage.** Il faut comprendre le flux, savoir ou placer chaque morceau de code. Les debutants ont souvent du mal a decider si un code va dans le Modele ou le Controleur.
+
+**Overhead pour les petits projets.** Un script qui lit un fichier CSV et l'affiche ne necessite pas MVC. L'architecture serait disproportionnee par rapport au probleme.
+
+### Quand NE PAS utiliser MVC
+
+- Scripts ponctuels (un script de migration de donnees, un utilitaire en ligne de commande)
+- Prototypes rapides (on veut valider une idee en 2 heures, pas structurer un projet)
+- Projets tres simples (une seule page, une seule fonctionnalite)
+
+Regle pratique : si le projet a plus d'une entite ou plus d'un ecran, MVC vaut le coup. Si le projet est susceptible d'evoluer, MVC vaut le coup. Dans le doute, utilisez MVC : le cout initial est faible et les benefices arrivent vite.
+
+---
+
+## 9. Methodologie d'examen
+
+### Comment les questions MVC tombent a l'examen BTS SIO
+
+Les sujets d'examen testent la comprehension de MVC de plusieurs facons :
+
+**Type 1 : Identification.** On vous donne du code et on vous demande d'identifier le Modele, la Vue et le Controleur. Le code peut etre melange dans un seul fichier ou deja partiellement structure.
+
+**Type 2 : Reorganisation.** On vous donne du code monolithique (tout dans un seul fichier) et on vous demande de le reorganiser en suivant MVC. Vous devez produire plusieurs fichiers avec la bonne repartition.
+
+**Type 3 : Completion.** On vous donne deux couches sur trois et on vous demande de coder la couche manquante.
+
+**Type 4 : Conception.** On vous donne un cas metier (cahier des charges) et on vous demande de concevoir l'architecture MVC : quelles classes, quels fichiers, quelle repartition.
+
+### Pieges classiques
+
+**Piege 1 : confondre Modele et Controleur.** La validation metier (un prix doit etre positif) est dans le Modele, PAS dans le Controleur. Le Controleur appelle la validation du Modele. Il ne la fait pas lui-meme.
+
+**Piege 2 : mettre du SQL dans le Controleur.** Le Controleur ne doit JAMAIS contenir de requetes SQL. S'il y a du SQL, c'est dans le Modele (dans le DAO).
+
+**Piege 3 : confondre Vue et Controleur en WinForms.** En WinForms, le code-behind du formulaire (Form1.cs) contient souvent tout. Pour l'examen, il faut savoir extraire la logique dans un Controleur separe.
+
+**Piege 4 : oublier le DAO.** Le DAO est un element du Modele. Quand on vous demande le Modele, il faut penser a la classe metier ET a la classe DAO.
+
+**Piege 5 : croire que MVC interdit toute logique dans la Vue.** La Vue peut contenir de la logique d'affichage simple (boucle pour afficher une liste, condition pour cacher un element). Ce qu'elle ne doit pas contenir, c'est de la logique metier ou du SQL.
+
+### Methode pour repondre
+
+1. Lire tout le code attentivement
+2. Identifier les requetes SQL et l'acces aux donnees → c'est le Modele (DAO)
+3. Identifier les classes qui representent les entites → c'est le Modele (classes metier)
+4. Identifier le code HTML, les templates, les composants graphiques → c'est la Vue
+5. Identifier le code qui fait le lien (recoit les requetes, appelle le modele, transmet a la vue) → c'est le Controleur
+6. Verifier que chaque couche ne contient QUE ce qui lui appartient
+
+---
+
+## 10. Exercices d'examen corriges
+
+### Exercice 1 : Identification des couches
+
+**Enonce.** Le code suivant gere une application de gestion de clients. Identifiez les parties qui correspondent au Modele, a la Vue et au Controleur.
+
+```javascript
+// Fichier unique : app.js
+const express = require('express');
+const mysql = require('mysql2/promise');
+const app = express();
+app.use(express.urlencoded({ extended: true }));
+
+const pool = mysql.createPool({
+    host: 'localhost', user: 'root', password: 'pass', database: 'crm'
+});
+
+app.get('/clients', async (req, res) => {
+    const [clients] = await pool.query('SELECT * FROM clients ORDER BY nom');
+    let html = '<h1>Clients</h1><ul>';
+    for (let c of clients) {
+        html += '<li>' + c.nom + ' - ' + c.email + '</li>';
+    }
+    html += '</ul>';
+    html += '<form method="POST" action="/clients">';
+    html += '<input name="nom" placeholder="Nom">';
+    html += '<input name="email" placeholder="Email">';
+    html += '<button>Ajouter</button></form>';
+    res.send(html);
+});
+
+app.post('/clients', async (req, res) => {
+    const { nom, email } = req.body;
+    if (!nom || nom.length < 2) {
+        return res.send('<p>Nom invalide</p><a href="/clients">Retour</a>');
+    }
+    if (!email || !email.includes('@')) {
+        return res.send('<p>Email invalide</p><a href="/clients">Retour</a>');
+    }
+    await pool.query('INSERT INTO clients (nom, email) VALUES (?, ?)', [nom, email]);
+    res.redirect('/clients');
+});
+
+app.listen(3000);
+```
+
+**Correction.**
+
+Modele (donnees et logique metier) :
+- La configuration de la connexion BDD : `const pool = mysql.createPool({...})`
+- Les requetes SQL : `pool.query('SELECT * FROM clients ORDER BY nom')` et `pool.query('INSERT INTO clients ...')`
+- La validation metier : `if (!nom || nom.length < 2)` et `if (!email || !email.includes('@'))`
+
+Vue (affichage) :
+- Toute la generation HTML : `let html = '<h1>Clients</h1><ul>';` et la suite
+- Le formulaire HTML : `'<form method="POST" action="/clients">'` etc.
+
+Controleur (coordination) :
+- Les fonctions de route : `app.get('/clients', async (req, res) => {...})` et `app.post('/clients', ...)`
+- La logique de flux : `res.redirect('/clients')` et `res.send(html)`
+
+Le probleme : tout est melange dans un seul fichier. La reorganisation est l'objet de l'exercice suivant.
+
+---
+
+### Exercice 2 : Reorganisation en MVC
+
+**Enonce.** Reorganisez le code de l'exercice 1 en suivant l'architecture MVC. Creez les fichiers necessaires.
+
+**Correction.**
+
+**models/Client.js :**
+
+```javascript
+class Client {
+    constructor(id, nom, email) {
+        this.id = id;
+        this.nom = nom;
+        this.email = email;
+    }
+
+    estValide() {
+        if (!this.nom || this.nom.trim().length < 2) {
+            return { valide: false, message: 'Le nom doit contenir au moins 2 caracteres' };
+        }
+        if (!this.email || !this.email.includes('@')) {
+            return { valide: false, message: 'L\'email doit etre valide' };
+        }
+        return { valide: true, message: '' };
+    }
+}
+
+module.exports = Client;
+```
+
+**models/ClientDAO.js :**
+
+```javascript
+const db = require('../config/database');
+const Client = require('./Client');
+
+class ClientDAO {
+    static async trouverTous() {
+        const [rows] = await db.query('SELECT * FROM clients ORDER BY nom');
+        return rows.map(r => new Client(r.id, r.nom, r.email));
+    }
+
+    static async creer(client) {
+        const [result] = await db.query(
+            'INSERT INTO clients (nom, email) VALUES (?, ?)',
+            [client.nom, client.email]
+        );
+        client.id = result.insertId;
+        return client;
+    }
+}
+
+module.exports = ClientDAO;
+```
+
+**controllers/clientController.js :**
+
+```javascript
+const ClientDAO = require('../models/ClientDAO');
+const Client = require('../models/Client');
+
+exports.listerClients = async (req, res) => {
+    try {
+        const clients = await ClientDAO.trouverTous();
+        res.render('clients/liste', { clients, erreur: null });
+    } catch (err) {
+        res.render('clients/liste', { clients: [], erreur: 'Erreur de chargement' });
+    }
+};
+
+exports.ajouterClient = async (req, res) => {
+    const { nom, email } = req.body;
+    const client = new Client(null, nom, email);
+
+    const validation = client.estValide();
+    if (!validation.valide) {
+        const clients = await ClientDAO.trouverTous();
+        return res.render('clients/liste', { clients, erreur: validation.message });
+    }
+
+    try {
+        await ClientDAO.creer(client);
+        res.redirect('/clients');
+    } catch (err) {
+        const clients = await ClientDAO.trouverTous();
+        res.render('clients/liste', { clients, erreur: 'Erreur lors de l\'ajout' });
+    }
+};
+```
+
+**views/clients/liste.ejs :**
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Clients</title></head>
+<body>
+    <h1>Clients</h1>
+    <% if (erreur) { %><p style="color:red"><%= erreur %></p><% } %>
+    <ul>
+        <% for (let c of clients) { %>
+            <li><%= c.nom %> - <%= c.email %></li>
+        <% } %>
+    </ul>
+    <form method="POST" action="/clients">
+        <input name="nom" placeholder="Nom" required>
+        <input name="email" placeholder="Email" required>
+        <button>Ajouter</button>
+    </form>
+</body>
+</html>
+```
+
+**routes/clientRoutes.js :**
+
+```javascript
+const express = require('express');
+const router = express.Router();
+const clientController = require('../controllers/clientController');
+
+router.get('/clients', clientController.listerClients);
+router.post('/clients', clientController.ajouterClient);
+
+module.exports = router;
+```
+
+---
+
+### Exercice 3 : Completer la couche manquante (C#)
+
+**Enonce.** On dispose du Modele et de la Vue ci-dessous. Ecrivez le Controleur manquant.
+
+Modele donne :
+
+```csharp
+// Models/Tache.cs
+public class Tache
+{
+    public int Id { get; set; }
+    public string Titre { get; set; }
+    public bool Terminee { get; set; }
+
+    public bool EstValide(out string erreur)
+    {
+        if (string.IsNullOrWhiteSpace(Titre))
+        {
+            erreur = "Le titre ne peut pas etre vide";
+            return false;
+        }
+        erreur = "";
+        return true;
+    }
+}
+```
+
+```csharp
+// Models/TacheDAO.cs
+public class TacheDAO
+{
+    public List<Tache> TrouverToutes() { /* implementation fournie */ }
+    public void Creer(Tache tache) { /* implementation fournie */ }
+    public void BasculerEtat(int id) { /* implementation fournie */ }
+    public void Supprimer(int id) { /* implementation fournie */ }
+}
+```
+
+Vue donnee :
+
+```csharp
+// Views/FormTaches.cs
+public partial class FormTaches : Form
+{
+    public DataGridView dgvTaches;
+    public TextBox txtTitre;
+    public Button btnAjouter;
+    public Button btnBasculer;
+    public Button btnSupprimer;
+    public Label lblMessage;
+}
+```
+
+**Correction.**
+
+```csharp
+// Controllers/TacheController.cs
+using System;
+using System.Collections.Generic;
+using System.Windows.Forms;
+
+namespace GestionTaches.Controllers
+{
+    public class TacheController
+    {
+        private readonly FormTaches vue;
+        private readonly TacheDAO dao;
+
+        public TacheController(FormTaches vue)
+        {
+            this.vue = vue;
+            this.dao = new TacheDAO();
+
+            // Abonnement aux evenements de la vue
+            this.vue.btnAjouter.Click += BtnAjouter_Click;
+            this.vue.btnBasculer.Click += BtnBasculer_Click;
+            this.vue.btnSupprimer.Click += BtnSupprimer_Click;
+
+            ChargerTaches();
+        }
+
+        private void ChargerTaches()
+        {
+            try
+            {
+                List<Tache> taches = dao.TrouverToutes();
+                vue.dgvTaches.DataSource = null;
+                vue.dgvTaches.DataSource = taches;
+                vue.lblMessage.Text = taches.Count + " tache(s)";
+            }
+            catch (Exception ex)
+            {
+                vue.lblMessage.Text = "Erreur : " + ex.Message;
+            }
+        }
+
+        private void BtnAjouter_Click(object sender, EventArgs e)
+        {
+            Tache tache = new Tache { Titre = vue.txtTitre.Text, Terminee = false };
+
+            if (!tache.EstValide(out string erreur))
+            {
+                vue.lblMessage.Text = erreur;
+                return;
+            }
+
+            try
+            {
+                dao.Creer(tache);
+                vue.txtTitre.Clear();
+                vue.lblMessage.Text = "Tache ajoutee";
+                ChargerTaches();
+            }
+            catch (Exception ex)
+            {
+                vue.lblMessage.Text = "Erreur : " + ex.Message;
+            }
+        }
+
+        private void BtnBasculer_Click(object sender, EventArgs e)
+        {
+            if (vue.dgvTaches.SelectedRows.Count == 0)
+            {
+                vue.lblMessage.Text = "Selectionnez une tache";
+                return;
+            }
+
+            Tache tache = (Tache)vue.dgvTaches.SelectedRows[0].DataBoundItem;
+
+            try
+            {
+                dao.BasculerEtat(tache.Id);
+                vue.lblMessage.Text = "Etat modifie";
+                ChargerTaches();
+            }
+            catch (Exception ex)
+            {
+                vue.lblMessage.Text = "Erreur : " + ex.Message;
+            }
+        }
+
+        private void BtnSupprimer_Click(object sender, EventArgs e)
+        {
+            if (vue.dgvTaches.SelectedRows.Count == 0)
+            {
+                vue.lblMessage.Text = "Selectionnez une tache";
+                return;
+            }
+
+            Tache tache = (Tache)vue.dgvTaches.SelectedRows[0].DataBoundItem;
+
+            DialogResult r = MessageBox.Show(
+                "Supprimer \"" + tache.Titre + "\" ?",
+                "Confirmation",
+                MessageBoxButtons.YesNo
+            );
+
+            if (r == DialogResult.Yes)
+            {
+                try
+                {
+                    dao.Supprimer(tache.Id);
+                    vue.lblMessage.Text = "Tache supprimee";
+                    ChargerTaches();
+                }
+                catch (Exception ex)
+                {
+                    vue.lblMessage.Text = "Erreur : " + ex.Message;
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+### Exercice 4 : Identifier les erreurs d'architecture
+
+**Enonce.** Le code suivant pretend suivre MVC mais contient des violations. Identifiez chaque violation et expliquez pourquoi c'est une erreur.
+
+```javascript
+// controllers/commandeController.js
+const db = require('../config/database');
+
+exports.creerCommande = async (req, res) => {
+    const { clientId, produitId, quantite } = req.body;
+
+    // Verification 1
+    if (quantite <= 0) {
+        return res.send('<p style="color:red">Quantite invalide</p>');
+    }
+
+    // Verification 2
+    const [produits] = await db.query('SELECT * FROM produits WHERE id = ?', [produitId]);
+    if (produits.length === 0) {
+        return res.send('<h1>Produit introuvable</h1>');
+    }
+
+    const produit = produits[0];
+    const total = produit.prix * quantite * 1.20; // TTC
+
+    await db.query(
+        'INSERT INTO commandes (client_id, produit_id, quantite, total) VALUES (?, ?, ?, ?)',
+        [clientId, produitId, quantite, total]
+    );
+
+    res.send('<h1>Commande creee</h1><p>Total : ' + total + ' EUR</p>');
+};
+```
+
+**Correction.**
+
+**Violation 1 : requetes SQL dans le Controleur.** Les lignes `db.query('SELECT * FROM produits ...')` et `db.query('INSERT INTO commandes ...')` n'ont pas leur place dans le Controleur. Elles doivent etre dans un DAO (ProduitDAO et CommandeDAO dans le Modele).
+
+**Violation 2 : logique metier dans le Controleur.** Le calcul `produit.prix * quantite * 1.20` est de la logique metier (calcul du prix TTC). Il doit etre dans le Modele, par exemple dans une methode `calculerTotal()` de la classe Commande.
+
+**Violation 3 : validation metier dans le Controleur.** La verification `if (quantite <= 0)` est une regle metier. Elle doit etre dans la methode `estValide()` de la classe Commande.
+
+**Violation 4 : generation HTML dans le Controleur.** Les lignes `res.send('<p style="color:red">...')` et `res.send('<h1>Commande creee</h1>...')` generent du HTML directement dans le Controleur. Le Controleur doit appeler `res.render()` pour deleguer l'affichage a une Vue (template EJS).
+
+**Violation 5 : import direct de la base de donnees.** Le Controleur importe `db` directement. Il ne devrait connaitre que les DAO du Modele, jamais la connexion a la base de donnees.
+
+**Code corrige :**
+
+```javascript
+// controllers/commandeController.js (CORRIGE)
+const CommandeDAO = require('../models/CommandeDAO');
+const ProduitDAO = require('../models/ProduitDAO');
+const Commande = require('../models/Commande');
+
+exports.creerCommande = async (req, res) => {
+    const { clientId, produitId, quantite } = req.body;
+
+    const produit = await ProduitDAO.trouverParId(produitId);
+    if (!produit) {
+        return res.render('commandes/erreur', { message: 'Produit introuvable' });
+    }
+
+    const commande = new Commande(null, clientId, produitId, parseInt(quantite), produit.prix);
+
+    const validation = commande.estValide();
+    if (!validation.valide) {
+        return res.render('commandes/erreur', { message: validation.message });
+    }
+
+    await CommandeDAO.creer(commande);
+    res.render('commandes/confirmation', { commande });
+};
+```
+
+---
+
+### Exercice 5 : Concevoir une architecture MVC
+
+**Enonce.** Une bibliotheque municipale souhaite une application de gestion de prets de livres. Les fonctionnalites sont : consulter le catalogue de livres, enregistrer un emprunt, enregistrer un retour, voir les emprunts en cours. Concevez l'architecture MVC : listez les fichiers necessaires, leur contenu (classes, methodes), et le flux pour l'action "enregistrer un emprunt".
+
+**Correction.**
+
+**Structure des fichiers :**
+
+```
+/models
+    Livre.js           -> classe Livre (id, titre, auteur, isbn, disponible)
+    LivreDAO.js        -> trouverTous(), trouverParId(), mettreAJourDisponibilite()
+    Emprunt.js         -> classe Emprunt (id, livreId, adherentNom, dateEmprunt, dateRetour)
+    EmpruntDAO.js      -> trouverEnCours(), creer(), enregistrerRetour()
+/controllers
+    livreController.js -> listerLivres()
+    empruntController.js -> listerEmprunts(), enregistrerEmprunt(), enregistrerRetour()
+/routes
+    livreRoutes.js     -> GET /livres
+    empruntRoutes.js   -> GET /emprunts, POST /emprunts, POST /emprunts/:id/retour
+/views
+    livres/
+        liste.ejs      -> affichage du catalogue
+    emprunts/
+        liste.ejs      -> affichage des emprunts en cours
+        formulaire.ejs -> formulaire d'emprunt
+```
+
+**Classes du Modele :**
+
+```javascript
+// models/Livre.js
+class Livre {
+    constructor(id, titre, auteur, isbn, disponible) {
+        this.id = id;
+        this.titre = titre;
+        this.auteur = auteur;
+        this.isbn = isbn;
+        this.disponible = disponible; // boolean
+    }
+}
+
+// models/Emprunt.js
+class Emprunt {
+    constructor(id, livreId, adherentNom, dateEmprunt, dateRetour) {
+        this.id = id;
+        this.livreId = livreId;
+        this.adherentNom = adherentNom;
+        this.dateEmprunt = dateEmprunt;
+        this.dateRetour = dateRetour; // null si pas encore retourne
+    }
+
+    estValide() {
+        if (!this.livreId) {
+            return { valide: false, message: 'Livre requis' };
+        }
+        if (!this.adherentNom || this.adherentNom.trim().length < 2) {
+            return { valide: false, message: 'Nom de l\'adherent requis' };
+        }
+        return { valide: true, message: '' };
+    }
+}
+```
+
+**Flux pour "enregistrer un emprunt" :**
+
+```
+1. L'adherent choisit un livre dans le catalogue et clique "Emprunter"
+   → La Vue envoie POST /emprunts avec livreId et adherentNom
+
+2. Le Controleur (empruntController.enregistrerEmprunt) recoit la requete
+   → Il cree un objet Emprunt et appelle estValide()
+
+3. Si valide, le Controleur appelle LivreDAO.trouverParId(livreId)
+   → Il verifie que le livre existe et qu'il est disponible
+
+4. Si le livre est disponible :
+   → EmpruntDAO.creer(emprunt) insere l'emprunt en BDD
+   → LivreDAO.mettreAJourDisponibilite(livreId, false) marque le livre comme indisponible
+
+5. Le Controleur redirige vers la liste des emprunts avec un message de succes
+
+6. Si le livre n'est pas disponible ou si les donnees sont invalides :
+   → Le Controleur rend la vue du formulaire avec un message d'erreur
+```
+
+---
+
+### Exercice 6 : QCM (Questions a choix multiples)
+
+**Question 1.** Ou doit se trouver la validation "un email doit contenir un @" ?
+- A) Dans la Vue
+- B) Dans le Controleur
+- C) Dans le Modele
+- D) Dans le fichier de routes
+
+**Reponse : C.** C'est une regle metier. La validation metier appartient au Modele. Le Controleur appelle la methode de validation du Modele, mais ne la contient pas.
+
+**Question 2.** Quel est le role du Controleur ?
+- A) Stocker les donnees en base de donnees
+- B) Afficher l'interface utilisateur
+- C) Coordonner le Modele et la Vue
+- D) Definir les regles de validation
+
+**Reponse : C.** Le Controleur est le chef d'orchestre. Il recoit les actions, appelle le Modele, et transmet le resultat a la Vue. Il ne stocke pas les donnees (role du Modele) et n'affiche rien (role de la Vue).
+
+**Question 3.** Dans une application Express.js en MVC, ou se trouvent les requetes SQL ?
+- A) Dans les fichiers de routes (routes/)
+- B) Dans les fichiers de controleurs (controllers/)
+- C) Dans les fichiers de vues (views/)
+- D) Dans les fichiers du modele (models/)
+
+**Reponse : D.** Les requetes SQL sont dans le Modele, plus precisement dans les DAO. Ni les routes, ni les controleurs, ni les vues ne doivent contenir de SQL.
+
+**Question 4.** En WinForms avec MVC, ou s'abonne-t-on aux evenements Click des boutons ?
+- A) Dans le Modele
+- B) Dans la Vue (Form)
+- C) Dans le Controleur
+- D) Dans Program.cs
+
+**Reponse : C.** Le Controleur s'abonne aux evenements de la Vue. C'est lui qui fait le lien entre les actions de l'utilisateur (via la Vue) et le traitement (via le Modele). L'abonnement se fait dans le constructeur du Controleur : `this.vue.btnAjouter.Click += BtnAjouter_Click;`
+
+**Question 5.** Quel avantage le pattern DAO apporte-t-il ?
+- A) Il accelere les requetes SQL
+- B) Il permet de changer de base de donnees sans modifier le Controleur
+- C) Il rend l'interface plus belle
+- D) Il reduit le nombre de fichiers
+
+**Reponse : B.** Le DAO isole l'acces aux donnees derriere une interface. Si on passe de MySQL a PostgreSQL, on cree un nouveau DAO qui implemente la meme interface. Le Controleur et la Vue ne changent pas.
+
+**Question 6.** Quel code est MAL PLACE dans ce controleur ?
+
+```javascript
+exports.afficherProduit = async (req, res) => {
+    const produit = await ProduitDAO.trouverParId(req.params.id);
+    const prixTTC = produit.prix * 1.20;  // <--- cette ligne
+    res.render('produits/detail', { produit, prixTTC });
+};
+```
+
+- A) L'appel a ProduitDAO
+- B) Le calcul du prix TTC
+- C) L'appel a res.render
+- D) L'acces a req.params.id
+
+**Reponse : B.** Le calcul du prix TTC est de la logique metier. Il doit etre une methode de la classe Produit dans le Modele : `produit.prixTTC()`. Le Controleur ne fait que coordonner, il ne calcule pas.
+
+---
+
+## Resume final
+
+MVC est un patron d'architecture qui separe une application en trois couches :
+
+- Le **Modele** gere les donnees, les requetes SQL (via le DAO), la validation et les calculs metier. Il ne connait ni la Vue ni le Controleur.
+
+- La **Vue** affiche les donnees et recueille les actions de l'utilisateur. Elle ne contient ni SQL ni logique metier.
+
+- Le **Controleur** coordonne les deux. Il recoit les actions (requetes HTTP ou evenements de clics), appelle le Modele, et transmet le resultat a la Vue.
+
+Le pattern DAO separe l'acces aux donnees dans des classes dediees, permettant de changer de base de donnees sans impacter le reste du code.
+
+En web (Express.js), le Controleur traite des requetes HTTP. En desktop (WinForms), il s'abonne aux evenements des composants graphiques. Le principe reste identique.
+
+A l'examen, les questions portent sur l'identification des couches, la reorganisation de code monolithique, et la conception d'architectures MVC. La cle : chaque ligne de code doit etre dans la bonne couche, et chaque couche ne doit contenir QUE ce qui lui revient.

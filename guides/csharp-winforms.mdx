@@ -1,0 +1,5493 @@
+---
+title: "C# Windows Forms (.NET Framework)"
+description: "Playbook exhaustif C# WinForms, Visual Studio Community, MySQL pour le BTS SIO SLAM"
+category: "Programmation"
+tags: ["csharp", "winforms", "dotnet", "visual-studio", "mysql"]
+difficulty: "Avance"
+---
+
+# C# Windows Forms (.NET Framework)
+
+Playbook complet pour le developpement d'applications desktop en C# avec Windows Forms sur .NET Framework. Visual Studio Community. Connexion MySQL. Architecture MVC.
+
+---
+
+## Table des matieres
+
+1. [Introduction a C#](#1-introduction-a-c)
+2. [Les bases de C#](#2-les-bases-de-c)
+3. [Programmation Orientee Objet en C#](#3-programmation-orientee-objet-en-c)
+4. [Windows Forms](#4-windows-forms)
+5. [Evenements en WinForms](#5-evenements-en-winforms)
+6. [Connexion a MySQL](#6-connexion-a-mysql)
+7. [Architecture MVC en WinForms](#7-architecture-mvc-en-winforms)
+8. [Fonctionnalites courantes](#8-fonctionnalites-courantes)
+9. [Exercices d'examen corriges](#9-exercices-dexamen-corriges)
+
+---
+
+## 1. Introduction a C#
+
+### 1.1 Historique
+
+C# (prononce "C sharp") est un langage de programmation cree par **Microsoft**, concu principalement par **Anders Hejlsberg** (qui avait deja concu Turbo Pascal et Delphi chez Borland). La premiere version a ete publiee en **2000**, en meme temps que la plateforme .NET.
+
+C# est un langage :
+- **Oriente objet** : tout est classe, tout est objet
+- **Fortement type** : chaque variable a un type defini a la compilation
+- **Inspire de Java et C++** : syntaxe proche de Java, puissance heritee du C++
+- **Gere par un ramasse-miettes (garbage collector)** : la memoire est liberee automatiquement
+
+Le langage a ete standardise par l'ECMA (ECMA-334) et l'ISO (ISO/IEC 23270).
+
+### 1.2 .NET Framework vs .NET Core / .NET 5+
+
+| Caracteristique | .NET Framework | .NET Core / .NET 5+ |
+|---|---|---|
+| Plateforme | Windows uniquement | Multiplateforme (Windows, Linux, macOS) |
+| Version actuelle | 4.8.1 (derniere version, plus de nouvelles versions majeures) | .NET 8, .NET 9... |
+| WinForms | Oui (natif) | Oui (depuis .NET Core 3.0, Windows uniquement) |
+| Utilisation en BTS | **Standard** | Rarement utilise en BTS SIO |
+| NuGet | Oui | Oui |
+| Deploiement | Installe avec Windows | Autonome ou dependant du runtime |
+
+**En BTS SIO SLAM, on utilise .NET Framework** car :
+- C'est le standard des sujets d'examen
+- Il est preinstalle sur Windows
+- Les sujets d'examen font reference a .NET Framework
+- La documentation et les exercices sont bases dessus
+
+Ne pas confondre : .NET Framework 4.x (ce qu'on utilise) et .NET 5/6/7/8 (la nouvelle plateforme unifiee).
+
+### 1.3 Visual Studio Community
+
+#### Installation
+
+1. Telecharger Visual Studio Community sur https://visualstudio.microsoft.com/fr/
+2. Lancer l'installateur (Visual Studio Installer)
+3. Cocher la charge de travail **"Developpement .NET Desktop"** (Desktop development with .NET)
+4. Cette charge installe automatiquement :
+   - Le SDK .NET Framework
+   - Les modeles de projets Windows Forms
+   - Le concepteur visuel de formulaires
+   - NuGet Package Manager
+5. Cliquer sur Installer et attendre la fin du telechargement
+
+#### Interface de Visual Studio
+
+Les elements principaux de l'interface :
+
+- **Explorateur de solutions** (Solution Explorer) : a droite, affiche l'arborescence du projet (fichiers, references, ressources)
+- **Editeur de code** : zone centrale, onglets pour chaque fichier ouvert
+- **Concepteur de formulaires** (Form Designer) : editeur visuel drag & drop pour les Forms
+- **Boite a outils** (Toolbox) : a gauche, contient les controles WinForms a glisser sur le formulaire
+- **Fenetre Proprietes** (Properties) : en bas a droite, affiche les proprietes du controle selectionne
+- **Fenetre Sortie** (Output) : en bas, affiche les messages de compilation et d'execution
+- **Liste d'erreurs** (Error List) : en bas, affiche les erreurs, avertissements et messages
+- **Explorateur de serveurs** (Server Explorer) : pour se connecter a des bases de donnees
+
+Raccourcis essentiels :
+- `Ctrl + Shift + B` : compiler le projet (Build)
+- `F5` : executer avec debogage
+- `Ctrl + F5` : executer sans debogage
+- `F9` : placer/retirer un point d'arret (breakpoint)
+- `F10` : pas a pas principal (Step Over)
+- `F11` : pas a pas detaille (Step Into)
+- `Ctrl + .` : corrections rapides (Quick Actions)
+- `Ctrl + Espace` : IntelliSense (auto-completion)
+- `Ctrl + K, Ctrl + D` : formater le document
+- `Ctrl + K, Ctrl + C` : commenter la selection
+- `Ctrl + K, Ctrl + U` : decommenter la selection
+
+#### Creer un projet Windows Forms
+
+1. Fichier > Nouveau > Projet (ou Ctrl + Shift + N)
+2. Rechercher "Windows Forms" dans les modeles
+3. Selectionner **"Application Windows Forms (.NET Framework)"** -- attention, bien choisir .NET Framework et pas .NET
+4. Donner un nom au projet (ex: GestionProduits)
+5. Choisir l'emplacement
+6. Selectionner la version du Framework (4.7.2 ou 4.8 recommande)
+7. Cliquer sur Creer
+
+### 1.4 Structure d'un projet WinForms
+
+Apres creation, le projet contient :
+
+```
+MonProjet/
+├── Properties/
+│   ├── AssemblyInfo.cs        // Informations sur l'assembly (version, auteur...)
+│   ├── Resources.resx         // Ressources embarquees (images, textes)
+│   └── Settings.settings      // Parametres de l'application
+├── References/                // Bibliotheques referencees
+│   ├── System
+│   ├── System.Core
+│   ├── System.Data
+│   ├── System.Drawing
+│   ├── System.Windows.Forms
+│   └── ...
+├── App.config                 // Fichier de configuration XML
+├── Form1.cs                   // Code du formulaire (logique)
+├── Form1.Designer.cs          // Code genere par le concepteur visuel
+├── Form1.resx                 // Ressources du formulaire
+├── Program.cs                 // Point d'entree de l'application
+└── MonProjet.csproj           // Fichier projet (configuration MSBuild)
+```
+
+**Program.cs** -- Point d'entree :
+
+```csharp
+using System;
+using System.Windows.Forms;
+
+namespace MonProjet
+{
+    static class Program
+    {
+        /// <summary>
+        /// Point d'entree principal de l'application.
+        /// </summary>
+        [STAThread]
+        static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new Form1());
+        }
+    }
+}
+```
+
+- `[STAThread]` : obligatoire pour WinForms, indique que le thread principal utilise le modele STA (Single-Threaded Apartment), requis par les controles Windows
+- `Application.EnableVisualStyles()` : active les styles visuels modernes de Windows
+- `Application.SetCompatibleTextRenderingDefault(false)` : utilise GDI+ pour le rendu du texte
+- `Application.Run(new Form1())` : lance la boucle de messages Windows et affiche le formulaire principal
+
+**Form1.cs** -- Code du formulaire :
+
+```csharp
+using System;
+using System.Windows.Forms;
+
+namespace MonProjet
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+    }
+}
+```
+
+- `partial` : le mot-cle partial permet de separer une classe en plusieurs fichiers. Ici, Form1 est definie dans Form1.cs (notre code) ET Form1.Designer.cs (code genere)
+- `InitializeComponent()` : methode generee dans Designer.cs qui cree et configure tous les controles places visuellement
+
+**Form1.Designer.cs** -- Code genere automatiquement :
+
+```csharp
+namespace MonProjet
+{
+    partial class Form1
+    {
+        private System.ComponentModel.IContainer components = null;
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Code genere par le Concepteur Windows Form
+
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+            // 
+            // Form1
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Name = "Form1";
+            this.Text = "Form1";
+            this.ResumeLayout(false);
+        }
+
+        #endregion
+    }
+}
+```
+
+**Regle absolue** : ne pas modifier manuellement Form1.Designer.cs sauf si on maitrise parfaitement ce qu'on fait. Le concepteur visuel ecrase ce fichier a chaque modification visuelle. Tout code personnel va dans Form1.cs.
+
+### 1.5 Le cycle de compilation
+
+```
+Code source C# (.cs)
+        |
+        v
+  Compilateur C# (csc.exe)
+        |
+        v
+  Code IL (Intermediate Language) dans un assembly (.exe ou .dll)
+        |
+        v
+  CLR (Common Language Runtime) -- au moment de l'execution
+        |
+        v
+  Compilateur JIT (Just-In-Time)
+        |
+        v
+  Code machine natif (execute par le processeur)
+```
+
+Etapes detaillees :
+
+1. **Ecriture du code source** : fichiers .cs contenant du C#
+2. **Compilation** : le compilateur C# (csc.exe) transforme le code source en **IL** (Intermediate Language), aussi appele MSIL ou CIL. L'IL est un langage intermediaire, independant du processeur. Le resultat est stocke dans un **assembly** (fichier .exe ou .dll)
+3. **Execution** : quand on lance l'application, le **CLR** (Common Language Runtime) prend le relais. Le CLR est la machine virtuelle de .NET
+4. **Compilation JIT** : le CLR utilise un compilateur **JIT** (Just-In-Time) qui transforme l'IL en code machine natif adapte au processeur de la machine. Cette compilation se fait methode par methode, au moment ou elles sont appelees pour la premiere fois
+5. **Execution native** : le code machine est execute par le processeur
+
+Avantages de ce modele :
+- Portabilite (l'IL est le meme sur toutes les machines)
+- Optimisations specifiques au processeur cible (par le JIT)
+- Verification de la securite du code par le CLR
+- Gestion automatique de la memoire (garbage collector)
+
+Le CLR fournit aussi :
+- La gestion des exceptions
+- La verification des types
+- La gestion de la memoire (allocation et liberation via le garbage collector)
+- La securite d'acces au code
+
+---
+
+## 2. Les bases de C#
+
+### 2.1 Variables et types de donnees
+
+C# est un langage **fortement type** : chaque variable doit avoir un type declare (ou infere) a la compilation.
+
+#### Types numeriques entiers
+
+```csharp
+int age = 25;                  // Entier 32 bits signe (-2 147 483 648 a 2 147 483 647)
+long population = 7800000000L; // Entier 64 bits signe
+short petit = 32000;           // Entier 16 bits signe (-32 768 a 32 767)
+byte octet = 255;              // Entier 8 bits non signe (0 a 255)
+```
+
+Le type `int` est le plus utilise pour les entiers en BTS.
+
+#### Types numeriques decimaux
+
+```csharp
+double prix = 19.99;           // Virgule flottante 64 bits (precision ~15-17 chiffres)
+float temperature = 36.6f;     // Virgule flottante 32 bits (precision ~6-9 chiffres) -- suffixe f obligatoire
+decimal montant = 1234.56m;    // Decimal 128 bits (precision ~28-29 chiffres) -- suffixe m obligatoire
+```
+
+**Quand utiliser quoi :**
+- `double` : calculs scientifiques, valeurs approchees (par defaut pour les litteraux decimaux)
+- `float` : quand la memoire est limitee (rare en BTS)
+- `decimal` : **calculs financiers** ou la precision est critique (pas d'erreurs d'arrondi)
+
+#### Autres types
+
+```csharp
+string nom = "Dupont";         // Chaine de caracteres (reference, immuable)
+char lettre = 'A';             // Un seul caractere Unicode (guillemets simples)
+bool estValide = true;         // Booleen (true ou false)
+DateTime maintenant = DateTime.Now;  // Date et heure
+DateTime dateNaissance = new DateTime(2000, 3, 15); // 15 mars 2000
+```
+
+#### Types valeur vs types reference
+
+- **Types valeur** (stockes sur la pile) : int, double, float, decimal, char, bool, DateTime, struct, enum
+- **Types reference** (stockes sur le tas, variable contient une reference) : string, classes, tableaux, interfaces
+
+`string` est un type reference mais il se comporte comme un type valeur grace a son **immutabilite** : toute modification cree une nouvelle instance.
+
+#### Valeurs par defaut
+
+```csharp
+int x;        // 0
+double d;     // 0.0
+bool b;       // false
+string s;     // null
+DateTime dt;  // 01/01/0001 00:00:00
+```
+
+Attention : les variables locales doivent etre initialisees avant utilisation. Seuls les champs de classe recoivent automatiquement leur valeur par defaut.
+
+#### Le mot-cle var
+
+```csharp
+var nom = "Dupont";     // Le compilateur infere le type string
+var age = 25;           // Le compilateur infere le type int
+var prix = 19.99;       // Le compilateur infere le type double
+var liste = new List<string>(); // Le compilateur infere List<string>
+```
+
+`var` n'est pas un typage dynamique. Le type est determine a la compilation et ne peut plus changer. C'est de l'**inference de type**.
+
+Regles :
+- `var` ne peut etre utilise que pour les variables locales (pas les champs de classe, pas les parametres)
+- La variable doit etre initialisee a la declaration (le compilateur a besoin de la valeur pour inferer le type)
+- `var x;` est interdit (pas de valeur, pas d'inference possible)
+
+### 2.2 Conversion de types
+
+#### Conversions implicites (elargissement)
+
+```csharp
+int entier = 42;
+double decimal1 = entier;    // int -> double : pas de perte de donnees, conversion automatique
+long grand = entier;          // int -> long : pas de perte, conversion automatique
+```
+
+#### Conversions explicites (cast)
+
+```csharp
+double prix = 19.99;
+int prixEntier = (int)prix;  // 19 -- la partie decimale est tronquee (pas arrondie)
+
+long grand = 1000000L;
+int normal = (int)grand;     // OK si la valeur tient dans un int
+```
+
+Le cast peut provoquer une perte de donnees ou une exception si la valeur deborde.
+
+#### Methodes de conversion
+
+```csharp
+// string vers int
+string texte = "42";
+
+int a = Convert.ToInt32(texte);   // Retourne 0 si texte est null
+int b = int.Parse(texte);         // Lance FormatException si texte n'est pas un entier valide
+                                   // Lance ArgumentNullException si texte est null
+
+// TryParse -- la methode la plus sure
+bool reussi = int.TryParse(texte, out int resultat);
+// reussi = true, resultat = 42
+// Si la conversion echoue : reussi = false, resultat = 0
+
+// string vers double
+double d = Convert.ToDouble("19.99");  // Attention au separateur decimal (culture)
+double e = double.Parse("19.99");
+
+// int vers string
+string s = age.ToString();            // "25"
+string s2 = Convert.ToString(age);    // "25"
+
+// Autres conversions
+bool flag = Convert.ToBoolean(1);     // true (0 = false, tout autre = true)
+DateTime dt = Convert.ToDateTime("2024-01-15");
+```
+
+**Bonne pratique a l'examen** : utiliser `int.TryParse()` pour convertir les saisies utilisateur (TextBox.Text) car on ne peut pas garantir que l'utilisateur entre un nombre valide.
+
+```csharp
+if (int.TryParse(txtQuantite.Text, out int quantite))
+{
+    // La conversion a reussi, on peut utiliser quantite
+}
+else
+{
+    MessageBox.Show("Veuillez entrer un nombre entier valide.");
+}
+```
+
+### 2.3 Les chaines de caracteres (string)
+
+#### Declaration et initialisation
+
+```csharp
+string nom = "Dupont";
+string vide = "";
+string nulle = null;          // Attention : null != ""
+string aussi = string.Empty;  // Equivalent de ""
+```
+
+#### Interpolation de chaines
+
+```csharp
+string prenom = "Jean";
+string nom = "Dupont";
+int age = 25;
+
+// Interpolation (C# 6+) -- methode recommandee
+string message = $"Bonjour {prenom} {nom}, vous avez {age} ans.";
+
+// Concatenation classique
+string message2 = "Bonjour " + prenom + " " + nom + ", vous avez " + age + " ans.";
+
+// String.Format
+string message3 = string.Format("Bonjour {0} {1}, vous avez {2} ans.", prenom, nom, age);
+
+// Expressions dans l'interpolation
+string info = $"Prix TTC : {prix * 1.20:F2} euros";  // :F2 = 2 decimales
+```
+
+L'interpolation avec `$""` est la methode la plus lisible et la plus utilisee.
+
+#### Chaine verbatim
+
+```csharp
+// Le @ permet d'ignorer les caracteres d'echappement
+string chemin = @"C:\Users\Documents\fichier.txt";
+// Equivalent sans @ :
+string chemin2 = "C:\\Users\\Documents\\fichier.txt";
+
+// Combinaison interpolation + verbatim
+string requete = $@"SELECT * FROM produits WHERE nom = '{nom}'";
+```
+
+#### Methodes importantes de string
+
+```csharp
+string texte = "  Bonjour le Monde  ";
+
+// Propriete
+int longueur = texte.Length;                    // 21
+
+// Recherche
+int index = texte.IndexOf("Monde");            // 16 (-1 si non trouve)
+bool contient = texte.Contains("Bonjour");     // true
+bool commence = texte.StartsWith("  Bon");     // true
+bool finit = texte.EndsWith("de  ");           // true
+
+// Modification (retourne une NOUVELLE chaine, l'originale ne change pas)
+string majuscules = texte.ToUpper();            // "  BONJOUR LE MONDE  "
+string minuscules = texte.ToLower();            // "  bonjour le monde  "
+string nettoye = texte.Trim();                  // "Bonjour le Monde"
+string trimDebut = texte.TrimStart();           // "Bonjour le Monde  "
+string trimFin = texte.TrimEnd();               // "  Bonjour le Monde"
+
+// Extraction
+string extrait = texte.Substring(2, 7);        // "Bonjour" (index depart, longueur)
+string depuis = texte.Substring(10);            // "le Monde  " (depuis l'index 10)
+
+// Remplacement
+string remplace = texte.Replace("Monde", "World"); // "  Bonjour le World  "
+
+// Decoupage
+string fruits = "pomme;poire;banane";
+string[] tableau = fruits.Split(';');           // ["pomme", "poire", "banane"]
+string[] mots = "un deux trois".Split(' ');     // ["un", "deux", "trois"]
+
+// Jointure (methode statique)
+string rejoint = string.Join(", ", tableau);    // "pomme, poire, banane"
+
+// Verification vide ou null
+bool estVide = string.IsNullOrEmpty(texte);         // false
+bool estBlanc = string.IsNullOrWhiteSpace("   ");   // true
+
+// Comparaison
+bool egal = texte.Equals("bonjour", StringComparison.OrdinalIgnoreCase); // insensible a la casse
+```
+
+**Point important** : les chaines sont **immuables** en C#. Chaque methode retourne une nouvelle chaine. La chaine originale n'est jamais modifiee.
+
+### 2.4 Operateurs
+
+#### Operateurs arithmetiques
+
+```csharp
+int a = 10, b = 3;
+int somme = a + b;        // 13
+int difference = a - b;   // 7
+int produit = a * b;      // 30
+int quotient = a / b;     // 3 (division entiere car a et b sont des int)
+int reste = a % b;        // 1 (modulo)
+
+double c = 10.0, d = 3.0;
+double division = c / d;  // 3.3333...
+
+// Attention a la division entiere
+int resultat = 10 / 3;           // 3 (pas 3.33)
+double resultat2 = 10.0 / 3;    // 3.3333... (un des operandes est double)
+double resultat3 = (double)10 / 3; // 3.3333... (cast explicite)
+```
+
+#### Operateurs d'affectation
+
+```csharp
+int x = 10;
+x += 5;   // x = x + 5 = 15
+x -= 3;   // x = x - 3 = 12
+x *= 2;   // x = x * 2 = 24
+x /= 4;   // x = x / 4 = 6
+x %= 4;   // x = x % 4 = 2
+
+x++;       // x = x + 1 = 3 (post-incrementation)
+++x;       // x = x + 1 = 4 (pre-incrementation)
+x--;       // x = x - 1 = 3
+```
+
+#### Operateurs de comparaison
+
+```csharp
+int a = 10, b = 20;
+bool r1 = (a == b);   // false (egalite)
+bool r2 = (a != b);   // true  (difference)
+bool r3 = (a < b);    // true  (inferieur strict)
+bool r4 = (a <= b);   // true  (inferieur ou egal)
+bool r5 = (a > b);    // false (superieur strict)
+bool r6 = (a >= b);   // false (superieur ou egal)
+```
+
+#### Operateurs logiques
+
+```csharp
+bool a = true, b = false;
+bool r1 = a && b;   // false (ET logique -- evaluation paresseuse)
+bool r2 = a || b;   // true  (OU logique -- evaluation paresseuse)
+bool r3 = !a;       // false (NON logique)
+```
+
+**Evaluation paresseuse** : avec `&&`, si le premier operande est `false`, le second n'est pas evalue. Avec `||`, si le premier est `true`, le second n'est pas evalue.
+
+#### Operateur ternaire
+
+```csharp
+int age = 20;
+string statut = (age >= 18) ? "Majeur" : "Mineur";
+// Equivalent de : if (age >= 18) statut = "Majeur"; else statut = "Mineur";
+```
+
+#### Operateur null-conditionnel et null-coalescent
+
+```csharp
+string nom = null;
+
+// Null-conditionnel (?.) -- evite NullReferenceException
+int? longueur = nom?.Length;  // null (au lieu de lancer une exception)
+
+// Null-coalescent (??) -- valeur par defaut si null
+string affichage = nom ?? "Inconnu";  // "Inconnu"
+```
+
+### 2.5 Structures de controle
+
+#### if / else if / else
+
+```csharp
+int note = 15;
+
+if (note >= 16)
+{
+    Console.WriteLine("Tres bien");
+}
+else if (note >= 14)
+{
+    Console.WriteLine("Bien");
+}
+else if (note >= 12)
+{
+    Console.WriteLine("Assez bien");
+}
+else if (note >= 10)
+{
+    Console.WriteLine("Passable");
+}
+else
+{
+    Console.WriteLine("Insuffisant");
+}
+```
+
+Les accolades sont obligatoires des qu'il y a plus d'une instruction. Bonne pratique : toujours les mettre, meme pour une seule instruction.
+
+#### switch
+
+```csharp
+string jour = "lundi";
+
+switch (jour)
+{
+    case "lundi":
+    case "mardi":
+    case "mercredi":
+    case "jeudi":
+    case "vendredi":
+        Console.WriteLine("Jour ouvre");
+        break;  // break obligatoire a la fin de chaque case
+    case "samedi":
+    case "dimanche":
+        Console.WriteLine("Week-end");
+        break;
+    default:
+        Console.WriteLine("Jour inconnu");
+        break;
+}
+```
+
+Le `break` est **obligatoire** en C# a la fin de chaque `case` (contrairement au C/C++ ou il est optionnel). Oublier le `break` provoque une erreur de compilation.
+
+#### for
+
+```csharp
+// Boucle for classique
+for (int i = 0; i < 10; i++)
+{
+    Console.WriteLine($"Iteration {i}");  // 0 a 9
+}
+
+// Decompte
+for (int i = 10; i > 0; i--)
+{
+    Console.WriteLine(i);  // 10 a 1
+}
+
+// Pas de 2
+for (int i = 0; i < 20; i += 2)
+{
+    Console.WriteLine(i);  // 0, 2, 4, ..., 18
+}
+```
+
+#### while
+
+```csharp
+int compteur = 0;
+while (compteur < 5)
+{
+    Console.WriteLine(compteur);
+    compteur++;
+}
+// Affiche 0, 1, 2, 3, 4
+```
+
+La condition est evaluee **avant** chaque iteration. Si la condition est fausse des le depart, le corps de la boucle n'est jamais execute.
+
+#### do...while
+
+```csharp
+int nombre;
+do
+{
+    Console.Write("Entrez un nombre positif : ");
+    nombre = int.Parse(Console.ReadLine());
+} while (nombre <= 0);
+```
+
+La condition est evaluee **apres** chaque iteration. Le corps est execute **au moins une fois**.
+
+#### foreach
+
+```csharp
+string[] prenoms = { "Alice", "Bob", "Charlie" };
+
+foreach (string prenom in prenoms)
+{
+    Console.WriteLine(prenom);
+}
+
+// Avec une List
+List<int> nombres = new List<int> { 1, 2, 3, 4, 5 };
+foreach (int n in nombres)
+{
+    Console.WriteLine(n);
+}
+```
+
+`foreach` est en lecture seule : on ne peut pas modifier l'element courant dans la boucle. On ne peut pas non plus ajouter ou supprimer des elements de la collection pendant le parcours.
+
+#### break et continue
+
+```csharp
+// break : sort de la boucle immediatement
+for (int i = 0; i < 100; i++)
+{
+    if (i == 5) break;
+    Console.WriteLine(i);  // 0, 1, 2, 3, 4
+}
+
+// continue : passe a l'iteration suivante
+for (int i = 0; i < 10; i++)
+{
+    if (i % 2 != 0) continue;  // Saute les nombres impairs
+    Console.WriteLine(i);       // 0, 2, 4, 6, 8
+}
+```
+
+### 2.6 Tableaux
+
+#### Declaration et initialisation
+
+```csharp
+// Declaration avec taille
+int[] nombres = new int[5];           // Tableau de 5 entiers (initialises a 0)
+
+// Declaration avec valeurs
+int[] notes = { 15, 12, 18, 9, 14 };  // Taille implicite : 5
+int[] notes2 = new int[] { 15, 12, 18, 9, 14 };  // Equivalent
+
+// Declaration avec var
+var prenoms = new string[] { "Alice", "Bob", "Charlie" };
+```
+
+#### Acces et modification
+
+```csharp
+int[] notes = { 15, 12, 18, 9, 14 };
+
+int premiere = notes[0];  // 15 (les index commencent a 0)
+int derniere = notes[4];  // 14
+notes[2] = 20;            // Modification : 18 devient 20
+
+int taille = notes.Length; // 5 (propriete, pas methode)
+```
+
+**Attention** : acceder a un index hors limites lance une `IndexOutOfRangeException`.
+
+#### Parcours
+
+```csharp
+int[] notes = { 15, 12, 18, 9, 14 };
+
+// Avec for
+for (int i = 0; i < notes.Length; i++)
+{
+    Console.WriteLine($"Note {i} : {notes[i]}");
+}
+
+// Avec foreach (plus simple quand on n'a pas besoin de l'index)
+foreach (int note in notes)
+{
+    Console.WriteLine(note);
+}
+```
+
+#### Methodes utiles (classe Array)
+
+```csharp
+int[] notes = { 15, 12, 18, 9, 14 };
+
+Array.Sort(notes);                    // Tri en place : {9, 12, 14, 15, 18}
+Array.Reverse(notes);                 // Inverse : {18, 15, 14, 12, 9}
+int index = Array.IndexOf(notes, 14); // Index de la valeur 14
+bool existe = Array.Exists(notes, n => n > 15); // true
+```
+
+#### Tableaux multidimensionnels
+
+```csharp
+// Tableau a 2 dimensions
+int[,] matrice = new int[3, 4];      // 3 lignes, 4 colonnes
+matrice[0, 0] = 1;
+matrice[2, 3] = 12;
+
+int[,] grille = {
+    { 1, 2, 3 },
+    { 4, 5, 6 },
+    { 7, 8, 9 }
+};
+
+// Parcours
+for (int i = 0; i < grille.GetLength(0); i++)      // Lignes
+{
+    for (int j = 0; j < grille.GetLength(1); j++)  // Colonnes
+    {
+        Console.Write(grille[i, j] + " ");
+    }
+    Console.WriteLine();
+}
+```
+
+### 2.7 Collections
+
+#### List\<T\>
+
+`List<T>` est une liste generique dynamique (taille variable). C'est la collection la plus utilisee en BTS.
+
+```csharp
+using System.Collections.Generic;
+
+// Creation
+List<string> prenoms = new List<string>();
+List<int> nombres = new List<int> { 1, 2, 3, 4, 5 };
+var produits = new List<string> { "Pomme", "Poire", "Banane" };
+
+// Ajout
+prenoms.Add("Alice");                          // Ajoute a la fin
+prenoms.Add("Bob");
+prenoms.AddRange(new string[] { "Charlie", "Diana" }); // Ajoute plusieurs elements
+prenoms.Insert(1, "Eve");                      // Insere a l'index 1
+
+// Acces
+string premier = prenoms[0];                   // "Alice"
+int taille = prenoms.Count;                    // Propriete Count (pas Length)
+
+// Suppression
+prenoms.Remove("Bob");                         // Supprime la premiere occurrence
+prenoms.RemoveAt(0);                           // Supprime par index
+prenoms.RemoveAll(p => p.StartsWith("C"));     // Supprime tous ceux qui commencent par C
+prenoms.Clear();                               // Vide la liste
+
+// Recherche
+bool existe = prenoms.Contains("Alice");       // true/false
+string trouve = prenoms.Find(p => p.Length > 4);       // Premier element correspondant (ou null/default)
+List<string> trouves = prenoms.FindAll(p => p.Length > 4); // Tous les elements correspondants
+int index = prenoms.IndexOf("Alice");          // Index de l'element (-1 si absent)
+
+// Tri
+prenoms.Sort();                                // Tri alphabetique en place
+prenoms.Reverse();                             // Inverse l'ordre
+
+// Parcours
+prenoms.ForEach(p => Console.WriteLine(p));    // Action sur chaque element
+
+// Conversion
+string[] tableau = prenoms.ToArray();          // List -> tableau
+```
+
+#### Dictionary\<TKey, TValue\>
+
+```csharp
+using System.Collections.Generic;
+
+// Creation
+Dictionary<string, int> ages = new Dictionary<string, int>();
+var capitales = new Dictionary<string, string>
+{
+    { "France", "Paris" },
+    { "Allemagne", "Berlin" },
+    { "Espagne", "Madrid" }
+};
+
+// Ajout
+ages.Add("Alice", 25);       // Lance une exception si la cle existe deja
+ages["Bob"] = 30;             // Ajoute ou remplace
+
+// Acces
+int ageAlice = ages["Alice"];            // 25 (lance KeyNotFoundException si cle absente)
+bool existe = ages.ContainsKey("Alice"); // true
+bool existeVal = ages.ContainsValue(25); // true
+
+// Acces securise
+if (ages.TryGetValue("Charlie", out int ageCharlie))
+{
+    Console.WriteLine(ageCharlie);
+}
+else
+{
+    Console.WriteLine("Cle non trouvee");
+}
+
+// Suppression
+ages.Remove("Bob");
+
+// Parcours
+foreach (KeyValuePair<string, int> paire in ages)
+{
+    Console.WriteLine($"{paire.Key} a {paire.Value} ans");
+}
+
+// Ou avec var
+foreach (var paire in ages)
+{
+    Console.WriteLine($"{paire.Key} a {paire.Value} ans");
+}
+
+// Nombre d'elements
+int nombre = ages.Count;
+
+// Collections de cles et valeurs
+var cles = ages.Keys;       // Collection des cles
+var valeurs = ages.Values;  // Collection des valeurs
+```
+
+### 2.8 LINQ (Language Integrated Query)
+
+LINQ permet d'ecrire des requetes directement dans le code C# pour filtrer, trier, projeter des collections. Il faut ajouter `using System.Linq;`.
+
+```csharp
+using System.Linq;
+
+List<int> nombres = new List<int> { 3, 7, 1, 9, 4, 6, 2, 8, 5 };
+
+// Where : filtre les elements
+List<int> pairs = nombres.Where(n => n % 2 == 0).ToList();
+// {4, 6, 2, 8}
+
+// Select : projette (transforme) chaque element
+List<int> doubles = nombres.Select(n => n * 2).ToList();
+// {6, 14, 2, 18, 8, 12, 4, 16, 10}
+
+// OrderBy / OrderByDescending : tri
+List<int> tries = nombres.OrderBy(n => n).ToList();
+// {1, 2, 3, 4, 5, 6, 7, 8, 9}
+List<int> triesDesc = nombres.OrderByDescending(n => n).ToList();
+// {9, 8, 7, 6, 5, 4, 3, 2, 1}
+
+// FirstOrDefault : premier element correspondant (ou default si aucun)
+int premierPair = nombres.FirstOrDefault(n => n % 2 == 0);  // 4
+int premierGrand = nombres.FirstOrDefault(n => n > 100);      // 0 (default de int)
+
+// Count : nombre d'elements (avec ou sans condition)
+int total = nombres.Count();                    // 9
+int nbPairs = nombres.Count(n => n % 2 == 0);  // 4
+
+// Sum, Average, Min, Max
+int somme = nombres.Sum();                      // 45
+double moyenne = nombres.Average();             // 5.0
+int minimum = nombres.Min();                    // 1
+int maximum = nombres.Max();                    // 9
+
+// Any : au moins un element correspond ?
+bool auMoinsUn = nombres.Any(n => n > 8);      // true
+
+// All : tous les elements correspondent ?
+bool tousPositifs = nombres.All(n => n > 0);    // true
+
+// Enchainement de methodes
+List<int> resultat = nombres
+    .Where(n => n > 3)
+    .OrderBy(n => n)
+    .ToList();
+// {4, 5, 6, 7, 8, 9}
+```
+
+#### LINQ avec des objets
+
+```csharp
+List<Produit> produits = GetProduits(); // Liste de produits
+
+// Filtrage
+var chers = produits.Where(p => p.Prix > 100).ToList();
+
+// Tri
+var parPrix = produits.OrderBy(p => p.Prix).ToList();
+var parNomDesc = produits.OrderByDescending(p => p.Nom).ToList();
+
+// Projection
+var noms = produits.Select(p => p.Nom).ToList();
+var resume = produits.Select(p => new { p.Nom, p.Prix }).ToList();
+
+// Recherche
+Produit premier = produits.FirstOrDefault(p => p.Id == 5);
+
+// Agregation
+decimal total = produits.Sum(p => p.Prix);
+double moyennePrix = produits.Average(p => (double)p.Prix);
+```
+
+**Important pour l'examen** : les expressions lambda (`n => n > 3`) sont des fonctions anonymes. Le parametre avant `=>` est l'element courant, l'expression apres `=>` est la condition ou la transformation.
+
+### 2.9 Gestion d'erreurs
+
+#### try / catch / finally
+
+```csharp
+try
+{
+    int nombre = int.Parse("abc");  // Lance FormatException
+    Console.WriteLine(nombre);
+}
+catch (FormatException ex)
+{
+    Console.WriteLine($"Erreur de format : {ex.Message}");
+}
+catch (OverflowException ex)
+{
+    Console.WriteLine($"Nombre trop grand : {ex.Message}");
+}
+catch (Exception ex)
+{
+    // Attrape toutes les autres exceptions
+    Console.WriteLine($"Erreur : {ex.Message}");
+}
+finally
+{
+    // Execute toujours, qu'il y ait eu une exception ou non
+    Console.WriteLine("Bloc finally execute.");
+}
+```
+
+Regles :
+- Les blocs `catch` sont evalues dans l'ordre : mettre les exceptions les plus specifiques en premier
+- `catch (Exception ex)` attrape toutes les exceptions (classe de base)
+- `finally` est optionnel mais s'execute toujours (utile pour liberer des ressources)
+- On peut avoir `try/catch` sans `finally`, ou `try/finally` sans `catch`
+
+#### Lancer une exception
+
+```csharp
+public void SetAge(int age)
+{
+    if (age < 0 || age > 150)
+    {
+        throw new ArgumentException("L'age doit etre entre 0 et 150.");
+    }
+    this.age = age;
+}
+```
+
+#### Exceptions courantes
+
+| Exception | Cause |
+|---|---|
+| `NullReferenceException` | Acces a un membre d'un objet null |
+| `IndexOutOfRangeException` | Index hors limites d'un tableau |
+| `FormatException` | Conversion de chaine impossible (ex: int.Parse("abc")) |
+| `InvalidOperationException` | Operation invalide dans l'etat actuel |
+| `ArgumentException` | Argument invalide passe a une methode |
+| `ArgumentNullException` | Argument null non autorise |
+| `DivideByZeroException` | Division par zero (types entiers) |
+| `FileNotFoundException` | Fichier introuvable |
+| `MySqlException` | Erreur de base de donnees MySQL |
+
+#### Exception personnalisee
+
+```csharp
+public class StockInsuffisantException : Exception
+{
+    public int StockDisponible { get; }
+    public int QuantiteDemandee { get; }
+
+    public StockInsuffisantException(int stock, int demande)
+        : base($"Stock insuffisant : {stock} disponible(s), {demande} demande(s).")
+    {
+        StockDisponible = stock;
+        QuantiteDemandee = demande;
+    }
+}
+
+// Utilisation
+public void Vendre(int quantite)
+{
+    if (quantite > this.stock)
+    {
+        throw new StockInsuffisantException(this.stock, quantite);
+    }
+    this.stock -= quantite;
+}
+```
+
+### 2.10 Exercices -- Les bases
+
+**Exercice 1** : Ecrire un programme qui demande un nombre a l'utilisateur et affiche s'il est pair ou impair. Utiliser TryParse pour la validation.
+
+```csharp
+Console.Write("Entrez un nombre : ");
+if (int.TryParse(Console.ReadLine(), out int nombre))
+{
+    string resultat = (nombre % 2 == 0) ? "pair" : "impair";
+    Console.WriteLine($"{nombre} est {resultat}.");
+}
+else
+{
+    Console.WriteLine("Saisie invalide.");
+}
+```
+
+**Exercice 2** : Creer une List\<int\>, y ajouter 10 nombres, puis afficher la somme, la moyenne, le min et le max avec LINQ.
+
+```csharp
+List<int> nombres = new List<int> { 12, 5, 8, 21, 3, 17, 9, 14, 6, 11 };
+
+Console.WriteLine($"Somme   : {nombres.Sum()}");
+Console.WriteLine($"Moyenne : {nombres.Average():F2}");
+Console.WriteLine($"Min     : {nombres.Min()}");
+Console.WriteLine($"Max     : {nombres.Max()}");
+Console.WriteLine($"Nombre d'elements > 10 : {nombres.Count(n => n > 10)}");
+```
+
+**Exercice 3** : Creer un Dictionary\<string, double\> representant des produits et leurs prix. Afficher les produits dont le prix est superieur a 50 euros, tries par prix croissant.
+
+```csharp
+var produits = new Dictionary<string, double>
+{
+    { "Clavier", 45.99 },
+    { "Souris", 29.99 },
+    { "Ecran", 249.99 },
+    { "Casque", 79.99 },
+    { "Webcam", 59.99 }
+};
+
+var chers = produits
+    .Where(p => p.Value > 50)
+    .OrderBy(p => p.Value);
+
+foreach (var p in chers)
+{
+    Console.WriteLine($"{p.Key} : {p.Value:F2} euros");
+}
+// Webcam : 59.99 euros
+// Casque : 79.99 euros
+// Ecran  : 249.99 euros
+```
+
+---
+
+## 3. Programmation Orientee Objet en C#
+
+### 3.1 Classes et objets
+
+Une **classe** est un modele (un plan) qui definit les attributs et les comportements d'un type d'objet. Un **objet** est une instance concrete de cette classe.
+
+```csharp
+public class Produit
+{
+    // Champs prives (attributs)
+    private int id;
+    private string nom;
+    private decimal prix;
+    private int stock;
+
+    // Constructeur avec parametres
+    public Produit(int id, string nom, decimal prix, int stock)
+    {
+        this.id = id;
+        this.nom = nom;
+        this.prix = prix;
+        this.stock = stock;
+    }
+
+    // Constructeur sans parametre (par defaut)
+    public Produit()
+    {
+        this.id = 0;
+        this.nom = "";
+        this.prix = 0;
+        this.stock = 0;
+    }
+
+    // Methode
+    public decimal CalculerPrixTTC(decimal tauxTVA)
+    {
+        return this.prix * (1 + tauxTVA / 100);
+    }
+
+    // Redefinition de ToString
+    public override string ToString()
+    {
+        return $"Produit [Id={id}, Nom={nom}, Prix={prix}, Stock={stock}]";
+    }
+}
+```
+
+#### Instanciation
+
+```csharp
+Produit p1 = new Produit(1, "Clavier", 45.99m, 50);
+Produit p2 = new Produit();  // Constructeur par defaut
+var p3 = new Produit(3, "Ecran", 249.99m, 10);
+
+Console.WriteLine(p1.ToString());
+Console.WriteLine(p1);  // Appelle automatiquement ToString()
+```
+
+### 3.2 Proprietes
+
+Les proprietes permettent de controler l'acces aux champs prives. Elles remplacent les getters/setters de Java.
+
+#### Proprietes completes
+
+```csharp
+public class Produit
+{
+    private string nom;
+
+    public string Nom
+    {
+        get { return nom; }
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException("Le nom ne peut pas etre vide.");
+            }
+            nom = value;
+        }
+    }
+
+    private decimal prix;
+
+    public decimal Prix
+    {
+        get { return prix; }
+        set
+        {
+            if (value < 0)
+            {
+                throw new ArgumentException("Le prix ne peut pas etre negatif.");
+            }
+            prix = value;
+        }
+    }
+}
+```
+
+`value` est un mot-cle implicite dans le setter qui represente la valeur assignee.
+
+#### Auto-proprietes
+
+Quand on n'a pas besoin de logique dans le getter/setter :
+
+```csharp
+public class Produit
+{
+    public int Id { get; set; }
+    public string Nom { get; set; }
+    public decimal Prix { get; set; }
+    public int Stock { get; set; }
+
+    // Propriete en lecture seule (pas de set public)
+    public decimal PrixTTC
+    {
+        get { return Prix * 1.20m; }
+    }
+
+    // Auto-propriete avec valeur par defaut (C# 6+)
+    public DateTime DateCreation { get; set; } = DateTime.Now;
+
+    // Auto-propriete en lecture seule (set uniquement dans le constructeur)
+    public int Code { get; }
+
+    // Set prive (modifiable uniquement depuis l'interieur de la classe)
+    public string Reference { get; private set; }
+}
+```
+
+**Convention en C#** : les proprietes commencent par une majuscule (PascalCase) : `Nom`, `Prix`, `Stock`. Les champs prives commencent par une minuscule : `nom`, `prix`, `stock`.
+
+### 3.3 Encapsulation
+
+| Modificateur | Acces |
+|---|---|
+| `private` | Uniquement dans la classe |
+| `public` | Partout |
+| `protected` | Dans la classe et ses classes derivees |
+| `internal` | Dans le meme assembly (projet) |
+| `protected internal` | Dans le meme assembly OU dans les classes derivees |
+
+**Regle fondamentale** : les champs sont `private`, l'acces se fait via des proprietes `public`. C'est le principe d'encapsulation.
+
+### 3.4 Heritage
+
+```csharp
+// Classe de base
+public class Personne
+{
+    public int Id { get; set; }
+    public string Nom { get; set; }
+    public string Prenom { get; set; }
+
+    public Personne(int id, string nom, string prenom)
+    {
+        Id = id;
+        Nom = nom;
+        Prenom = prenom;
+    }
+
+    public virtual string SePresenter()
+    {
+        return $"Je suis {Prenom} {Nom}.";
+    }
+}
+
+// Classe derivee
+public class Employe : Personne
+{
+    public string Poste { get; set; }
+    public decimal Salaire { get; set; }
+
+    // Appel du constructeur de la classe de base avec : base(...)
+    public Employe(int id, string nom, string prenom, string poste, decimal salaire)
+        : base(id, nom, prenom)
+    {
+        Poste = poste;
+        Salaire = salaire;
+    }
+
+    // Redefinition de la methode (override)
+    public override string SePresenter()
+    {
+        return $"Je suis {Prenom} {Nom}, {Poste}.";
+    }
+}
+```
+
+Points cles :
+- L'heritage se declare avec `:` (deux-points)
+- `virtual` : la methode peut etre redefinie dans une classe derivee
+- `override` : redefinit une methode `virtual` ou `abstract` de la classe de base
+- `base` : reference a la classe de base (equivalent de `super` en Java)
+- C# ne supporte que l'**heritage simple** (une seule classe de base)
+- Toutes les classes heritent implicitement de `System.Object`
+
+#### Classe abstraite
+
+```csharp
+public abstract class Forme
+{
+    public string Couleur { get; set; }
+
+    // Methode abstraite : pas de corps, DOIT etre implementee par les classes derivees
+    public abstract double CalculerSurface();
+
+    // Methode concrete : peut etre heritee telle quelle
+    public void Afficher()
+    {
+        Console.WriteLine($"Forme de couleur {Couleur}, surface = {CalculerSurface():F2}");
+    }
+}
+
+public class Rectangle : Forme
+{
+    public double Largeur { get; set; }
+    public double Hauteur { get; set; }
+
+    public Rectangle(double largeur, double hauteur, string couleur)
+    {
+        Largeur = largeur;
+        Hauteur = hauteur;
+        Couleur = couleur;
+    }
+
+    public override double CalculerSurface()
+    {
+        return Largeur * Hauteur;
+    }
+}
+
+public class Cercle : Forme
+{
+    public double Rayon { get; set; }
+
+    public Cercle(double rayon, string couleur)
+    {
+        Rayon = rayon;
+        Couleur = couleur;
+    }
+
+    public override double CalculerSurface()
+    {
+        return Math.PI * Rayon * Rayon;
+    }
+}
+```
+
+On ne peut pas instancier une classe abstraite : `new Forme()` provoque une erreur de compilation.
+
+### 3.5 Interfaces
+
+Une interface definit un contrat : un ensemble de methodes et proprietes que les classes implementant l'interface doivent fournir.
+
+```csharp
+public interface IExportable
+{
+    string ExporterCSV();
+    void ExporterFichier(string chemin);
+}
+
+public interface IIdentifiable
+{
+    int Id { get; set; }
+}
+
+// Implementation de plusieurs interfaces
+public class Produit : IExportable, IIdentifiable
+{
+    public int Id { get; set; }
+    public string Nom { get; set; }
+    public decimal Prix { get; set; }
+
+    public string ExporterCSV()
+    {
+        return $"{Id};{Nom};{Prix}";
+    }
+
+    public void ExporterFichier(string chemin)
+    {
+        System.IO.File.WriteAllText(chemin, ExporterCSV());
+    }
+}
+```
+
+Differences entre classe abstraite et interface :
+- Une classe peut implementer **plusieurs interfaces** mais heriter d'**une seule classe**
+- Une interface ne contient que des signatures (pas d'implementation en .NET Framework)
+- Une classe abstraite peut contenir des methodes avec implementation
+- Convention : les noms d'interfaces commencent par `I` (IExportable, IComparable, IDisposable)
+
+### 3.6 Methodes statiques
+
+```csharp
+public class MathUtils
+{
+    // Methode statique : s'appelle sur la classe, pas sur un objet
+    public static double Carre(double nombre)
+    {
+        return nombre * nombre;
+    }
+
+    public static bool EstPair(int nombre)
+    {
+        return nombre % 2 == 0;
+    }
+
+    // Champ statique
+    public static int NombreAppels { get; private set; } = 0;
+}
+
+// Utilisation
+double r = MathUtils.Carre(5);  // 25
+bool p = MathUtils.EstPair(4);   // true
+```
+
+Une methode statique ne peut pas acceder aux membres d'instance (non statiques) de la classe. Elle n'a pas de `this`.
+
+### 3.7 Renvoi
+
+Pour les concepts approfondis de POO (polymorphisme, composition, SOLID, diagrammes UML), consulter le playbook **Programmation Orientee Objet**.
+
+---
+
+## 4. Windows Forms
+
+### 4.1 L'editeur visuel de Visual Studio
+
+Le **concepteur de formulaires** (Form Designer) permet de construire l'interface graphique par **glisser-deposer** (drag & drop).
+
+**Pour ouvrir le concepteur** : double-cliquer sur le fichier `.cs` du formulaire dans l'Explorateur de solutions, ou clic droit > Concepteur de vues.
+
+**Pour ouvrir le code** : clic droit sur le formulaire > Afficher le code, ou appuyer sur F7.
+
+**Pour basculer** : F7 (code) et Shift+F7 (concepteur).
+
+Workflow typique :
+1. Ouvrir la Boite a outils (Affichage > Boite a outils, ou Ctrl+Alt+X)
+2. Glisser un controle depuis la Boite a outils vers le formulaire
+3. Configurer ses proprietes dans la fenetre Proprietes (F4)
+4. Double-cliquer sur le controle pour creer le gestionnaire d'evenement par defaut
+5. Ecrire le code du gestionnaire dans le fichier .cs
+
+### 4.2 Le fichier Designer.cs
+
+Le fichier `Form1.Designer.cs` contient le code genere automatiquement par le concepteur visuel. Il contient :
+- La methode `InitializeComponent()` : cree et configure tous les controles
+- Les declarations des controles (champs de la classe)
+- La methode `Dispose()` pour liberer les ressources
+
+**Regle** : ne jamais modifier ce fichier manuellement (sauf en cas de necessite absolue et en sachant exactement ce qu'on fait). Toute modification manuelle peut etre ecrasee par le concepteur.
+
+### 4.3 Les controles essentiels
+
+#### Form
+
+Le formulaire est la fenetre de l'application. Chaque formulaire est une classe qui herite de `System.Windows.Forms.Form`.
+
+Proprietes principales :
+| Propriete | Description |
+|---|---|
+| `Text` | Titre de la fenetre |
+| `Size` | Taille de la fenetre (Width, Height) |
+| `ClientSize` | Taille de la zone client (sans les bordures) |
+| `StartPosition` | Position au demarrage : CenterScreen, CenterParent, Manual, WindowsDefaultLocation |
+| `FormBorderStyle` | Style de la bordure : Sizable (redimensionnable), FixedSingle (taille fixe avec bordure), FixedDialog, None |
+| `MaximizeBox` | true/false -- affiche ou masque le bouton agrandir |
+| `MinimizeBox` | true/false -- affiche ou masque le bouton reduire |
+| `Icon` | Icone de la fenetre |
+| `WindowState` | Etat : Normal, Minimized, Maximized |
+| `BackColor` | Couleur de fond |
+| `AcceptButton` | Bouton active quand on appuie sur Entree |
+| `CancelButton` | Bouton active quand on appuie sur Echap |
+
+Evenements principaux :
+| Evenement | Declenchement |
+|---|---|
+| `Load` | Quand le formulaire est charge (avant affichage) |
+| `Shown` | Quand le formulaire est affiche pour la premiere fois |
+| `FormClosing` | Avant la fermeture (permet d'annuler) |
+| `FormClosed` | Apres la fermeture |
+| `Resize` | Quand le formulaire est redimensionne |
+
+```csharp
+public partial class Form1 : Form
+{
+    public Form1()
+    {
+        InitializeComponent();
+
+        // Configuration dans le code (alternative au concepteur)
+        this.Text = "Mon Application";
+        this.Size = new Size(800, 600);
+        this.StartPosition = FormStartPosition.CenterScreen;
+        this.FormBorderStyle = FormBorderStyle.FixedSingle;
+        this.MaximizeBox = false;
+    }
+
+    private void Form1_Load(object sender, EventArgs e)
+    {
+        // Code execute au chargement du formulaire
+        // Ideal pour charger des donnees depuis la BDD
+    }
+
+    private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+    {
+        DialogResult result = MessageBox.Show(
+            "Voulez-vous vraiment quitter ?",
+            "Confirmation",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question);
+
+        if (result == DialogResult.No)
+        {
+            e.Cancel = true;  // Annule la fermeture
+        }
+    }
+}
+```
+
+#### Button
+
+Proprietes principales :
+| Propriete | Description |
+|---|---|
+| `Text` | Texte affiche sur le bouton |
+| `Name` | Nom du controle dans le code (ex: btnValider) |
+| `Enabled` | true/false -- active ou desactive le bouton |
+| `Visible` | true/false -- affiche ou masque |
+| `Size` | Taille du bouton |
+| `FlatStyle` | Style : Standard, Flat, Popup, System |
+| `BackColor` | Couleur de fond |
+| `ForeColor` | Couleur du texte |
+| `Font` | Police du texte |
+
+Evenement principal : `Click`
+
+```csharp
+private void btnValider_Click(object sender, EventArgs e)
+{
+    MessageBox.Show("Bouton clique !");
+}
+
+// Desactiver/activer un bouton
+btnSupprimer.Enabled = false;
+btnSupprimer.Enabled = true;
+```
+
+**Convention de nommage** : prefixer le nom du controle par son type abrege :
+- Button : `btn` (btnValider, btnAnnuler, btnSupprimer)
+- TextBox : `txt` (txtNom, txtPrenom)
+- Label : `lbl` (lblTitre, lblMessage)
+- ComboBox : `cbo` (cboCategorie)
+- ListBox : `lst` (lstProduits)
+- DataGridView : `dgv` (dgvProduits)
+- CheckBox : `chk` (chkActif)
+- RadioButton : `rdb` (rdbHomme, rdbFemme)
+- NumericUpDown : `nud` (nudQuantite)
+- DateTimePicker : `dtp` (dtpDate)
+- PictureBox : `pic` (picPhoto)
+- Panel : `pnl` (pnlContenu)
+- GroupBox : `grp` (grpOptions)
+- MenuStrip : `mns` (mnsMenu)
+- Timer : `tmr` (tmrActualisation)
+
+#### TextBox
+
+Proprietes principales :
+| Propriete | Description |
+|---|---|
+| `Text` | Contenu textuel |
+| `Name` | Nom dans le code |
+| `ReadOnly` | true/false -- lecture seule |
+| `Enabled` | true/false -- active ou desactive |
+| `PasswordChar` | Caractere de masquage (ex: '*') pour les mots de passe |
+| `Multiline` | true/false -- saisie multiligne |
+| `ScrollBars` | Barres de defilement (None, Vertical, Horizontal, Both) |
+| `MaxLength` | Nombre maximum de caracteres |
+| `PlaceholderText` | Texte indicatif affiche quand vide (.NET Framework 4.7.2+) |
+| `TextAlign` | Alignement du texte : Left, Center, Right |
+
+Evenements principaux :
+| Evenement | Declenchement |
+|---|---|
+| `TextChanged` | Quand le texte change |
+| `KeyDown` | Quand une touche est enfoncee |
+| `KeyPress` | Quand une touche de caractere est pressee |
+| `Enter` | Quand le controle recoit le focus |
+| `Leave` | Quand le controle perd le focus |
+| `Validating` | Avant que le controle perde le focus (pour validation) |
+
+```csharp
+// Recuperer le texte saisi
+string nom = txtNom.Text;
+
+// Vider un TextBox
+txtNom.Text = "";
+txtNom.Clear();  // Equivalent
+
+// TextBox mot de passe
+txtMotDePasse.PasswordChar = '*';
+txtMotDePasse.UseSystemPasswordChar = true; // Utilise le caractere systeme
+
+// Empecher la saisie de caracteres non numeriques
+private void txtQuantite_KeyPress(object sender, KeyPressEventArgs e)
+{
+    if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar))
+    {
+        e.Handled = true;  // Annule la frappe
+    }
+}
+```
+
+#### Label
+
+Proprietes principales :
+| Propriete | Description |
+|---|---|
+| `Text` | Texte affiche |
+| `Font` | Police (taille, gras, italique...) |
+| `ForeColor` | Couleur du texte |
+| `BackColor` | Couleur de fond |
+| `AutoSize` | true/false -- ajuste automatiquement la taille au texte |
+| `TextAlign` | Alignement : TopLeft, MiddleCenter, etc. |
+
+Le Label n'a pas d'evenement utile en general (il sert uniquement a afficher du texte).
+
+```csharp
+lblMessage.Text = "Operation reussie.";
+lblMessage.ForeColor = Color.Green;
+lblMessage.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+```
+
+#### ComboBox
+
+Liste deroulante permettant de choisir un element parmi une liste.
+
+Proprietes principales :
+| Propriete | Description |
+|---|---|
+| `Items` | Collection des elements |
+| `SelectedItem` | Element selectionne (type object) |
+| `SelectedIndex` | Index de l'element selectionne (-1 si aucun) |
+| `SelectedValue` | Valeur selectionnee (avec DataSource) |
+| `DropDownStyle` | DropDown (saisie libre + liste), DropDownList (liste uniquement, pas de saisie), Simple |
+| `DataSource` | Source de donnees liee |
+| `DisplayMember` | Propriete a afficher (avec DataSource) |
+| `ValueMember` | Propriete servant de valeur (avec DataSource) |
+| `Text` | Texte affiche / saisi |
+
+Evenement principal : `SelectedIndexChanged`
+
+```csharp
+// Remplir un ComboBox manuellement
+cboCategorie.Items.Add("Informatique");
+cboCategorie.Items.Add("Bureautique");
+cboCategorie.Items.Add("Reseau");
+
+// Selectionner un element
+cboCategorie.SelectedIndex = 0;  // Premier element
+
+// Recuperer la selection
+string categorie = cboCategorie.SelectedItem.ToString();
+int index = cboCategorie.SelectedIndex;
+
+// Vider le ComboBox
+cboCategorie.Items.Clear();
+
+// Remplir avec une liste d'objets
+List<Categorie> categories = categorieDAO.GetAll();
+cboCategorie.DataSource = categories;
+cboCategorie.DisplayMember = "Nom";     // Propriete affichee
+cboCategorie.ValueMember = "Id";        // Propriete servant de valeur
+
+// Recuperer la valeur avec DataSource
+int idCategorie = (int)cboCategorie.SelectedValue;
+Categorie catSelectionnee = (Categorie)cboCategorie.SelectedItem;
+
+// Evenement
+private void cboCategorie_SelectedIndexChanged(object sender, EventArgs e)
+{
+    if (cboCategorie.SelectedIndex != -1)
+    {
+        string selection = cboCategorie.SelectedItem.ToString();
+        // Traitement...
+    }
+}
+```
+
+#### ListBox
+
+Liste permettant de choisir un ou plusieurs elements.
+
+Proprietes principales :
+| Propriete | Description |
+|---|---|
+| `Items` | Collection des elements |
+| `SelectedItem` | Element selectionne |
+| `SelectedIndex` | Index de l'element selectionne (-1 si aucun) |
+| `SelectionMode` | None, One, MultiSimple, MultiExtended |
+| `SelectedItems` | Collection des elements selectionnes (mode multi) |
+| `DataSource` | Source de donnees |
+| `DisplayMember` | Propriete a afficher |
+| `ValueMember` | Propriete valeur |
+
+Evenement principal : `SelectedIndexChanged`
+
+```csharp
+// Remplir
+lstProduits.Items.Add("Produit A");
+lstProduits.Items.Add("Produit B");
+
+// Supprimer
+lstProduits.Items.Remove("Produit A");
+lstProduits.Items.RemoveAt(0);
+
+// Avec DataSource
+lstProduits.DataSource = listeProduits;
+lstProduits.DisplayMember = "Nom";
+```
+
+#### DataGridView
+
+Le controle le plus important pour afficher des donnees tabulaires. Tres utilise a l'examen.
+
+Proprietes principales :
+| Propriete | Description |
+|---|---|
+| `DataSource` | Source de donnees (DataTable, List, BindingList...) |
+| `Columns` | Collection des colonnes |
+| `Rows` | Collection des lignes |
+| `AutoGenerateColumns` | true/false -- genere automatiquement les colonnes depuis la source |
+| `ReadOnly` | true/false -- empeche la modification |
+| `AllowUserToAddRows` | true/false -- empeche l'ajout de lignes par l'utilisateur |
+| `AllowUserToDeleteRows` | true/false -- empeche la suppression |
+| `SelectionMode` | FullRowSelect (selection de ligne entiere), CellSelect, FullColumnSelect |
+| `MultiSelect` | true/false -- selection multiple |
+| `AutoSizeColumnsMode` | Fill (remplit l'espace), AllCells, DisplayedCells |
+| `RowHeadersVisible` | true/false -- affiche les en-tetes de lignes |
+| `ColumnHeadersDefaultCellStyle` | Style des en-tetes de colonnes |
+| `AlternatingRowsDefaultCellStyle` | Style des lignes alternees |
+
+Evenements principaux :
+| Evenement | Declenchement |
+|---|---|
+| `CellClick` | Clic sur une cellule |
+| `CellDoubleClick` | Double-clic sur une cellule |
+| `SelectionChanged` | La selection change |
+| `CellValueChanged` | La valeur d'une cellule change |
+| `RowEnter` | On entre dans une ligne |
+
+```csharp
+// Liaison avec une List<T> via BindingSource
+BindingSource bs = new BindingSource();
+List<Produit> produits = produitDAO.GetAll();
+bs.DataSource = produits;
+dgvProduits.DataSource = bs;
+
+// Liaison avec un DataTable
+DataTable dt = produitDAO.GetAllAsDataTable();
+dgvProduits.DataSource = dt;
+
+// Configuration des colonnes
+dgvProduits.AutoGenerateColumns = false;
+dgvProduits.Columns.Clear();
+
+dgvProduits.Columns.Add(new DataGridViewTextBoxColumn
+{
+    Name = "colId",
+    HeaderText = "ID",
+    DataPropertyName = "Id",
+    Width = 50,
+    ReadOnly = true
+});
+
+dgvProduits.Columns.Add(new DataGridViewTextBoxColumn
+{
+    Name = "colNom",
+    HeaderText = "Nom",
+    DataPropertyName = "Nom",
+    Width = 200
+});
+
+dgvProduits.Columns.Add(new DataGridViewTextBoxColumn
+{
+    Name = "colPrix",
+    HeaderText = "Prix",
+    DataPropertyName = "Prix",
+    Width = 100,
+    DefaultCellStyle = new DataGridViewCellStyle { Format = "C2" }  // Format monnaie
+});
+
+// Configuration generale
+dgvProduits.ReadOnly = true;
+dgvProduits.AllowUserToAddRows = false;
+dgvProduits.AllowUserToDeleteRows = false;
+dgvProduits.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+dgvProduits.MultiSelect = false;
+dgvProduits.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+// Recuperer la ligne selectionnee
+private void dgvProduits_CellClick(object sender, DataGridViewCellEventArgs e)
+{
+    if (e.RowIndex >= 0)  // Verifier que ce n'est pas l'en-tete
+    {
+        DataGridViewRow ligne = dgvProduits.Rows[e.RowIndex];
+
+        // Avec DataSource de type List<Produit>
+        Produit produitSelectionne = (Produit)ligne.DataBoundItem;
+        txtNom.Text = produitSelectionne.Nom;
+        txtPrix.Text = produitSelectionne.Prix.ToString();
+
+        // OU acces direct aux cellules
+        string nom = ligne.Cells["colNom"].Value.ToString();
+        decimal prix = Convert.ToDecimal(ligne.Cells["colPrix"].Value);
+    }
+}
+
+// Rafraichir le DataGridView
+private void RafraichirGrille()
+{
+    List<Produit> produits = produitDAO.GetAll();
+    bs.DataSource = produits;
+    dgvProduits.DataSource = null;
+    dgvProduits.DataSource = bs;
+    // OU plus simplement :
+    bs.ResetBindings(false);
+}
+```
+
+#### CheckBox
+
+Proprietes principales :
+| Propriete | Description |
+|---|---|
+| `Checked` | true/false -- etat de la case |
+| `Text` | Texte a cote de la case |
+| `CheckState` | Checked, Unchecked, Indeterminate |
+| `ThreeState` | true/false -- autorise l'etat intermediaire |
+
+Evenement principal : `CheckedChanged`
+
+```csharp
+private void chkActif_CheckedChanged(object sender, EventArgs e)
+{
+    if (chkActif.Checked)
+    {
+        lblStatut.Text = "Actif";
+    }
+    else
+    {
+        lblStatut.Text = "Inactif";
+    }
+}
+```
+
+#### RadioButton
+
+Proprietes principales :
+| Propriete | Description |
+|---|---|
+| `Checked` | true/false -- selectionne ou non |
+| `Text` | Texte a cote du bouton |
+
+Evenement principal : `CheckedChanged`
+
+**Important** : les RadioButton dans un meme conteneur (Form, GroupBox, Panel) sont **mutuellement exclusifs** : un seul peut etre selectionne a la fois. Utiliser un `GroupBox` pour creer des groupes independants.
+
+```csharp
+// Deux groupes independants grace aux GroupBox
+// GroupBox grpGenre contient rdbHomme et rdbFemme
+// GroupBox grpStatut contient rdbActif et rdbInactif
+
+private void btnValider_Click(object sender, EventArgs e)
+{
+    string genre = "";
+    if (rdbHomme.Checked) genre = "Homme";
+    else if (rdbFemme.Checked) genre = "Femme";
+
+    string statut = "";
+    if (rdbActif.Checked) statut = "Actif";
+    else if (rdbInactif.Checked) statut = "Inactif";
+}
+```
+
+#### NumericUpDown
+
+Proprietes principales :
+| Propriete | Description |
+|---|---|
+| `Value` | Valeur actuelle (type decimal) |
+| `Minimum` | Valeur minimale |
+| `Maximum` | Valeur maximale |
+| `DecimalPlaces` | Nombre de decimales |
+| `Increment` | Pas d'incrementation |
+| `ReadOnly` | Lecture seule |
+
+Evenement principal : `ValueChanged`
+
+```csharp
+nudQuantite.Minimum = 1;
+nudQuantite.Maximum = 1000;
+nudQuantite.Value = 1;
+nudQuantite.DecimalPlaces = 0;
+nudQuantite.Increment = 1;
+
+// Recuperer la valeur
+int quantite = (int)nudQuantite.Value;
+```
+
+#### DateTimePicker
+
+Proprietes principales :
+| Propriete | Description |
+|---|---|
+| `Value` | Date et heure selectionnees (type DateTime) |
+| `Format` | Long, Short, Time, Custom |
+| `CustomFormat` | Format personnalise (si Format = Custom) |
+| `MinDate` | Date minimale |
+| `MaxDate` | Date maximale |
+| `ShowCheckBox` | Affiche une case a cocher pour activer/desactiver |
+| `Checked` | true/false (avec ShowCheckBox) |
+
+Evenement principal : `ValueChanged`
+
+```csharp
+dtpDate.Format = DateTimePickerFormat.Short;  // jj/MM/aaaa
+dtpDate.Value = DateTime.Today;
+dtpDate.MinDate = new DateTime(2000, 1, 1);
+dtpDate.MaxDate = DateTime.Today;
+
+// Format personnalise
+dtpDate.Format = DateTimePickerFormat.Custom;
+dtpDate.CustomFormat = "dd/MM/yyyy";
+
+// Recuperer la valeur
+DateTime dateChoisie = dtpDate.Value;
+string dateTexte = dtpDate.Value.ToString("yyyy-MM-dd"); // Format pour MySQL
+```
+
+#### PictureBox
+
+Proprietes principales :
+| Propriete | Description |
+|---|---|
+| `Image` | L'image affichee |
+| `ImageLocation` | Chemin ou URL de l'image |
+| `SizeMode` | Normal, StretchImage, AutoSize, CenterImage, Zoom |
+
+```csharp
+// Charger une image depuis un fichier
+picPhoto.Image = Image.FromFile(@"C:\images\photo.jpg");
+picPhoto.SizeMode = PictureBoxSizeMode.Zoom;
+
+// Supprimer l'image
+picPhoto.Image = null;
+
+// Avec OpenFileDialog
+OpenFileDialog ofd = new OpenFileDialog();
+ofd.Filter = "Images|*.jpg;*.jpeg;*.png;*.bmp;*.gif";
+if (ofd.ShowDialog() == DialogResult.OK)
+{
+    picPhoto.Image = Image.FromFile(ofd.FileName);
+}
+```
+
+#### MenuStrip, ToolStrip, StatusStrip
+
+```csharp
+// MenuStrip : barre de menus en haut
+// Ajouter via le concepteur visuel, puis gerer les evenements Click
+
+private void fichierQuitterToolStripMenuItem_Click(object sender, EventArgs e)
+{
+    this.Close();
+}
+
+// StatusStrip : barre de statut en bas
+toolStripStatusLabel1.Text = "Pret.";
+
+// ToolStrip : barre d'outils avec boutons icones
+private void toolStripBtnNouveau_Click(object sender, EventArgs e)
+{
+    // Nouveau document
+}
+```
+
+#### Panel, GroupBox, TabControl
+
+Ces controles servent a organiser l'interface.
+
+**Panel** : conteneur invisible, utile pour grouper des controles. Peut avoir un fond colore et des bordures.
+
+**GroupBox** : conteneur avec un titre et une bordure. Sert a grouper des RadioButton ou des controles lies.
+
+**TabControl** : controle avec des onglets (TabPage). Chaque onglet contient ses propres controles.
+
+```csharp
+// Ajouter un onglet par code
+TabPage onglet = new TabPage("Statistiques");
+tabControl1.TabPages.Add(onglet);
+
+// Selectionner un onglet
+tabControl1.SelectedIndex = 0;
+tabControl1.SelectedTab = onglet;
+```
+
+#### OpenFileDialog et SaveFileDialog
+
+```csharp
+// Ouvrir un fichier
+OpenFileDialog ofd = new OpenFileDialog();
+ofd.Title = "Ouvrir un fichier";
+ofd.Filter = "Fichiers texte (*.txt)|*.txt|Tous les fichiers (*.*)|*.*";
+ofd.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+if (ofd.ShowDialog() == DialogResult.OK)
+{
+    string chemin = ofd.FileName;
+    string contenu = System.IO.File.ReadAllText(chemin);
+    txtContenu.Text = contenu;
+}
+
+// Enregistrer un fichier
+SaveFileDialog sfd = new SaveFileDialog();
+sfd.Title = "Enregistrer sous";
+sfd.Filter = "Fichiers CSV (*.csv)|*.csv|Fichiers texte (*.txt)|*.txt";
+sfd.DefaultExt = "csv";
+sfd.FileName = "export";
+
+if (sfd.ShowDialog() == DialogResult.OK)
+{
+    System.IO.File.WriteAllText(sfd.FileName, contenuCSV);
+}
+```
+
+#### MessageBox
+
+```csharp
+// Message simple
+MessageBox.Show("Operation terminee.");
+
+// Avec titre
+MessageBox.Show("Operation terminee.", "Information");
+
+// Avec boutons
+MessageBox.Show("Enregistrement reussi.", "Succes",
+    MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+// Avec confirmation
+DialogResult result = MessageBox.Show(
+    "Voulez-vous supprimer cet element ?",
+    "Confirmation de suppression",
+    MessageBoxButtons.YesNo,
+    MessageBoxIcon.Warning);
+
+if (result == DialogResult.Yes)
+{
+    // Supprimer
+}
+
+// Avec 3 boutons
+DialogResult result2 = MessageBox.Show(
+    "Voulez-vous enregistrer les modifications ?",
+    "Enregistrement",
+    MessageBoxButtons.YesNoCancel,
+    MessageBoxIcon.Question);
+
+if (result2 == DialogResult.Yes)
+{
+    // Enregistrer
+}
+else if (result2 == DialogResult.No)
+{
+    // Ne pas enregistrer
+}
+else
+{
+    // Annuler (ne rien faire)
+}
+```
+
+Boutons disponibles : `OK`, `OKCancel`, `YesNo`, `YesNoCancel`, `RetryCancel`, `AbortRetryIgnore`
+
+Icones disponibles : `Information`, `Warning`, `Error`, `Question`, `None`
+
+#### Timer
+
+```csharp
+// Le Timer execute du code a intervalles reguliers
+
+tmrActualisation.Interval = 5000;  // 5000 ms = 5 secondes
+tmrActualisation.Enabled = true;   // Demarre le timer
+// OU
+tmrActualisation.Start();
+tmrActualisation.Stop();
+
+private void tmrActualisation_Tick(object sender, EventArgs e)
+{
+    // Code execute toutes les 5 secondes
+    RafraichirDonnees();
+}
+```
+
+### 4.4 Disposition des controles
+
+#### Anchor
+
+La propriete `Anchor` definit les bords auxquels un controle est ancre. Quand le formulaire est redimensionne, le controle maintient sa distance par rapport aux bords ancres.
+
+| Valeur | Comportement |
+|---|---|
+| `Top, Left` | Par defaut. Le controle reste en haut a gauche |
+| `Top, Left, Right` | Le controle s'etire horizontalement |
+| `Top, Left, Right, Bottom` | Le controle s'etire dans toutes les directions |
+| `Bottom, Right` | Le controle reste en bas a droite |
+
+```csharp
+txtRecherche.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+dgvProduits.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+btnFermer.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+```
+
+#### Dock
+
+La propriete `Dock` colle le controle a un bord du conteneur parent.
+
+| Valeur | Comportement |
+|---|---|
+| `None` | Pas de docking |
+| `Top` | Colle en haut, remplit toute la largeur |
+| `Bottom` | Colle en bas, remplit toute la largeur |
+| `Left` | Colle a gauche, remplit toute la hauteur |
+| `Right` | Colle a droite, remplit toute la hauteur |
+| `Fill` | Remplit tout l'espace restant |
+
+```csharp
+menuStrip1.Dock = DockStyle.Top;
+statusStrip1.Dock = DockStyle.Bottom;
+dgvProduits.Dock = DockStyle.Fill;
+```
+
+#### TableLayoutPanel
+
+Grille de disposition avec lignes et colonnes. Les controles sont places dans les cellules.
+
+```csharp
+TableLayoutPanel tlp = new TableLayoutPanel();
+tlp.ColumnCount = 2;
+tlp.RowCount = 3;
+tlp.Dock = DockStyle.Fill;
+
+// Definir les tailles des colonnes
+tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30)); // 30%
+tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70)); // 70%
+
+// Ajouter des controles
+tlp.Controls.Add(new Label { Text = "Nom :" }, 0, 0);   // colonne 0, ligne 0
+tlp.Controls.Add(txtNom, 1, 0);                           // colonne 1, ligne 0
+```
+
+#### FlowLayoutPanel
+
+Dispose les controles les uns a la suite des autres, avec retour a la ligne automatique.
+
+```csharp
+FlowLayoutPanel flp = new FlowLayoutPanel();
+flp.FlowDirection = FlowDirection.LeftToRight;
+flp.WrapContents = true;
+flp.Dock = DockStyle.Fill;
+
+// Les controles ajoutes s'arrangent automatiquement
+flp.Controls.Add(new Button { Text = "Bouton 1" });
+flp.Controls.Add(new Button { Text = "Bouton 2" });
+flp.Controls.Add(new Button { Text = "Bouton 3" });
+```
+
+### 4.5 Exercices -- Windows Forms
+
+**Exercice 1** : Creer un formulaire de saisie d'un contact avec les champs Nom (TextBox), Prenom (TextBox), Date de naissance (DateTimePicker), Email (TextBox), Telephone (TextBox), Civilite (RadioButton Homme/Femme dans un GroupBox), un CheckBox "Recevoir la newsletter", et deux boutons Valider et Annuler. Au clic sur Valider, afficher un MessageBox recapitulatif.
+
+```csharp
+public partial class FrmContact : Form
+{
+    public FrmContact()
+    {
+        InitializeComponent();
+        this.Text = "Saisie d'un contact";
+        this.StartPosition = FormStartPosition.CenterScreen;
+        this.FormBorderStyle = FormBorderStyle.FixedSingle;
+        this.MaximizeBox = false;
+        this.AcceptButton = btnValider;
+        this.CancelButton = btnAnnuler;
+    }
+
+    private void btnValider_Click(object sender, EventArgs e)
+    {
+        // Validation
+        if (string.IsNullOrWhiteSpace(txtNom.Text))
+        {
+            MessageBox.Show("Le nom est obligatoire.", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            txtNom.Focus();
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(txtPrenom.Text))
+        {
+            MessageBox.Show("Le prenom est obligatoire.", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            txtPrenom.Focus();
+            return;
+        }
+
+        // Recapitulatif
+        string civilite = rdbHomme.Checked ? "M." : "Mme";
+        string newsletter = chkNewsletter.Checked ? "Oui" : "Non";
+
+        string message = $"Civilite : {civilite}\n"
+                       + $"Nom : {txtNom.Text}\n"
+                       + $"Prenom : {txtPrenom.Text}\n"
+                       + $"Date de naissance : {dtpDateNaissance.Value:dd/MM/yyyy}\n"
+                       + $"Email : {txtEmail.Text}\n"
+                       + $"Telephone : {txtTelephone.Text}\n"
+                       + $"Newsletter : {newsletter}";
+
+        MessageBox.Show(message, "Recapitulatif",
+            MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private void btnAnnuler_Click(object sender, EventArgs e)
+    {
+        this.Close();
+    }
+}
+```
+
+---
+
+## 5. Evenements en WinForms
+
+### 5.1 Le modele evenementiel
+
+Windows Forms utilise un modele **evenementiel** : l'application attend les actions de l'utilisateur (clic, frappe clavier, selection...) et reagit en executant du code associe a chaque evenement.
+
+Le principe :
+1. Un **evenement** se produit (ex: l'utilisateur clique sur un bouton)
+2. Le systeme cherche s'il y a un **gestionnaire** (event handler) enregistre pour cet evenement
+3. Si oui, le gestionnaire est execute
+
+Un gestionnaire d'evenement est une methode avec une signature specifique :
+
+```csharp
+private void NomGestionnaire(object sender, EventArgs e)
+{
+    // Code a executer quand l'evenement se produit
+}
+```
+
+- `sender` : l'objet qui a declenche l'evenement (le controle)
+- `e` (ou `EventArgs`) : informations supplementaires sur l'evenement
+
+### 5.2 Creer un gestionnaire d'evenement
+
+#### Methode 1 : Double-clic dans le concepteur
+
+Double-cliquer sur un controle dans le concepteur visuel cree automatiquement le gestionnaire pour l'evenement **par defaut** du controle :
+- Button : `Click`
+- TextBox : `TextChanged`
+- ComboBox : `SelectedIndexChanged`
+- Form : `Load`
+- CheckBox : `CheckedChanged`
+- DataGridView : `CellContentClick`
+- Timer : `Tick`
+
+#### Methode 2 : Fenetre Proprietes > Evenements
+
+1. Selectionner le controle
+2. Dans la fenetre Proprietes, cliquer sur l'icone eclair (evenements)
+3. Double-cliquer a cote du nom de l'evenement voulu
+
+#### Methode 3 : Enregistrement manuel dans le code
+
+```csharp
+public Form1()
+{
+    InitializeComponent();
+
+    // Enregistrer un gestionnaire manuellement
+    btnValider.Click += new EventHandler(btnValider_Click);
+    // OU syntaxe simplifiee (C# 2+) :
+    btnValider.Click += btnValider_Click;
+
+    // Avec une methode anonyme
+    btnAnnuler.Click += delegate(object sender, EventArgs e)
+    {
+        this.Close();
+    };
+
+    // Avec une expression lambda (C# 3+)
+    btnAnnuler.Click += (sender, e) => this.Close();
+
+    // Meme gestionnaire pour plusieurs controles
+    btnOption1.Click += BoutonOption_Click;
+    btnOption2.Click += BoutonOption_Click;
+    btnOption3.Click += BoutonOption_Click;
+}
+
+private void BoutonOption_Click(object sender, EventArgs e)
+{
+    Button boutonClique = (Button)sender;  // Cast du sender pour savoir quel bouton
+    MessageBox.Show($"Vous avez clique sur : {boutonClique.Text}");
+}
+```
+
+### 5.3 sender et EventArgs
+
+**sender** permet d'identifier quel controle a declenche l'evenement. C'est utile quand plusieurs controles partagent le meme gestionnaire.
+
+```csharp
+private void Bouton_Click(object sender, EventArgs e)
+{
+    Button btn = (Button)sender;
+    // Maintenant on peut acceder aux proprietes du bouton
+    string texte = btn.Text;
+    string nom = btn.Name;
+}
+```
+
+**EventArgs** est la classe de base. Certains evenements utilisent des classes derivees avec plus d'informations :
+
+| Evenement | Type EventArgs | Proprietes utiles |
+|---|---|---|
+| `Click` | `EventArgs` | Aucune propriete supplementaire |
+| `KeyDown` / `KeyUp` | `KeyEventArgs` | `KeyCode`, `Modifiers`, `Shift`, `Control`, `Alt` |
+| `KeyPress` | `KeyPressEventArgs` | `KeyChar`, `Handled` |
+| `MouseClick` | `MouseEventArgs` | `Button`, `X`, `Y`, `Clicks` |
+| `CellClick` (DGV) | `DataGridViewCellEventArgs` | `RowIndex`, `ColumnIndex` |
+| `FormClosing` | `FormClosingEventArgs` | `Cancel`, `CloseReason` |
+| `Validating` | `CancelEventArgs` | `Cancel` |
+
+### 5.4 Evenements courants
+
+#### Click
+
+```csharp
+private void btnCalculer_Click(object sender, EventArgs e)
+{
+    if (double.TryParse(txtMontant.Text, out double montant))
+    {
+        double ttc = montant * 1.20;
+        lblResultat.Text = $"TTC : {ttc:F2} euros";
+    }
+    else
+    {
+        MessageBox.Show("Montant invalide.", "Erreur",
+            MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+}
+```
+
+#### TextChanged
+
+Declenche a chaque modification du texte (chaque frappe de touche).
+
+```csharp
+private void txtRecherche_TextChanged(object sender, EventArgs e)
+{
+    string filtre = txtRecherche.Text.ToLower();
+    List<Produit> resultats = tousLesProduits
+        .Where(p => p.Nom.ToLower().Contains(filtre))
+        .ToList();
+    dgvProduits.DataSource = resultats;
+}
+```
+
+#### SelectedIndexChanged
+
+```csharp
+private void cboCategorie_SelectedIndexChanged(object sender, EventArgs e)
+{
+    if (cboCategorie.SelectedIndex != -1)
+    {
+        int idCategorie = (int)cboCategorie.SelectedValue;
+        List<Produit> produits = produitDAO.GetByCategorie(idCategorie);
+        dgvProduits.DataSource = produits;
+    }
+}
+```
+
+#### Load
+
+```csharp
+private void Form1_Load(object sender, EventArgs e)
+{
+    // Charger les donnees au demarrage
+    try
+    {
+        List<Produit> produits = produitDAO.GetAll();
+        dgvProduits.DataSource = produits;
+
+        List<Categorie> categories = categorieDAO.GetAll();
+        cboCategorie.DataSource = categories;
+        cboCategorie.DisplayMember = "Nom";
+        cboCategorie.ValueMember = "Id";
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show($"Erreur de chargement : {ex.Message}", "Erreur",
+            MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+}
+```
+
+#### FormClosing
+
+```csharp
+private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+{
+    if (modificationsNonSauvegardees)
+    {
+        DialogResult result = MessageBox.Show(
+            "Des modifications n'ont pas ete sauvegardees. Quitter quand meme ?",
+            "Confirmation",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning);
+
+        if (result == DialogResult.No)
+        {
+            e.Cancel = true;  // Annule la fermeture
+        }
+    }
+}
+```
+
+#### KeyDown
+
+```csharp
+private void txtRecherche_KeyDown(object sender, KeyEventArgs e)
+{
+    if (e.KeyCode == Keys.Enter)
+    {
+        Rechercher();
+        e.SuppressKeyPress = true;  // Empeche le "ding" sonore
+    }
+}
+
+private void Form1_KeyDown(object sender, KeyEventArgs e)
+{
+    // Raccourci Ctrl+S pour sauvegarder
+    if (e.Control && e.KeyCode == Keys.S)
+    {
+        Sauvegarder();
+    }
+}
+```
+
+Pour capturer les touches au niveau du formulaire (pas seulement du controle qui a le focus), mettre `this.KeyPreview = true;` dans le constructeur.
+
+### 5.5 Exercice : Calculatrice WinForms
+
+Creer une calculatrice simple avec :
+- Un TextBox en lecture seule pour l'affichage (txtAffichage)
+- Des boutons pour les chiffres 0-9
+- Des boutons pour les operations +, -, *, /
+- Un bouton = pour calculer
+- Un bouton C pour effacer
+
+```csharp
+public partial class FrmCalculatrice : Form
+{
+    private double premierNombre = 0;
+    private string operation = "";
+    private bool nouvelleEntree = true;
+
+    public FrmCalculatrice()
+    {
+        InitializeComponent();
+        this.Text = "Calculatrice";
+        this.FormBorderStyle = FormBorderStyle.FixedSingle;
+        this.MaximizeBox = false;
+        this.StartPosition = FormStartPosition.CenterScreen;
+    }
+
+    // Gestionnaire commun pour tous les boutons chiffres
+    private void BtnChiffre_Click(object sender, EventArgs e)
+    {
+        Button btn = (Button)sender;
+
+        if (nouvelleEntree)
+        {
+            txtAffichage.Text = btn.Text;
+            nouvelleEntree = false;
+        }
+        else
+        {
+            txtAffichage.Text += btn.Text;
+        }
+    }
+
+    // Gestionnaire commun pour les boutons operations
+    private void BtnOperation_Click(object sender, EventArgs e)
+    {
+        Button btn = (Button)sender;
+
+        if (!nouvelleEntree)
+        {
+            Calculer();
+        }
+
+        premierNombre = double.Parse(txtAffichage.Text);
+        operation = btn.Text;
+        nouvelleEntree = true;
+    }
+
+    private void btnEgal_Click(object sender, EventArgs e)
+    {
+        Calculer();
+        operation = "";
+        nouvelleEntree = true;
+    }
+
+    private void Calculer()
+    {
+        if (string.IsNullOrEmpty(operation)) return;
+
+        double deuxiemeNombre = double.Parse(txtAffichage.Text);
+        double resultat = 0;
+
+        switch (operation)
+        {
+            case "+":
+                resultat = premierNombre + deuxiemeNombre;
+                break;
+            case "-":
+                resultat = premierNombre - deuxiemeNombre;
+                break;
+            case "*":
+                resultat = premierNombre * deuxiemeNombre;
+                break;
+            case "/":
+                if (deuxiemeNombre == 0)
+                {
+                    MessageBox.Show("Division par zero impossible.", "Erreur",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                resultat = premierNombre / deuxiemeNombre;
+                break;
+        }
+
+        txtAffichage.Text = resultat.ToString();
+        premierNombre = resultat;
+    }
+
+    private void btnEffacer_Click(object sender, EventArgs e)
+    {
+        txtAffichage.Text = "0";
+        premierNombre = 0;
+        operation = "";
+        nouvelleEntree = true;
+    }
+
+    private void btnVirgule_Click(object sender, EventArgs e)
+    {
+        if (!txtAffichage.Text.Contains(","))
+        {
+            txtAffichage.Text += ",";
+            nouvelleEntree = false;
+        }
+    }
+}
+```
+
+---
+
+## 6. Connexion a MySQL
+
+### 6.1 Installation du package MySQL.Data
+
+MySQL Connector/NET est le pilote officiel pour connecter une application .NET a une base de donnees MySQL.
+
+**Installation via NuGet :**
+
+1. Clic droit sur le projet dans l'Explorateur de solutions
+2. Gerer les packages NuGet
+3. Onglet Parcourir
+4. Rechercher "MySql.Data"
+5. Selectionner **MySql.Data** (par Oracle)
+6. Cliquer sur Installer
+7. Accepter la licence
+
+**Alternative** : Console du Gestionnaire de packages (Outils > Gestionnaire de package NuGet > Console) :
+
+```
+Install-Package MySql.Data
+```
+
+Apres installation, ajouter le using dans les fichiers qui utilisent MySQL :
+
+```csharp
+using MySql.Data.MySqlClient;
+```
+
+### 6.2 Chaine de connexion
+
+La chaine de connexion (connection string) contient toutes les informations necessaires pour se connecter a la base de donnees.
+
+```csharp
+string connectionString = "server=localhost;port=3306;database=ma_base;uid=root;pwd=;";
+```
+
+| Parametre | Description |
+|---|---|
+| `server` (ou `host`) | Adresse du serveur MySQL (localhost, 127.0.0.1, ou IP distante) |
+| `port` | Port MySQL (3306 par defaut) |
+| `database` (ou `db`) | Nom de la base de donnees |
+| `uid` (ou `user`) | Nom d'utilisateur |
+| `pwd` (ou `password`) | Mot de passe |
+| `charset` | Jeu de caracteres (utf8, utf8mb4) |
+| `SslMode` | None, Preferred, Required |
+
+Exemples courants :
+
+```csharp
+// WAMP/XAMPP en local (root sans mot de passe)
+string cs = "server=localhost;database=gestion;uid=root;pwd=;";
+
+// Avec mot de passe
+string cs = "server=localhost;database=gestion;uid=admin;pwd=monMotDePasse;";
+
+// Avec charset
+string cs = "server=localhost;database=gestion;uid=root;pwd=;charset=utf8;";
+```
+
+**Bonne pratique** : stocker la chaine de connexion dans `App.config` :
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <connectionStrings>
+    <add name="MaBase"
+         connectionString="server=localhost;database=gestion;uid=root;pwd=;"
+         providerName="MySql.Data.MySqlClient" />
+  </connectionStrings>
+</configuration>
+```
+
+```csharp
+using System.Configuration;
+
+string cs = ConfigurationManager.ConnectionStrings["MaBase"].ConnectionString;
+```
+
+Pour que `ConfigurationManager` fonctionne, il faut ajouter une reference a `System.Configuration` (clic droit sur References > Ajouter une reference > Assemblys > System.Configuration).
+
+### 6.3 MySqlConnection
+
+```csharp
+// Ouverture et fermeture manuelle
+MySqlConnection connexion = new MySqlConnection(connectionString);
+try
+{
+    connexion.Open();
+    // Utiliser la connexion...
+}
+catch (MySqlException ex)
+{
+    MessageBox.Show($"Erreur de connexion : {ex.Message}");
+}
+finally
+{
+    if (connexion.State == System.Data.ConnectionState.Open)
+    {
+        connexion.Close();
+    }
+}
+
+// Methode recommandee : using (fermeture automatique)
+using (MySqlConnection connexion = new MySqlConnection(connectionString))
+{
+    connexion.Open();
+    // Utiliser la connexion...
+}
+// La connexion est automatiquement fermee et disposee ici
+```
+
+Le bloc `using` garantit que la connexion est fermee meme en cas d'exception. C'est la methode a utiliser systematiquement.
+
+### 6.4 MySqlCommand
+
+#### ExecuteReader -- pour les SELECT
+
+Retourne un `MySqlDataReader` permettant de lire les resultats ligne par ligne.
+
+```csharp
+using (MySqlConnection connexion = new MySqlConnection(connectionString))
+{
+    connexion.Open();
+
+    string requete = "SELECT id, nom, prix, stock FROM produits";
+    MySqlCommand commande = new MySqlCommand(requete, connexion);
+
+    using (MySqlDataReader lecteur = commande.ExecuteReader())
+    {
+        while (lecteur.Read())
+        {
+            int id = lecteur.GetInt32("id");          // Par nom de colonne
+            string nom = lecteur.GetString("nom");
+            decimal prix = lecteur.GetDecimal("prix");
+            int stock = lecteur.GetInt32("stock");
+
+            // OU par index de colonne
+            int id2 = lecteur.GetInt32(0);
+            string nom2 = lecteur.GetString(1);
+
+            Console.WriteLine($"{id} - {nom} - {prix} - {stock}");
+        }
+    }
+}
+```
+
+Methodes du MySqlDataReader :
+| Methode | Description |
+|---|---|
+| `Read()` | Avance a la ligne suivante. Retourne false s'il n'y a plus de lignes |
+| `GetInt32(index ou nom)` | Lit un entier |
+| `GetString(index ou nom)` | Lit une chaine |
+| `GetDecimal(index ou nom)` | Lit un decimal |
+| `GetDouble(index ou nom)` | Lit un double |
+| `GetDateTime(index ou nom)` | Lit une date |
+| `GetBoolean(index ou nom)` | Lit un booleen |
+| `IsDBNull(index)` | Verifie si la valeur est NULL |
+| `GetOrdinal(nom)` | Retourne l'index d'une colonne par son nom |
+
+**Gestion des valeurs NULL** :
+
+```csharp
+string description = lecteur.IsDBNull(lecteur.GetOrdinal("description"))
+    ? null
+    : lecteur.GetString("description");
+
+// OU
+object valeur = lecteur["description"];
+string description2 = (valeur == DBNull.Value) ? null : valeur.ToString();
+```
+
+#### ExecuteNonQuery -- pour INSERT, UPDATE, DELETE
+
+Retourne le nombre de lignes affectees.
+
+```csharp
+using (MySqlConnection connexion = new MySqlConnection(connectionString))
+{
+    connexion.Open();
+
+    string requete = "INSERT INTO produits (nom, prix, stock) VALUES (@nom, @prix, @stock)";
+    MySqlCommand commande = new MySqlCommand(requete, connexion);
+    commande.Parameters.AddWithValue("@nom", "Clavier");
+    commande.Parameters.AddWithValue("@prix", 45.99);
+    commande.Parameters.AddWithValue("@stock", 50);
+
+    int lignesAffectees = commande.ExecuteNonQuery();
+    // lignesAffectees = 1 si l'insertion a reussi
+}
+```
+
+#### ExecuteScalar -- pour une valeur unique
+
+Retourne la premiere colonne de la premiere ligne du resultat. Utile pour COUNT, MAX, MIN, ou pour recuperer l'ID auto-incremente apres un INSERT.
+
+```csharp
+using (MySqlConnection connexion = new MySqlConnection(connectionString))
+{
+    connexion.Open();
+
+    // Compter les produits
+    string requete = "SELECT COUNT(*) FROM produits";
+    MySqlCommand commande = new MySqlCommand(requete, connexion);
+    int nombre = Convert.ToInt32(commande.ExecuteScalar());
+
+    // Recuperer le dernier ID insere
+    string requete2 = "SELECT LAST_INSERT_ID()";
+    MySqlCommand commande2 = new MySqlCommand(requete2, connexion);
+    int dernierID = Convert.ToInt32(commande2.ExecuteScalar());
+}
+```
+
+### 6.5 Requetes parametrees
+
+**Les requetes parametrees sont OBLIGATOIRES.** Ne jamais concatener des valeurs utilisateur directement dans une requete SQL. Cela expose l'application aux **injections SQL**.
+
+#### Mauvais exemple (injection SQL possible)
+
+```csharp
+// NE JAMAIS FAIRE CELA
+string nom = txtNom.Text;
+string requete = "SELECT * FROM produits WHERE nom = '" + nom + "'";
+// Si l'utilisateur entre : ' OR 1=1 --
+// La requete devient : SELECT * FROM produits WHERE nom = '' OR 1=1 --'
+// Cela retourne tous les produits !
+```
+
+#### Bon exemple (requete parametree)
+
+```csharp
+string requete = "SELECT * FROM produits WHERE nom = @nom";
+MySqlCommand commande = new MySqlCommand(requete, connexion);
+commande.Parameters.AddWithValue("@nom", txtNom.Text);
+// Le parametre est echappe automatiquement, l'injection est impossible
+```
+
+#### Syntaxe des parametres
+
+```csharp
+// Methode 1 : AddWithValue (la plus simple et la plus courante)
+commande.Parameters.AddWithValue("@nom", "Clavier");
+commande.Parameters.AddWithValue("@prix", 45.99);
+commande.Parameters.AddWithValue("@stock", 50);
+
+// Methode 2 : Add avec type explicite (plus precis)
+commande.Parameters.Add("@nom", MySqlDbType.VarChar, 100).Value = "Clavier";
+commande.Parameters.Add("@prix", MySqlDbType.Decimal).Value = 45.99m;
+commande.Parameters.Add("@stock", MySqlDbType.Int32).Value = 50;
+
+// Gestion des NULL
+commande.Parameters.AddWithValue("@description",
+    string.IsNullOrEmpty(description) ? (object)DBNull.Value : description);
+```
+
+#### Exemples complets avec parametres
+
+```csharp
+// SELECT avec WHERE parametre
+string requete = "SELECT * FROM produits WHERE categorie_id = @catId AND prix < @prixMax";
+MySqlCommand cmd = new MySqlCommand(requete, connexion);
+cmd.Parameters.AddWithValue("@catId", idCategorie);
+cmd.Parameters.AddWithValue("@prixMax", prixMaximum);
+
+// INSERT
+string requete = "INSERT INTO produits (nom, prix, stock, categorie_id) VALUES (@nom, @prix, @stock, @catId)";
+MySqlCommand cmd = new MySqlCommand(requete, connexion);
+cmd.Parameters.AddWithValue("@nom", produit.Nom);
+cmd.Parameters.AddWithValue("@prix", produit.Prix);
+cmd.Parameters.AddWithValue("@stock", produit.Stock);
+cmd.Parameters.AddWithValue("@catId", produit.CategorieId);
+int result = cmd.ExecuteNonQuery();
+
+// UPDATE
+string requete = "UPDATE produits SET nom = @nom, prix = @prix, stock = @stock WHERE id = @id";
+MySqlCommand cmd = new MySqlCommand(requete, connexion);
+cmd.Parameters.AddWithValue("@nom", produit.Nom);
+cmd.Parameters.AddWithValue("@prix", produit.Prix);
+cmd.Parameters.AddWithValue("@stock", produit.Stock);
+cmd.Parameters.AddWithValue("@id", produit.Id);
+int result = cmd.ExecuteNonQuery();
+
+// DELETE
+string requete = "DELETE FROM produits WHERE id = @id";
+MySqlCommand cmd = new MySqlCommand(requete, connexion);
+cmd.Parameters.AddWithValue("@id", idProduit);
+int result = cmd.ExecuteNonQuery();
+
+// LIKE avec parametre
+string requete = "SELECT * FROM produits WHERE nom LIKE @recherche";
+MySqlCommand cmd = new MySqlCommand(requete, connexion);
+cmd.Parameters.AddWithValue("@recherche", $"%{txtRecherche.Text}%");
+```
+
+### 6.6 Le pattern DAO
+
+Le pattern **DAO** (Data Access Object) separe la logique d'acces aux donnees du reste de l'application. Chaque entite a sa propre classe DAO.
+
+#### Classe de connexion
+
+```csharp
+using MySql.Data.MySqlClient;
+
+namespace GestionProduits.DAL
+{
+    /// <summary>
+    /// Classe utilitaire pour la gestion de la connexion a la base de donnees.
+    /// </summary>
+    public static class ConnexionBDD
+    {
+        private static readonly string connectionString =
+            "server=localhost;database=gestion;uid=root;pwd=;charset=utf8;";
+
+        /// <summary>
+        /// Retourne une nouvelle connexion MySQL.
+        /// L'appelant est responsable de l'ouverture et de la fermeture.
+        /// </summary>
+        public static MySqlConnection GetConnexion()
+        {
+            return new MySqlConnection(connectionString);
+        }
+    }
+}
+```
+
+Alternative avec singleton (une seule connexion partagee -- moins recommande car pose des problemes de concurrence) :
+
+```csharp
+public static class ConnexionBDD
+{
+    private static MySqlConnection instance = null;
+    private static readonly string connectionString =
+        "server=localhost;database=gestion;uid=root;pwd=;charset=utf8;";
+
+    public static MySqlConnection GetInstance()
+    {
+        if (instance == null)
+        {
+            instance = new MySqlConnection(connectionString);
+        }
+        if (instance.State != System.Data.ConnectionState.Open)
+        {
+            instance.Open();
+        }
+        return instance;
+    }
+}
+```
+
+La methode avec `GetConnexion()` retournant une nouvelle connexion a chaque appel, combinee avec `using`, est **la plus sure et la plus recommandee**.
+
+#### Classe metier (Model)
+
+```csharp
+namespace GestionProduits.Models
+{
+    public class Produit
+    {
+        public int Id { get; set; }
+        public string Nom { get; set; }
+        public string Description { get; set; }
+        public decimal Prix { get; set; }
+        public int Stock { get; set; }
+        public int CategorieId { get; set; }
+        public DateTime DateCreation { get; set; }
+
+        public Produit()
+        {
+        }
+
+        public Produit(int id, string nom, string description, decimal prix, int stock, int categorieId)
+        {
+            Id = id;
+            Nom = nom;
+            Description = description;
+            Prix = prix;
+            Stock = stock;
+            CategorieId = categorieId;
+        }
+
+        public override string ToString()
+        {
+            return $"{Nom} - {Prix:C2}";
+        }
+    }
+}
+```
+
+#### Classe DAO
+
+```csharp
+using System;
+using System.Collections.Generic;
+using MySql.Data.MySqlClient;
+using GestionProduits.Models;
+
+namespace GestionProduits.DAL
+{
+    public class ProduitDAO
+    {
+        /// <summary>
+        /// Recupere tous les produits.
+        /// </summary>
+        public List<Produit> GetAll()
+        {
+            List<Produit> produits = new List<Produit>();
+
+            using (MySqlConnection connexion = ConnexionBDD.GetConnexion())
+            {
+                connexion.Open();
+                string requete = "SELECT id, nom, description, prix, stock, categorie_id, date_creation FROM produits ORDER BY nom";
+                MySqlCommand commande = new MySqlCommand(requete, connexion);
+
+                using (MySqlDataReader lecteur = commande.ExecuteReader())
+                {
+                    while (lecteur.Read())
+                    {
+                        Produit p = MapperProduit(lecteur);
+                        produits.Add(p);
+                    }
+                }
+            }
+
+            return produits;
+        }
+
+        /// <summary>
+        /// Recupere un produit par son identifiant.
+        /// </summary>
+        public Produit GetById(int id)
+        {
+            Produit produit = null;
+
+            using (MySqlConnection connexion = ConnexionBDD.GetConnexion())
+            {
+                connexion.Open();
+                string requete = "SELECT id, nom, description, prix, stock, categorie_id, date_creation FROM produits WHERE id = @id";
+                MySqlCommand commande = new MySqlCommand(requete, connexion);
+                commande.Parameters.AddWithValue("@id", id);
+
+                using (MySqlDataReader lecteur = commande.ExecuteReader())
+                {
+                    if (lecteur.Read())
+                    {
+                        produit = MapperProduit(lecteur);
+                    }
+                }
+            }
+
+            return produit;
+        }
+
+        /// <summary>
+        /// Recherche des produits par nom (LIKE).
+        /// </summary>
+        public List<Produit> Rechercher(string terme)
+        {
+            List<Produit> produits = new List<Produit>();
+
+            using (MySqlConnection connexion = ConnexionBDD.GetConnexion())
+            {
+                connexion.Open();
+                string requete = "SELECT id, nom, description, prix, stock, categorie_id, date_creation FROM produits WHERE nom LIKE @terme ORDER BY nom";
+                MySqlCommand commande = new MySqlCommand(requete, connexion);
+                commande.Parameters.AddWithValue("@terme", $"%{terme}%");
+
+                using (MySqlDataReader lecteur = commande.ExecuteReader())
+                {
+                    while (lecteur.Read())
+                    {
+                        produits.Add(MapperProduit(lecteur));
+                    }
+                }
+            }
+
+            return produits;
+        }
+
+        /// <summary>
+        /// Recupere les produits d'une categorie.
+        /// </summary>
+        public List<Produit> GetByCategorie(int categorieId)
+        {
+            List<Produit> produits = new List<Produit>();
+
+            using (MySqlConnection connexion = ConnexionBDD.GetConnexion())
+            {
+                connexion.Open();
+                string requete = "SELECT id, nom, description, prix, stock, categorie_id, date_creation FROM produits WHERE categorie_id = @catId ORDER BY nom";
+                MySqlCommand commande = new MySqlCommand(requete, connexion);
+                commande.Parameters.AddWithValue("@catId", categorieId);
+
+                using (MySqlDataReader lecteur = commande.ExecuteReader())
+                {
+                    while (lecteur.Read())
+                    {
+                        produits.Add(MapperProduit(lecteur));
+                    }
+                }
+            }
+
+            return produits;
+        }
+
+        /// <summary>
+        /// Insere un nouveau produit. Retourne l'identifiant genere.
+        /// </summary>
+        public int Insert(Produit produit)
+        {
+            using (MySqlConnection connexion = ConnexionBDD.GetConnexion())
+            {
+                connexion.Open();
+                string requete = @"INSERT INTO produits (nom, description, prix, stock, categorie_id)
+                                   VALUES (@nom, @description, @prix, @stock, @catId)";
+                MySqlCommand commande = new MySqlCommand(requete, connexion);
+                commande.Parameters.AddWithValue("@nom", produit.Nom);
+                commande.Parameters.AddWithValue("@description",
+                    string.IsNullOrEmpty(produit.Description) ? (object)DBNull.Value : produit.Description);
+                commande.Parameters.AddWithValue("@prix", produit.Prix);
+                commande.Parameters.AddWithValue("@stock", produit.Stock);
+                commande.Parameters.AddWithValue("@catId", produit.CategorieId);
+
+                commande.ExecuteNonQuery();
+
+                // Recuperer l'ID auto-incremente
+                commande.CommandText = "SELECT LAST_INSERT_ID()";
+                int nouvelId = Convert.ToInt32(commande.ExecuteScalar());
+                produit.Id = nouvelId;
+
+                return nouvelId;
+            }
+        }
+
+        /// <summary>
+        /// Met a jour un produit existant.
+        /// </summary>
+        public bool Update(Produit produit)
+        {
+            using (MySqlConnection connexion = ConnexionBDD.GetConnexion())
+            {
+                connexion.Open();
+                string requete = @"UPDATE produits
+                                   SET nom = @nom, description = @description, prix = @prix,
+                                       stock = @stock, categorie_id = @catId
+                                   WHERE id = @id";
+                MySqlCommand commande = new MySqlCommand(requete, connexion);
+                commande.Parameters.AddWithValue("@nom", produit.Nom);
+                commande.Parameters.AddWithValue("@description",
+                    string.IsNullOrEmpty(produit.Description) ? (object)DBNull.Value : produit.Description);
+                commande.Parameters.AddWithValue("@prix", produit.Prix);
+                commande.Parameters.AddWithValue("@stock", produit.Stock);
+                commande.Parameters.AddWithValue("@catId", produit.CategorieId);
+                commande.Parameters.AddWithValue("@id", produit.Id);
+
+                int lignesAffectees = commande.ExecuteNonQuery();
+                return lignesAffectees > 0;
+            }
+        }
+
+        /// <summary>
+        /// Supprime un produit par son identifiant.
+        /// </summary>
+        public bool Delete(int id)
+        {
+            using (MySqlConnection connexion = ConnexionBDD.GetConnexion())
+            {
+                connexion.Open();
+                string requete = "DELETE FROM produits WHERE id = @id";
+                MySqlCommand commande = new MySqlCommand(requete, connexion);
+                commande.Parameters.AddWithValue("@id", id);
+
+                int lignesAffectees = commande.ExecuteNonQuery();
+                return lignesAffectees > 0;
+            }
+        }
+
+        /// <summary>
+        /// Methode privee de mapping : DataReader -> objet Produit.
+        /// </summary>
+        private Produit MapperProduit(MySqlDataReader lecteur)
+        {
+            return new Produit
+            {
+                Id = lecteur.GetInt32("id"),
+                Nom = lecteur.GetString("nom"),
+                Description = lecteur.IsDBNull(lecteur.GetOrdinal("description"))
+                    ? null
+                    : lecteur.GetString("description"),
+                Prix = lecteur.GetDecimal("prix"),
+                Stock = lecteur.GetInt32("stock"),
+                CategorieId = lecteur.GetInt32("categorie_id"),
+                DateCreation = lecteur.GetDateTime("date_creation")
+            };
+        }
+    }
+}
+```
+
+### 6.7 DataTable et DataGridView
+
+Au lieu de mapper les resultats vers des objets, on peut utiliser un `DataTable` pour charger directement les donnees et les lier au DataGridView.
+
+```csharp
+using System.Data;
+using MySql.Data.MySqlClient;
+
+public DataTable GetAllAsDataTable()
+{
+    DataTable dt = new DataTable();
+
+    using (MySqlConnection connexion = ConnexionBDD.GetConnexion())
+    {
+        connexion.Open();
+        string requete = "SELECT id AS 'ID', nom AS 'Nom', prix AS 'Prix', stock AS 'Stock' FROM produits ORDER BY nom";
+        MySqlDataAdapter adapter = new MySqlDataAdapter(requete, connexion);
+        adapter.Fill(dt);
+    }
+
+    return dt;
+}
+
+// Dans le formulaire :
+DataTable dt = produitDAO.GetAllAsDataTable();
+dgvProduits.DataSource = dt;
+```
+
+Le `MySqlDataAdapter` remplit le DataTable en une seule operation. Les alias SQL (`AS 'Nom'`) servent de noms de colonnes dans le DataGridView.
+
+### 6.8 Transactions
+
+Une transaction garantit que plusieurs operations sont executees comme un tout : soit toutes reussissent (commit), soit toutes sont annulees (rollback).
+
+```csharp
+using (MySqlConnection connexion = ConnexionBDD.GetConnexion())
+{
+    connexion.Open();
+    MySqlTransaction transaction = connexion.BeginTransaction();
+
+    try
+    {
+        // Premiere operation : inserer une commande
+        string reqCommande = "INSERT INTO commandes (client_id, date_commande, montant_total) VALUES (@clientId, @date, @montant)";
+        MySqlCommand cmdCommande = new MySqlCommand(reqCommande, connexion, transaction);
+        cmdCommande.Parameters.AddWithValue("@clientId", commande.ClientId);
+        cmdCommande.Parameters.AddWithValue("@date", DateTime.Now);
+        cmdCommande.Parameters.AddWithValue("@montant", commande.MontantTotal);
+        cmdCommande.ExecuteNonQuery();
+
+        // Recuperer l'ID de la commande
+        cmdCommande.CommandText = "SELECT LAST_INSERT_ID()";
+        int commandeId = Convert.ToInt32(cmdCommande.ExecuteScalar());
+
+        // Deuxieme operation : inserer les lignes de commande
+        foreach (LigneCommande ligne in commande.Lignes)
+        {
+            string reqLigne = "INSERT INTO lignes_commande (commande_id, produit_id, quantite, prix_unitaire) VALUES (@cmdId, @prodId, @qte, @pu)";
+            MySqlCommand cmdLigne = new MySqlCommand(reqLigne, connexion, transaction);
+            cmdLigne.Parameters.AddWithValue("@cmdId", commandeId);
+            cmdLigne.Parameters.AddWithValue("@prodId", ligne.ProduitId);
+            cmdLigne.Parameters.AddWithValue("@qte", ligne.Quantite);
+            cmdLigne.Parameters.AddWithValue("@pu", ligne.PrixUnitaire);
+            cmdLigne.ExecuteNonQuery();
+        }
+
+        // Troisieme operation : mettre a jour le stock
+        foreach (LigneCommande ligne in commande.Lignes)
+        {
+            string reqStock = "UPDATE produits SET stock = stock - @qte WHERE id = @prodId";
+            MySqlCommand cmdStock = new MySqlCommand(reqStock, connexion, transaction);
+            cmdStock.Parameters.AddWithValue("@qte", ligne.Quantite);
+            cmdStock.Parameters.AddWithValue("@prodId", ligne.ProduitId);
+            cmdStock.ExecuteNonQuery();
+        }
+
+        // Tout s'est bien passe : valider la transaction
+        transaction.Commit();
+    }
+    catch (Exception ex)
+    {
+        // Une erreur s'est produite : annuler toutes les operations
+        transaction.Rollback();
+        throw;  // Relancer l'exception pour la gerer plus haut
+    }
+}
+```
+
+### 6.9 Application CRUD complete avec MySQL et DataGridView
+
+Voici le code complet d'un formulaire de gestion de produits avec les operations CRUD.
+
+**Script SQL de la base de donnees :**
+
+```sql
+CREATE DATABASE IF NOT EXISTS gestion CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE gestion;
+
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE produits (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(200) NOT NULL,
+    description TEXT,
+    prix DECIMAL(10,2) NOT NULL,
+    stock INT NOT NULL DEFAULT 0,
+    categorie_id INT,
+    date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (categorie_id) REFERENCES categories(id)
+);
+
+INSERT INTO categories (nom) VALUES ('Informatique'), ('Bureautique'), ('Reseau');
+
+INSERT INTO produits (nom, description, prix, stock, categorie_id) VALUES
+('Clavier mecanique', 'Clavier Cherry MX Blue', 89.99, 50, 1),
+('Souris sans fil', 'Souris ergonomique Logitech', 39.99, 120, 1),
+('Ecran 27 pouces', 'Ecran IPS 4K', 349.99, 15, 1),
+('Ramette papier A4', '500 feuilles 80g', 5.49, 200, 2),
+('Stylo bille', 'Lot de 10 stylos noirs', 3.99, 500, 2),
+('Switch 8 ports', 'Switch Gigabit non manage', 29.99, 30, 3),
+('Cable RJ45 Cat6', 'Cable 3 metres', 4.99, 150, 3);
+```
+
+**Formulaire principal (FrmGestionProduits) :**
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Windows.Forms;
+using GestionProduits.DAL;
+using GestionProduits.Models;
+
+namespace GestionProduits
+{
+    public partial class FrmGestionProduits : Form
+    {
+        private ProduitDAO produitDAO = new ProduitDAO();
+        private CategorieDAO categorieDAO = new CategorieDAO();
+        private List<Produit> listeProduits;
+        private Produit produitSelectionne = null;
+
+        public FrmGestionProduits()
+        {
+            InitializeComponent();
+            ConfigurerDataGridView();
+        }
+
+        private void ConfigurerDataGridView()
+        {
+            dgvProduits.AutoGenerateColumns = false;
+            dgvProduits.ReadOnly = true;
+            dgvProduits.AllowUserToAddRows = false;
+            dgvProduits.AllowUserToDeleteRows = false;
+            dgvProduits.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvProduits.MultiSelect = false;
+            dgvProduits.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvProduits.RowHeadersVisible = false;
+
+            dgvProduits.Columns.Clear();
+            dgvProduits.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "colId",
+                HeaderText = "ID",
+                DataPropertyName = "Id",
+                Width = 50
+            });
+            dgvProduits.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "colNom",
+                HeaderText = "Nom",
+                DataPropertyName = "Nom",
+                Width = 200
+            });
+            dgvProduits.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "colPrix",
+                HeaderText = "Prix",
+                DataPropertyName = "Prix",
+                Width = 80,
+                DefaultCellStyle = new DataGridViewCellStyle { Format = "N2", Alignment = DataGridViewContentAlignment.MiddleRight }
+            });
+            dgvProduits.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "colStock",
+                HeaderText = "Stock",
+                DataPropertyName = "Stock",
+                Width = 60,
+                DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter }
+            });
+        }
+
+        private void FrmGestionProduits_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                // Charger les categories dans le ComboBox
+                List<Categorie> categories = categorieDAO.GetAll();
+                cboCategorie.DataSource = categories;
+                cboCategorie.DisplayMember = "Nom";
+                cboCategorie.ValueMember = "Id";
+                cboCategorie.SelectedIndex = -1;
+
+                // Charger les produits
+                ChargerProduits();
+
+                ViderChamps();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur lors du chargement : {ex.Message}", "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void ChargerProduits()
+        {
+            listeProduits = produitDAO.GetAll();
+            dgvProduits.DataSource = null;
+            dgvProduits.DataSource = listeProduits;
+        }
+
+        private void ViderChamps()
+        {
+            txtNom.Text = "";
+            txtDescription.Text = "";
+            txtPrix.Text = "";
+            nudStock.Value = 0;
+            cboCategorie.SelectedIndex = -1;
+            produitSelectionne = null;
+            lblStatut.Text = "Nouveau produit";
+        }
+
+        private void RemplirChamps(Produit p)
+        {
+            txtNom.Text = p.Nom;
+            txtDescription.Text = p.Description;
+            txtPrix.Text = p.Prix.ToString("F2");
+            nudStock.Value = p.Stock;
+            cboCategorie.SelectedValue = p.CategorieId;
+            produitSelectionne = p;
+            lblStatut.Text = $"Modification du produit #{p.Id}";
+        }
+
+        private bool ValiderSaisie()
+        {
+            if (string.IsNullOrWhiteSpace(txtNom.Text))
+            {
+                MessageBox.Show("Le nom est obligatoire.", "Validation",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtNom.Focus();
+                return false;
+            }
+
+            if (!decimal.TryParse(txtPrix.Text, out decimal prix) || prix < 0)
+            {
+                MessageBox.Show("Le prix doit etre un nombre positif.", "Validation",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtPrix.Focus();
+                return false;
+            }
+
+            if (cboCategorie.SelectedIndex == -1)
+            {
+                MessageBox.Show("Veuillez selectionner une categorie.", "Validation",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                cboCategorie.Focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        private void dgvProduits_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                Produit p = (Produit)dgvProduits.Rows[e.RowIndex].DataBoundItem;
+                RemplirChamps(p);
+            }
+        }
+
+        private void btnAjouter_Click(object sender, EventArgs e)
+        {
+            if (!ValiderSaisie()) return;
+
+            try
+            {
+                Produit nouveau = new Produit
+                {
+                    Nom = txtNom.Text.Trim(),
+                    Description = txtDescription.Text.Trim(),
+                    Prix = decimal.Parse(txtPrix.Text),
+                    Stock = (int)nudStock.Value,
+                    CategorieId = (int)cboCategorie.SelectedValue
+                };
+
+                produitDAO.Insert(nouveau);
+                MessageBox.Show("Produit ajoute avec succes.", "Succes",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ChargerProduits();
+                ViderChamps();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur lors de l'ajout : {ex.Message}", "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnModifier_Click(object sender, EventArgs e)
+        {
+            if (produitSelectionne == null)
+            {
+                MessageBox.Show("Veuillez selectionner un produit a modifier.", "Information",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (!ValiderSaisie()) return;
+
+            try
+            {
+                produitSelectionne.Nom = txtNom.Text.Trim();
+                produitSelectionne.Description = txtDescription.Text.Trim();
+                produitSelectionne.Prix = decimal.Parse(txtPrix.Text);
+                produitSelectionne.Stock = (int)nudStock.Value;
+                produitSelectionne.CategorieId = (int)cboCategorie.SelectedValue;
+
+                produitDAO.Update(produitSelectionne);
+                MessageBox.Show("Produit modifie avec succes.", "Succes",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ChargerProduits();
+                ViderChamps();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur lors de la modification : {ex.Message}", "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnSupprimer_Click(object sender, EventArgs e)
+        {
+            if (produitSelectionne == null)
+            {
+                MessageBox.Show("Veuillez selectionner un produit a supprimer.", "Information",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            DialogResult result = MessageBox.Show(
+                $"Voulez-vous vraiment supprimer le produit '{produitSelectionne.Nom}' ?",
+                "Confirmation de suppression",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    produitDAO.Delete(produitSelectionne.Id);
+                    MessageBox.Show("Produit supprime avec succes.", "Succes",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ChargerProduits();
+                    ViderChamps();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Erreur lors de la suppression : {ex.Message}", "Erreur",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void btnNouveau_Click(object sender, EventArgs e)
+        {
+            ViderChamps();
+            txtNom.Focus();
+        }
+
+        private void txtRecherche_TextChanged(object sender, EventArgs e)
+        {
+            string terme = txtRecherche.Text.Trim();
+            if (string.IsNullOrEmpty(terme))
+            {
+                dgvProduits.DataSource = listeProduits;
+            }
+            else
+            {
+                var resultats = listeProduits
+                    .FindAll(p => p.Nom.ToLower().Contains(terme.ToLower()));
+                dgvProduits.DataSource = resultats;
+            }
+        }
+    }
+}
+```
+
+### 6.10 Gestion des erreurs BDD
+
+```csharp
+using MySql.Data.MySqlClient;
+
+try
+{
+    // Operations BDD...
+}
+catch (MySqlException ex)
+{
+    switch (ex.Number)
+    {
+        case 0:
+            MessageBox.Show("Impossible de se connecter au serveur MySQL.\nVerifiez que le serveur est demarre.",
+                "Erreur de connexion", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            break;
+        case 1045:
+            MessageBox.Show("Identifiants de connexion incorrects.",
+                "Erreur d'authentification", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            break;
+        case 1049:
+            MessageBox.Show("La base de donnees n'existe pas.",
+                "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            break;
+        case 1062:
+            MessageBox.Show("Un enregistrement avec cette valeur existe deja (doublon).",
+                "Erreur de doublon", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            break;
+        case 1451:
+            MessageBox.Show("Impossible de supprimer : cet element est reference par d'autres enregistrements.",
+                "Contrainte d'integrite", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            break;
+        case 1452:
+            MessageBox.Show("La reference (cle etrangere) est invalide.",
+                "Contrainte d'integrite", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            break;
+        default:
+            MessageBox.Show($"Erreur MySQL #{ex.Number} : {ex.Message}",
+                "Erreur base de donnees", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            break;
+    }
+}
+catch (Exception ex)
+{
+    MessageBox.Show($"Erreur inattendue : {ex.Message}",
+        "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+```
+
+### 6.11 Exercices -- MySQL
+
+**Exercice 1** : Ecrire une classe `CategorieDAO` avec les methodes `GetAll()`, `GetById(int id)`, `Insert(Categorie c)`, `Update(Categorie c)`, `Delete(int id)`.
+
+```csharp
+public class CategorieDAO
+{
+    public List<Categorie> GetAll()
+    {
+        List<Categorie> categories = new List<Categorie>();
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "SELECT id, nom FROM categories ORDER BY nom";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    categories.Add(new Categorie
+                    {
+                        Id = reader.GetInt32("id"),
+                        Nom = reader.GetString("nom")
+                    });
+                }
+            }
+        }
+        return categories;
+    }
+
+    public Categorie GetById(int id)
+    {
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "SELECT id, nom FROM categories WHERE id = @id";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            cmd.Parameters.AddWithValue("@id", id);
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                if (reader.Read())
+                {
+                    return new Categorie
+                    {
+                        Id = reader.GetInt32("id"),
+                        Nom = reader.GetString("nom")
+                    };
+                }
+            }
+        }
+        return null;
+    }
+
+    public int Insert(Categorie c)
+    {
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "INSERT INTO categories (nom) VALUES (@nom)";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            cmd.Parameters.AddWithValue("@nom", c.Nom);
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "SELECT LAST_INSERT_ID()";
+            return Convert.ToInt32(cmd.ExecuteScalar());
+        }
+    }
+
+    public bool Update(Categorie c)
+    {
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "UPDATE categories SET nom = @nom WHERE id = @id";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            cmd.Parameters.AddWithValue("@nom", c.Nom);
+            cmd.Parameters.AddWithValue("@id", c.Id);
+            return cmd.ExecuteNonQuery() > 0;
+        }
+    }
+
+    public bool Delete(int id)
+    {
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "DELETE FROM categories WHERE id = @id";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            cmd.Parameters.AddWithValue("@id", id);
+            return cmd.ExecuteNonQuery() > 0;
+        }
+    }
+}
+```
+
+**Exercice 2** : Ecrire une methode qui retourne le nombre total de produits en stock et la valeur totale du stock (somme de prix * stock).
+
+```csharp
+public (int totalArticles, decimal valeurTotale) GetStatistiquesStock()
+{
+    using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+    {
+        cnx.Open();
+        string req = "SELECT COALESCE(SUM(stock), 0) AS total_articles, COALESCE(SUM(prix * stock), 0) AS valeur_totale FROM produits";
+        MySqlCommand cmd = new MySqlCommand(req, cnx);
+        using (MySqlDataReader reader = cmd.ExecuteReader())
+        {
+            if (reader.Read())
+            {
+                return (reader.GetInt32("total_articles"), reader.GetDecimal("valeur_totale"));
+            }
+        }
+    }
+    return (0, 0);
+}
+```
+
+---
+
+## 7. Architecture MVC en WinForms
+
+### 7.1 Adapter MVC au desktop
+
+Le pattern **MVC** (Model-View-Controller) separe l'application en trois couches :
+
+- **Model** : les classes metier (Produit, Categorie...) et les classes d'acces aux donnees (DAO)
+- **View** : les formulaires Windows Forms (ce que l'utilisateur voit et manipule)
+- **Controller** : la logique qui fait le lien entre la vue et le modele
+
+En WinForms, le Controller est souvent implemente comme une classe separee qui est instanciee par le formulaire. Le formulaire (View) delegue toute la logique metier au Controller.
+
+### 7.2 Structure de dossiers
+
+```
+GestionProduits/
+├── Models/
+│   ├── Produit.cs
+│   ├── Categorie.cs
+│   └── LigneCommande.cs
+├── DAL/                       (Data Access Layer)
+│   ├── ConnexionBDD.cs
+│   ├── ProduitDAO.cs
+│   └── CategorieDAO.cs
+├── Controllers/
+│   └── ProduitController.cs
+├── Views/
+│   ├── FrmPrincipal.cs
+│   ├── FrmPrincipal.Designer.cs
+│   ├── FrmGestionProduits.cs
+│   ├── FrmGestionProduits.Designer.cs
+│   └── FrmDetailProduit.cs
+├── Program.cs
+└── App.config
+```
+
+### 7.3 Exemple complet : gestion de produits en MVC
+
+#### Model (deja vu dans la section precedente)
+
+```csharp
+// Models/Produit.cs
+namespace GestionProduits.Models
+{
+    public class Produit
+    {
+        public int Id { get; set; }
+        public string Nom { get; set; }
+        public string Description { get; set; }
+        public decimal Prix { get; set; }
+        public int Stock { get; set; }
+        public int CategorieId { get; set; }
+    }
+}
+```
+
+#### Controller
+
+```csharp
+// Controllers/ProduitController.cs
+using System;
+using System.Collections.Generic;
+using GestionProduits.DAL;
+using GestionProduits.Models;
+
+namespace GestionProduits.Controllers
+{
+    public class ProduitController
+    {
+        private ProduitDAO produitDAO;
+        private CategorieDAO categorieDAO;
+
+        public ProduitController()
+        {
+            produitDAO = new ProduitDAO();
+            categorieDAO = new CategorieDAO();
+        }
+
+        public List<Produit> GetTousProduits()
+        {
+            return produitDAO.GetAll();
+        }
+
+        public List<Categorie> GetToutesCategories()
+        {
+            return categorieDAO.GetAll();
+        }
+
+        public List<Produit> RechercherProduits(string terme)
+        {
+            if (string.IsNullOrWhiteSpace(terme))
+            {
+                return produitDAO.GetAll();
+            }
+            return produitDAO.Rechercher(terme);
+        }
+
+        public List<Produit> GetProduitsParCategorie(int categorieId)
+        {
+            return produitDAO.GetByCategorie(categorieId);
+        }
+
+        /// <summary>
+        /// Ajoute un produit apres validation.
+        /// Lance une exception si les donnees sont invalides.
+        /// </summary>
+        public int AjouterProduit(string nom, string description, string prixTexte, int stock, int categorieId)
+        {
+            // Validation metier
+            if (string.IsNullOrWhiteSpace(nom))
+            {
+                throw new ArgumentException("Le nom du produit est obligatoire.");
+            }
+
+            if (!decimal.TryParse(prixTexte, out decimal prix) || prix < 0)
+            {
+                throw new ArgumentException("Le prix doit etre un nombre positif.");
+            }
+
+            if (stock < 0)
+            {
+                throw new ArgumentException("Le stock ne peut pas etre negatif.");
+            }
+
+            Produit produit = new Produit
+            {
+                Nom = nom.Trim(),
+                Description = description?.Trim(),
+                Prix = prix,
+                Stock = stock,
+                CategorieId = categorieId
+            };
+
+            return produitDAO.Insert(produit);
+        }
+
+        public bool ModifierProduit(int id, string nom, string description, string prixTexte, int stock, int categorieId)
+        {
+            if (string.IsNullOrWhiteSpace(nom))
+            {
+                throw new ArgumentException("Le nom du produit est obligatoire.");
+            }
+
+            if (!decimal.TryParse(prixTexte, out decimal prix) || prix < 0)
+            {
+                throw new ArgumentException("Le prix doit etre un nombre positif.");
+            }
+
+            Produit produit = new Produit
+            {
+                Id = id,
+                Nom = nom.Trim(),
+                Description = description?.Trim(),
+                Prix = prix,
+                Stock = stock,
+                CategorieId = categorieId
+            };
+
+            return produitDAO.Update(produit);
+        }
+
+        public bool SupprimerProduit(int id)
+        {
+            return produitDAO.Delete(id);
+        }
+    }
+}
+```
+
+#### View (Formulaire utilisant le Controller)
+
+```csharp
+// Views/FrmGestionProduits.cs
+using System;
+using System.Collections.Generic;
+using System.Windows.Forms;
+using GestionProduits.Controllers;
+using GestionProduits.Models;
+
+namespace GestionProduits.Views
+{
+    public partial class FrmGestionProduits : Form
+    {
+        private ProduitController controller;
+        private Produit produitSelectionne = null;
+
+        public FrmGestionProduits()
+        {
+            InitializeComponent();
+            controller = new ProduitController();
+        }
+
+        private void FrmGestionProduits_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                // Charger les categories
+                cboCategorie.DataSource = controller.GetToutesCategories();
+                cboCategorie.DisplayMember = "Nom";
+                cboCategorie.ValueMember = "Id";
+                cboCategorie.SelectedIndex = -1;
+
+                // Charger les produits
+                RafraichirGrille();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur de chargement : {ex.Message}", "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void RafraichirGrille()
+        {
+            dgvProduits.DataSource = controller.GetTousProduits();
+        }
+
+        private void dgvProduits_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                produitSelectionne = (Produit)dgvProduits.Rows[e.RowIndex].DataBoundItem;
+                txtNom.Text = produitSelectionne.Nom;
+                txtDescription.Text = produitSelectionne.Description;
+                txtPrix.Text = produitSelectionne.Prix.ToString("F2");
+                nudStock.Value = produitSelectionne.Stock;
+                cboCategorie.SelectedValue = produitSelectionne.CategorieId;
+            }
+        }
+
+        private void btnAjouter_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                int categorieId = (cboCategorie.SelectedValue != null)
+                    ? (int)cboCategorie.SelectedValue
+                    : 0;
+
+                controller.AjouterProduit(
+                    txtNom.Text,
+                    txtDescription.Text,
+                    txtPrix.Text,
+                    (int)nudStock.Value,
+                    categorieId);
+
+                MessageBox.Show("Produit ajoute.", "Succes",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                RafraichirGrille();
+                ViderChamps();
+            }
+            catch (ArgumentException ex)
+            {
+                MessageBox.Show(ex.Message, "Validation",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur : {ex.Message}", "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnModifier_Click(object sender, EventArgs e)
+        {
+            if (produitSelectionne == null)
+            {
+                MessageBox.Show("Selectionnez un produit.", "Information",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                controller.ModifierProduit(
+                    produitSelectionne.Id,
+                    txtNom.Text,
+                    txtDescription.Text,
+                    txtPrix.Text,
+                    (int)nudStock.Value,
+                    (int)cboCategorie.SelectedValue);
+
+                MessageBox.Show("Produit modifie.", "Succes",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                RafraichirGrille();
+                ViderChamps();
+            }
+            catch (ArgumentException ex)
+            {
+                MessageBox.Show(ex.Message, "Validation",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur : {ex.Message}", "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnSupprimer_Click(object sender, EventArgs e)
+        {
+            if (produitSelectionne == null)
+            {
+                MessageBox.Show("Selectionnez un produit.", "Information",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            DialogResult result = MessageBox.Show(
+                $"Supprimer '{produitSelectionne.Nom}' ?",
+                "Confirmation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    controller.SupprimerProduit(produitSelectionne.Id);
+                    MessageBox.Show("Produit supprime.", "Succes",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    RafraichirGrille();
+                    ViderChamps();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Erreur : {ex.Message}", "Erreur",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void txtRecherche_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                dgvProduits.DataSource = controller.RechercherProduits(txtRecherche.Text);
+            }
+            catch (Exception ex)
+            {
+                // Silencieux pour ne pas afficher une erreur a chaque frappe
+            }
+        }
+
+        private void ViderChamps()
+        {
+            txtNom.Text = "";
+            txtDescription.Text = "";
+            txtPrix.Text = "";
+            nudStock.Value = 0;
+            cboCategorie.SelectedIndex = -1;
+            produitSelectionne = null;
+        }
+    }
+}
+```
+
+### 7.4 Avantages de MVC
+
+- **Separation des responsabilites** : chaque couche a un role precis
+- **Testabilite** : le Controller peut etre teste independamment de l'interface graphique
+- **Reutilisabilite** : le meme Controller peut etre utilise avec une interface differente
+- **Maintenabilite** : modifier la logique metier ne touche pas l'interface, et inversement
+- **Lisibilite** : le code du formulaire est plus simple car il delegue la logique au Controller
+
+Pour les concepts approfondis de MVC, consulter le playbook **Architecture MVC**.
+
+---
+
+## 8. Fonctionnalites courantes
+
+### 8.1 Recherche et filtrage en temps reel
+
+```csharp
+// Filtrage cote client avec LINQ (sur une liste deja chargee en memoire)
+private List<Produit> tousLesProduits;
+
+private void FrmProduits_Load(object sender, EventArgs e)
+{
+    tousLesProduits = produitDAO.GetAll();
+    dgvProduits.DataSource = tousLesProduits;
+}
+
+private void txtRecherche_TextChanged(object sender, EventArgs e)
+{
+    string filtre = txtRecherche.Text.Trim().ToLower();
+
+    if (string.IsNullOrEmpty(filtre))
+    {
+        dgvProduits.DataSource = tousLesProduits;
+    }
+    else
+    {
+        var resultats = tousLesProduits
+            .Where(p => p.Nom.ToLower().Contains(filtre)
+                     || (p.Description != null && p.Description.ToLower().Contains(filtre)))
+            .ToList();
+        dgvProduits.DataSource = resultats;
+    }
+}
+
+// Filtrage cote serveur (requete BDD a chaque frappe -- plus lourd mais toujours a jour)
+private void txtRecherche_TextChanged(object sender, EventArgs e)
+{
+    string terme = txtRecherche.Text.Trim();
+    dgvProduits.DataSource = produitDAO.Rechercher(terme);
+}
+```
+
+### 8.2 Export en CSV
+
+```csharp
+private void btnExportCSV_Click(object sender, EventArgs e)
+{
+    SaveFileDialog sfd = new SaveFileDialog();
+    sfd.Filter = "Fichiers CSV (*.csv)|*.csv";
+    sfd.FileName = $"export_produits_{DateTime.Now:yyyyMMdd}";
+
+    if (sfd.ShowDialog() == DialogResult.OK)
+    {
+        try
+        {
+            List<Produit> produits = produitDAO.GetAll();
+            var lignes = new List<string>();
+
+            // En-tete
+            lignes.Add("ID;Nom;Description;Prix;Stock;Categorie");
+
+            // Donnees
+            foreach (Produit p in produits)
+            {
+                string description = p.Description?.Replace(";", ",") ?? "";
+                lignes.Add($"{p.Id};{p.Nom};{description};{p.Prix:F2};{p.Stock};{p.CategorieId}");
+            }
+
+            System.IO.File.WriteAllLines(sfd.FileName, lignes, System.Text.Encoding.UTF8);
+            MessageBox.Show("Export termine avec succes.", "Export CSV",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors de l'export : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+}
+```
+
+### 8.3 Impression (PrintDocument)
+
+```csharp
+using System.Drawing;
+using System.Drawing.Printing;
+
+private void btnImprimer_Click(object sender, EventArgs e)
+{
+    PrintDocument doc = new PrintDocument();
+    doc.PrintPage += Doc_PrintPage;
+
+    PrintPreviewDialog apercu = new PrintPreviewDialog();
+    apercu.Document = doc;
+    apercu.ShowDialog();
+}
+
+private void Doc_PrintPage(object sender, PrintPageEventArgs e)
+{
+    Graphics g = e.Graphics;
+    Font fontTitre = new Font("Segoe UI", 16, FontStyle.Bold);
+    Font fontTexte = new Font("Segoe UI", 10, FontStyle.Regular);
+    Font fontEnTete = new Font("Segoe UI", 10, FontStyle.Bold);
+
+    float y = 50;
+    float x = 50;
+
+    // Titre
+    g.DrawString("Liste des produits", fontTitre, Brushes.Black, x, y);
+    y += 40;
+
+    // En-tetes de colonnes
+    g.DrawString("Nom", fontEnTete, Brushes.Black, x, y);
+    g.DrawString("Prix", fontEnTete, Brushes.Black, x + 300, y);
+    g.DrawString("Stock", fontEnTete, Brushes.Black, x + 450, y);
+    y += 25;
+
+    // Ligne de separation
+    g.DrawLine(Pens.Black, x, y, x + 550, y);
+    y += 5;
+
+    // Donnees
+    List<Produit> produits = produitDAO.GetAll();
+    foreach (Produit p in produits)
+    {
+        if (y > e.MarginBounds.Bottom)
+        {
+            e.HasMorePages = true;  // Continuer sur la page suivante
+            return;
+        }
+
+        g.DrawString(p.Nom, fontTexte, Brushes.Black, x, y);
+        g.DrawString($"{p.Prix:F2}", fontTexte, Brushes.Black, x + 300, y);
+        g.DrawString(p.Stock.ToString(), fontTexte, Brushes.Black, x + 450, y);
+        y += 20;
+    }
+
+    e.HasMorePages = false;
+}
+```
+
+### 8.4 Validation de formulaire avec ErrorProvider
+
+Le controle `ErrorProvider` affiche une icone d'erreur a cote des controles invalides.
+
+```csharp
+// Ajouter un ErrorProvider au formulaire (via le concepteur ou le code)
+private ErrorProvider errorProvider = new ErrorProvider();
+
+private bool ValiderFormulaire()
+{
+    bool valide = true;
+    errorProvider.Clear();  // Effacer les erreurs precedentes
+
+    if (string.IsNullOrWhiteSpace(txtNom.Text))
+    {
+        errorProvider.SetError(txtNom, "Le nom est obligatoire.");
+        valide = false;
+    }
+
+    if (string.IsNullOrWhiteSpace(txtPrix.Text))
+    {
+        errorProvider.SetError(txtPrix, "Le prix est obligatoire.");
+        valide = false;
+    }
+    else if (!decimal.TryParse(txtPrix.Text, out decimal prix))
+    {
+        errorProvider.SetError(txtPrix, "Le prix doit etre un nombre valide.");
+        valide = false;
+    }
+    else if (prix < 0)
+    {
+        errorProvider.SetError(txtPrix, "Le prix ne peut pas etre negatif.");
+        valide = false;
+    }
+
+    if (cboCategorie.SelectedIndex == -1)
+    {
+        errorProvider.SetError(cboCategorie, "Selectionnez une categorie.");
+        valide = false;
+    }
+
+    return valide;
+}
+
+private void btnValider_Click(object sender, EventArgs e)
+{
+    if (ValiderFormulaire())
+    {
+        // Proceder a l'enregistrement...
+    }
+}
+```
+
+### 8.5 Navigation entre formulaires
+
+#### Show() -- formulaire non modal
+
+Le formulaire appelant reste accessible. Les deux formulaires sont independants.
+
+```csharp
+private void btnOuvrirDetail_Click(object sender, EventArgs e)
+{
+    FrmDetailProduit frmDetail = new FrmDetailProduit();
+    frmDetail.Show();
+    // Le code continue ici immediatement, le formulaire appelant reste actif
+}
+```
+
+#### ShowDialog() -- formulaire modal
+
+Le formulaire appelant est bloque tant que le formulaire modal est ouvert. Utilise pour les dialogues de saisie, confirmation, etc.
+
+```csharp
+private void btnOuvrirDetail_Click(object sender, EventArgs e)
+{
+    FrmDetailProduit frmDetail = new FrmDetailProduit();
+    DialogResult result = frmDetail.ShowDialog();
+    // Le code continue ici APRES la fermeture du formulaire modal
+
+    if (result == DialogResult.OK)
+    {
+        // L'utilisateur a valide
+        RafraichirGrille();
+    }
+}
+
+// Dans le formulaire modal (FrmDetailProduit) :
+private void btnValider_Click(object sender, EventArgs e)
+{
+    // Enregistrer les donnees...
+    this.DialogResult = DialogResult.OK;  // Definit le resultat
+    this.Close();                          // Ferme le formulaire
+}
+
+private void btnAnnuler_Click(object sender, EventArgs e)
+{
+    this.DialogResult = DialogResult.Cancel;
+    this.Close();
+}
+```
+
+#### Passage de donnees entre formulaires
+
+**Methode 1 : via le constructeur**
+
+```csharp
+// Formulaire de detail
+public partial class FrmDetailProduit : Form
+{
+    private Produit produit;
+
+    public FrmDetailProduit(Produit produit)
+    {
+        InitializeComponent();
+        this.produit = produit;
+    }
+
+    private void FrmDetailProduit_Load(object sender, EventArgs e)
+    {
+        txtNom.Text = produit.Nom;
+        txtPrix.Text = produit.Prix.ToString("F2");
+    }
+}
+
+// Appel depuis le formulaire principal
+Produit p = (Produit)dgvProduits.CurrentRow.DataBoundItem;
+FrmDetailProduit frmDetail = new FrmDetailProduit(p);
+frmDetail.ShowDialog();
+```
+
+**Methode 2 : via des proprietes publiques**
+
+```csharp
+// Formulaire de detail
+public partial class FrmDetailProduit : Form
+{
+    public Produit ProduitResultat { get; private set; }
+
+    private void btnValider_Click(object sender, EventArgs e)
+    {
+        ProduitResultat = new Produit
+        {
+            Nom = txtNom.Text,
+            Prix = decimal.Parse(txtPrix.Text),
+            Stock = (int)nudStock.Value
+        };
+        this.DialogResult = DialogResult.OK;
+        this.Close();
+    }
+}
+
+// Appel depuis le formulaire principal
+FrmDetailProduit frmDetail = new FrmDetailProduit();
+if (frmDetail.ShowDialog() == DialogResult.OK)
+{
+    Produit nouveauProduit = frmDetail.ProduitResultat;
+    produitDAO.Insert(nouveauProduit);
+    RafraichirGrille();
+}
+```
+
+**Methode 3 : via des champs/proprietes publiques (avant ouverture)**
+
+```csharp
+FrmDetailProduit frmDetail = new FrmDetailProduit();
+frmDetail.ModeProduit = "modification";
+frmDetail.ProduitAModifier = produitSelectionne;
+frmDetail.ShowDialog();
+```
+
+---
+
+## 9. Exercices d'examen corriges
+
+### Exercice 1 : Creer un formulaire de saisie d'un employe
+
+**Enonce** : Creer un formulaire permettant de saisir les informations d'un employe : nom, prenom, date d'embauche, salaire, service (liste deroulante), temps plein (case a cocher). Un bouton "Enregistrer" affiche un recapitulatif. Un bouton "Effacer" reinitialise le formulaire.
+
+**Correction** :
+
+```csharp
+public partial class FrmEmploye : Form
+{
+    public FrmEmploye()
+    {
+        InitializeComponent();
+        this.Text = "Saisie employe";
+        this.StartPosition = FormStartPosition.CenterScreen;
+        this.FormBorderStyle = FormBorderStyle.FixedSingle;
+        this.MaximizeBox = false;
+    }
+
+    private void FrmEmploye_Load(object sender, EventArgs e)
+    {
+        cboService.Items.AddRange(new string[] {
+            "Comptabilite", "Informatique", "Ressources humaines", "Commercial", "Direction"
+        });
+        cboService.DropDownStyle = ComboBoxStyle.DropDownList;
+        dtpEmbauche.MaxDate = DateTime.Today;
+        nudSalaire.Minimum = 0;
+        nudSalaire.Maximum = 100000;
+        nudSalaire.DecimalPlaces = 2;
+        nudSalaire.Increment = 100;
+    }
+
+    private void btnEnregistrer_Click(object sender, EventArgs e)
+    {
+        // Validation
+        if (string.IsNullOrWhiteSpace(txtNom.Text))
+        {
+            MessageBox.Show("Le nom est obligatoire.", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            txtNom.Focus();
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(txtPrenom.Text))
+        {
+            MessageBox.Show("Le prenom est obligatoire.", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            txtPrenom.Focus();
+            return;
+        }
+
+        if (cboService.SelectedIndex == -1)
+        {
+            MessageBox.Show("Selectionnez un service.", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        // Recapitulatif
+        string tempsPlein = chkTempsPlein.Checked ? "Oui" : "Non";
+        string recap = $"Nom : {txtNom.Text}\n"
+                     + $"Prenom : {txtPrenom.Text}\n"
+                     + $"Date d'embauche : {dtpEmbauche.Value:dd/MM/yyyy}\n"
+                     + $"Salaire : {nudSalaire.Value:N2} euros\n"
+                     + $"Service : {cboService.SelectedItem}\n"
+                     + $"Temps plein : {tempsPlein}";
+
+        MessageBox.Show(recap, "Recapitulatif", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private void btnEffacer_Click(object sender, EventArgs e)
+    {
+        txtNom.Clear();
+        txtPrenom.Clear();
+        dtpEmbauche.Value = DateTime.Today;
+        nudSalaire.Value = 0;
+        cboService.SelectedIndex = -1;
+        chkTempsPlein.Checked = false;
+        txtNom.Focus();
+    }
+}
+```
+
+### Exercice 2 : CRUD complet avec MySQL -- Gestion de clients
+
+**Enonce** : Creer une application de gestion de clients (id, nom, prenom, email, telephone, date_inscription). Interface avec un DataGridView et un formulaire de saisie. Operations : ajouter, modifier, supprimer, rechercher.
+
+**Table SQL** :
+
+```sql
+CREATE TABLE clients (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    email VARCHAR(200),
+    telephone VARCHAR(20),
+    date_inscription DATE DEFAULT (CURRENT_DATE)
+);
+```
+
+**Model** :
+
+```csharp
+public class Client
+{
+    public int Id { get; set; }
+    public string Nom { get; set; }
+    public string Prenom { get; set; }
+    public string Email { get; set; }
+    public string Telephone { get; set; }
+    public DateTime DateInscription { get; set; }
+}
+```
+
+**DAO** :
+
+```csharp
+public class ClientDAO
+{
+    public List<Client> GetAll()
+    {
+        List<Client> clients = new List<Client>();
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "SELECT * FROM clients ORDER BY nom, prenom";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            using (MySqlDataReader r = cmd.ExecuteReader())
+            {
+                while (r.Read())
+                {
+                    clients.Add(new Client
+                    {
+                        Id = r.GetInt32("id"),
+                        Nom = r.GetString("nom"),
+                        Prenom = r.GetString("prenom"),
+                        Email = r.IsDBNull(r.GetOrdinal("email")) ? null : r.GetString("email"),
+                        Telephone = r.IsDBNull(r.GetOrdinal("telephone")) ? null : r.GetString("telephone"),
+                        DateInscription = r.GetDateTime("date_inscription")
+                    });
+                }
+            }
+        }
+        return clients;
+    }
+
+    public int Insert(Client c)
+    {
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "INSERT INTO clients (nom, prenom, email, telephone) VALUES (@nom, @prenom, @email, @tel)";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            cmd.Parameters.AddWithValue("@nom", c.Nom);
+            cmd.Parameters.AddWithValue("@prenom", c.Prenom);
+            cmd.Parameters.AddWithValue("@email", string.IsNullOrEmpty(c.Email) ? (object)DBNull.Value : c.Email);
+            cmd.Parameters.AddWithValue("@tel", string.IsNullOrEmpty(c.Telephone) ? (object)DBNull.Value : c.Telephone);
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "SELECT LAST_INSERT_ID()";
+            return Convert.ToInt32(cmd.ExecuteScalar());
+        }
+    }
+
+    public bool Update(Client c)
+    {
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "UPDATE clients SET nom=@nom, prenom=@prenom, email=@email, telephone=@tel WHERE id=@id";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            cmd.Parameters.AddWithValue("@nom", c.Nom);
+            cmd.Parameters.AddWithValue("@prenom", c.Prenom);
+            cmd.Parameters.AddWithValue("@email", string.IsNullOrEmpty(c.Email) ? (object)DBNull.Value : c.Email);
+            cmd.Parameters.AddWithValue("@tel", string.IsNullOrEmpty(c.Telephone) ? (object)DBNull.Value : c.Telephone);
+            cmd.Parameters.AddWithValue("@id", c.Id);
+            return cmd.ExecuteNonQuery() > 0;
+        }
+    }
+
+    public bool Delete(int id)
+    {
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "DELETE FROM clients WHERE id=@id";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            cmd.Parameters.AddWithValue("@id", id);
+            return cmd.ExecuteNonQuery() > 0;
+        }
+    }
+
+    public List<Client> Rechercher(string terme)
+    {
+        List<Client> clients = new List<Client>();
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "SELECT * FROM clients WHERE nom LIKE @terme OR prenom LIKE @terme OR email LIKE @terme ORDER BY nom";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            cmd.Parameters.AddWithValue("@terme", $"%{terme}%");
+            using (MySqlDataReader r = cmd.ExecuteReader())
+            {
+                while (r.Read())
+                {
+                    clients.Add(new Client
+                    {
+                        Id = r.GetInt32("id"),
+                        Nom = r.GetString("nom"),
+                        Prenom = r.GetString("prenom"),
+                        Email = r.IsDBNull(r.GetOrdinal("email")) ? null : r.GetString("email"),
+                        Telephone = r.IsDBNull(r.GetOrdinal("telephone")) ? null : r.GetString("telephone"),
+                        DateInscription = r.GetDateTime("date_inscription")
+                    });
+                }
+            }
+        }
+        return clients;
+    }
+}
+```
+
+### Exercice 3 : Completer du code WinForms
+
+**Enonce** : Le code suivant est incomplet. Completer les parties manquantes pour que l'application fonctionne.
+
+```csharp
+public partial class FrmNotes : Form
+{
+    private List<double> notes = new List<double>();
+
+    public FrmNotes()
+    {
+        InitializeComponent();
+    }
+
+    // A COMPLETER : ajouter une note a la liste quand on clique sur btnAjouter
+    private void btnAjouter_Click(object sender, EventArgs e)
+    {
+        // CORRECTION :
+        if (double.TryParse(txtNote.Text, out double note))
+        {
+            if (note >= 0 && note <= 20)
+            {
+                notes.Add(note);
+                lstNotes.Items.Add(note.ToString("F2"));
+                txtNote.Clear();
+                txtNote.Focus();
+                MettreAJourStatistiques();
+            }
+            else
+            {
+                MessageBox.Show("La note doit etre entre 0 et 20.", "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+        else
+        {
+            MessageBox.Show("Veuillez entrer un nombre valide.", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
+    // A COMPLETER : supprimer la note selectionnee dans la ListBox
+    private void btnSupprimer_Click(object sender, EventArgs e)
+    {
+        // CORRECTION :
+        if (lstNotes.SelectedIndex != -1)
+        {
+            int index = lstNotes.SelectedIndex;
+            notes.RemoveAt(index);
+            lstNotes.Items.RemoveAt(index);
+            MettreAJourStatistiques();
+        }
+        else
+        {
+            MessageBox.Show("Selectionnez une note a supprimer.", "Information",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+    }
+
+    // A COMPLETER : afficher la moyenne, la note min et max
+    private void MettreAJourStatistiques()
+    {
+        // CORRECTION :
+        if (notes.Count > 0)
+        {
+            lblMoyenne.Text = $"Moyenne : {notes.Average():F2}";
+            lblMin.Text = $"Min : {notes.Min():F2}";
+            lblMax.Text = $"Max : {notes.Max():F2}";
+            lblNombre.Text = $"Nombre de notes : {notes.Count}";
+        }
+        else
+        {
+            lblMoyenne.Text = "Moyenne : -";
+            lblMin.Text = "Min : -";
+            lblMax.Text = "Max : -";
+            lblNombre.Text = "Nombre de notes : 0";
+        }
+    }
+}
+```
+
+### Exercice 4 : Requetes parametrees
+
+**Enonce** : Reecrire les requetes suivantes en utilisant des requetes parametrees.
+
+Code dangereux :
+
+```csharp
+// 1. Recherche par nom
+string req1 = "SELECT * FROM produits WHERE nom = '" + txtNom.Text + "'";
+
+// 2. Insertion
+string req2 = "INSERT INTO clients (nom, age) VALUES ('" + nom + "', " + age + ")";
+
+// 3. Mise a jour
+string req3 = "UPDATE produits SET prix = " + nouveauPrix + " WHERE id = " + id;
+```
+
+**Correction** :
+
+```csharp
+// 1. Recherche par nom
+string req1 = "SELECT * FROM produits WHERE nom = @nom";
+MySqlCommand cmd1 = new MySqlCommand(req1, connexion);
+cmd1.Parameters.AddWithValue("@nom", txtNom.Text);
+
+// 2. Insertion
+string req2 = "INSERT INTO clients (nom, age) VALUES (@nom, @age)";
+MySqlCommand cmd2 = new MySqlCommand(req2, connexion);
+cmd2.Parameters.AddWithValue("@nom", nom);
+cmd2.Parameters.AddWithValue("@age", age);
+
+// 3. Mise a jour
+string req3 = "UPDATE produits SET prix = @prix WHERE id = @id";
+MySqlCommand cmd3 = new MySqlCommand(req3, connexion);
+cmd3.Parameters.AddWithValue("@prix", nouveauPrix);
+cmd3.Parameters.AddWithValue("@id", id);
+```
+
+### Exercice 5 : DataGridView avec ComboBox de filtrage
+
+**Enonce** : Creer un formulaire avec un ComboBox contenant des categories et un DataGridView. Quand on change la categorie, le DataGridView affiche les produits de cette categorie. Un choix "Toutes les categories" affiche tous les produits.
+
+```csharp
+public partial class FrmFiltrage : Form
+{
+    private ProduitDAO produitDAO = new ProduitDAO();
+    private CategorieDAO categorieDAO = new CategorieDAO();
+
+    public FrmFiltrage()
+    {
+        InitializeComponent();
+    }
+
+    private void FrmFiltrage_Load(object sender, EventArgs e)
+    {
+        // Charger les categories avec un element "Toutes"
+        List<Categorie> categories = categorieDAO.GetAll();
+        categories.Insert(0, new Categorie { Id = 0, Nom = "-- Toutes les categories --" });
+
+        cboCategorie.DataSource = categories;
+        cboCategorie.DisplayMember = "Nom";
+        cboCategorie.ValueMember = "Id";
+        cboCategorie.SelectedIndex = 0;
+
+        // Configuration du DataGridView
+        dgvProduits.ReadOnly = true;
+        dgvProduits.AllowUserToAddRows = false;
+        dgvProduits.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+        dgvProduits.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+        ChargerProduits();
+    }
+
+    private void cboCategorie_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        ChargerProduits();
+    }
+
+    private void ChargerProduits()
+    {
+        if (cboCategorie.SelectedValue == null) return;
+
+        int categorieId = (int)cboCategorie.SelectedValue;
+
+        if (categorieId == 0)
+        {
+            dgvProduits.DataSource = produitDAO.GetAll();
+        }
+        else
+        {
+            dgvProduits.DataSource = produitDAO.GetByCategorie(categorieId);
+        }
+    }
+}
+```
+
+### Exercice 6 : Calculer un prix TTC avec TVA variable
+
+**Enonce** : Creer un formulaire avec un TextBox pour le prix HT, des RadioButton pour le taux de TVA (5.5%, 10%, 20%), un bouton Calculer et un Label pour afficher le prix TTC.
+
+```csharp
+public partial class FrmTVA : Form
+{
+    public FrmTVA()
+    {
+        InitializeComponent();
+        rdb20.Checked = true;  // TVA 20% par defaut
+    }
+
+    private void btnCalculer_Click(object sender, EventArgs e)
+    {
+        if (!decimal.TryParse(txtPrixHT.Text, out decimal prixHT) || prixHT < 0)
+        {
+            MessageBox.Show("Entrez un prix HT valide.", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            txtPrixHT.Focus();
+            return;
+        }
+
+        decimal taux = 0;
+        if (rdb55.Checked) taux = 5.5m;
+        else if (rdb10.Checked) taux = 10m;
+        else if (rdb20.Checked) taux = 20m;
+
+        decimal montantTVA = prixHT * taux / 100;
+        decimal prixTTC = prixHT + montantTVA;
+
+        lblMontantTVA.Text = $"Montant TVA : {montantTVA:F2} euros";
+        lblPrixTTC.Text = $"Prix TTC : {prixTTC:F2} euros";
+    }
+}
+```
+
+### Exercice 7 : Formulaire de connexion (login)
+
+**Enonce** : Creer un formulaire de connexion avec un TextBox pour le login, un TextBox masque pour le mot de passe, et un bouton Se connecter. Verifier les identifiants dans la base de donnees. Si valides, ouvrir le formulaire principal. Limiter a 3 tentatives.
+
+```csharp
+public partial class FrmLogin : Form
+{
+    private int tentatives = 0;
+    private const int MAX_TENTATIVES = 3;
+
+    public FrmLogin()
+    {
+        InitializeComponent();
+        this.Text = "Connexion";
+        this.StartPosition = FormStartPosition.CenterScreen;
+        this.FormBorderStyle = FormBorderStyle.FixedDialog;
+        this.MaximizeBox = false;
+        this.MinimizeBox = false;
+        this.AcceptButton = btnConnecter;
+
+        txtMotDePasse.PasswordChar = '*';
+    }
+
+    private void btnConnecter_Click(object sender, EventArgs e)
+    {
+        string login = txtLogin.Text.Trim();
+        string motDePasse = txtMotDePasse.Text;
+
+        if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(motDePasse))
+        {
+            MessageBox.Show("Veuillez remplir tous les champs.", "Connexion",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        try
+        {
+            bool authentifie = VerifierIdentifiants(login, motDePasse);
+
+            if (authentifie)
+            {
+                FrmPrincipal frmPrincipal = new FrmPrincipal();
+                this.Hide();
+                frmPrincipal.ShowDialog();
+                this.Close();
+            }
+            else
+            {
+                tentatives++;
+                int restantes = MAX_TENTATIVES - tentatives;
+
+                if (restantes > 0)
+                {
+                    MessageBox.Show($"Identifiants incorrects.\n{restantes} tentative(s) restante(s).",
+                        "Echec de connexion", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    txtMotDePasse.Clear();
+                    txtMotDePasse.Focus();
+                }
+                else
+                {
+                    MessageBox.Show("Nombre maximum de tentatives atteint.\nL'application va se fermer.",
+                        "Acces refuse", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Application.Exit();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur de connexion a la base : {ex.Message}",
+                "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private bool VerifierIdentifiants(string login, string motDePasse)
+    {
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "SELECT COUNT(*) FROM utilisateurs WHERE login = @login AND mot_de_passe = @mdp";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            cmd.Parameters.AddWithValue("@login", login);
+            cmd.Parameters.AddWithValue("@mdp", motDePasse);  // En production, hacher le mot de passe
+
+            int count = Convert.ToInt32(cmd.ExecuteScalar());
+            return count > 0;
+        }
+    }
+}
+
+// Dans Program.cs, lancer le formulaire de login :
+static void Main()
+{
+    Application.EnableVisualStyles();
+    Application.SetCompatibleTextRenderingDefault(false);
+    Application.Run(new FrmLogin());
+}
+```
+
+### Exercice 8 : Architecture MVC -- Gestion de livres
+
+**Enonce** : Implementer une gestion de livres (id, titre, auteur, annee, prix) en architecture MVC.
+
+**Model** :
+
+```csharp
+public class Livre
+{
+    public int Id { get; set; }
+    public string Titre { get; set; }
+    public string Auteur { get; set; }
+    public int Annee { get; set; }
+    public decimal Prix { get; set; }
+}
+```
+
+**DAO** :
+
+```csharp
+public class LivreDAO
+{
+    public List<Livre> GetAll()
+    {
+        List<Livre> livres = new List<Livre>();
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "SELECT * FROM livres ORDER BY titre";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            using (MySqlDataReader r = cmd.ExecuteReader())
+            {
+                while (r.Read())
+                {
+                    livres.Add(new Livre
+                    {
+                        Id = r.GetInt32("id"),
+                        Titre = r.GetString("titre"),
+                        Auteur = r.GetString("auteur"),
+                        Annee = r.GetInt32("annee"),
+                        Prix = r.GetDecimal("prix")
+                    });
+                }
+            }
+        }
+        return livres;
+    }
+
+    public int Insert(Livre l)
+    {
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "INSERT INTO livres (titre, auteur, annee, prix) VALUES (@titre, @auteur, @annee, @prix)";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            cmd.Parameters.AddWithValue("@titre", l.Titre);
+            cmd.Parameters.AddWithValue("@auteur", l.Auteur);
+            cmd.Parameters.AddWithValue("@annee", l.Annee);
+            cmd.Parameters.AddWithValue("@prix", l.Prix);
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "SELECT LAST_INSERT_ID()";
+            return Convert.ToInt32(cmd.ExecuteScalar());
+        }
+    }
+
+    public bool Update(Livre l)
+    {
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "UPDATE livres SET titre=@titre, auteur=@auteur, annee=@annee, prix=@prix WHERE id=@id";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            cmd.Parameters.AddWithValue("@titre", l.Titre);
+            cmd.Parameters.AddWithValue("@auteur", l.Auteur);
+            cmd.Parameters.AddWithValue("@annee", l.Annee);
+            cmd.Parameters.AddWithValue("@prix", l.Prix);
+            cmd.Parameters.AddWithValue("@id", l.Id);
+            return cmd.ExecuteNonQuery() > 0;
+        }
+    }
+
+    public bool Delete(int id)
+    {
+        using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+        {
+            cnx.Open();
+            string req = "DELETE FROM livres WHERE id=@id";
+            MySqlCommand cmd = new MySqlCommand(req, cnx);
+            cmd.Parameters.AddWithValue("@id", id);
+            return cmd.ExecuteNonQuery() > 0;
+        }
+    }
+}
+```
+
+**Controller** :
+
+```csharp
+public class LivreController
+{
+    private LivreDAO livreDAO = new LivreDAO();
+
+    public List<Livre> GetTousLivres()
+    {
+        return livreDAO.GetAll();
+    }
+
+    public int AjouterLivre(string titre, string auteur, string anneeTexte, string prixTexte)
+    {
+        if (string.IsNullOrWhiteSpace(titre))
+            throw new ArgumentException("Le titre est obligatoire.");
+        if (string.IsNullOrWhiteSpace(auteur))
+            throw new ArgumentException("L'auteur est obligatoire.");
+        if (!int.TryParse(anneeTexte, out int annee) || annee < 0 || annee > DateTime.Now.Year)
+            throw new ArgumentException("L'annee est invalide.");
+        if (!decimal.TryParse(prixTexte, out decimal prix) || prix < 0)
+            throw new ArgumentException("Le prix est invalide.");
+
+        Livre livre = new Livre
+        {
+            Titre = titre.Trim(),
+            Auteur = auteur.Trim(),
+            Annee = annee,
+            Prix = prix
+        };
+        return livreDAO.Insert(livre);
+    }
+
+    public bool ModifierLivre(int id, string titre, string auteur, string anneeTexte, string prixTexte)
+    {
+        if (string.IsNullOrWhiteSpace(titre))
+            throw new ArgumentException("Le titre est obligatoire.");
+        if (string.IsNullOrWhiteSpace(auteur))
+            throw new ArgumentException("L'auteur est obligatoire.");
+        if (!int.TryParse(anneeTexte, out int annee) || annee < 0)
+            throw new ArgumentException("L'annee est invalide.");
+        if (!decimal.TryParse(prixTexte, out decimal prix) || prix < 0)
+            throw new ArgumentException("Le prix est invalide.");
+
+        Livre livre = new Livre
+        {
+            Id = id,
+            Titre = titre.Trim(),
+            Auteur = auteur.Trim(),
+            Annee = annee,
+            Prix = prix
+        };
+        return livreDAO.Update(livre);
+    }
+
+    public bool SupprimerLivre(int id)
+    {
+        return livreDAO.Delete(id);
+    }
+}
+```
+
+### Exercice 9 : Remplir un DataGridView depuis une requete avec jointure
+
+**Enonce** : Afficher dans un DataGridView la liste des produits avec le nom de leur categorie (jointure entre produits et categories).
+
+```csharp
+public List<Produit> GetAllAvecCategorie()
+{
+    List<Produit> produits = new List<Produit>();
+    using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+    {
+        cnx.Open();
+        string req = @"SELECT p.id, p.nom, p.description, p.prix, p.stock,
+                               p.categorie_id, c.nom AS nom_categorie
+                        FROM produits p
+                        INNER JOIN categories c ON p.categorie_id = c.id
+                        ORDER BY p.nom";
+        MySqlCommand cmd = new MySqlCommand(req, cnx);
+        using (MySqlDataReader r = cmd.ExecuteReader())
+        {
+            while (r.Read())
+            {
+                produits.Add(new Produit
+                {
+                    Id = r.GetInt32("id"),
+                    Nom = r.GetString("nom"),
+                    Description = r.IsDBNull(r.GetOrdinal("description")) ? null : r.GetString("description"),
+                    Prix = r.GetDecimal("prix"),
+                    Stock = r.GetInt32("stock"),
+                    CategorieId = r.GetInt32("categorie_id"),
+                    NomCategorie = r.GetString("nom_categorie")  // Propriete ajoutee a la classe Produit
+                });
+            }
+        }
+    }
+    return produits;
+}
+
+// Ajout a la classe Produit :
+public string NomCategorie { get; set; }
+
+// Dans le formulaire, ajouter une colonne pour la categorie :
+dgvProduits.Columns.Add(new DataGridViewTextBoxColumn
+{
+    HeaderText = "Categorie",
+    DataPropertyName = "NomCategorie",
+    Width = 120
+});
+```
+
+### Exercice 10 : Navigation entre formulaires avec passage de donnees
+
+**Enonce** : Depuis un formulaire principal, ouvrir un formulaire de detail en passant l'ID d'un produit. Le formulaire de detail charge les informations du produit et permet de les modifier. Au retour, rafraichir la liste.
+
+```csharp
+// Formulaire principal
+private void btnModifier_Click(object sender, EventArgs e)
+{
+    if (dgvProduits.CurrentRow == null) return;
+
+    Produit p = (Produit)dgvProduits.CurrentRow.DataBoundItem;
+
+    FrmModifierProduit frmModifier = new FrmModifierProduit(p.Id);
+    DialogResult result = frmModifier.ShowDialog();
+
+    if (result == DialogResult.OK)
+    {
+        ChargerProduits();  // Rafraichir la grille
+    }
+}
+
+// Formulaire de modification
+public partial class FrmModifierProduit : Form
+{
+    private int produitId;
+    private ProduitDAO produitDAO = new ProduitDAO();
+    private CategorieDAO categorieDAO = new CategorieDAO();
+
+    public FrmModifierProduit(int id)
+    {
+        InitializeComponent();
+        this.produitId = id;
+        this.Text = "Modifier un produit";
+        this.StartPosition = FormStartPosition.CenterParent;
+        this.FormBorderStyle = FormBorderStyle.FixedDialog;
+        this.MaximizeBox = false;
+        this.MinimizeBox = false;
+    }
+
+    private void FrmModifierProduit_Load(object sender, EventArgs e)
+    {
+        try
+        {
+            // Charger les categories
+            cboCategorie.DataSource = categorieDAO.GetAll();
+            cboCategorie.DisplayMember = "Nom";
+            cboCategorie.ValueMember = "Id";
+
+            // Charger le produit
+            Produit p = produitDAO.GetById(produitId);
+            if (p != null)
+            {
+                txtNom.Text = p.Nom;
+                txtDescription.Text = p.Description;
+                txtPrix.Text = p.Prix.ToString("F2");
+                nudStock.Value = p.Stock;
+                cboCategorie.SelectedValue = p.CategorieId;
+            }
+            else
+            {
+                MessageBox.Show("Produit introuvable.", "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                this.Close();
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            this.Close();
+        }
+    }
+
+    private void btnEnregistrer_Click(object sender, EventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(txtNom.Text))
+        {
+            MessageBox.Show("Le nom est obligatoire.", "Validation",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        if (!decimal.TryParse(txtPrix.Text, out decimal prix) || prix < 0)
+        {
+            MessageBox.Show("Prix invalide.", "Validation",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        try
+        {
+            Produit p = new Produit
+            {
+                Id = produitId,
+                Nom = txtNom.Text.Trim(),
+                Description = txtDescription.Text.Trim(),
+                Prix = prix,
+                Stock = (int)nudStock.Value,
+                CategorieId = (int)cboCategorie.SelectedValue
+            };
+
+            produitDAO.Update(p);
+            MessageBox.Show("Produit modifie.", "Succes",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            this.DialogResult = DialogResult.OK;
+            this.Close();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void btnAnnuler_Click(object sender, EventArgs e)
+    {
+        this.DialogResult = DialogResult.Cancel;
+        this.Close();
+    }
+}
+```
+
+### Exercice 11 : Export CSV depuis un DataGridView
+
+**Enonce** : Ecrire une methode generique qui exporte le contenu d'un DataGridView dans un fichier CSV.
+
+```csharp
+private void ExporterDataGridViewEnCSV(DataGridView dgv, string cheminFichier)
+{
+    var lignes = new List<string>();
+
+    // En-tetes
+    var enTetes = new List<string>();
+    foreach (DataGridViewColumn col in dgv.Columns)
+    {
+        if (col.Visible)
+        {
+            enTetes.Add(col.HeaderText);
+        }
+    }
+    lignes.Add(string.Join(";", enTetes));
+
+    // Donnees
+    foreach (DataGridViewRow row in dgv.Rows)
+    {
+        if (row.IsNewRow) continue;
+
+        var valeurs = new List<string>();
+        foreach (DataGridViewColumn col in dgv.Columns)
+        {
+            if (col.Visible)
+            {
+                object cellValue = row.Cells[col.Index].Value;
+                string texte = (cellValue != null) ? cellValue.ToString() : "";
+                // Echapper les points-virgules
+                texte = texte.Replace(";", ",");
+                valeurs.Add(texte);
+            }
+        }
+        lignes.Add(string.Join(";", valeurs));
+    }
+
+    System.IO.File.WriteAllLines(cheminFichier, lignes, System.Text.Encoding.UTF8);
+}
+
+// Utilisation
+private void btnExporter_Click(object sender, EventArgs e)
+{
+    SaveFileDialog sfd = new SaveFileDialog();
+    sfd.Filter = "Fichiers CSV|*.csv";
+    sfd.FileName = "export";
+
+    if (sfd.ShowDialog() == DialogResult.OK)
+    {
+        try
+        {
+            ExporterDataGridViewEnCSV(dgvProduits, sfd.FileName);
+            MessageBox.Show("Export reussi.", "Export",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+}
+```
+
+### Exercice 12 : Recherche multi-criteres
+
+**Enonce** : Creer un formulaire de recherche avancee avec plusieurs criteres optionnels : nom (LIKE), prix minimum, prix maximum, categorie. Construire la requete dynamiquement.
+
+```csharp
+public List<Produit> RechercheAvancee(string nom, decimal? prixMin, decimal? prixMax, int? categorieId)
+{
+    List<Produit> produits = new List<Produit>();
+
+    using (MySqlConnection cnx = ConnexionBDD.GetConnexion())
+    {
+        cnx.Open();
+
+        string req = "SELECT * FROM produits WHERE 1=1";
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.Connection = cnx;
+
+        if (!string.IsNullOrWhiteSpace(nom))
+        {
+            req += " AND nom LIKE @nom";
+            cmd.Parameters.AddWithValue("@nom", $"%{nom}%");
+        }
+
+        if (prixMin.HasValue)
+        {
+            req += " AND prix >= @prixMin";
+            cmd.Parameters.AddWithValue("@prixMin", prixMin.Value);
+        }
+
+        if (prixMax.HasValue)
+        {
+            req += " AND prix <= @prixMax";
+            cmd.Parameters.AddWithValue("@prixMax", prixMax.Value);
+        }
+
+        if (categorieId.HasValue && categorieId.Value > 0)
+        {
+            req += " AND categorie_id = @catId";
+            cmd.Parameters.AddWithValue("@catId", categorieId.Value);
+        }
+
+        req += " ORDER BY nom";
+        cmd.CommandText = req;
+
+        using (MySqlDataReader r = cmd.ExecuteReader())
+        {
+            while (r.Read())
+            {
+                produits.Add(new Produit
+                {
+                    Id = r.GetInt32("id"),
+                    Nom = r.GetString("nom"),
+                    Prix = r.GetDecimal("prix"),
+                    Stock = r.GetInt32("stock"),
+                    CategorieId = r.GetInt32("categorie_id")
+                });
+            }
+        }
+    }
+
+    return produits;
+}
+
+// Dans le formulaire
+private void btnRechercher_Click(object sender, EventArgs e)
+{
+    string nom = txtNom.Text.Trim();
+
+    decimal? prixMin = null;
+    if (!string.IsNullOrEmpty(txtPrixMin.Text))
+    {
+        if (decimal.TryParse(txtPrixMin.Text, out decimal val))
+            prixMin = val;
+    }
+
+    decimal? prixMax = null;
+    if (!string.IsNullOrEmpty(txtPrixMax.Text))
+    {
+        if (decimal.TryParse(txtPrixMax.Text, out decimal val))
+            prixMax = val;
+    }
+
+    int? categorieId = null;
+    if (cboCategorie.SelectedIndex > 0)
+    {
+        categorieId = (int)cboCategorie.SelectedValue;
+    }
+
+    dgvProduits.DataSource = produitDAO.RechercheAvancee(nom, prixMin, prixMax, categorieId);
+}
+```
+
+---
+
+## Recapitulatif des points essentiels pour l'examen
+
+1. **Types et conversions** : connaitre les types de base, savoir utiliser `TryParse` pour les saisies utilisateur
+2. **Structures de controle** : if/else, switch, for, foreach, while -- savoir choisir la bonne boucle
+3. **Collections** : `List<T>` est la collection principale, connaitre Add, Remove, Count, Find, LINQ
+4. **LINQ** : Where, Select, OrderBy, FirstOrDefault, Count, Sum, Average -- savoir enchainer les methodes
+5. **POO** : classes, constructeurs, proprietes (get/set), heritage avec `:`, override, abstract, interfaces
+6. **WinForms** : connaitre les controles principaux (Button, TextBox, Label, ComboBox, DataGridView), leurs proprietes et evenements
+7. **DataGridView** : savoir le configurer, le lier a une source de donnees, recuperer la ligne selectionnee
+8. **Evenements** : comprendre le modele evenementiel, sender/EventArgs, savoir creer des gestionnaires
+9. **MySQL** : chaine de connexion, MySqlCommand, ExecuteReader/ExecuteNonQuery/ExecuteScalar
+10. **Requetes parametrees** : TOUJOURS utiliser `@parametre` et `AddWithValue`, JAMAIS de concatenation
+11. **Pattern DAO** : classe de connexion + une classe DAO par entite avec GetAll, GetById, Insert, Update, Delete
+12. **Architecture MVC** : Model (classes + DAO), View (Forms), Controller (logique metier)
+13. **Navigation** : Show vs ShowDialog, passage de donnees par constructeur ou proprietes, DialogResult
+14. **Gestion d'erreurs** : try/catch autour des operations BDD, messages d'erreur explicites, `using` pour les connexions

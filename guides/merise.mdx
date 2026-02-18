@@ -1,0 +1,2059 @@
+---
+title: "Methode MERISE"
+description: "Guide exhaustif de la methode MERISE pour le BTS SIO SLAM"
+category: "Bases de donnees"
+tags: ["merise", "mcd", "mld", "modelisation"]
+difficulty: "Intermediaire"
+---
+
+# Methode MERISE — Le Guide Exhaustif BTS SIO SLAM
+
+---
+
+## Table des matieres
+
+1. [Introduction a Merise](#introduction-a-merise)
+2. [Le Modele Conceptuel de Donnees (MCD)](#le-modele-conceptuel-de-donnees-mcd)
+3. [Du MCD au MLD](#du-mcd-au-mld-modele-logique-de-donnees)
+4. [Du MLD au MPD](#du-mld-au-mpd-modele-physique-de-donnees)
+5. [Le Modele Conceptuel de Traitements (MCT)](#le-modele-conceptuel-de-traitements-mct)
+6. [Methodologie d'examen](#methodologie-dexamen)
+7. [Exercices d'examen corriges](#exercices-dexamen-corriges)
+
+---
+
+## Introduction a Merise
+
+### Historique
+
+Merise est une methode francaise de conception de systemes d'information, nee entre 1978 et 1979. Elle a ete developpee sous l'impulsion du ministere de l'Industrie par une equipe composee notamment de Hubert Tardieu, Arnold Rochfeld et Rene Colletti. Le nom "Merise" fait reference au merisier, un arbre dont on greffe les cerises — metaphore de la greffe d'un systeme d'information sur une organisation existante.
+
+Merise reste aujourd'hui largement enseignee dans les formations francaises (BTS SIO, BUT Informatique, licences professionnelles) et utilisee dans l'administration publique et les entreprises francaises. Meme si des methodes plus recentes (UML, methodes agiles) existent, Merise demeure incontournable pour la modelisation des bases de donnees relationnelles.
+
+**Pourquoi c'est au programme du BTS SIO SLAM :** la modelisation Merise est le socle de la conception de bases de donnees. Aucun developpeur serieux ne code une base de donnees sans l'avoir modelisee au prealable.
+
+### Pourquoi modeliser AVANT de coder ?
+
+Analogie fondamentale : **un architecte dessine un plan avant de poser la premiere brique**. Personne ne construit un immeuble en posant des briques au hasard en esperant que ca tienne.
+
+En informatique, c'est exactement pareil :
+- Sans modele, on cree des tables redondantes, des donnees incoherentes, des relations manquantes.
+- Le cout de correction d'une erreur de conception est **10 a 100 fois superieur** si elle est detectee apres le codage.
+- Le modele sert de **document de communication** entre le client, le chef de projet et le developpeur.
+- Le modele permet de **verifier la coherence** des donnees avant d'ecrire la moindre ligne de SQL.
+
+**Exemple concret :** une entreprise veut gerer ses commandes. Sans modelisation, le developpeur cree une table "commandes" avec un champ "nom_client" en texte libre. Resultat : "Dupont", "dupont", "DUPONT", "M. Dupont" deviennent quatre clients differents. Avec un MCD, on identifie immediatement que Client est une entite separee, liee a Commande par une association.
+
+### Les niveaux d'abstraction
+
+Merise repose sur une separation en trois niveaux d'abstraction. C'est l'une de ses forces principales :
+
+| Niveau | Modele de donnees | Question posee | Independant de... |
+|--------|-------------------|----------------|-------------------|
+| **Conceptuel** | MCD | **Quelles donnees ?** Quels concepts metier ? | Toute technologie |
+| **Logique** | MLD | **Comment organiser ?** Quelles tables, quelles cles ? | Le SGBD specifique |
+| **Physique** | MPD | **Comment implementer ?** Quel SQL exact ? | Rien (c'est le code final) |
+
+**Le principe fondamental :** on part de l'abstrait (le metier, les concepts) pour aller vers le concret (le code SQL). Chaque niveau ajoute des contraintes techniques.
+
+- Le **MCD** est comprehensible par le client (il parle de clients, de commandes, de produits).
+- Le **MLD** est comprehensible par le concepteur (il parle de tables, de cles primaires, de cles etrangeres).
+- Le **MPD** est comprehensible par le developpeur et le SGBD (il parle de CREATE TABLE, de INT, de VARCHAR).
+
+### Le cycle de Merise
+
+Le cycle de vie d'un projet Merise comporte plusieurs etapes :
+
+1. **Etude prealable (schema directeur)** — Comprendre l'organisation existante, identifier les besoins globaux, definir le perimetre du projet. On produit un premier MCD simplifie.
+
+2. **Etude detaillee** — Affiner le MCD, detailler chaque entite, chaque association, chaque cardinalite. Valider avec les utilisateurs. Produire le MLD.
+
+3. **Etude technique** — Choisir le SGBD, definir les types de donnees, les index, les contraintes. Produire le MPD.
+
+4. **Realisation** — Coder le SQL, creer la base, developper l'application.
+
+5. **Mise en oeuvre** — Deploiement, migration des donnees, formation des utilisateurs.
+
+**Pour l'examen BTS SIO :** on vous demande essentiellement de maitriser les etapes 2 et 3 — c'est-a-dire de savoir lire/creer un MCD, le transformer en MLD, puis en SQL.
+
+---
+
+## Le Modele Conceptuel de Donnees (MCD)
+
+Le MCD est le coeur de Merise. C'est le modele le plus important et celui qui tombe systematiquement a l'examen. Il decrit les donnees du systeme d'information de maniere abstraite, independamment de toute technologie.
+
+### Les entites
+
+Une **entite** represente un objet, un concept, une "chose" du monde reel que l'on souhaite stocker dans le systeme d'information. On la represente par un rectangle.
+
+**Regle pour identifier une entite :** si on a besoin de stocker plusieurs informations sur un meme concept, et qu'il peut y en avoir plusieurs occurrences, c'est une entite.
+
+Exemples d'entites courantes :
+- **Client** (on stocke son nom, prenom, adresse, telephone...)
+- **Produit** (on stocke son libelle, son prix, sa description...)
+- **Commande** (on stocke sa date, son statut...)
+- **Employe** (on stocke son nom, son poste, son salaire...)
+- **Salle** (on stocke son numero, sa capacite...)
+
+**Convention de nommage :** le nom d'une entite est un **substantif au singulier**, avec une majuscule. On ecrit "Client", pas "Clients", pas "les clients", pas "table_client".
+
+### Les attributs
+
+Chaque entite possede des **attributs** (aussi appeles proprietes). Ce sont les informations que l'on stocke pour chaque occurrence de l'entite.
+
+**L'identifiant** est l'attribut (ou le groupe d'attributs) qui permet de distinguer de maniere unique chaque occurrence de l'entite. Il est **souligne** dans le MCD.
+
+Exemple — Entite **Client** :
+
+```
++-----------------+
+|     Client      |
++-----------------+
+| _idClient_      |
+| nom             |
+| prenom          |
+| adresse         |
+| telephone       |
+| email           |
++-----------------+
+```
+
+**Regles sur les attributs :**
+- Chaque attribut doit etre **atomique** (non decomposable). Si "adresse" doit etre decomposee pour des recherches par ville ou code postal, on cree des attributs separes : rue, codePostal, ville.
+- Chaque attribut doit dependre **directement et entierement** de l'identifiant de l'entite (dependance fonctionnelle).
+- Un attribut ne doit apparaitre qu'**une seule fois** dans tout le MCD (pas de doublons).
+- Un attribut ne doit **pas etre un calcul** derivable d'autres attributs (sauf cas de performance, qui releve du MPD).
+
+**PIEGE EXAMEN :** un attribut "age" dans l'entite Client est une erreur. L'age se calcule a partir de la date de naissance. On stocke "dateNaissance", pas "age".
+
+### Les associations
+
+Une **association** (ou relation) represente un lien semantique entre deux entites (ou plus). On la represente par un **ovale** (ou un losange selon les notations) relie aux entites par des traits.
+
+**Convention :** une association porte un **verbe** qui decrit la nature du lien.
+
+Exemples :
+- Client **passe** Commande
+- Commande **contient** Produit
+- Employe **travaille dans** Service
+- Etudiant **est inscrit a** Formation
+
+```
++----------+          +----------+          +----------+
+|  Client  |---passe--|          |---contient-| Produit |
++----------+          | Commande |          +----------+
+                      +----------+
+```
+
+**Attention :** une association n'est PAS une entite. Elle ne porte pas d'identifiant propre. Elle peut porter des proprietes (voir plus bas) mais son identifiant est toujours la combinaison des identifiants des entites reliees.
+
+### Les cardinalites — LE point crucial
+
+Les cardinalites expriment les **regles de gestion** du systeme. Elles indiquent, pour chaque entite participant a une association, le nombre minimum et maximum de fois qu'une occurrence de cette entite peut participer a l'association.
+
+Les quatre cardinalites possibles :
+
+| Cardinalite | Signification | Lecture |
+|-------------|---------------|---------|
+| **0,1** | Zero ou un | L'entite peut ne pas participer, ou participer au plus une fois |
+| **1,1** | Exactement un | L'entite participe obligatoirement et exactement une fois |
+| **0,n** | Zero ou plusieurs | L'entite peut ne pas participer, ou participer un nombre quelconque de fois |
+| **1,n** | Un ou plusieurs | L'entite participe obligatoirement au moins une fois |
+
+#### Comment lire les cardinalites ? La technique de la question
+
+**Regle d'or : on lit TOUJOURS les cardinalites du point de vue de l'entite, en posant la question suivante :**
+
+> "UN [entite] [verbe de l'association] COMBIEN de [autre entite] ? Au minimum ? Au maximum ?"
+
+**Exemple detaille — Client passe Commande :**
+
+1. "UN client passe combien de commandes ?"
+   - Au minimum : 0 (un client peut exister sans avoir encore passe de commande)
+   - Au maximum : n (un client peut passer plusieurs commandes)
+   - **Cardinalite cote Client : 0,n**
+
+2. "UNE commande est passee par combien de clients ?"
+   - Au minimum : 1 (une commande est forcement passee par un client)
+   - Au maximum : 1 (une commande est passee par un seul client)
+   - **Cardinalite cote Commande : 1,1**
+
+```
++----------+  0,n      passe      1,1  +----------+
+|  Client  |---------------------------|  Commande |
++----------+                           +----------+
+```
+
+**Lecture :** Un client passe 0 ou plusieurs commandes. Une commande est passee par exactement 1 client.
+
+#### La methode infaillible en 4 etapes
+
+Pour chaque association, repeter cette procedure :
+
+1. **Pointer une entite** du doigt.
+2. **Poser la question** : "UN(E) [cette entite] [verbe] combien de [autre entite] ?"
+3. **Repondre** au minimum (0 ou 1 ?) puis au maximum (1 ou n ?).
+4. **Ecrire** la cardinalite a cote de l'entite pointee.
+5. **Recommencer** avec l'autre entite.
+
+**ATTENTION :** la cardinalite est ecrite **a cote de l'entite qu'on interroge**, PAS a cote de l'autre. C'est une source d'erreur frequente.
+
+#### 10 exercices de cardinalites
+
+**Exercice 1 — Employe / Service**
+Un employe travaille dans exactement un service. Un service emploie au moins un employe.
+
+Question : "Un employe travaille dans combien de services ?" → min 1, max 1 → **1,1**
+Question : "Un service emploie combien d'employes ?" → min 1, max n → **1,n**
+
+```
+Employe (1,1) ---travaille dans--- (1,n) Service
+```
+
+---
+
+**Exercice 2 — Etudiant / Cours**
+Un etudiant peut suivre plusieurs cours. Un cours est suivi par plusieurs etudiants.
+
+Question : "Un etudiant suit combien de cours ?" → min 0, max n → **0,n**
+Question : "Un cours est suivi par combien d'etudiants ?" → min 0, max n → **0,n**
+
+```
+Etudiant (0,n) ---suit--- (0,n) Cours
+```
+
+---
+
+**Exercice 3 — Personne / Passeport**
+Une personne possede au plus un passeport. Un passeport appartient a exactement une personne.
+
+Question : "Une personne possede combien de passeports ?" → min 0, max 1 → **0,1**
+Question : "Un passeport appartient a combien de personnes ?" → min 1, max 1 → **1,1**
+
+```
+Personne (0,1) ---possede--- (1,1) Passeport
+```
+
+---
+
+**Exercice 4 — Auteur / Livre**
+Un auteur ecrit au moins un livre. Un livre est ecrit par au moins un auteur (co-auteurs possibles).
+
+Question : "Un auteur ecrit combien de livres ?" → min 1, max n → **1,n**
+Question : "Un livre est ecrit par combien d'auteurs ?" → min 1, max n → **1,n**
+
+```
+Auteur (1,n) ---ecrit--- (1,n) Livre
+```
+
+---
+
+**Exercice 5 — Voiture / Place de parking**
+Une voiture est garee sur au plus une place. Une place accueille au plus une voiture.
+
+Question : "Une voiture est garee sur combien de places ?" → min 0, max 1 → **0,1**
+Question : "Une place accueille combien de voitures ?" → min 0, max 1 → **0,1**
+
+```
+Voiture (0,1) ---est garee sur--- (0,1) Place
+```
+
+---
+
+**Exercice 6 — Facture / Commande**
+Une facture correspond a exactement une commande. Une commande genere au plus une facture (car certaines commandes annulees n'ont pas de facture).
+
+Question : "Une facture correspond a combien de commandes ?" → min 1, max 1 → **1,1**
+Question : "Une commande genere combien de factures ?" → min 0, max 1 → **0,1**
+
+```
+Facture (1,1) ---correspond a--- (0,1) Commande
+```
+
+---
+
+**Exercice 7 — Medecin / Patient**
+Un medecin soigne plusieurs patients. Un patient peut consulter plusieurs medecins.
+
+Question : "Un medecin soigne combien de patients ?" → min 0, max n → **0,n**
+Question : "Un patient est soigne par combien de medecins ?" → min 1, max n → **1,n**
+
+```
+Medecin (0,n) ---soigne--- (1,n) Patient
+```
+
+---
+
+**Exercice 8 — Pays / Capitale**
+Un pays a exactement une capitale. Une capitale est celle d'exactement un pays.
+
+Question : "Un pays a combien de capitales ?" → min 1, max 1 → **1,1**
+Question : "Une capitale est celle de combien de pays ?" → min 1, max 1 → **1,1**
+
+```
+Pays (1,1) ---a pour capitale--- (1,1) Capitale
+```
+
+---
+
+**Exercice 9 — Produit / Categorie**
+Un produit appartient a exactement une categorie. Une categorie contient zero ou plusieurs produits.
+
+Question : "Un produit appartient a combien de categories ?" → min 1, max 1 → **1,1**
+Question : "Une categorie contient combien de produits ?" → min 0, max n → **0,n**
+
+```
+Produit (1,1) ---appartient a--- (0,n) Categorie
+```
+
+---
+
+**Exercice 10 — Chambre / Hotel**
+Une chambre est dans exactement un hotel. Un hotel possede au moins une chambre.
+
+Question : "Une chambre est dans combien d'hotels ?" → min 1, max 1 → **1,1**
+Question : "Un hotel possede combien de chambres ?" → min 1, max n → **1,n**
+
+```
+Chambre (1,1) ---se trouve dans--- (1,n) Hotel
+```
+
+### Les associations porteuses de proprietes
+
+Certaines informations n'appartiennent ni a une entite ni a l'autre, mais a la **relation entre les deux**. Ces informations sont des **proprietes de l'association**.
+
+**Exemple fondamental — Commande contient Produit :**
+
+La quantite commandee d'un produit depend a la fois de la commande ET du produit. "3" n'est pas une propriete du produit (il n'a pas toujours la quantite 3). "3" n'est pas une propriete de la commande (la commande peut contenir d'autres produits en quantites differentes). "3" est une propriete de l'association "contient".
+
+```
++----------+  1,n     contient     0,n  +----------+
+| Commande |---------------------------| Produit  |
++----------+     | quantite |          +----------+
+                 | prixUnitaire |
+```
+
+**Regle fondamentale :** une association porteuse de proprietes est **toujours** de type n,n (au moins un "n" de chaque cote). En effet, si l'un des cotes est 1,1, la propriete peut etre absorbee dans l'entite cote 1,1.
+
+**PIEGE EXAMEN :** oublier les proprietes d'une association est une erreur classique. Quand vous voyez une association n,n, demandez-vous systematiquement : "y a-t-il des informations qui dependent de CE lien precis entre les deux entites ?"
+
+### Association reflexive
+
+Une **association reflexive** relie une entite a elle-meme. Elle exprime une relation entre les occurrences d'une meme entite.
+
+**Exemple — Employe manage Employe :**
+
+Un employe peut manager plusieurs autres employes. Un employe est manage par au plus un employe.
+
+```
+                    +----------+
+         0,n  manage  0,1
+          +------| Employe  |------+
+          |      +----------+      |
+          +------------------------+
+```
+
+**Autres exemples :**
+- **Personne** est parent de **Personne**
+- **Piece** est composee de **Piece** (nomenclature)
+- **Page web** contient un lien vers **Page web**
+
+**Attention :** dans une association reflexive, il faut nommer les **roles** pour eviter l'ambiguite. Dans l'exemple ci-dessus : role "manager" (cote 0,1) et role "subordonnes" (cote 0,n).
+
+### Association ternaire
+
+Une **association ternaire** relie trois entites simultanement. Elle est plus rare mais peut tomber a l'examen.
+
+**Exemple — Professeur enseigne Matiere dans Salle :**
+
+L'information "le professeur Dupont enseigne les mathematiques en salle A204" ne peut pas se decomposer en associations binaires sans perdre d'information.
+
+```
++----------+     +----------+     +----------+
+|Professeur|-----|enseigne  |-----|  Matiere  |
++----------+     +----------+     +----------+
+                      |
+                 +----------+
+                 |   Salle  |
+                 +----------+
+```
+
+Cardinalites (a lire pour chaque entite) :
+- Un professeur enseigne dans au moins un triplet : **1,n**
+- Une matiere est enseignee dans au moins un triplet : **1,n**
+- Une salle est utilisee dans zero ou plusieurs triplets : **0,n**
+
+**Regle pratique :** avant de creer une association ternaire, verifier qu'on ne peut pas la decomposer en associations binaires. Si la decomposition fait perdre de l'information, l'association ternaire est justifiee.
+
+**PIEGE EXAMEN :** les associations ternaires sont rares dans les sujets. Si vous en voyez une, verifiez bien qu'elle ne peut pas etre decomposee. Souvent, le sujet peut se modeliser avec des associations binaires.
+
+### Contraintes d'integrite fonctionnelle (CIF)
+
+Une **contrainte d'integrite fonctionnelle** (CIF) existe lorsqu'une entite participant a une association avec la cardinalite **1,1** (ou 0,1) determine fonctionnellement les autres entites de l'association.
+
+**En pratique :** si une entite a la cardinalite 1,1 dans une association, c'est une CIF. Cela signifie que, connaissant une occurrence de cette entite, on peut determiner exactement l'occurrence associee de l'autre entite.
+
+**Exemple :** Dans "Commande (1,1) --- est passee par --- (0,n) Client", connaissant une commande, on determine exactement le client. C'est une CIF de Commande vers Client.
+
+**Consequence sur le MLD :** la CIF se traduit par une cle etrangere dans la table cote 1,1.
+
+### Les pieges classiques du MCD
+
+#### Piege 1 : Confondre entite et attribut
+
+**La question a se poser :** "Ai-je besoin de stocker PLUSIEURS informations sur ce concept ? Peut-il y avoir PLUSIEURS occurrences ?"
+
+Exemple : **Ville** — entite ou attribut de Client ?
+
+- Si on stocke juste le nom de la ville dans la fiche client → **attribut** de Client.
+- Si on a besoin de stocker des informations sur la ville (code postal, population, region) OU si plusieurs entites referent a la meme ville → **entite** separee.
+
+**Regle de decision :**
+1. Si le concept a des attributs propres (au-dela du simple nom) → entite.
+2. Si le concept est reference par plusieurs entites → entite.
+3. Si on veut garantir l'unicite et la coherence (eviter "Paris", "paris", "PARIS") → entite.
+4. Sinon → attribut.
+
+#### Piege 2 : Mauvaises cardinalites
+
+C'est l'erreur la plus penalisee a l'examen. Les sources d'erreur :
+
+1. **Lire la cardinalite du mauvais cote.** La cardinalite est ecrite cote de l'entite qu'on interroge.
+2. **Confondre minimum et maximum.** Le minimum est la premiere valeur, le maximum est la seconde.
+3. **Ne pas lire attentivement les regles de gestion.** "Un client DOIT avoir au moins une commande" → minimum = 1, pas 0.
+4. **Oublier les cas limites.** "Un client qui vient de s'inscrire n'a pas encore de commande" → minimum = 0.
+
+**Conseil :** relire systematiquement chaque cardinalite en reformulant la question. Si la reponse ne colle pas, la cardinalite est fausse.
+
+#### Piege 3 : Association n,n avec proprietes oubliees
+
+Quand deux entites sont reliees par une association de type n,n (c'est-a-dire au moins un "n" de chaque cote), il y a **souvent** des proprietes sur l'association.
+
+Exemple : Commande (1,n) --- contient --- (0,n) Produit. Si on oublie l'attribut "quantite" sur l'association, la modelisation est incomplete : on sait qu'un produit est dans une commande, mais pas en quelle quantite.
+
+**Reflexe :** a chaque association n,n, se poser la question : "quand je lie ces deux entites, y a-t-il une information supplementaire propre a CE lien ?"
+
+### Exercices MCD complets
+
+#### Exercice MCD 1 — Bibliotheque
+
+**Enonce :** Une bibliotheque souhaite gerer ses prets de livres. Chaque livre est identifie par un ISBN et possede un titre et un auteur. Chaque adherent est identifie par un numero et possede un nom, un prenom et une adresse. Un adherent peut emprunter plusieurs livres. Un livre peut etre emprunte par plusieurs adherents (mais pas en meme temps). On souhaite conserver l'historique des emprunts avec la date d'emprunt et la date de retour.
+
+**Entites :**
+- **Adherent** (_idAdherent_, nom, prenom, adresse)
+- **Livre** (_isbn_, titre, auteur)
+
+**Association :**
+- Adherent **emprunte** Livre
+  - Cardinalites : Adherent (0,n) — Livre (0,n)
+  - Proprietes de l'association : dateEmprunt, dateRetour
+
+```
++-----------+  0,n    emprunte    0,n  +-----------+
+| Adherent  |-------------------------| Livre     |
++-----------+  | dateEmprunt |        +-----------+
+| _idAdher_ |  | dateRetour  |        | _isbn_    |
+| nom       |                         | titre     |
+| prenom    |                         | auteur    |
+| adresse   |                         +-----------+
++-----------+
+```
+
+**Remarque :** ici l'association "emprunte" est en realite plus subtile. Si un meme adherent peut emprunter le meme livre plusieurs fois (historique), l'identifiant de l'association doit inclure la date d'emprunt, ou bien on cree une entite **Emprunt**. Pour le BTS SIO, la version avec association porteuse de proprietes est acceptee si on considere que le couple (adherent, livre, dateEmprunt) est unique.
+
+---
+
+#### Exercice MCD 2 — E-commerce
+
+**Enonce :** Un site e-commerce gere des clients, des produits et des commandes. Chaque client possede un identifiant, un nom, un email et une adresse de livraison. Chaque produit possede une reference, un libelle, une description et un prix unitaire. Un client peut passer plusieurs commandes. Chaque commande a un numero, une date et un statut. Une commande contient un ou plusieurs produits, avec pour chaque produit une quantite commandee.
+
+**Entites :**
+- **Client** (_idClient_, nom, email, adresseLivraison)
+- **Produit** (_refProduit_, libelle, description, prixUnitaire)
+- **Commande** (_numCommande_, dateCommande, statut)
+
+**Associations :**
+- Client **passe** Commande : Client (0,n) — Commande (1,1)
+- Commande **contient** Produit : Commande (1,n) — Produit (0,n)
+  - Proprietes : quantite
+
+```
++-----------+  0,n    passe    1,1  +-----------+  1,n   contient  0,n  +-----------+
+|  Client   |----------------------| Commande  |----------------------|  Produit  |
++-----------+                      +-----------+    | quantite |      +-----------+
+| _idClient_|                      |_numCde_   |                      |_refProd_  |
+| nom       |                      | dateCde   |                      | libelle   |
+| email     |                      | statut    |                      | descript  |
+| adrLivr   |                      +-----------+                      | prixUnit  |
++-----------+                                                         +-----------+
+```
+
+---
+
+#### Exercice MCD 3 — Hopital
+
+**Enonce :** Un hopital gere des patients, des medecins et des consultations. Chaque patient a un numero de dossier, un nom, un prenom, une date de naissance et un numero de securite sociale. Chaque medecin a un identifiant, un nom, un prenom et une specialite. Un medecin exerce dans un seul service. Un service a un code et un nom. Un patient peut avoir plusieurs consultations avec differents medecins. Chaque consultation a une date, une heure et un diagnostic.
+
+**Entites :**
+- **Patient** (_numDossier_, nom, prenom, dateNaissance, numSecu)
+- **Medecin** (_idMedecin_, nom, prenom, specialite)
+- **Service** (_codeService_, nomService)
+- **Consultation** (_numConsultation_, dateConsult, heureConsult, diagnostic)
+
+**Associations :**
+- Medecin **exerce dans** Service : Medecin (1,1) — Service (1,n)
+- Patient **a** Consultation : Patient (0,n) — Consultation (1,1)
+- Medecin **realise** Consultation : Medecin (0,n) — Consultation (1,1)
+
+```
++-----------+  1,1  exerce dans  1,n  +-----------+
+|  Medecin  |------------------------| Service   |
++-----------+                        +-----------+
+| _idMed_   |                        | _codeSrv_ |
+| nom       |   0,n                  | nomServ   |
+| prenom    |   |                    +-----------+
+| specialite|   | realise
++-----------+   |
+                | 1,1
+          +-----------+  1,1  a  0,n  +-----------+
+          |Consultation|-------------| Patient   |
+          +-----------+              +-----------+
+          |_numConsult_|             |_numDossier_|
+          | dateConsult|             | nom        |
+          | heureConsu |             | prenom     |
+          | diagnostic |             | dateNaiss  |
+          +-----------+              | numSecu    |
+                                     +-----------+
+```
+
+**Note :** on a choisi de faire de Consultation une entite a part entiere (plutot qu'une association ternaire) car elle possede son propre identifiant et des attributs riches. C'est une approche parfaitement valable et souvent preferee.
+
+---
+
+#### Exercice MCD 4 — Ecole
+
+**Enonce :** Une ecole gere des etudiants, des enseignants, des matieres et des notes. Chaque etudiant a un numero, un nom, un prenom et une classe. Chaque enseignant a un identifiant, un nom et un prenom. Chaque matiere a un code et un libelle. Un enseignant enseigne une ou plusieurs matieres. Une matiere peut etre enseignee par plusieurs enseignants. Un etudiant recoit des notes dans des matieres. Chaque note est datee et a une valeur sur 20.
+
+**Entites :**
+- **Etudiant** (_numEtudiant_, nom, prenom, classe)
+- **Enseignant** (_idEnseignant_, nom, prenom)
+- **Matiere** (_codeMatiere_, libelle)
+
+**Associations :**
+- Enseignant **enseigne** Matiere : Enseignant (1,n) — Matiere (1,n)
+- Etudiant **recoit note en** Matiere : Etudiant (0,n) — Matiere (0,n)
+  - Proprietes : dateNote, valeurNote
+
+```
++-----------+  1,n   enseigne   1,n  +-----------+
+| Enseignant|------------------------| Matiere   |
++-----------+                        +-----------+
+| _idEns_   |                        | _codeMat_ |
+| nom       |                        | libelle   |
+| prenom    |                        +-----------+
++-----------+                             |
+                                     0,n  | recoit note en
+                                          |
+                                     0,n  |
+                                    +-----------+
+                                    | Etudiant  |
+                                    +-----------+
+                                    | _numEtud_ |
+                                    | nom       |
+                                    | prenom    |
+                                    | classe    |
+                                    +-----------+
+                               Proprietes de l'association:
+                               dateNote, valeurNote
+```
+
+---
+
+#### Exercice MCD 5 — Location de vehicules
+
+**Enonce :** Une agence de location de vehicules gere ses vehicules, ses clients et ses locations. Chaque vehicule a une immatriculation, une marque, un modele, une categorie (citadine, berline, SUV) et un kilometrage. Chaque client a un identifiant, un nom, un prenom, un numero de permis et un telephone. Un client peut louer plusieurs vehicules a des periodes differentes. Un vehicule peut etre loue par plusieurs clients au fil du temps. Chaque location a une date de debut, une date de fin prevue, une date de retour effective et un kilometrage au depart.
+
+**Entites :**
+- **Vehicule** (_immatriculation_, marque, modele, categorie, kilometrage)
+- **Client** (_idClient_, nom, prenom, numPermis, telephone)
+
+**Association :**
+- Client **loue** Vehicule : Client (0,n) — Vehicule (0,n)
+  - Proprietes : dateDebut, dateFinPrevue, dateRetour, kmDepart
+
+```
++-----------+  0,n      loue      0,n  +-----------+
+|  Client   |--------------------------| Vehicule  |
++-----------+  | dateDebut     |       +-----------+
+| _idClient_|  | dateFinPrevue |       | _immat_   |
+| nom       |  | dateRetour    |       | marque    |
+| prenom    |  | kmDepart      |       | modele    |
+| numPermis |                          | categorie |
+| telephone |                          | kilometrage|
++-----------+                          +-----------+
+```
+
+---
+
+## Du MCD au MLD (Modele Logique de Donnees)
+
+Le passage du MCD au MLD est une operation **mecanique** qui suit des regles precises. C'est un exercice tres frequent a l'examen. Il n'y a aucune place pour l'interpretation : les regles sont strictes.
+
+### Notation du MLD
+
+Le MLD s'ecrit sous la forme suivante :
+
+```
+NomTable(#clePrimaire, attribut1, attribut2, #cleEtrangere=>TableReference)
+```
+
+Conventions :
+- **#** devant un attribut signifie qu'il fait partie de la cle primaire
+- **=>** indique une cle etrangere et la table referencee
+- Les attributs sont separes par des virgules
+- Le nom de la table est suivi de parentheses contenant tous ses attributs
+
+### Regle 1 : Entite → Table
+
+**Chaque entite du MCD devient une table dans le MLD. L'identifiant de l'entite devient la cle primaire de la table.**
+
+Exemple :
+
+MCD :
+```
++-----------+
+|  Client   |
++-----------+
+| _idClient_|
+| nom       |
+| prenom    |
+| email     |
++-----------+
+```
+
+MLD :
+```
+Client(#idClient, nom, prenom, email)
+```
+
+C'est la regle la plus simple. Elle s'applique toujours, sans exception.
+
+### Regle 2 : Association 1,1 — x,n → Cle etrangere
+
+**Quand une association a la cardinalite 1,1 (ou 0,1) d'un cote et x,n de l'autre (x = 0 ou 1), la cle primaire du cote "n" migre comme cle etrangere dans la table du cote "1,1" (ou "0,1").**
+
+Autrement dit : le cote "1" recoit la cle etrangere.
+
+**Moyen mnemotechnique :** la cle etrangere va du cote du "1" — c'est-a-dire du cote ou chaque occurrence est liee a exactement une (ou au plus une) occurrence de l'autre entite.
+
+Exemple :
+
+MCD :
+```
+Commande (1,1) ---est passee par--- (0,n) Client
+```
+
+MLD :
+```
+Client(#idClient, nom, prenom, email)
+Commande(#numCommande, dateCommande, statut, #idClient=>Client)
+```
+
+La cle primaire de Client (idClient) migre dans la table Commande comme cle etrangere. Chaque commande "connait" son client.
+
+**Pourquoi dans ce sens ?** Parce que chaque commande est liee a exactement un client (1,1). C'est donc dans la table Commande qu'on stocke la reference au client. L'inverse (stocker les numeros de commande dans Client) serait impossible car un client a 0 ou plusieurs commandes — on ne peut pas stocker une liste dans un champ.
+
+**Autre exemple :**
+```
+Employe (1,1) ---travaille dans--- (1,n) Service
+```
+
+MLD :
+```
+Service(#codeService, nomService)
+Employe(#idEmploye, nom, prenom, #codeService=>Service)
+```
+
+### Regle 3 : Association n,n → Table intermediaire (table de jonction)
+
+**Quand une association a au moins un "n" de chaque cote (0,n — 0,n, 1,n — 0,n, 1,n — 1,n, etc.), on cree une table intermediaire.**
+
+Cette table contient :
+- Les cles primaires des deux entites, qui forment ensemble la **cle primaire composee** de la table intermediaire.
+- Les proprietes de l'association (s'il y en a).
+
+Exemple :
+
+MCD :
+```
+Commande (1,n) ---contient--- (0,n) Produit
+Proprietes de l'association : quantite
+```
+
+MLD :
+```
+Commande(#numCommande, dateCommande, statut, #idClient=>Client)
+Produit(#refProduit, libelle, description, prixUnitaire)
+Contenir(#numCommande=>Commande, #refProduit=>Produit, quantite)
+```
+
+**La table "Contenir" :**
+- Sa cle primaire est composee de (#numCommande, #refProduit) — c'est la combinaison des deux cles etrangeres.
+- L'attribut "quantite" est un attribut ordinaire de cette table.
+- Chaque ligne de cette table represente "le produit X est present dans la commande Y en quantite Z".
+
+**Nommage de la table intermediaire :** on utilise generalement le verbe de l'association a l'infinitif (Contenir, Emprunter, Suivre...) ou un nom descriptif (LigneCommande, Inscription...).
+
+### Regle 4 : Association 1,1 — 1,1 → Fusion ou cle etrangere
+
+**Quand les deux cotes d'une association ont la cardinalite 1,1, on peut :**
+- **Fusionner** les deux entites en une seule table (si cela a du sens).
+- **Ou** placer une cle etrangere dans l'une des deux tables (au choix).
+
+Exemple :
+
+MCD :
+```
+Pays (1,1) ---a pour capitale--- (1,1) Capitale
+```
+
+MLD (option 1 — fusion) :
+```
+Pays(#codePays, nomPays, nomCapitale, populationCapitale)
+```
+
+MLD (option 2 — cle etrangere) :
+```
+Pays(#codePays, nomPays, #idCapitale=>Capitale)
+Capitale(#idCapitale, nomCapitale, population)
+```
+
+**En pratique pour l'examen :** si les deux entites ont des attributs nombreux et distincts, on prefere l'option 2. Si l'une des entites a peu d'attributs, la fusion (option 1) est plus simple.
+
+### Regle 5 : Association reflexive → Cle etrangere dans la meme table
+
+**Pour une association reflexive, on ajoute une cle etrangere dans la table qui reference sa propre cle primaire.**
+
+Exemple :
+
+MCD :
+```
+Employe (0,1) ---est manage par--- (0,n) Employe
+```
+
+MLD :
+```
+Employe(#idEmploye, nom, prenom, #idManager=>Employe)
+```
+
+L'attribut "idManager" est une cle etrangere qui reference la cle primaire de la meme table (Employe). Un employe dont idManager est NULL n'a pas de manager (c'est le directeur general, par exemple).
+
+**Si l'association reflexive est n,n**, on cree une table intermediaire comme pour une association n,n classique :
+
+MCD :
+```
+Personne (0,n) ---est ami avec--- (0,n) Personne
+```
+
+MLD :
+```
+Personne(#idPersonne, nom, prenom)
+Amitie(#idPersonne1=>Personne, #idPersonne2=>Personne)
+```
+
+### Transformation des 5 MCD en MLD
+
+#### MLD 1 — Bibliotheque
+
+```
+Adherent(#idAdherent, nom, prenom, adresse)
+Livre(#isbn, titre, auteur)
+Emprunter(#idAdherent=>Adherent, #isbn=>Livre, #dateEmprunt, dateRetour)
+```
+
+**Remarque :** on a ajoute dateEmprunt a la cle primaire composee pour permettre a un adherent d'emprunter le meme livre plusieurs fois (a des dates differentes).
+
+---
+
+#### MLD 2 — E-commerce
+
+```
+Client(#idClient, nom, email, adresseLivraison)
+Commande(#numCommande, dateCommande, statut, #idClient=>Client)
+Produit(#refProduit, libelle, description, prixUnitaire)
+Contenir(#numCommande=>Commande, #refProduit=>Produit, quantite)
+```
+
+**Explication :**
+- Client → Commande : association 0,n — 1,1 → cle etrangere idClient dans Commande (regle 2).
+- Commande → Produit : association 1,n — 0,n → table intermediaire Contenir (regle 3).
+
+---
+
+#### MLD 3 — Hopital
+
+```
+Service(#codeService, nomService)
+Medecin(#idMedecin, nom, prenom, specialite, #codeService=>Service)
+Patient(#numDossier, nom, prenom, dateNaissance, numSecu)
+Consultation(#numConsultation, dateConsult, heureConsult, diagnostic, #idMedecin=>Medecin, #numDossier=>Patient)
+```
+
+**Explication :**
+- Medecin (1,1) — Service (1,n) → cle etrangere codeService dans Medecin.
+- Consultation (1,1) — Medecin (0,n) → cle etrangere idMedecin dans Consultation.
+- Consultation (1,1) — Patient (0,n) → cle etrangere numDossier dans Consultation.
+
+---
+
+#### MLD 4 — Ecole
+
+```
+Enseignant(#idEnseignant, nom, prenom)
+Matiere(#codeMatiere, libelle)
+Enseigner(#idEnseignant=>Enseignant, #codeMatiere=>Matiere)
+Etudiant(#numEtudiant, nom, prenom, classe)
+Noter(#numEtudiant=>Etudiant, #codeMatiere=>Matiere, #dateNote, valeurNote)
+```
+
+**Explication :**
+- Enseignant — Matiere : association 1,n — 1,n → table Enseigner (regle 3).
+- Etudiant — Matiere : association 0,n — 0,n avec proprietes → table Noter (regle 3). On ajoute dateNote a la cle primaire pour permettre plusieurs notes par etudiant par matiere.
+
+---
+
+#### MLD 5 — Location de vehicules
+
+```
+Client(#idClient, nom, prenom, numPermis, telephone)
+Vehicule(#immatriculation, marque, modele, categorie, kilometrage)
+Louer(#idClient=>Client, #immatriculation=>Vehicule, #dateDebut, dateFinPrevue, dateRetour, kmDepart)
+```
+
+**Explication :**
+- Client — Vehicule : association 0,n — 0,n avec proprietes → table Louer (regle 3). dateDebut est ajoutee a la cle primaire pour permettre plusieurs locations du meme vehicule par le meme client.
+
+---
+
+## Du MLD au MPD (Modele Physique de Donnees)
+
+Le **MPD** est la traduction directe du MLD en instructions SQL. C'est l'etape finale : on ecrit le code qui cree reellement la base de donnees.
+
+### Types de donnees MySQL
+
+| Type | Usage | Exemple |
+|------|-------|---------|
+| **INT** | Nombres entiers | Identifiants, quantites, ages |
+| **BIGINT** | Grands entiers | Tres grands identifiants |
+| **SMALLINT** | Petits entiers | Codes, flags |
+| **VARCHAR(n)** | Chaine de caracteres de longueur variable, max n | Noms, emails (VARCHAR(100)) |
+| **CHAR(n)** | Chaine de longueur fixe | Codes fixes (CHAR(5)) |
+| **TEXT** | Texte long | Descriptions, commentaires |
+| **DATE** | Date (AAAA-MM-JJ) | Dates de naissance, dates de commande |
+| **DATETIME** | Date et heure (AAAA-MM-JJ HH:MM:SS) | Horodatage precis |
+| **DECIMAL(p,s)** | Nombre decimal exact (p chiffres dont s decimales) | Prix (DECIMAL(10,2)), notes |
+| **BOOLEAN** | Vrai/Faux (stocke comme TINYINT(1)) | Champs oui/non |
+| **FLOAT / DOUBLE** | Nombres decimaux approximatifs | Calculs scientifiques (eviter pour les prix) |
+
+**PIEGE EXAMEN :** ne jamais utiliser FLOAT ou DOUBLE pour les prix. Utiliser DECIMAL pour eviter les erreurs d'arrondi. 19.99 en FLOAT peut devenir 19.9899997.
+
+### Contraintes SQL
+
+| Contrainte | Role |
+|------------|------|
+| **PRIMARY KEY** | Identifie de maniere unique chaque ligne |
+| **FOREIGN KEY** | Reference la cle primaire d'une autre table |
+| **NOT NULL** | Interdit les valeurs nulles |
+| **UNIQUE** | Interdit les doublons dans la colonne |
+| **DEFAULT valeur** | Valeur par defaut si aucune n'est fournie |
+| **AUTO_INCREMENT** | Incremente automatiquement la valeur (entiers) |
+| **CHECK(condition)** | Verifie une condition sur les donnees |
+
+### Contraintes d'integrite referentielle
+
+Les contraintes ON DELETE et ON UPDATE definissent le comportement quand on supprime ou modifie une ligne referencee par une cle etrangere.
+
+| Option | Comportement |
+|--------|-------------|
+| **ON DELETE RESTRICT** | Interdit la suppression si des lignes la referencent (par defaut) |
+| **ON DELETE CASCADE** | Supprime automatiquement les lignes qui la referencent |
+| **ON DELETE SET NULL** | Met a NULL la cle etrangere des lignes qui la referencent |
+| **ON UPDATE CASCADE** | Repercute la modification de la cle primaire sur les cles etrangeres |
+
+**Quand utiliser quoi :**
+- **CASCADE** : quand les lignes dependantes n'ont plus de sens sans la ligne parente. Exemple : supprimer une commande supprime ses lignes de commande.
+- **RESTRICT** : quand on veut empecher la suppression accidentelle. Exemple : on ne peut pas supprimer un client s'il a des commandes.
+- **SET NULL** : quand la relation est optionnelle. Exemple : supprimer un manager met a NULL le champ idManager des employes.
+
+### SQL de creation pour chaque MLD
+
+#### MPD 1 — Bibliotheque
+
+```sql
+CREATE TABLE Adherent (
+    idAdherent INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    adresse VARCHAR(255),
+    PRIMARY KEY (idAdherent)
+) ENGINE=InnoDB;
+
+CREATE TABLE Livre (
+    isbn VARCHAR(13),
+    titre VARCHAR(255) NOT NULL,
+    auteur VARCHAR(200) NOT NULL,
+    PRIMARY KEY (isbn)
+) ENGINE=InnoDB;
+
+CREATE TABLE Emprunter (
+    idAdherent INT,
+    isbn VARCHAR(13),
+    dateEmprunt DATE,
+    dateRetour DATE,
+    PRIMARY KEY (idAdherent, isbn, dateEmprunt),
+    FOREIGN KEY (idAdherent) REFERENCES Adherent(idAdherent)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (isbn) REFERENCES Livre(isbn)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+```
+
+---
+
+#### MPD 2 — E-commerce
+
+```sql
+CREATE TABLE Client (
+    idClient INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    adresseLivraison VARCHAR(255),
+    PRIMARY KEY (idClient)
+) ENGINE=InnoDB;
+
+CREATE TABLE Commande (
+    numCommande INT AUTO_INCREMENT,
+    dateCommande DATE NOT NULL,
+    statut VARCHAR(50) NOT NULL DEFAULT 'en attente',
+    idClient INT NOT NULL,
+    PRIMARY KEY (numCommande),
+    FOREIGN KEY (idClient) REFERENCES Client(idClient)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE Produit (
+    refProduit VARCHAR(20),
+    libelle VARCHAR(200) NOT NULL,
+    description TEXT,
+    prixUnitaire DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (refProduit)
+) ENGINE=InnoDB;
+
+CREATE TABLE Contenir (
+    numCommande INT,
+    refProduit VARCHAR(20),
+    quantite INT NOT NULL CHECK (quantite > 0),
+    PRIMARY KEY (numCommande, refProduit),
+    FOREIGN KEY (numCommande) REFERENCES Commande(numCommande)
+        ON DELETE CASCADE,
+    FOREIGN KEY (refProduit) REFERENCES Produit(refProduit)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+```
+
+---
+
+#### MPD 3 — Hopital
+
+```sql
+CREATE TABLE Service (
+    codeService VARCHAR(10),
+    nomService VARCHAR(100) NOT NULL,
+    PRIMARY KEY (codeService)
+) ENGINE=InnoDB;
+
+CREATE TABLE Medecin (
+    idMedecin INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    specialite VARCHAR(100),
+    codeService VARCHAR(10) NOT NULL,
+    PRIMARY KEY (idMedecin),
+    FOREIGN KEY (codeService) REFERENCES Service(codeService)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE Patient (
+    numDossier INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    dateNaissance DATE NOT NULL,
+    numSecu VARCHAR(15) NOT NULL UNIQUE,
+    PRIMARY KEY (numDossier)
+) ENGINE=InnoDB;
+
+CREATE TABLE Consultation (
+    numConsultation INT AUTO_INCREMENT,
+    dateConsult DATE NOT NULL,
+    heureConsult TIME NOT NULL,
+    diagnostic TEXT,
+    idMedecin INT NOT NULL,
+    numDossier INT NOT NULL,
+    PRIMARY KEY (numConsultation),
+    FOREIGN KEY (idMedecin) REFERENCES Medecin(idMedecin)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (numDossier) REFERENCES Patient(numDossier)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+```
+
+---
+
+#### MPD 4 — Ecole
+
+```sql
+CREATE TABLE Enseignant (
+    idEnseignant INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    PRIMARY KEY (idEnseignant)
+) ENGINE=InnoDB;
+
+CREATE TABLE Matiere (
+    codeMatiere VARCHAR(10),
+    libelle VARCHAR(100) NOT NULL,
+    PRIMARY KEY (codeMatiere)
+) ENGINE=InnoDB;
+
+CREATE TABLE Enseigner (
+    idEnseignant INT,
+    codeMatiere VARCHAR(10),
+    PRIMARY KEY (idEnseignant, codeMatiere),
+    FOREIGN KEY (idEnseignant) REFERENCES Enseignant(idEnseignant)
+        ON DELETE CASCADE,
+    FOREIGN KEY (codeMatiere) REFERENCES Matiere(codeMatiere)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE Etudiant (
+    numEtudiant INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    classe VARCHAR(20) NOT NULL,
+    PRIMARY KEY (numEtudiant)
+) ENGINE=InnoDB;
+
+CREATE TABLE Noter (
+    numEtudiant INT,
+    codeMatiere VARCHAR(10),
+    dateNote DATE,
+    valeurNote DECIMAL(4,2) NOT NULL CHECK (valeurNote >= 0 AND valeurNote <= 20),
+    PRIMARY KEY (numEtudiant, codeMatiere, dateNote),
+    FOREIGN KEY (numEtudiant) REFERENCES Etudiant(numEtudiant)
+        ON DELETE CASCADE,
+    FOREIGN KEY (codeMatiere) REFERENCES Matiere(codeMatiere)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+```
+
+---
+
+#### MPD 5 — Location de vehicules
+
+```sql
+CREATE TABLE Client (
+    idClient INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    numPermis VARCHAR(20) NOT NULL UNIQUE,
+    telephone VARCHAR(20),
+    PRIMARY KEY (idClient)
+) ENGINE=InnoDB;
+
+CREATE TABLE Vehicule (
+    immatriculation VARCHAR(10),
+    marque VARCHAR(50) NOT NULL,
+    modele VARCHAR(50) NOT NULL,
+    categorie VARCHAR(30) NOT NULL,
+    kilometrage INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (immatriculation)
+) ENGINE=InnoDB;
+
+CREATE TABLE Louer (
+    idClient INT,
+    immatriculation VARCHAR(10),
+    dateDebut DATE,
+    dateFinPrevue DATE NOT NULL,
+    dateRetour DATE,
+    kmDepart INT NOT NULL,
+    PRIMARY KEY (idClient, immatriculation, dateDebut),
+    FOREIGN KEY (idClient) REFERENCES Client(idClient)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (immatriculation) REFERENCES Vehicule(immatriculation)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+```
+
+---
+
+## Le Modele Conceptuel de Traitements (MCT)
+
+Le MCT est le modele des traitements au niveau conceptuel. Il decrit **ce que fait** le systeme (pas comment). Bien que moins central que le MCD a l'examen du BTS SIO, il peut faire l'objet de questions.
+
+### Les composants du MCT
+
+**1. Evenement declencheur** — C'est le fait qui declenche un traitement. Il vient de l'exterieur du systeme ou d'un autre traitement.
+
+Representation : un ovale en haut du schema.
+
+Exemples :
+- "Demande de pret recue"
+- "Commande validee par le client"
+- "Date d'echeance atteinte"
+
+**2. Operation** — C'est le traitement effectue par le systeme en reponse a un ou plusieurs evenements. Elle est representee par un rectangle.
+
+Une operation est :
+- **Atomique** : elle s'execute entierement ou pas du tout (pas d'etat intermediaire).
+- **Ininterruptible** : une fois commencee, elle se termine sans attendre d'evenement exterieur.
+
+Exemples :
+- "Verifier la disponibilite du livre"
+- "Enregistrer la commande"
+- "Calculer le montant de la facture"
+
+**3. Resultat (evenement resultat)** — C'est le fait produit par l'operation. Il peut declencher d'autres operations.
+
+Representation : un ovale en bas du schema.
+
+Exemples :
+- "Livre disponible" / "Livre indisponible"
+- "Commande enregistree"
+- "Facture emise"
+
+**4. Synchronisation** — Quand une operation necessite plusieurs evenements pour se declencher, on utilise des operateurs logiques :
+- **ET** : tous les evenements doivent etre presents.
+- **OU** : au moins un evenement doit etre present.
+
+### Exemple complet de MCT — Processus de commande
+
+```
++---------------------------+     +---------------------------+
+| Commande recue du client  |     | Stock verifie             |
++---------------------------+     +---------------------------+
+              |                              |
+              +------------- ET -------------+
+                             |
+              +-----------------------------+
+              |   Traiter la commande       |
+              |                             |
+              | - Verifier le stock         |
+              | - Calculer le total         |
+              | - Enregistrer la commande   |
+              +-----------------------------+
+                   /                  \
+            [stock OK]          [stock insuffisant]
+                 |                      |
+    +-----------------+     +-----------------------+
+    | Commande validee|     | Client informe du     |
+    |                 |     | manque de stock       |
+    +-----------------+     +-----------------------+
+```
+
+**Lecture du schema :**
+1. L'operation "Traiter la commande" se declenche quand les deux evenements "Commande recue du client" ET "Stock verifie" sont presents (synchronisation ET).
+2. L'operation produit deux resultats possibles : "Commande validee" (si le stock est suffisant) ou "Client informe du manque de stock" (sinon).
+3. Chaque resultat est un evenement qui peut declencher d'autres operations (livraison, relance fournisseur...).
+
+### Regles de construction du MCT
+
+1. **Identifier les evenements externes** (venant de l'environnement du systeme).
+2. **Identifier les operations** declenchees par ces evenements.
+3. **Definir les regles d'emission** (conditions de sortie de chaque operation).
+4. **Identifier les evenements resultats** produits par chaque operation.
+5. **Definir les synchronisations** si une operation necessite plusieurs evenements.
+
+---
+
+## Methodologie d'examen
+
+### Comment lire un sujet Merise
+
+Un sujet Merise est toujours structure de la meme maniere :
+
+1. **Un texte descriptif** expliquant le contexte metier et les regles de gestion.
+2. **Une ou plusieurs questions** demandant de produire un MCD, un MLD ou du SQL.
+
+**Etape 1 : Lire le texte entierement une premiere fois** sans rien ecrire. Comprendre le contexte global.
+
+**Etape 2 : Relire le texte en surlignant :**
+- Les **noms communs** qui reviennent souvent → candidats entites (Client, Produit, Commande...)
+- Les **verbes** qui relient ces noms → candidats associations (passe, contient, appartient...)
+- Les **regles numeriques** → cardinalites ("un client peut avoir plusieurs...", "chaque commande a exactement un...")
+- Les **informations** mentionnees → candidats attributs (nom, date, numero...)
+
+**Etape 3 : Lister les entites** avec leurs attributs et identifiants.
+
+**Etape 4 : Lister les associations** avec leurs cardinalites.
+
+**Etape 5 : Dessiner le MCD.**
+
+**Etape 6 : Verifier** (voir checklist ci-dessous).
+
+### L'ordre de travail
+
+1. **Lire le texte** — comprendre le metier.
+2. **Identifier les entites** — ce sont les "choses" que le systeme doit gerer.
+3. **Identifier les attributs** — quelles informations pour chaque entite ?
+4. **Identifier les identifiants** — quel attribut permet de distinguer chaque occurrence ?
+5. **Identifier les associations** — quels liens entre les entites ?
+6. **Poser les cardinalites** — appliquer la technique de la question pour chaque association.
+7. **Verifier les proprietes des associations** — y a-t-il des informations sur les liens ?
+8. **Dessiner proprement** — un schema clair est un schema qui rapporte des points.
+9. **Relire et verifier** — chaque cardinalite, chaque attribut.
+
+### Les pieges recurrents a l'examen
+
+1. **Entites manquantes** — Ne pas voir qu'un concept du texte merite une entite propre.
+2. **Cardinalites inversees** — Ecrire la cardinalite du mauvais cote.
+3. **Minimum confondu** — Ecrire 1,n quand c'est 0,n (ou inversement). Relire la regle de gestion.
+4. **Proprietes d'association oubliees** — Toute association n,n merite qu'on se pose la question.
+5. **Attribut calcule** — Ne pas stocker un attribut qui se deduit d'autres (age, total...).
+6. **Identifiant absent ou mal choisi** — Chaque entite DOIT avoir un identifiant.
+7. **Confusion MCD/MLD** — Le MCD n'a pas de cles etrangeres. Le MLD n'a pas de cardinalites.
+8. **SQL incomplet** — Oublier les NOT NULL, les FOREIGN KEY, le ENGINE=InnoDB.
+9. **Types de donnees incorrects** — FLOAT pour un prix, INT pour un ISBN, VARCHAR trop court.
+10. **Table intermediaire oubliee** — Toute association n,n doit devenir une table dans le MLD.
+
+### Checklist de verification
+
+Avant de rendre sa copie, verifier point par point :
+
+**Pour le MCD :**
+- [ ] Chaque entite a un identifiant souligne
+- [ ] Chaque entite a au moins un attribut en plus de l'identifiant
+- [ ] Chaque association porte un verbe
+- [ ] Chaque association a des cardinalites des deux cotes
+- [ ] Les cardinalites sont coherentes avec le texte (relire les regles de gestion)
+- [ ] Les associations n,n ont ete verifiees pour les proprietes
+- [ ] Aucun attribut en double dans le MCD
+- [ ] Pas d'attribut calcule
+- [ ] Les noms sont au singulier
+
+**Pour le MLD :**
+- [ ] Chaque entite est devenue une table
+- [ ] Chaque cle primaire est marquee avec #
+- [ ] Les associations 1,1/x,n ont une cle etrangere (cote 1,1)
+- [ ] Les associations n,n ont une table intermediaire
+- [ ] Les tables intermediaires ont une cle primaire composee
+- [ ] Les proprietes des associations sont dans la table intermediaire
+- [ ] Les cles etrangeres sont marquees avec =>
+
+**Pour le SQL :**
+- [ ] Chaque table a un CREATE TABLE
+- [ ] Chaque PRIMARY KEY est declaree
+- [ ] Chaque FOREIGN KEY est declaree avec REFERENCES
+- [ ] Les types de donnees sont coherents (DECIMAL pour les prix, DATE pour les dates...)
+- [ ] Les NOT NULL sont places sur les champs obligatoires
+- [ ] AUTO_INCREMENT sur les identifiants numeriques generes
+- [ ] Les tables referencees sont creees AVANT les tables qui les referencent
+- [ ] ENGINE=InnoDB pour supporter les cles etrangeres
+
+---
+
+## Exercices d'examen corriges
+
+### Exercice 1 — Gestion d'une pizzeria
+
+**Enonce :**
+
+Une pizzeria souhaite informatiser la gestion de ses commandes. La pizzeria propose un menu compose de pizzas. Chaque pizza est identifiee par un code, possede un nom, une description et un prix. Les clients sont identifies par un numero et possedent un nom, un prenom, un telephone et une adresse. Un client peut passer plusieurs commandes. Chaque commande est identifiee par un numero et possede une date et une heure de commande. Une commande contient une ou plusieurs pizzas, avec pour chaque pizza une quantite commandee. Chaque commande est livree par un livreur. Un livreur est identifie par un numero et possede un nom, un prenom et un numero de telephone. Un livreur peut livrer plusieurs commandes dans la journee.
+
+**MCD :**
+
+Entites :
+- **Client** (_numClient_, nom, prenom, telephone, adresse)
+- **Pizza** (_codePizza_, nomPizza, description, prix)
+- **Commande** (_numCommande_, dateCommande, heureCommande)
+- **Livreur** (_numLivreur_, nom, prenom, telephone)
+
+Associations et cardinalites :
+- Client (0,n) **passe** (1,1) Commande
+- Commande (1,n) **contient** (0,n) Pizza — propriete : quantite
+- Livreur (0,n) **livre** (1,1) Commande
+
+```
++---------+ 0,n  passe  1,1 +-----------+ 1,n contient 0,n +---------+
+| Client  |----------------| Commande  |------------------| Pizza   |
++---------+                +-----------+   | quantite |   +---------+
+                                |                         | _codePi_|
+                           1,1  |                         | nomPizza|
+                          livre |                         | descript|
+                                |                         | prix    |
+                           0,n  |                         +---------+
+                          +---------+
+                          | Livreur |
+                          +---------+
+```
+
+**MLD :**
+
+```
+Client(#numClient, nom, prenom, telephone, adresse)
+Pizza(#codePizza, nomPizza, description, prix)
+Livreur(#numLivreur, nom, prenom, telephone)
+Commande(#numCommande, dateCommande, heureCommande, #numClient=>Client, #numLivreur=>Livreur)
+Contenir(#numCommande=>Commande, #codePizza=>Pizza, quantite)
+```
+
+**SQL :**
+
+```sql
+CREATE TABLE Client (
+    numClient INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    telephone VARCHAR(20),
+    adresse VARCHAR(255) NOT NULL,
+    PRIMARY KEY (numClient)
+) ENGINE=InnoDB;
+
+CREATE TABLE Pizza (
+    codePizza VARCHAR(10),
+    nomPizza VARCHAR(100) NOT NULL,
+    description TEXT,
+    prix DECIMAL(5,2) NOT NULL,
+    PRIMARY KEY (codePizza)
+) ENGINE=InnoDB;
+
+CREATE TABLE Livreur (
+    numLivreur INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    telephone VARCHAR(20) NOT NULL,
+    PRIMARY KEY (numLivreur)
+) ENGINE=InnoDB;
+
+CREATE TABLE Commande (
+    numCommande INT AUTO_INCREMENT,
+    dateCommande DATE NOT NULL,
+    heureCommande TIME NOT NULL,
+    numClient INT NOT NULL,
+    numLivreur INT NOT NULL,
+    PRIMARY KEY (numCommande),
+    FOREIGN KEY (numClient) REFERENCES Client(numClient)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (numLivreur) REFERENCES Livreur(numLivreur)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE Contenir (
+    numCommande INT,
+    codePizza VARCHAR(10),
+    quantite INT NOT NULL CHECK (quantite > 0),
+    PRIMARY KEY (numCommande, codePizza),
+    FOREIGN KEY (numCommande) REFERENCES Commande(numCommande)
+        ON DELETE CASCADE,
+    FOREIGN KEY (codePizza) REFERENCES Pizza(codePizza)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+```
+
+---
+
+### Exercice 2 — Gestion d'un cabinet medical
+
+**Enonce :**
+
+Un cabinet medical regroupe plusieurs medecins. Chaque medecin possede un identifiant (RPPS), un nom, un prenom et une specialite. Le cabinet gere des patients identifies par un numero de dossier, avec leur nom, prenom, date de naissance, adresse et numero de securite sociale. Quand un patient consulte un medecin, on enregistre un rendez-vous avec la date, l'heure de debut et la duree en minutes. A l'issue d'un rendez-vous, le medecin peut emettre une ordonnance. Chaque ordonnance est identifiee par un numero et contient une date. Une ordonnance peut prescrire plusieurs medicaments. Chaque medicament a un code CIS, un nom commercial et un dosage. Pour chaque medicament prescrit, on note la posologie et la duree du traitement.
+
+**MCD :**
+
+Entites :
+- **Medecin** (_rpps_, nom, prenom, specialite)
+- **Patient** (_numDossier_, nom, prenom, dateNaissance, adresse, numSecu)
+- **RendezVous** (_numRdv_, dateRdv, heureDebut, dureeMinutes)
+- **Ordonnance** (_numOrdonnance_, dateOrdonnance)
+- **Medicament** (_codeCIS_, nomCommercial, dosage)
+
+Associations :
+- Patient (0,n) **a** (1,1) RendezVous
+- Medecin (0,n) **recoit** (1,1) RendezVous
+- RendezVous (0,1) **genere** (1,1) Ordonnance
+- Ordonnance (1,n) **prescrit** (0,n) Medicament — proprietes : posologie, dureTraitement
+
+**MLD :**
+
+```
+Medecin(#rpps, nom, prenom, specialite)
+Patient(#numDossier, nom, prenom, dateNaissance, adresse, numSecu)
+RendezVous(#numRdv, dateRdv, heureDebut, dureeMinutes, #rpps=>Medecin, #numDossier=>Patient)
+Ordonnance(#numOrdonnance, dateOrdonnance, #numRdv=>RendezVous)
+Medicament(#codeCIS, nomCommercial, dosage)
+Prescrire(#numOrdonnance=>Ordonnance, #codeCIS=>Medicament, posologie, dureeTraitement)
+```
+
+**SQL :**
+
+```sql
+CREATE TABLE Medecin (
+    rpps VARCHAR(11),
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    specialite VARCHAR(100),
+    PRIMARY KEY (rpps)
+) ENGINE=InnoDB;
+
+CREATE TABLE Patient (
+    numDossier INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    dateNaissance DATE NOT NULL,
+    adresse VARCHAR(255),
+    numSecu VARCHAR(15) NOT NULL UNIQUE,
+    PRIMARY KEY (numDossier)
+) ENGINE=InnoDB;
+
+CREATE TABLE RendezVous (
+    numRdv INT AUTO_INCREMENT,
+    dateRdv DATE NOT NULL,
+    heureDebut TIME NOT NULL,
+    dureeMinutes INT NOT NULL,
+    rpps VARCHAR(11) NOT NULL,
+    numDossier INT NOT NULL,
+    PRIMARY KEY (numRdv),
+    FOREIGN KEY (rpps) REFERENCES Medecin(rpps)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (numDossier) REFERENCES Patient(numDossier)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE Ordonnance (
+    numOrdonnance INT AUTO_INCREMENT,
+    dateOrdonnance DATE NOT NULL,
+    numRdv INT NOT NULL UNIQUE,
+    PRIMARY KEY (numOrdonnance),
+    FOREIGN KEY (numRdv) REFERENCES RendezVous(numRdv)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE Medicament (
+    codeCIS VARCHAR(13),
+    nomCommercial VARCHAR(200) NOT NULL,
+    dosage VARCHAR(100) NOT NULL,
+    PRIMARY KEY (codeCIS)
+) ENGINE=InnoDB;
+
+CREATE TABLE Prescrire (
+    numOrdonnance INT,
+    codeCIS VARCHAR(13),
+    posologie VARCHAR(255) NOT NULL,
+    dureeTraitement VARCHAR(100) NOT NULL,
+    PRIMARY KEY (numOrdonnance, codeCIS),
+    FOREIGN KEY (numOrdonnance) REFERENCES Ordonnance(numOrdonnance)
+        ON DELETE CASCADE,
+    FOREIGN KEY (codeCIS) REFERENCES Medicament(codeCIS)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+```
+
+---
+
+### Exercice 3 — Gestion d'une salle de sport
+
+**Enonce :**
+
+Une salle de sport souhaite gerer ses adherents et ses cours collectifs. Chaque adherent possede un numero, un nom, un prenom, une date de naissance, un telephone et un type d'abonnement (mensuel, trimestriel, annuel). La salle propose des cours collectifs. Chaque cours a un code, un nom (yoga, crossfit, pilates...) et une duree en minutes. Chaque cours est anime par un coach. Un coach a un identifiant, un nom, un prenom et une ou plusieurs specialites. Un coach peut animer plusieurs cours. Un cours n'est anime que par un seul coach. Un adherent peut s'inscrire a plusieurs cours. Un cours accueille plusieurs adherents. Pour chaque inscription, on note la date d'inscription.
+
+**MCD :**
+
+Entites :
+- **Adherent** (_numAdherent_, nom, prenom, dateNaissance, telephone, typeAbonnement)
+- **Cours** (_codeCours_, nomCours, dureeMinutes)
+- **Coach** (_idCoach_, nom, prenom)
+- **Specialite** (_codeSpecialite_, libelleSpecialite)
+
+Associations :
+- Coach (1,n) **anime** (1,1) Cours
+- Adherent (0,n) **s'inscrit a** (0,n) Cours — propriete : dateInscription
+- Coach (1,n) **possede** (0,n) Specialite
+
+**Remarque :** on a fait de Specialite une entite car un coach peut avoir plusieurs specialites et une specialite peut concerner plusieurs coachs. Si le sujet disait "une specialite est un simple texte", on pourrait faire autrement, mais cette modelisation est plus rigoureuse.
+
+**MLD :**
+
+```
+Coach(#idCoach, nom, prenom)
+Specialite(#codeSpecialite, libelleSpecialite)
+Posseder(#idCoach=>Coach, #codeSpecialite=>Specialite)
+Cours(#codeCours, nomCours, dureeMinutes, #idCoach=>Coach)
+Adherent(#numAdherent, nom, prenom, dateNaissance, telephone, typeAbonnement)
+Inscrire(#numAdherent=>Adherent, #codeCours=>Cours, dateInscription)
+```
+
+**SQL :**
+
+```sql
+CREATE TABLE Coach (
+    idCoach INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    PRIMARY KEY (idCoach)
+) ENGINE=InnoDB;
+
+CREATE TABLE Specialite (
+    codeSpecialite VARCHAR(10),
+    libelleSpecialite VARCHAR(100) NOT NULL,
+    PRIMARY KEY (codeSpecialite)
+) ENGINE=InnoDB;
+
+CREATE TABLE Posseder (
+    idCoach INT,
+    codeSpecialite VARCHAR(10),
+    PRIMARY KEY (idCoach, codeSpecialite),
+    FOREIGN KEY (idCoach) REFERENCES Coach(idCoach)
+        ON DELETE CASCADE,
+    FOREIGN KEY (codeSpecialite) REFERENCES Specialite(codeSpecialite)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE Cours (
+    codeCours VARCHAR(10),
+    nomCours VARCHAR(100) NOT NULL,
+    dureeMinutes INT NOT NULL,
+    idCoach INT NOT NULL,
+    PRIMARY KEY (codeCours),
+    FOREIGN KEY (idCoach) REFERENCES Coach(idCoach)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE Adherent (
+    numAdherent INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    dateNaissance DATE NOT NULL,
+    telephone VARCHAR(20),
+    typeAbonnement VARCHAR(20) NOT NULL,
+    PRIMARY KEY (numAdherent)
+) ENGINE=InnoDB;
+
+CREATE TABLE Inscrire (
+    numAdherent INT,
+    codeCours VARCHAR(10),
+    dateInscription DATE NOT NULL,
+    PRIMARY KEY (numAdherent, codeCours),
+    FOREIGN KEY (numAdherent) REFERENCES Adherent(numAdherent)
+        ON DELETE CASCADE,
+    FOREIGN KEY (codeCours) REFERENCES Cours(codeCours)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+```
+
+---
+
+### Exercice 4 — Gestion d'un parc informatique
+
+**Enonce :**
+
+Une entreprise souhaite gerer son parc informatique. Chaque equipement est identifie par un numero d'inventaire et possede un type (ordinateur, ecran, imprimante, telephone), une marque, un modele et une date d'achat. Chaque equipement est affecte a un seul bureau. Un bureau est identifie par un code et possede un etage et un batiment. Un bureau peut accueillir plusieurs equipements. Chaque equipement est attribue a un employe. Un employe est identifie par un matricule et possede un nom, un prenom et une fonction. Un employe peut avoir plusieurs equipements. Quand un equipement tombe en panne, une intervention est creee. Chaque intervention a un numero, une date de signalement, une description du probleme, une date de resolution et un statut (en cours, resolu, en attente piece). Une intervention est traitee par un technicien (qui est aussi un employe).
+
+**MCD :**
+
+Entites :
+- **Equipement** (_numInventaire_, typeEquip, marque, modele, dateAchat)
+- **Bureau** (_codeBureau_, etage, batiment)
+- **Employe** (_matricule_, nom, prenom, fonction)
+- **Intervention** (_numIntervention_, dateSignalement, descriptionProbleme, dateResolution, statut)
+
+Associations :
+- Equipement (1,1) **est situe dans** (0,n) Bureau
+- Equipement (1,1) **est attribue a** (0,n) Employe
+- Equipement (0,n) **fait l'objet de** (1,1) Intervention
+- Employe (0,n) **traite** (1,1) Intervention (role : technicien)
+
+**MLD :**
+
+```
+Bureau(#codeBureau, etage, batiment)
+Employe(#matricule, nom, prenom, fonction)
+Equipement(#numInventaire, typeEquip, marque, modele, dateAchat, #codeBureau=>Bureau, #matricule=>Employe)
+Intervention(#numIntervention, dateSignalement, descriptionProbleme, dateResolution, statut, #numInventaire=>Equipement, #matriculeTechnicien=>Employe)
+```
+
+**SQL :**
+
+```sql
+CREATE TABLE Bureau (
+    codeBureau VARCHAR(10),
+    etage INT NOT NULL,
+    batiment VARCHAR(50) NOT NULL,
+    PRIMARY KEY (codeBureau)
+) ENGINE=InnoDB;
+
+CREATE TABLE Employe (
+    matricule VARCHAR(10),
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    fonction VARCHAR(100) NOT NULL,
+    PRIMARY KEY (matricule)
+) ENGINE=InnoDB;
+
+CREATE TABLE Equipement (
+    numInventaire VARCHAR(20),
+    typeEquip VARCHAR(50) NOT NULL,
+    marque VARCHAR(50) NOT NULL,
+    modele VARCHAR(100) NOT NULL,
+    dateAchat DATE NOT NULL,
+    codeBureau VARCHAR(10) NOT NULL,
+    matricule VARCHAR(10) NOT NULL,
+    PRIMARY KEY (numInventaire),
+    FOREIGN KEY (codeBureau) REFERENCES Bureau(codeBureau)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (matricule) REFERENCES Employe(matricule)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE Intervention (
+    numIntervention INT AUTO_INCREMENT,
+    dateSignalement DATE NOT NULL,
+    descriptionProbleme TEXT NOT NULL,
+    dateResolution DATE,
+    statut VARCHAR(30) NOT NULL DEFAULT 'en cours',
+    numInventaire VARCHAR(20) NOT NULL,
+    matriculeTechnicien VARCHAR(10) NOT NULL,
+    PRIMARY KEY (numIntervention),
+    FOREIGN KEY (numInventaire) REFERENCES Equipement(numInventaire)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (matriculeTechnicien) REFERENCES Employe(matricule)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+```
+
+---
+
+### Exercice 5 — Gestion d'un festival de musique
+
+**Enonce :**
+
+Un festival de musique se deroule sur plusieurs jours et sur plusieurs scenes. Chaque scene a un identifiant, un nom et une capacite d'accueil. Chaque jour du festival est identifie par une date. Des artistes se produisent sur les scenes a des creneaux definis. Chaque artiste a un identifiant, un nom de scene et un genre musical. Un artiste peut se produire plusieurs fois durant le festival (sur des scenes et jours differents). Pour chaque passage (concert), on note l'heure de debut et la duree prevue. Le festival vend des billets. Chaque billet a un numero unique et un tarif (normal, reduit, VIP). Un billet est valable pour un jour specifique du festival. Un spectateur achete un ou plusieurs billets. Un spectateur est identifie par un numero et possede un nom, un prenom et un email.
+
+**MCD :**
+
+Entites :
+- **Scene** (_idScene_, nomScene, capacite)
+- **JourFestival** (_dateFestival_)
+- **Artiste** (_idArtiste_, nomScene, genreMusical)
+- **Billet** (_numBillet_, tarif)
+- **Spectateur** (_numSpectateur_, nom, prenom, email)
+
+Associations :
+- Artiste (1,n) **se produit** (0,n) Scene — cette association est liee aussi a JourFestival (ternaire)
+  - Proprietes : heureDebut, dureePrevue
+  - Artiste (1,n), Scene (0,n), JourFestival (0,n)
+- Billet (1,1) **est valable pour** (0,n) JourFestival
+- Spectateur (0,n) **achete** (1,1) Billet
+
+**MLD :**
+
+```
+Scene(#idScene, nomScene, capacite)
+JourFestival(#dateFestival)
+Artiste(#idArtiste, nomScene, genreMusical)
+Concert(#idArtiste=>Artiste, #idScene=>Scene, #dateFestival=>JourFestival, heureDebut, dureePrevue)
+Spectateur(#numSpectateur, nom, prenom, email)
+Billet(#numBillet, tarif, #dateFestival=>JourFestival, #numSpectateur=>Spectateur)
+```
+
+**SQL :**
+
+```sql
+CREATE TABLE Scene (
+    idScene INT AUTO_INCREMENT,
+    nomScene VARCHAR(100) NOT NULL,
+    capacite INT NOT NULL,
+    PRIMARY KEY (idScene)
+) ENGINE=InnoDB;
+
+CREATE TABLE JourFestival (
+    dateFestival DATE,
+    PRIMARY KEY (dateFestival)
+) ENGINE=InnoDB;
+
+CREATE TABLE Artiste (
+    idArtiste INT AUTO_INCREMENT,
+    nomScene VARCHAR(150) NOT NULL,
+    genreMusical VARCHAR(50) NOT NULL,
+    PRIMARY KEY (idArtiste)
+) ENGINE=InnoDB;
+
+CREATE TABLE Concert (
+    idArtiste INT,
+    idScene INT,
+    dateFestival DATE,
+    heureDebut TIME NOT NULL,
+    dureePrevue INT NOT NULL,
+    PRIMARY KEY (idArtiste, idScene, dateFestival),
+    FOREIGN KEY (idArtiste) REFERENCES Artiste(idArtiste)
+        ON DELETE CASCADE,
+    FOREIGN KEY (idScene) REFERENCES Scene(idScene)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (dateFestival) REFERENCES JourFestival(dateFestival)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE Spectateur (
+    numSpectateur INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    PRIMARY KEY (numSpectateur)
+) ENGINE=InnoDB;
+
+CREATE TABLE Billet (
+    numBillet INT AUTO_INCREMENT,
+    tarif VARCHAR(20) NOT NULL,
+    dateFestival DATE NOT NULL,
+    numSpectateur INT NOT NULL,
+    PRIMARY KEY (numBillet),
+    FOREIGN KEY (dateFestival) REFERENCES JourFestival(dateFestival)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (numSpectateur) REFERENCES Spectateur(numSpectateur)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+```
+
+---
+
+### Exercice 6 — Gestion d'une agence immobiliere
+
+**Enonce :**
+
+Une agence immobiliere gere des biens immobiliers et des clients. Chaque bien est identifie par une reference et possede un type (appartement, maison, studio), une adresse, une superficie en m2, un nombre de pieces et un prix. Chaque bien est confie a l'agence par un proprietaire. Un proprietaire est identifie par un numero et possede un nom, un prenom et un telephone. Un proprietaire peut confier plusieurs biens. Un bien n'a qu'un seul proprietaire. Des clients cherchent a acheter ou louer un bien. Un client est identifie par un numero et possede un nom, un prenom, un telephone et un budget maximum. Un agent immobilier est identifie par un matricule et possede un nom et un prenom. Chaque visite d'un bien par un client est organisee par un agent. On enregistre la date et l'heure de la visite ainsi que les commentaires eventuels du client apres la visite.
+
+**MCD :**
+
+Entites :
+- **Bien** (_refBien_, typeBien, adresse, superficie, nbPieces, prix)
+- **Proprietaire** (_numProprietaire_, nom, prenom, telephone)
+- **Client** (_numClient_, nom, prenom, telephone, budgetMax)
+- **Agent** (_matriculeAgent_, nom, prenom)
+
+Associations :
+- Proprietaire (1,n) **confie** (1,1) Bien
+- Client (0,n) **visite** (0,n) Bien — c'est en realite une association ternaire avec Agent
+  - On modelise : Visite entre Client, Bien et Agent
+  - Client (0,n), Bien (0,n), Agent (0,n)
+  - Proprietes : dateVisite, heureVisite, commentaires
+
+**MLD :**
+
+```
+Proprietaire(#numProprietaire, nom, prenom, telephone)
+Bien(#refBien, typeBien, adresse, superficie, nbPieces, prix, #numProprietaire=>Proprietaire)
+Client(#numClient, nom, prenom, telephone, budgetMax)
+Agent(#matriculeAgent, nom, prenom)
+Visite(#numClient=>Client, #refBien=>Bien, #matriculeAgent=>Agent, #dateVisite, heureVisite, commentaires)
+```
+
+**SQL :**
+
+```sql
+CREATE TABLE Proprietaire (
+    numProprietaire INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    telephone VARCHAR(20) NOT NULL,
+    PRIMARY KEY (numProprietaire)
+) ENGINE=InnoDB;
+
+CREATE TABLE Bien (
+    refBien VARCHAR(15),
+    typeBien VARCHAR(30) NOT NULL,
+    adresse VARCHAR(255) NOT NULL,
+    superficie DECIMAL(8,2) NOT NULL,
+    nbPieces INT NOT NULL,
+    prix DECIMAL(12,2) NOT NULL,
+    numProprietaire INT NOT NULL,
+    PRIMARY KEY (refBien),
+    FOREIGN KEY (numProprietaire) REFERENCES Proprietaire(numProprietaire)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE Client (
+    numClient INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    telephone VARCHAR(20) NOT NULL,
+    budgetMax DECIMAL(12,2),
+    PRIMARY KEY (numClient)
+) ENGINE=InnoDB;
+
+CREATE TABLE Agent (
+    matriculeAgent VARCHAR(10),
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    PRIMARY KEY (matriculeAgent)
+) ENGINE=InnoDB;
+
+CREATE TABLE Visite (
+    numClient INT,
+    refBien VARCHAR(15),
+    matriculeAgent VARCHAR(10),
+    dateVisite DATE,
+    heureVisite TIME NOT NULL,
+    commentaires TEXT,
+    PRIMARY KEY (numClient, refBien, matriculeAgent, dateVisite),
+    FOREIGN KEY (numClient) REFERENCES Client(numClient)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (refBien) REFERENCES Bien(refBien)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (matriculeAgent) REFERENCES Agent(matriculeAgent)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+```
+
+---
+
+### Exercice 7 — Gestion d'un centre de formation
+
+**Enonce :**
+
+Un centre de formation professionnelle organise des sessions de formation. Chaque formation est identifiee par un code et possede un intitule, un domaine (informatique, management, langues...) et un nombre d'heures. Chaque session est identifiee par un numero et possede une date de debut, une date de fin et un nombre maximum de places. Une session correspond a exactement une formation. Une formation peut donner lieu a plusieurs sessions. Chaque session se deroule dans une salle. Une salle est identifiee par un numero et possede un nom, une capacite et un equipement (vidéoprojecteur, tableau blanc, etc.). Une salle peut accueillir plusieurs sessions (a des dates differentes). Un formateur est identifie par un matricule et possede un nom, un prenom et un tarif journalier. Un formateur anime une ou plusieurs sessions. Une session est animee par un seul formateur. Les stagiaires sont identifies par un numero d'inscription et possedent un nom, un prenom, une entreprise et un email. Un stagiaire peut participer a plusieurs sessions. Une session accueille plusieurs stagiaires. Pour chaque participation, on note une appreciation finale (insuffisant, satisfaisant, tres bien) et une note sur 10.
+
+**MCD :**
+
+Entites :
+- **Formation** (_codeFormation_, intitule, domaine, nbHeures)
+- **Session** (_numSession_, dateDebut, dateFin, nbPlacesMax)
+- **Salle** (_numSalle_, nomSalle, capacite, equipement)
+- **Formateur** (_matriculeFormateur_, nom, prenom, tarifJournalier)
+- **Stagiaire** (_numInscription_, nom, prenom, entreprise, email)
+
+Associations :
+- Formation (1,n) **donne lieu a** (1,1) Session
+- Salle (0,n) **accueille** (1,1) Session
+- Formateur (1,n) **anime** (1,1) Session
+- Stagiaire (0,n) **participe a** (0,n) Session — proprietes : appreciation, note
+
+**MLD :**
+
+```
+Formation(#codeFormation, intitule, domaine, nbHeures)
+Salle(#numSalle, nomSalle, capacite, equipement)
+Formateur(#matriculeFormateur, nom, prenom, tarifJournalier)
+Session(#numSession, dateDebut, dateFin, nbPlacesMax, #codeFormation=>Formation, #numSalle=>Salle, #matriculeFormateur=>Formateur)
+Stagiaire(#numInscription, nom, prenom, entreprise, email)
+Participer(#numInscription=>Stagiaire, #numSession=>Session, appreciation, note)
+```
+
+**SQL :**
+
+```sql
+CREATE TABLE Formation (
+    codeFormation VARCHAR(10),
+    intitule VARCHAR(200) NOT NULL,
+    domaine VARCHAR(100) NOT NULL,
+    nbHeures INT NOT NULL,
+    PRIMARY KEY (codeFormation)
+) ENGINE=InnoDB;
+
+CREATE TABLE Salle (
+    numSalle INT,
+    nomSalle VARCHAR(50) NOT NULL,
+    capacite INT NOT NULL,
+    equipement VARCHAR(255),
+    PRIMARY KEY (numSalle)
+) ENGINE=InnoDB;
+
+CREATE TABLE Formateur (
+    matriculeFormateur VARCHAR(10),
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    tarifJournalier DECIMAL(7,2) NOT NULL,
+    PRIMARY KEY (matriculeFormateur)
+) ENGINE=InnoDB;
+
+CREATE TABLE Session (
+    numSession INT AUTO_INCREMENT,
+    dateDebut DATE NOT NULL,
+    dateFin DATE NOT NULL,
+    nbPlacesMax INT NOT NULL,
+    codeFormation VARCHAR(10) NOT NULL,
+    numSalle INT NOT NULL,
+    matriculeFormateur VARCHAR(10) NOT NULL,
+    PRIMARY KEY (numSession),
+    FOREIGN KEY (codeFormation) REFERENCES Formation(codeFormation)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (numSalle) REFERENCES Salle(numSalle)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (matriculeFormateur) REFERENCES Formateur(matriculeFormateur)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE Stagiaire (
+    numInscription INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    entreprise VARCHAR(150),
+    email VARCHAR(150) NOT NULL UNIQUE,
+    PRIMARY KEY (numInscription)
+) ENGINE=InnoDB;
+
+CREATE TABLE Participer (
+    numInscription INT,
+    numSession INT,
+    appreciation VARCHAR(30),
+    note DECIMAL(4,2) CHECK (note >= 0 AND note <= 10),
+    PRIMARY KEY (numInscription, numSession),
+    FOREIGN KEY (numInscription) REFERENCES Stagiaire(numInscription)
+        ON DELETE CASCADE,
+    FOREIGN KEY (numSession) REFERENCES Session(numSession)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+```
+
+---
+
+### Exercice 8 — Gestion d'une plateforme de covoiturage
+
+**Enonce :**
+
+Une plateforme de covoiturage met en relation des conducteurs et des passagers pour des trajets. Chaque utilisateur est identifie par un numero et possede un nom, un prenom, un email, un telephone et une date d'inscription. Un utilisateur peut etre conducteur, passager, ou les deux selon les trajets. Un conducteur propose des trajets. Chaque trajet est identifie par un numero et possede une ville de depart, une ville d'arrivee, une date, une heure de depart, un nombre de places disponibles et un prix par place. Un conducteur peut proposer plusieurs trajets. Chaque trajet est propose par un seul conducteur. Un vehicule est identifie par sa plaque d'immatriculation et possede une marque, un modele, une couleur et un nombre de places total. Chaque trajet est effectue avec un vehicule. Un vehicule peut servir pour plusieurs trajets. Un passager peut reserver une ou plusieurs places sur un trajet. Pour chaque reservation, on enregistre le nombre de places reservees, la date de reservation et un statut (confirmee, annulee, en attente). Un passager peut avoir des reservations sur plusieurs trajets. Un trajet peut avoir plusieurs passagers.
+
+**MCD :**
+
+Entites :
+- **Utilisateur** (_numUtilisateur_, nom, prenom, email, telephone, dateInscription)
+- **Trajet** (_numTrajet_, villeDepart, villeArrivee, dateTrajet, heureDepart, nbPlacesDispo, prixParPlace)
+- **Vehicule** (_immatriculation_, marque, modele, couleur, nbPlacesTotal)
+
+Associations :
+- Utilisateur (0,n) **propose** (1,1) Trajet (role : conducteur)
+- Vehicule (0,n) **est utilise pour** (1,1) Trajet
+- Utilisateur (0,n) **reserve** (0,n) Trajet (role : passager) — proprietes : nbPlacesReservees, dateReservation, statut
+
+**MLD :**
+
+```
+Utilisateur(#numUtilisateur, nom, prenom, email, telephone, dateInscription)
+Vehicule(#immatriculation, marque, modele, couleur, nbPlacesTotal)
+Trajet(#numTrajet, villeDepart, villeArrivee, dateTrajet, heureDepart, nbPlacesDispo, prixParPlace, #numConducteur=>Utilisateur, #immatriculation=>Vehicule)
+Reserver(#numUtilisateur=>Utilisateur, #numTrajet=>Trajet, nbPlacesReservees, dateReservation, statut)
+```
+
+**SQL :**
+
+```sql
+CREATE TABLE Utilisateur (
+    numUtilisateur INT AUTO_INCREMENT,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    telephone VARCHAR(20) NOT NULL,
+    dateInscription DATE NOT NULL,
+    PRIMARY KEY (numUtilisateur)
+) ENGINE=InnoDB;
+
+CREATE TABLE Vehicule (
+    immatriculation VARCHAR(10),
+    marque VARCHAR(50) NOT NULL,
+    modele VARCHAR(50) NOT NULL,
+    couleur VARCHAR(30),
+    nbPlacesTotal INT NOT NULL,
+    PRIMARY KEY (immatriculation)
+) ENGINE=InnoDB;
+
+CREATE TABLE Trajet (
+    numTrajet INT AUTO_INCREMENT,
+    villeDepart VARCHAR(100) NOT NULL,
+    villeArrivee VARCHAR(100) NOT NULL,
+    dateTrajet DATE NOT NULL,
+    heureDepart TIME NOT NULL,
+    nbPlacesDispo INT NOT NULL,
+    prixParPlace DECIMAL(6,2) NOT NULL,
+    numConducteur INT NOT NULL,
+    immatriculation VARCHAR(10) NOT NULL,
+    PRIMARY KEY (numTrajet),
+    FOREIGN KEY (numConducteur) REFERENCES Utilisateur(numUtilisateur)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (immatriculation) REFERENCES Vehicule(immatriculation)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE Reserver (
+    numUtilisateur INT,
+    numTrajet INT,
+    nbPlacesReservees INT NOT NULL CHECK (nbPlacesReservees > 0),
+    dateReservation DATE NOT NULL,
+    statut VARCHAR(20) NOT NULL DEFAULT 'en attente',
+    PRIMARY KEY (numUtilisateur, numTrajet),
+    FOREIGN KEY (numUtilisateur) REFERENCES Utilisateur(numUtilisateur)
+        ON DELETE RESTRICT,
+    FOREIGN KEY (numTrajet) REFERENCES Trajet(numTrajet)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+```
+
+---
+
+## Resume des regles de transformation MCD vers MLD
+
+| Situation dans le MCD | Regle de transformation MLD |
+|------------------------|-----------------------------|
+| Entite | Devient une table. Identifiant = cle primaire. |
+| Association 1,1 — 0,n ou 1,n | Cle etrangere dans la table du cote 1,1 (ou 0,1). |
+| Association 0,1 — 0,n ou 1,n | Cle etrangere (nullable) dans la table du cote 0,1. |
+| Association 0,n — 0,n (ou toute combinaison n,n) | Table intermediaire avec cle primaire composee des deux FK. |
+| Association 1,1 — 1,1 | Fusion ou FK dans l'une des tables. |
+| Association reflexive x,1 — x,n | FK dans la meme table (auto-reference). |
+| Association reflexive x,n — x,n | Table intermediaire auto-referencante. |
+| Proprietes d'une association n,n | Attributs ordinaires dans la table intermediaire. |
+| Association ternaire | Table intermediaire avec cle primaire composee des trois FK. |
+
+---
+
+## Resume des types SQL courants pour l'examen
+
+| Donnee | Type SQL recommande |
+|--------|-------------------|
+| Identifiant auto-genere | INT AUTO_INCREMENT |
+| Identifiant textuel (code, reference) | VARCHAR(longueur) |
+| Nom, prenom | VARCHAR(100) |
+| Email | VARCHAR(150) UNIQUE |
+| Adresse | VARCHAR(255) |
+| Telephone | VARCHAR(20) |
+| Numero de securite sociale | VARCHAR(15) UNIQUE |
+| ISBN | VARCHAR(13) |
+| Date | DATE |
+| Date et heure | DATETIME ou DATE + TIME |
+| Prix, montant | DECIMAL(10,2) |
+| Note sur 20 | DECIMAL(4,2) |
+| Quantite | INT |
+| Description longue | TEXT |
+| Booleen | BOOLEAN (TINYINT(1)) |
+
+---
+
+## Lexique
+
+| Terme | Definition |
+|-------|-----------|
+| **Entite** | Objet du monde reel que l'on souhaite representer dans le systeme d'information. |
+| **Attribut** | Propriete d'une entite ou d'une association. |
+| **Identifiant** | Attribut (ou groupe d'attributs) permettant d'identifier de maniere unique chaque occurrence d'une entite. |
+| **Association** | Lien semantique entre deux ou plusieurs entites. |
+| **Cardinalite** | Couple (min, max) indiquant le nombre minimum et maximum de participations d'une occurrence d'entite a une association. |
+| **CIF** | Contrainte d'integrite fonctionnelle : dependance fonctionnelle entre entites via une association 1,1. |
+| **Cle primaire** | Colonne (ou ensemble de colonnes) identifiant de maniere unique chaque ligne d'une table. |
+| **Cle etrangere** | Colonne d'une table referencant la cle primaire d'une autre table (ou de la meme table). |
+| **Table de jonction** | Table intermediaire creee lors de la transformation d'une association n,n en MLD. |
+| **Dependance fonctionnelle** | A determine B : connaissant la valeur de A, on peut determiner exactement la valeur de B. |
+| **Integrite referentielle** | Contrainte garantissant que toute cle etrangere reference une cle primaire existante. |
+| **MCD** | Modele Conceptuel de Donnees. |
+| **MLD** | Modele Logique de Donnees. |
+| **MPD** | Modele Physique de Donnees. |
+| **MCT** | Modele Conceptuel de Traitements. |
+
+---
+
+*Ce document constitue une reference complete pour la preparation a l'epreuve de conception de bases de donnees du BTS SIO SLAM. Chaque regle, chaque exemple et chaque exercice a ete concu pour couvrir l'integralite du programme et les situations les plus frequemment rencontrees a l'examen.*

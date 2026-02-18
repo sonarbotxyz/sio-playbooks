@@ -1,0 +1,234 @@
+import type { Config } from 'tailwindcss'
+
+const config: Config = {
+  content: [
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        base: {
+          blue: '#0052FF',
+          'blue-dark': '#003ECB',
+          'blue-light': '#4D8AFF',
+          'blue-muted': '#1A3A7A',
+          'blue-glow': '#3370FF',
+        },
+        dark: {
+          950: '#050507',
+          900: '#0A0B0D',
+          850: '#0E0F13',
+          800: '#111217',
+          750: '#15161C',
+          700: '#1A1B23',
+          650: '#1F202A',
+          600: '#252631',
+          500: '#2E3040',
+          400: '#3D4058',
+          300: '#5A5E7A',
+          200: '#8488A4',
+          100: '#B0B4CC',
+        },
+      },
+      fontFamily: {
+        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-body)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'monospace'],
+      },
+      maxWidth: {
+        reading: '720px',
+        content: '1140px',
+        narrow: '560px',
+      },
+      animation: {
+        'fade-up': 'fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'fade-in': 'fadeIn 0.6s ease-out forwards',
+        'slide-in': 'slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'code-rain': 'codeRain 20s linear infinite',
+        'glow-pulse': 'glowPulse 4s ease-in-out infinite',
+        'shimmer': 'shimmer 2s ease-in-out infinite',
+      },
+      keyframes: {
+        fadeUp: {
+          '0%': { opacity: '0', transform: 'translateY(24px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideIn: {
+          '0%': { opacity: '0', transform: 'translateX(-16px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        codeRain: {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100%)' },
+        },
+        glowPulse: {
+          '0%, 100%': { opacity: '0.4' },
+          '50%': { opacity: '0.8' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+      },
+      typography: {
+        dark: {
+          css: {
+            maxWidth: '720px',
+            color: '#B0B4CC',
+            fontFamily: 'var(--font-body), system-ui, sans-serif',
+            lineHeight: '1.85',
+            fontSize: '1.0625rem',
+            p: {
+              marginTop: '1.35em',
+              marginBottom: '1.35em',
+            },
+            a: {
+              color: '#4D8AFF',
+              textDecoration: 'none',
+              fontWeight: '500',
+              borderBottom: '1.5px solid rgba(0, 82, 255, 0.3)',
+              transition: 'border-color 0.25s ease, color 0.25s ease',
+              '&:hover': {
+                borderBottomColor: '#0052FF',
+                color: '#6EA0FF',
+              },
+            },
+            'h1, h2, h3, h4': {
+              fontFamily: 'var(--font-display), system-ui, sans-serif',
+              fontWeight: '700',
+              color: '#E8EAF0',
+              letterSpacing: '-0.025em',
+            },
+            h1: {
+              fontSize: '2.1em',
+              marginTop: '0',
+              marginBottom: '0.85em',
+              lineHeight: '1.15',
+            },
+            h2: {
+              marginTop: '2.8em',
+              marginBottom: '0.85em',
+              fontSize: '1.55em',
+              lineHeight: '1.2',
+              paddingBottom: '0.6em',
+              borderBottom: '1px solid #252631',
+            },
+            h3: {
+              marginTop: '2.2em',
+              marginBottom: '0.65em',
+              fontSize: '1.3em',
+              lineHeight: '1.3',
+            },
+            h4: {
+              marginTop: '1.6em',
+              marginBottom: '0.5em',
+              fontSize: '1.1em',
+              lineHeight: '1.35',
+            },
+            code: {
+              color: '#4D8AFF',
+              fontFamily: 'var(--font-mono), monospace',
+              fontWeight: '500',
+              fontSize: '0.84em',
+              backgroundColor: 'rgba(0, 82, 255, 0.1)',
+              padding: '0.2em 0.45em',
+              borderRadius: '0.3rem',
+              border: '1px solid rgba(0, 82, 255, 0.15)',
+            },
+            'code::before': { content: '""' },
+            'code::after': { content: '""' },
+            pre: {
+              fontFamily: 'var(--font-mono), monospace',
+              backgroundColor: '#050507',
+              color: '#B0B4CC',
+              borderRadius: '0.75rem',
+              padding: '1.4rem 1.6rem',
+              overflowX: 'auto',
+              border: '1px solid #1A1B23',
+              fontSize: '0.84rem',
+              lineHeight: '1.75',
+              boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4)',
+            },
+            'pre code': {
+              backgroundColor: 'transparent',
+              padding: '0',
+              color: 'inherit',
+              fontSize: 'inherit',
+              fontWeight: '400',
+              border: 'none',
+            },
+            blockquote: {
+              borderLeftColor: '#0052FF',
+              borderLeftWidth: '3px',
+              fontStyle: 'normal',
+              color: '#8488A4',
+              backgroundColor: 'rgba(0, 82, 255, 0.05)',
+              padding: '1.1rem 1.4rem',
+              borderRadius: '0 0.625rem 0.625rem 0',
+              fontSize: '0.975em',
+            },
+            'blockquote p:first-of-type::before': { content: '""' },
+            'blockquote p:last-of-type::after': { content: '""' },
+            table: {
+              fontSize: '0.875rem',
+              fontFamily: 'var(--font-body), system-ui, sans-serif',
+            },
+            'thead th': {
+              color: '#E8EAF0',
+              fontWeight: '600',
+              fontFamily: 'var(--font-body), system-ui, sans-serif',
+              borderBottomColor: '#252631',
+              padding: '0.8rem 1rem',
+              fontSize: '0.8rem',
+              letterSpacing: '0.03em',
+              textTransform: 'uppercase',
+            },
+            'thead': {
+              borderBottomColor: '#252631',
+            },
+            'tbody td': {
+              borderBottomColor: '#1A1B23',
+              padding: '0.8rem 1rem',
+            },
+            'tbody tr': {
+              borderBottomColor: '#1A1B23',
+            },
+            hr: {
+              borderColor: '#252631',
+              marginTop: '2.8em',
+              marginBottom: '2.8em',
+            },
+            strong: {
+              color: '#E8EAF0',
+              fontWeight: '650',
+            },
+            li: {
+              marginTop: '0.35em',
+              marginBottom: '0.35em',
+            },
+            'ul > li::marker': {
+              color: '#0052FF',
+            },
+            'ol > li::marker': {
+              color: '#0052FF',
+              fontWeight: '600',
+            },
+            img: {
+              borderRadius: '0.75rem',
+              border: '1px solid #252631',
+            },
+          },
+        },
+      },
+    },
+  },
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
+}
+
+export default config

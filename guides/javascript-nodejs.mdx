@@ -1,0 +1,3496 @@
+---
+title: "JavaScript - Node.js et Express"
+description: "Partie 2/3 - JavaScript cote serveur avec Node.js, Express et MySQL"
+category: "Programmation"
+tags: ["javascript", "nodejs", "express", "mysql", "api"]
+difficulty: "Intermediaire"
+---
+
+# JavaScript -- Node.js et Express
+
+Partie 2 sur 3 des playbooks JavaScript. Ce document couvre le developpement cote serveur avec Node.js, le framework Express et la base de donnees MySQL. Le lecteur est suppose maitriser JavaScript Vanilla (voir Partie 1).
+
+---
+
+## 1. Node.js
+
+### 1.1. Qu'est-ce que Node.js ?
+
+Node.js est un environnement d'execution JavaScript en dehors du navigateur. Il repose sur le moteur V8 de Google Chrome, le meme moteur qui execute le JavaScript dans le navigateur Chrome, mais adapte pour fonctionner directement sur un systeme d'exploitation (Windows, macOS, Linux).
+
+Avant Node.js, JavaScript ne pouvait s'executer que dans un navigateur web. Node.js a change cela en permettant d'utiliser JavaScript pour :
+
+- Creer des serveurs web
+- Acceder au systeme de fichiers (lire/ecrire des fichiers)
+- Se connecter a des bases de donnees
+- Executer des scripts en ligne de commande
+- Construire des API REST
+
+Node.js est **mono-thread** avec un modele **asynchrone non-bloquant** : il ne bloque pas l'execution en attendant qu'une operation (lecture fichier, requete BDD) se termine. Il utilise une boucle d'evenements (event loop) pour gerer les operations en parallele.
+
+**Ce que Node.js n'est PAS :**
+
+- Ce n'est pas un langage de programmation (c'est toujours du JavaScript)
+- Ce n'est pas un framework (Express est un framework, Node.js est un environnement)
+- Ce n'est pas un serveur web tout fait (il faut coder le serveur)
+
+### 1.2. Installation et verification
+
+Telecharger Node.js depuis le site officiel (nodejs.org). Choisir la version LTS (Long Term Support) pour la stabilite.
+
+L'installation de Node.js installe automatiquement **npm** (Node Package Manager), le gestionnaire de paquets.
+
+Verification dans le terminal :
+
+```bash
+node --version
+# Affiche la version de Node.js, par exemple : v20.11.0
+
+npm --version
+# Affiche la version de npm, par exemple : 10.2.4
+```
+
+Executer un fichier JavaScript avec Node :
+
+```bash
+node monFichier.js
+```
+
+Lancer le mode interactif (REPL) :
+
+```bash
+node
+# On peut taper du JavaScript directement
+> console.log("Bonjour depuis Node")
+Bonjour depuis Node
+> 2 + 3
+5
+> .exit
+```
+
+### 1.3. npm et package.json
+
+**npm** (Node Package Manager) est l'outil qui permet d'installer, gerer et partager des paquets (bibliotheques) JavaScript.
+
+#### Initialiser un projet
+
+```bash
+mkdir mon-projet
+cd mon-projet
+npm init
+```
+
+La commande `npm init` pose une serie de questions (nom du projet, version, description, etc.) et genere un fichier `package.json`. Pour accepter les valeurs par defaut sans questions :
+
+```bash
+npm init -y
+```
+
+#### Le fichier package.json
+
+Le `package.json` est le fichier de configuration central de tout projet Node.js. Il decrit le projet et liste ses dependances.
+
+```json
+{
+  "name": "mon-projet",
+  "version": "1.0.0",
+  "description": "Mon application Express",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.6.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
+```
+
+Explication de chaque champ :
+
+| Champ | Role |
+|---|---|
+| `name` | Nom du projet (en minuscules, sans espaces) |
+| `version` | Version du projet (format semver : majeur.mineur.patch) |
+| `description` | Description courte du projet |
+| `main` | Fichier d'entree principal |
+| `scripts` | Commandes personnalisees executables avec `npm run` |
+| `dependencies` | Paquets necessaires en production |
+| `devDependencies` | Paquets necessaires uniquement en developpement |
+
+#### Installer des paquets
+
+```bash
+# Installer un paquet en dependance de production
+npm install express
+# Equivalent raccourci :
+npm i express
+
+# Installer un paquet en dependance de developpement
+npm install nodemon --save-dev
+# Equivalent :
+npm i nodemon -D
+
+# Installer toutes les dependances listees dans package.json
+npm install
+
+# Desinstaller un paquet
+npm uninstall express
+```
+
+#### Le dossier node_modules
+
+Quand on installe un paquet, npm le telecharge dans le dossier `node_modules/`. Ce dossier peut contenir des milliers de fichiers. Il ne faut **jamais** le versionner avec Git.
+
+Fichier `.gitignore` obligatoire :
+
+```
+node_modules/
+.env
+```
+
+Pour reconstituer `node_modules/` apres un clone Git, il suffit d'executer `npm install` : npm lira le `package.json` et retelecharger toutes les dependances.
+
+#### Le fichier package-lock.json
+
+Ce fichier est genere automatiquement par npm. Il verrouille les versions exactes de chaque dependance (et de leurs sous-dependances). Il garantit que tous les developpeurs du projet utilisent exactement les memes versions. Il faut le versionner avec Git.
+
+#### Les scripts npm
+
+Les scripts definis dans `package.json` s'executent avec `npm run` :
+
+```bash
+npm run dev      # Execute "nodemon index.js"
+npm run test     # Execute "jest"
+npm start        # Cas special : pas besoin de "run" pour "start"
+npm test         # Cas special : pas besoin de "run" pour "test"
+```
+
+### 1.4. CommonJS vs ES Modules
+
+Node.js supporte deux systemes de modules.
+
+#### CommonJS (systeme historique de Node.js)
+
+C'est le systeme par defaut dans Node.js. Il utilise `require()` pour importer et `module.exports` pour exporter.
+
+```javascript
+// fichier : mathUtils.js
+function addition(a, b) {
+  return a + b;
+}
+
+function soustraction(a, b) {
+  return a - b;
+}
+
+// Exporter un objet contenant les fonctions
+module.exports = { addition, soustraction };
+```
+
+```javascript
+// fichier : index.js
+const { addition, soustraction } = require("./mathUtils");
+
+console.log(addition(3, 5));       // 8
+console.log(soustraction(10, 4));   // 6
+```
+
+On peut aussi exporter une seule valeur :
+
+```javascript
+// fichier : saluer.js
+module.exports = function saluer(nom) {
+  return "Bonjour " + nom;
+};
+```
+
+```javascript
+// fichier : index.js
+const saluer = require("./saluer");
+console.log(saluer("Alice"));  // Bonjour Alice
+```
+
+Regles pour les chemins avec `require()` :
+
+- `require("./fichier")` : fichier local (chemin relatif, le `.js` est optionnel)
+- `require("express")` : paquet npm (cherche dans `node_modules/`)
+- `require("fs")` : module natif de Node.js
+
+#### ES Modules (systeme moderne)
+
+C'est le systeme standardise par ECMAScript, le meme que dans le navigateur. Pour l'utiliser dans Node.js, deux options :
+
+1. Ajouter `"type": "module"` dans le `package.json`
+2. Utiliser l'extension `.mjs` pour les fichiers
+
+```json
+{
+  "name": "mon-projet",
+  "type": "module"
+}
+```
+
+```javascript
+// fichier : mathUtils.js
+export function addition(a, b) {
+  return a + b;
+}
+
+export function soustraction(a, b) {
+  return a - b;
+}
+```
+
+```javascript
+// fichier : index.js
+import { addition, soustraction } from "./mathUtils.js";
+
+console.log(addition(3, 5));       // 8
+console.log(soustraction(10, 4));   // 6
+```
+
+Export par defaut avec ES Modules :
+
+```javascript
+// fichier : saluer.js
+export default function saluer(nom) {
+  return "Bonjour " + nom;
+}
+```
+
+```javascript
+// fichier : index.js
+import saluer from "./saluer.js";
+console.log(saluer("Alice"));
+```
+
+**Differences importantes :**
+
+| Aspect | CommonJS | ES Modules |
+|---|---|---|
+| Syntaxe import | `require()` | `import` |
+| Syntaxe export | `module.exports` | `export` / `export default` |
+| Chargement | Synchrone | Asynchrone |
+| Extension | `.js` (par defaut) | `.js` avec `"type": "module"` ou `.mjs` |
+| `await` au top-level | Non | Oui |
+
+Pour le BTS SIO, les deux systemes peuvent apparaitre a l'examen. CommonJS reste plus frequent dans les sujets existants.
+
+### 1.5. Le module fs (systeme de fichiers)
+
+Le module `fs` est un module natif de Node.js (pas besoin de l'installer). Il permet de lire, ecrire, supprimer et manipuler des fichiers.
+
+#### Version asynchrone avec callbacks
+
+```javascript
+const fs = require("fs");
+
+// Lire un fichier
+fs.readFile("./data.txt", "utf-8", function (err, contenu) {
+  if (err) {
+    console.error("Erreur de lecture :", err.message);
+    return;
+  }
+  console.log(contenu);
+});
+
+// Ecrire dans un fichier (ecrase le contenu existant)
+fs.writeFile("./sortie.txt", "Bonjour le monde", "utf-8", function (err) {
+  if (err) {
+    console.error("Erreur d'ecriture :", err.message);
+    return;
+  }
+  console.log("Fichier ecrit avec succes");
+});
+
+// Ajouter du contenu a un fichier existant
+fs.appendFile("./log.txt", "Nouvelle ligne\n", "utf-8", function (err) {
+  if (err) {
+    console.error("Erreur :", err.message);
+  }
+});
+```
+
+#### Version avec Promises (fs/promises)
+
+```javascript
+const fs = require("fs/promises");
+
+async function lireFichier() {
+  try {
+    const contenu = await fs.readFile("./data.txt", "utf-8");
+    console.log(contenu);
+  } catch (err) {
+    console.error("Erreur :", err.message);
+  }
+}
+
+async function ecrireFichier() {
+  try {
+    await fs.writeFile("./sortie.txt", "Contenu ecrit");
+    console.log("Fichier ecrit");
+  } catch (err) {
+    console.error("Erreur :", err.message);
+  }
+}
+
+lireFichier();
+ecrireFichier();
+```
+
+#### Version synchrone
+
+```javascript
+const fs = require("fs");
+
+// Bloque l'execution jusqu'a la fin de la lecture
+const contenu = fs.readFileSync("./data.txt", "utf-8");
+console.log(contenu);
+
+fs.writeFileSync("./sortie.txt", "Contenu ecrit");
+```
+
+Les versions synchrones bloquent le thread principal. Elles sont utiles pour les scripts simples mais deconseillees dans un serveur web.
+
+#### Autres operations courantes
+
+```javascript
+const fs = require("fs");
+
+// Verifier si un fichier existe
+fs.existsSync("./data.txt"); // true ou false
+
+// Supprimer un fichier
+fs.unlinkSync("./fichier.txt");
+
+// Creer un dossier
+fs.mkdirSync("./nouveau-dossier", { recursive: true });
+
+// Lire le contenu d'un dossier
+const fichiers = fs.readdirSync("./mon-dossier");
+console.log(fichiers); // ["fichier1.txt", "fichier2.txt"]
+```
+
+### 1.6. Variables d'environnement
+
+Les variables d'environnement permettent de stocker des informations de configuration (port du serveur, identifiants de base de donnees, cles API) en dehors du code source.
+
+#### Acces avec process.env
+
+```javascript
+// Acces direct a une variable d'environnement
+const port = process.env.PORT || 3000;
+console.log("Le serveur ecoute sur le port", port);
+```
+
+On peut definir des variables au lancement :
+
+```bash
+PORT=8080 node index.js
+```
+
+#### Le paquet dotenv
+
+En developpement, on utilise le paquet `dotenv` pour charger les variables depuis un fichier `.env`.
+
+```bash
+npm install dotenv
+```
+
+Fichier `.env` (a la racine du projet) :
+
+```
+PORT=3000
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=motdepasse123
+DB_NAME=ma_base
+SECRET_KEY=uneCleSuperSecrete
+```
+
+Fichier `index.js` :
+
+```javascript
+require("dotenv").config();
+
+console.log(process.env.PORT);        // "3000"
+console.log(process.env.DB_HOST);     // "localhost"
+console.log(process.env.DB_USER);     // "root"
+console.log(process.env.DB_PASSWORD); // "motdepasse123"
+```
+
+**Regles importantes :**
+
+- Le fichier `.env` ne doit **jamais** etre versionne avec Git (l'ajouter dans `.gitignore`)
+- Les valeurs sont toujours des chaines de caracteres (penser a convertir si besoin : `parseInt(process.env.PORT)`)
+- `require("dotenv").config()` doit etre appele **au tout debut** du fichier principal, avant tout autre import
+
+---
+
+## 2. Express.js
+
+### 2.1. Qu'est-ce qu'Express ?
+
+Express est un framework web minimaliste pour Node.js. Il simplifie la creation de serveurs web et d'API en fournissant :
+
+- Un systeme de routage (associer des URLs a des fonctions)
+- Un systeme de middleware (fonctions intermediaires)
+- Des methodes pour gerer les requetes et les reponses HTTP
+
+Sans Express, creer un serveur HTTP en Node.js pur est fastidieux :
+
+```javascript
+// Serveur HTTP sans Express (Node.js pur)
+const http = require("http");
+
+const serveur = http.createServer(function (req, res) {
+  if (req.method === "GET" && req.url === "/") {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("Bonjour le monde");
+  } else if (req.method === "GET" && req.url === "/api/produits") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify([{ id: 1, nom: "Clavier" }]));
+  } else {
+    res.writeHead(404);
+    res.end("Page non trouvee");
+  }
+});
+
+serveur.listen(3000, function () {
+  console.log("Serveur demarre sur le port 3000");
+});
+```
+
+Avec Express, le meme code devient beaucoup plus lisible.
+
+### 2.2. Installation et premier serveur
+
+```bash
+mkdir mon-api
+cd mon-api
+npm init -y
+npm install express
+```
+
+Fichier `index.js` :
+
+```javascript
+const express = require("express");
+const app = express();
+const PORT = 3000;
+
+app.get("/", function (req, res) {
+  res.send("Bonjour le monde");
+});
+
+app.listen(PORT, function () {
+  console.log("Serveur demarre sur http://localhost:" + PORT);
+});
+```
+
+Lancer le serveur :
+
+```bash
+node index.js
+```
+
+Ouvrir `http://localhost:3000` dans un navigateur : la page affiche "Bonjour le monde".
+
+**Explication ligne par ligne :**
+
+1. `require("express")` : importe le module Express
+2. `express()` : cree une application Express
+3. `app.get("/", ...)` : definit une route pour les requetes GET sur "/"
+4. `res.send(...)` : envoie une reponse au client
+5. `app.listen(PORT, ...)` : demarre le serveur sur le port indique
+
+#### Utiliser nodemon pour le developpement
+
+```bash
+npm install nodemon --save-dev
+```
+
+Dans `package.json`, ajouter un script :
+
+```json
+"scripts": {
+  "dev": "nodemon index.js"
+}
+```
+
+```bash
+npm run dev
+```
+
+Nodemon surveille les fichiers et redemarre automatiquement le serveur a chaque modification.
+
+### 2.3. Le routing
+
+Le routing definit comment l'application repond a une requete sur une URL donnee, avec une methode HTTP donnee.
+
+#### Les methodes HTTP
+
+```javascript
+const express = require("express");
+const app = express();
+
+app.use(express.json()); // Necessaire pour lire req.body en JSON
+
+// GET : recuperer des donnees
+app.get("/produits", function (req, res) {
+  res.json([
+    { id: 1, nom: "Clavier", prix: 49.99 },
+    { id: 2, nom: "Souris", prix: 29.99 }
+  ]);
+});
+
+// POST : creer une donnee
+app.post("/produits", function (req, res) {
+  const nouveauProduit = req.body;
+  console.log("Produit recu :", nouveauProduit);
+  res.status(201).json({ message: "Produit cree", produit: nouveauProduit });
+});
+
+// PUT : modifier une donnee existante (remplacement complet)
+app.put("/produits/:id", function (req, res) {
+  const id = req.params.id;
+  const donnees = req.body;
+  console.log("Modifier le produit", id, "avec", donnees);
+  res.json({ message: "Produit " + id + " modifie" });
+});
+
+// DELETE : supprimer une donnee
+app.delete("/produits/:id", function (req, res) {
+  const id = req.params.id;
+  console.log("Supprimer le produit", id);
+  res.json({ message: "Produit " + id + " supprime" });
+});
+
+app.listen(3000);
+```
+
+#### Parametres de route
+
+Les parametres de route sont des segments dynamiques dans l'URL, prefixes par `:`.
+
+```javascript
+// :id est un parametre de route
+app.get("/produits/:id", function (req, res) {
+  const id = req.params.id; // Toujours une chaine de caracteres
+  console.log("ID demande :", id);
+  res.json({ id: parseInt(id), nom: "Produit " + id });
+});
+
+// Plusieurs parametres
+app.get("/categories/:catId/produits/:prodId", function (req, res) {
+  const catId = req.params.catId;
+  const prodId = req.params.prodId;
+  res.json({ categorie: catId, produit: prodId });
+});
+```
+
+Exemple d'appel : `GET /produits/42` donne `req.params.id` qui vaut `"42"`.
+
+#### Query parameters (parametres de requete)
+
+Les query parameters sont les parametres apres le `?` dans l'URL.
+
+```javascript
+// URL : /produits?page=2&limite=10&tri=prix
+app.get("/produits", function (req, res) {
+  const page = parseInt(req.query.page) || 1;
+  const limite = parseInt(req.query.limite) || 20;
+  const tri = req.query.tri || "nom";
+
+  console.log("Page:", page, "Limite:", limite, "Tri:", tri);
+  res.json({ page: page, limite: limite, tri: tri });
+});
+```
+
+#### Le corps de la requete (req.body)
+
+Le corps de la requete contient les donnees envoyees par le client (formulaire, JSON). Il faut un middleware pour le parser.
+
+```javascript
+// OBLIGATOIRE pour lire le JSON dans req.body
+app.use(express.json());
+
+// Pour lire les donnees de formulaires HTML classiques
+app.use(express.urlencoded({ extended: true }));
+
+app.post("/produits", function (req, res) {
+  console.log(req.body);
+  // Exemple : { nom: "Clavier", prix: 49.99 }
+  res.status(201).json(req.body);
+});
+```
+
+**Recapitulatif des sources de donnees :**
+
+| Source | Acces | Exemple URL |
+|---|---|---|
+| Parametre de route | `req.params.id` | `/produits/42` |
+| Query parameter | `req.query.page` | `/produits?page=2` |
+| Corps de la requete | `req.body.nom` | Donnees POST/PUT |
+| En-tetes HTTP | `req.headers["authorization"]` | Headers de la requete |
+
+### 2.4. Les middleware
+
+Un middleware est une fonction qui s'execute **entre** la reception de la requete et l'envoi de la reponse. C'est le concept le plus important d'Express.
+
+Un middleware recoit trois parametres : `req` (requete), `res` (reponse), `next` (fonction pour passer au middleware suivant).
+
+```
+Client --> Middleware 1 --> Middleware 2 --> Route --> Reponse
+```
+
+#### Syntaxe d'un middleware
+
+```javascript
+function monMiddleware(req, res, next) {
+  // Faire quelque chose avec req ou res
+  console.log("Middleware execute");
+  next(); // Passer au middleware suivant (OBLIGATOIRE sinon la requete reste bloquee)
+}
+```
+
+#### Middleware integres d'Express
+
+```javascript
+// Parser le JSON dans le body des requetes
+app.use(express.json());
+
+// Parser les donnees de formulaires URL-encoded
+app.use(express.urlencoded({ extended: true }));
+
+// Servir des fichiers statiques (HTML, CSS, JS, images)
+app.use(express.static("public"));
+// Les fichiers dans le dossier "public/" seront accessibles directement
+// Exemple : public/style.css --> http://localhost:3000/style.css
+```
+
+#### Middleware custom : logger
+
+```javascript
+function logger(req, res, next) {
+  const date = new Date().toISOString();
+  console.log("[" + date + "] " + req.method + " " + req.url);
+  next();
+}
+
+// Appliquer le middleware a TOUTES les routes
+app.use(logger);
+```
+
+Chaque requete affichera dans la console :
+```
+[2024-03-15T10:30:00.000Z] GET /produits
+[2024-03-15T10:30:05.000Z] POST /produits
+```
+
+#### Middleware d'authentification
+
+```javascript
+function verifierAuth(req, res, next) {
+  const token = req.headers["authorization"];
+
+  if (!token) {
+    return res.status(401).json({ erreur: "Token manquant" });
+  }
+
+  // Verifier le token (simplifie ici)
+  if (token !== "mon-token-secret") {
+    return res.status(403).json({ erreur: "Token invalide" });
+  }
+
+  next(); // Token valide, on continue
+}
+
+// Appliquer le middleware a une seule route
+app.get("/admin/tableau-de-bord", verifierAuth, function (req, res) {
+  res.json({ message: "Bienvenue dans l'espace admin" });
+});
+
+// Appliquer le middleware a un groupe de routes
+app.use("/admin", verifierAuth);
+```
+
+#### Middleware d'erreur
+
+Un middleware d'erreur se distingue par ses **quatre parametres** : `err, req, res, next`.
+
+```javascript
+// Middleware d'erreur (toujours 4 parametres)
+function gestionErreurs(err, req, res, next) {
+  console.error("Erreur :", err.message);
+  res.status(err.status || 500).json({
+    erreur: err.message || "Erreur interne du serveur"
+  });
+}
+
+// Le middleware d'erreur se declare APRES toutes les routes
+app.get("/produits/:id", function (req, res, next) {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    const erreur = new Error("ID invalide");
+    erreur.status = 400;
+    return next(erreur); // Passer l'erreur au middleware d'erreur
+  }
+  res.json({ id: id });
+});
+
+app.use(gestionErreurs); // Toujours en dernier
+```
+
+#### Ordre d'execution des middleware
+
+L'ordre de declaration est crucial. Les middleware s'executent dans l'ordre ou ils sont declares :
+
+```javascript
+// 1. Parser le JSON (s'execute en premier)
+app.use(express.json());
+
+// 2. Logger (s'execute en deuxieme)
+app.use(logger);
+
+// 3. Routes (s'executent ensuite)
+app.get("/produits", function (req, res) { /* ... */ });
+app.post("/produits", function (req, res) { /* ... */ });
+
+// 4. Route 404 (si aucune route n'a matche)
+app.use(function (req, res) {
+  res.status(404).json({ erreur: "Route non trouvee" });
+});
+
+// 5. Middleware d'erreur (en tout dernier)
+app.use(gestionErreurs);
+```
+
+### 2.5. Les reponses
+
+Express fournit plusieurs methodes sur l'objet `res` pour envoyer des reponses :
+
+```javascript
+// Envoyer du JSON (le plus courant pour une API)
+res.json({ nom: "Clavier", prix: 49.99 });
+
+// Envoyer du texte ou du HTML
+res.send("Bonjour");
+res.send("<h1>Page d'accueil</h1>");
+
+// Definir le code de statut HTTP
+res.status(201).json({ message: "Cree" });
+res.status(404).json({ erreur: "Non trouve" });
+res.status(204).send(); // 204 = pas de contenu
+
+// Rediriger vers une autre URL
+res.redirect("/autre-page");
+res.redirect(301, "/nouvelle-url"); // Redirection permanente
+
+// Rendre une vue (avec un moteur de templates comme EJS)
+res.render("index", { titre: "Accueil" });
+
+// Envoyer un fichier en telechargement
+res.download("./fichiers/rapport.pdf");
+
+// Envoyer un fichier
+res.sendFile(__dirname + "/public/index.html");
+```
+
+### 2.6. Le Router
+
+Le Router permet d'organiser les routes dans des fichiers separes, par module ou par ressource.
+
+```javascript
+// fichier : routes/produits.js
+const express = require("express");
+const router = express.Router();
+
+// Toutes ces routes seront prefixees par le chemin defini dans app.use()
+router.get("/", function (req, res) {
+  res.json([{ id: 1, nom: "Clavier" }]);
+});
+
+router.get("/:id", function (req, res) {
+  res.json({ id: req.params.id, nom: "Clavier" });
+});
+
+router.post("/", function (req, res) {
+  res.status(201).json({ message: "Produit cree" });
+});
+
+router.put("/:id", function (req, res) {
+  res.json({ message: "Produit modifie" });
+});
+
+router.delete("/:id", function (req, res) {
+  res.json({ message: "Produit supprime" });
+});
+
+module.exports = router;
+```
+
+```javascript
+// fichier : index.js
+const express = require("express");
+const app = express();
+
+const produitsRouter = require("./routes/produits");
+const utilisateursRouter = require("./routes/utilisateurs");
+
+app.use(express.json());
+
+// Monter les routers avec un prefixe
+app.use("/api/produits", produitsRouter);
+app.use("/api/utilisateurs", utilisateursRouter);
+
+app.listen(3000);
+```
+
+Avec cette organisation :
+- `GET /api/produits` appelle `router.get("/")`
+- `GET /api/produits/42` appelle `router.get("/:id")`
+- `POST /api/produits` appelle `router.post("/")`
+
+---
+
+## 3. API REST complete
+
+### 3.1. Qu'est-ce qu'une API REST ?
+
+REST (Representational State Transfer) est un ensemble de conventions pour structurer les URLs et les methodes HTTP d'une API web. Ce n'est pas un protocole ni un standard technique : c'est un style architectural.
+
+Une API REST utilise :
+
+- Les **URLs** pour identifier les ressources (donnees)
+- Les **methodes HTTP** pour definir l'action a effectuer
+- Les **codes de statut HTTP** pour indiquer le resultat
+- Le format **JSON** pour echanger les donnees
+
+### 3.2. Les conventions REST
+
+Pour une ressource "produits" :
+
+| Methode | URL | Action | Description |
+|---|---|---|---|
+| GET | `/api/produits` | Lister | Recuperer tous les produits |
+| GET | `/api/produits/:id` | Lire | Recuperer un produit par son ID |
+| POST | `/api/produits` | Creer | Ajouter un nouveau produit |
+| PUT | `/api/produits/:id` | Modifier | Mettre a jour un produit existant |
+| DELETE | `/api/produits/:id` | Supprimer | Supprimer un produit |
+
+Regles de nommage :
+
+- Les URLs utilisent des **noms au pluriel** : `/produits`, `/utilisateurs`, `/commandes`
+- Les URLs sont en **minuscules** avec des tirets si necessaire : `/categories-produits`
+- On ne met **pas de verbe** dans l'URL : pas `/getProduits` ni `/creerProduit`
+- L'action est determinee par la **methode HTTP**, pas par l'URL
+
+### 3.3. Les codes de statut HTTP
+
+| Code | Signification | Utilisation |
+|---|---|---|
+| 200 | OK | Requete reussie (GET, PUT) |
+| 201 | Created | Ressource creee avec succes (POST) |
+| 204 | No Content | Succes sans contenu a retourner (DELETE) |
+| 400 | Bad Request | Donnees invalides envoyees par le client |
+| 401 | Unauthorized | Authentification requise (pas de token) |
+| 403 | Forbidden | Authentifie mais pas autorise (droits insuffisants) |
+| 404 | Not Found | Ressource introuvable |
+| 500 | Internal Server Error | Erreur cote serveur |
+
+### 3.4. Exercice complet : CRUD Produits (sans base de donnees)
+
+Cet exercice utilise un tableau en memoire. La section suivante connectera MySQL.
+
+```javascript
+const express = require("express");
+const app = express();
+const PORT = 3000;
+
+app.use(express.json());
+
+// Donnees en memoire (simulation de base de donnees)
+let produits = [
+  { id: 1, nom: "Clavier mecanique", prix: 89.99, stock: 15 },
+  { id: 2, nom: "Souris sans fil", prix: 39.99, stock: 30 },
+  { id: 3, nom: "Ecran 27 pouces", prix: 299.99, stock: 8 }
+];
+let prochainId = 4;
+
+// GET /api/produits -- Lister tous les produits
+app.get("/api/produits", function (req, res) {
+  res.json(produits);
+});
+
+// GET /api/produits/:id -- Obtenir un produit par son ID
+app.get("/api/produits/:id", function (req, res) {
+  const id = parseInt(req.params.id);
+  const produit = produits.find(function (p) {
+    return p.id === id;
+  });
+
+  if (!produit) {
+    return res.status(404).json({ erreur: "Produit non trouve" });
+  }
+
+  res.json(produit);
+});
+
+// POST /api/produits -- Creer un nouveau produit
+app.post("/api/produits", function (req, res) {
+  const { nom, prix, stock } = req.body;
+
+  // Validation
+  if (!nom || prix === undefined || stock === undefined) {
+    return res.status(400).json({
+      erreur: "Les champs nom, prix et stock sont obligatoires"
+    });
+  }
+
+  if (typeof prix !== "number" || prix < 0) {
+    return res.status(400).json({ erreur: "Le prix doit etre un nombre positif" });
+  }
+
+  const nouveauProduit = {
+    id: prochainId,
+    nom: nom,
+    prix: prix,
+    stock: stock
+  };
+  prochainId++;
+
+  produits.push(nouveauProduit);
+  res.status(201).json(nouveauProduit);
+});
+
+// PUT /api/produits/:id -- Modifier un produit existant
+app.put("/api/produits/:id", function (req, res) {
+  const id = parseInt(req.params.id);
+  const index = produits.findIndex(function (p) {
+    return p.id === id;
+  });
+
+  if (index === -1) {
+    return res.status(404).json({ erreur: "Produit non trouve" });
+  }
+
+  const { nom, prix, stock } = req.body;
+
+  if (!nom || prix === undefined || stock === undefined) {
+    return res.status(400).json({
+      erreur: "Les champs nom, prix et stock sont obligatoires"
+    });
+  }
+
+  produits[index] = { id: id, nom: nom, prix: prix, stock: stock };
+  res.json(produits[index]);
+});
+
+// DELETE /api/produits/:id -- Supprimer un produit
+app.delete("/api/produits/:id", function (req, res) {
+  const id = parseInt(req.params.id);
+  const index = produits.findIndex(function (p) {
+    return p.id === id;
+  });
+
+  if (index === -1) {
+    return res.status(404).json({ erreur: "Produit non trouve" });
+  }
+
+  produits.splice(index, 1);
+  res.status(204).send();
+});
+
+// Route 404 pour les routes non definies
+app.use(function (req, res) {
+  res.status(404).json({ erreur: "Route non trouvee" });
+});
+
+app.listen(PORT, function () {
+  console.log("API demarree sur http://localhost:" + PORT);
+});
+```
+
+---
+
+## 4. Connexion MySQL
+
+### 4.1. Le package mysql2
+
+Le package `mysql2` est le pilote recommande pour connecter Node.js a une base de donnees MySQL. Il supporte les Promises et async/await.
+
+```bash
+npm install mysql2
+```
+
+### 4.2. Creer la connexion
+
+#### createConnection (connexion unique)
+
+```javascript
+const mysql = require("mysql2/promise");
+
+async function main() {
+  const connexion = await mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "motdepasse",
+    database: "ma_boutique"
+  });
+
+  const [lignes] = await connexion.execute("SELECT * FROM produits");
+  console.log(lignes);
+
+  await connexion.end(); // Fermer la connexion
+}
+
+main();
+```
+
+`createConnection` ouvre **une seule connexion**. Elle doit etre fermee manuellement. Adaptee pour des scripts ponctuels.
+
+#### createPool (pool de connexions)
+
+```javascript
+const mysql = require("mysql2/promise");
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "ma_boutique",
+  waitForConnections: true,
+  connectionLimit: 10
+});
+
+module.exports = pool;
+```
+
+`createPool` cree un **pool de connexions reutilisables**. Le pool gere automatiquement l'ouverture et la fermeture des connexions. C'est la methode recommandee pour un serveur Express car :
+
+- Plusieurs requetes HTTP peuvent s'executer en parallele
+- Chaque requete obtient une connexion du pool
+- La connexion est rendue au pool apres utilisation (pas besoin de la fermer manuellement)
+
+### 4.3. Requetes preparees
+
+Les requetes preparees sont **obligatoires** pour se proteger contre les injections SQL. Elles separent la structure de la requete des donnees.
+
+```javascript
+// DANGEREUX -- Injection SQL possible
+const id = req.params.id;
+const [lignes] = await pool.execute("SELECT * FROM produits WHERE id = " + id);
+// Si id vaut "1 OR 1=1", la requete retourne tous les produits
+
+// SECURISE -- Requete preparee
+const id = req.params.id;
+const [lignes] = await pool.execute("SELECT * FROM produits WHERE id = ?", [id]);
+// Le ? est un placeholder. mysql2 echappe automatiquement la valeur.
+```
+
+Exemples de requetes preparees pour chaque operation CRUD :
+
+```javascript
+const pool = require("./db");
+
+// SELECT avec condition
+async function getProduitParId(id) {
+  const [lignes] = await pool.execute(
+    "SELECT * FROM produits WHERE id = ?",
+    [id]
+  );
+  return lignes[0]; // Un seul resultat (ou undefined)
+}
+
+// SELECT tous
+async function getTousProduits() {
+  const [lignes] = await pool.execute("SELECT * FROM produits ORDER BY nom");
+  return lignes; // Tableau de resultats
+}
+
+// INSERT
+async function creerProduit(nom, prix, stock) {
+  const [resultat] = await pool.execute(
+    "INSERT INTO produits (nom, prix, stock) VALUES (?, ?, ?)",
+    [nom, prix, stock]
+  );
+  return resultat.insertId; // ID auto-genere par MySQL
+}
+
+// UPDATE
+async function modifierProduit(id, nom, prix, stock) {
+  const [resultat] = await pool.execute(
+    "UPDATE produits SET nom = ?, prix = ?, stock = ? WHERE id = ?",
+    [nom, prix, stock, id]
+  );
+  return resultat.affectedRows; // Nombre de lignes modifiees
+}
+
+// DELETE
+async function supprimerProduit(id) {
+  const [resultat] = await pool.execute(
+    "DELETE FROM produits WHERE id = ?",
+    [id]
+  );
+  return resultat.affectedRows; // Nombre de lignes supprimees
+}
+```
+
+**Proprietes utiles du resultat :**
+
+| Propriete | Description | Concerne |
+|---|---|---|
+| `resultat.insertId` | ID de la ligne inseree (auto-increment) | INSERT |
+| `resultat.affectedRows` | Nombre de lignes affectees | INSERT, UPDATE, DELETE |
+| `resultat.changedRows` | Nombre de lignes reellement modifiees | UPDATE |
+
+### 4.4. async/await avec les requetes
+
+Toutes les requetes avec `mysql2/promise` retournent des Promises. On utilise async/await pour les manipuler de facon lisible.
+
+La methode `execute()` retourne un tableau de deux elements :
+- L'element 0 contient les resultats (lignes pour un SELECT, informations pour INSERT/UPDATE/DELETE)
+- L'element 1 contient les metadonnees des colonnes (rarement utilise)
+
+On utilise la destructuration pour extraire uniquement les resultats :
+
+```javascript
+const [lignes] = await pool.execute("SELECT * FROM produits");
+// lignes est un tableau d'objets : [{ id: 1, nom: "Clavier", ... }, ...]
+
+const [resultat] = await pool.execute("INSERT INTO produits (nom) VALUES (?)", ["Souris"]);
+// resultat.insertId contient l'ID genere
+```
+
+### 4.5. Gestion des erreurs BDD
+
+```javascript
+async function getProduitParId(id) {
+  try {
+    const [lignes] = await pool.execute(
+      "SELECT * FROM produits WHERE id = ?",
+      [id]
+    );
+    return lignes[0];
+  } catch (erreur) {
+    console.error("Erreur BDD :", erreur.message);
+    throw erreur; // Relancer l'erreur pour que le controller la gere
+  }
+}
+```
+
+Erreurs MySQL courantes :
+
+| Code | Signification |
+|---|---|
+| `ER_ACCESS_DENIED_ERROR` | Identifiants incorrects |
+| `ER_BAD_DB_ERROR` | Base de donnees inexistante |
+| `ER_NO_SUCH_TABLE` | Table inexistante |
+| `ER_DUP_ENTRY` | Violation de contrainte UNIQUE |
+| `ER_PARSE_ERROR` | Erreur de syntaxe SQL |
+| `ECONNREFUSED` | Serveur MySQL non accessible |
+
+### 4.6. Exercice : CRUD complet avec MySQL
+
+Table SQL :
+
+```sql
+CREATE DATABASE IF NOT EXISTS ma_boutique;
+USE ma_boutique;
+
+CREATE TABLE produits (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nom VARCHAR(100) NOT NULL,
+  prix DECIMAL(10, 2) NOT NULL,
+  stock INT NOT NULL DEFAULT 0,
+  date_creation DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO produits (nom, prix, stock) VALUES
+  ('Clavier mecanique', 89.99, 15),
+  ('Souris sans fil', 39.99, 30),
+  ('Ecran 27 pouces', 299.99, 8);
+```
+
+Fichier `db.js` :
+
+```javascript
+require("dotenv").config();
+const mysql = require("mysql2/promise");
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
+});
+
+module.exports = pool;
+```
+
+Fichier `index.js` :
+
+```javascript
+require("dotenv").config();
+const express = require("express");
+const app = express();
+const pool = require("./db");
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+
+// GET /api/produits
+app.get("/api/produits", async function (req, res) {
+  try {
+    const [produits] = await pool.execute("SELECT * FROM produits ORDER BY nom");
+    res.json(produits);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+});
+
+// GET /api/produits/:id
+app.get("/api/produits/:id", async function (req, res) {
+  try {
+    const [produits] = await pool.execute(
+      "SELECT * FROM produits WHERE id = ?",
+      [req.params.id]
+    );
+
+    if (produits.length === 0) {
+      return res.status(404).json({ erreur: "Produit non trouve" });
+    }
+
+    res.json(produits[0]);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+});
+
+// POST /api/produits
+app.post("/api/produits", async function (req, res) {
+  try {
+    const { nom, prix, stock } = req.body;
+
+    if (!nom || prix === undefined || stock === undefined) {
+      return res.status(400).json({
+        erreur: "Les champs nom, prix et stock sont obligatoires"
+      });
+    }
+
+    const [resultat] = await pool.execute(
+      "INSERT INTO produits (nom, prix, stock) VALUES (?, ?, ?)",
+      [nom, prix, stock]
+    );
+
+    const [nouveauProduit] = await pool.execute(
+      "SELECT * FROM produits WHERE id = ?",
+      [resultat.insertId]
+    );
+
+    res.status(201).json(nouveauProduit[0]);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+});
+
+// PUT /api/produits/:id
+app.put("/api/produits/:id", async function (req, res) {
+  try {
+    const { nom, prix, stock } = req.body;
+
+    if (!nom || prix === undefined || stock === undefined) {
+      return res.status(400).json({
+        erreur: "Les champs nom, prix et stock sont obligatoires"
+      });
+    }
+
+    const [resultat] = await pool.execute(
+      "UPDATE produits SET nom = ?, prix = ?, stock = ? WHERE id = ?",
+      [nom, prix, stock, req.params.id]
+    );
+
+    if (resultat.affectedRows === 0) {
+      return res.status(404).json({ erreur: "Produit non trouve" });
+    }
+
+    const [produitModifie] = await pool.execute(
+      "SELECT * FROM produits WHERE id = ?",
+      [req.params.id]
+    );
+
+    res.json(produitModifie[0]);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+});
+
+// DELETE /api/produits/:id
+app.delete("/api/produits/:id", async function (req, res) {
+  try {
+    const [resultat] = await pool.execute(
+      "DELETE FROM produits WHERE id = ?",
+      [req.params.id]
+    );
+
+    if (resultat.affectedRows === 0) {
+      return res.status(404).json({ erreur: "Produit non trouve" });
+    }
+
+    res.status(204).send();
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+});
+
+app.listen(PORT, function () {
+  console.log("Serveur demarre sur le port " + PORT);
+});
+```
+
+---
+
+## 5. Architecture MVC avec Express
+
+### 5.1. Principe
+
+L'architecture MVC (Modele-Vue-Controleur) separe le code en trois couches :
+
+- **Modele (Model)** : acces aux donnees (requetes SQL)
+- **Vue (View)** : affichage (templates HTML ou reponses JSON)
+- **Controleur (Controller)** : logique metier (traitement des requetes)
+
+Les **Routes** font le lien entre les URLs et les controleurs.
+
+Pour une API REST, la couche Vue est souvent remplacee par des reponses JSON.
+
+### 5.2. Structure de dossiers
+
+```
+mon-projet/
+  node_modules/
+  models/
+    produitModel.js
+    utilisateurModel.js
+  controllers/
+    produitController.js
+    utilisateurController.js
+  routes/
+    produitRoutes.js
+    utilisateurRoutes.js
+  middleware/
+    auth.js
+    erreurs.js
+  views/           (si utilisation de templates)
+  public/          (fichiers statiques)
+  db.js
+  index.js
+  package.json
+  .env
+  .gitignore
+```
+
+### 5.3. Code complet d'une application CRUD en MVC
+
+#### Fichier db.js (connexion a la base de donnees)
+
+```javascript
+require("dotenv").config();
+const mysql = require("mysql2/promise");
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
+});
+
+module.exports = pool;
+```
+
+#### Fichier models/produitModel.js
+
+Le modele contient uniquement les fonctions d'acces a la base de donnees. Aucune logique metier, aucune gestion de requete HTTP.
+
+```javascript
+const pool = require("../db");
+
+async function trouverTous() {
+  const [lignes] = await pool.execute("SELECT * FROM produits ORDER BY nom");
+  return lignes;
+}
+
+async function trouverParId(id) {
+  const [lignes] = await pool.execute(
+    "SELECT * FROM produits WHERE id = ?",
+    [id]
+  );
+  return lignes[0];
+}
+
+async function creer(nom, prix, stock) {
+  const [resultat] = await pool.execute(
+    "INSERT INTO produits (nom, prix, stock) VALUES (?, ?, ?)",
+    [nom, prix, stock]
+  );
+  return resultat.insertId;
+}
+
+async function modifier(id, nom, prix, stock) {
+  const [resultat] = await pool.execute(
+    "UPDATE produits SET nom = ?, prix = ?, stock = ? WHERE id = ?",
+    [nom, prix, stock, id]
+  );
+  return resultat.affectedRows;
+}
+
+async function supprimer(id) {
+  const [resultat] = await pool.execute(
+    "DELETE FROM produits WHERE id = ?",
+    [id]
+  );
+  return resultat.affectedRows;
+}
+
+module.exports = {
+  trouverTous,
+  trouverParId,
+  creer,
+  modifier,
+  supprimer
+};
+```
+
+#### Fichier controllers/produitController.js
+
+Le controleur contient la logique metier. Il recoit la requete HTTP, appelle le modele, et envoie la reponse.
+
+```javascript
+const produitModel = require("../models/produitModel");
+
+async function listerProduits(req, res) {
+  try {
+    const produits = await produitModel.trouverTous();
+    res.json(produits);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+async function obtenirProduit(req, res) {
+  try {
+    const produit = await produitModel.trouverParId(req.params.id);
+
+    if (!produit) {
+      return res.status(404).json({ erreur: "Produit non trouve" });
+    }
+
+    res.json(produit);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+async function creerProduit(req, res) {
+  try {
+    const { nom, prix, stock } = req.body;
+
+    if (!nom || prix === undefined || stock === undefined) {
+      return res.status(400).json({
+        erreur: "Les champs nom, prix et stock sont obligatoires"
+      });
+    }
+
+    if (typeof prix !== "number" || prix < 0) {
+      return res.status(400).json({ erreur: "Le prix doit etre un nombre positif" });
+    }
+
+    if (!Number.isInteger(stock) || stock < 0) {
+      return res.status(400).json({ erreur: "Le stock doit etre un entier positif" });
+    }
+
+    const id = await produitModel.creer(nom, prix, stock);
+    const nouveauProduit = await produitModel.trouverParId(id);
+
+    res.status(201).json(nouveauProduit);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+async function modifierProduit(req, res) {
+  try {
+    const { nom, prix, stock } = req.body;
+
+    if (!nom || prix === undefined || stock === undefined) {
+      return res.status(400).json({
+        erreur: "Les champs nom, prix et stock sont obligatoires"
+      });
+    }
+
+    const lignesAffectees = await produitModel.modifier(
+      req.params.id, nom, prix, stock
+    );
+
+    if (lignesAffectees === 0) {
+      return res.status(404).json({ erreur: "Produit non trouve" });
+    }
+
+    const produitModifie = await produitModel.trouverParId(req.params.id);
+    res.json(produitModifie);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+async function supprimerProduit(req, res) {
+  try {
+    const lignesAffectees = await produitModel.supprimer(req.params.id);
+
+    if (lignesAffectees === 0) {
+      return res.status(404).json({ erreur: "Produit non trouve" });
+    }
+
+    res.status(204).send();
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+module.exports = {
+  listerProduits,
+  obtenirProduit,
+  creerProduit,
+  modifierProduit,
+  supprimerProduit
+};
+```
+
+#### Fichier routes/produitRoutes.js
+
+Les routes font le mapping entre les URLs et les fonctions du controleur. Aucune logique metier ici.
+
+```javascript
+const express = require("express");
+const router = express.Router();
+const produitController = require("../controllers/produitController");
+
+router.get("/", produitController.listerProduits);
+router.get("/:id", produitController.obtenirProduit);
+router.post("/", produitController.creerProduit);
+router.put("/:id", produitController.modifierProduit);
+router.delete("/:id", produitController.supprimerProduit);
+
+module.exports = router;
+```
+
+#### Fichier index.js (point d'entree)
+
+```javascript
+require("dotenv").config();
+const express = require("express");
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+const produitRoutes = require("./routes/produitRoutes");
+
+// Middleware globaux
+app.use(express.json());
+
+// Routes
+app.use("/api/produits", produitRoutes);
+
+// Route 404
+app.use(function (req, res) {
+  res.status(404).json({ erreur: "Route non trouvee" });
+});
+
+// Middleware d'erreur
+app.use(function (err, req, res, next) {
+  console.error(err);
+  res.status(500).json({ erreur: "Erreur interne du serveur" });
+});
+
+app.listen(PORT, function () {
+  console.log("Serveur demarre sur le port " + PORT);
+});
+```
+
+#### Schema du flux MVC
+
+```
+Requete HTTP
+    |
+    v
+index.js (app.use)
+    |
+    v
+routes/produitRoutes.js (quel controleur appeler ?)
+    |
+    v
+controllers/produitController.js (logique metier, validation)
+    |
+    v
+models/produitModel.js (requete SQL via mysql2)
+    |
+    v
+Base de donnees MySQL
+    |
+    v (resultats)
+models/ --> controllers/ --> res.json() --> Client
+```
+
+Pour un traitement approfondi du pattern MVC et de ses principes generaux, consulter le playbook Architecture MVC.
+
+---
+
+## 6. Authentification
+
+### 6.1. Sessions avec express-session
+
+Les sessions permettent de stocker des informations sur le serveur pour un utilisateur connecte. Un cookie contenant un identifiant de session est envoye au navigateur.
+
+```bash
+npm install express-session
+```
+
+```javascript
+const session = require("express-session");
+
+app.use(session({
+  secret: "une-cle-secrete-longue-et-aleatoire",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24, // 24 heures en millisecondes
+    httpOnly: true,                // Cookie inaccessible depuis JavaScript cote client
+    secure: false                  // true en production avec HTTPS
+  }
+}));
+```
+
+Utilisation dans une route :
+
+```javascript
+// Connexion : stocker l'utilisateur en session
+app.post("/login", async function (req, res) {
+  const { email, motDePasse } = req.body;
+
+  // Verifier les identifiants (simplifie)
+  const utilisateur = await utilisateurModel.trouverParEmail(email);
+
+  if (!utilisateur) {
+    return res.status(401).json({ erreur: "Email ou mot de passe incorrect" });
+  }
+
+  // Stocker l'utilisateur dans la session
+  req.session.utilisateur = {
+    id: utilisateur.id,
+    nom: utilisateur.nom,
+    email: utilisateur.email,
+    role: utilisateur.role
+  };
+
+  res.json({ message: "Connexion reussie" });
+});
+
+// Verifier si l'utilisateur est connecte
+app.get("/profil", function (req, res) {
+  if (!req.session.utilisateur) {
+    return res.status(401).json({ erreur: "Non connecte" });
+  }
+
+  res.json(req.session.utilisateur);
+});
+
+// Deconnexion : detruire la session
+app.post("/logout", function (req, res) {
+  req.session.destroy(function (err) {
+    if (err) {
+      return res.status(500).json({ erreur: "Erreur lors de la deconnexion" });
+    }
+    res.json({ message: "Deconnexion reussie" });
+  });
+});
+```
+
+### 6.2. Bcrypt pour hasher les mots de passe
+
+Les mots de passe ne doivent **jamais** etre stockes en clair dans la base de donnees. On utilise bcrypt pour les hasher (transformer de maniere irreversible).
+
+```bash
+npm install bcrypt
+```
+
+```javascript
+const bcrypt = require("bcrypt");
+
+// Hasher un mot de passe (a l'inscription)
+async function hasherMotDePasse(motDePasse) {
+  const sel = 10; // Nombre de rounds de salage (10 est un bon compromis)
+  const hash = await bcrypt.hash(motDePasse, sel);
+  return hash;
+  // Exemple de hash : "$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+}
+
+// Verifier un mot de passe (a la connexion)
+async function verifierMotDePasse(motDePasse, hash) {
+  const correspond = await bcrypt.compare(motDePasse, hash);
+  return correspond; // true ou false
+}
+```
+
+Exemple complet d'inscription et de connexion :
+
+```javascript
+// Inscription
+app.post("/inscription", async function (req, res) {
+  try {
+    const { nom, email, motDePasse } = req.body;
+
+    // Verifier que l'email n'existe pas deja
+    const existant = await utilisateurModel.trouverParEmail(email);
+    if (existant) {
+      return res.status(400).json({ erreur: "Cet email est deja utilise" });
+    }
+
+    // Hasher le mot de passe
+    const hash = await bcrypt.hash(motDePasse, 10);
+
+    // Creer l'utilisateur avec le hash
+    const id = await utilisateurModel.creer(nom, email, hash);
+
+    res.status(201).json({ message: "Compte cree", id: id });
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+});
+
+// Connexion
+app.post("/connexion", async function (req, res) {
+  try {
+    const { email, motDePasse } = req.body;
+
+    // Chercher l'utilisateur par email
+    const utilisateur = await utilisateurModel.trouverParEmail(email);
+
+    if (!utilisateur) {
+      return res.status(401).json({ erreur: "Email ou mot de passe incorrect" });
+    }
+
+    // Comparer le mot de passe avec le hash stocke
+    const correspond = await bcrypt.compare(motDePasse, utilisateur.mot_de_passe);
+
+    if (!correspond) {
+      return res.status(401).json({ erreur: "Email ou mot de passe incorrect" });
+    }
+
+    // Stocker en session
+    req.session.utilisateur = {
+      id: utilisateur.id,
+      nom: utilisateur.nom,
+      email: utilisateur.email
+    };
+
+    res.json({ message: "Connexion reussie" });
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+});
+```
+
+**Point de securite important :** le message d'erreur est volontairement identique pour un email inexistant et un mauvais mot de passe ("Email ou mot de passe incorrect"). Cela empeche un attaquant de savoir si un email est enregistre.
+
+### 6.3. Middleware d'authentification
+
+```javascript
+// middleware/auth.js
+
+function estConnecte(req, res, next) {
+  if (!req.session.utilisateur) {
+    return res.status(401).json({ erreur: "Authentification requise" });
+  }
+  next();
+}
+
+function estAdmin(req, res, next) {
+  if (!req.session.utilisateur) {
+    return res.status(401).json({ erreur: "Authentification requise" });
+  }
+  if (req.session.utilisateur.role !== "admin") {
+    return res.status(403).json({ erreur: "Acces refuse : droits insuffisants" });
+  }
+  next();
+}
+
+module.exports = { estConnecte, estAdmin };
+```
+
+Utilisation :
+
+```javascript
+const { estConnecte, estAdmin } = require("./middleware/auth");
+
+// Route accessible uniquement aux utilisateurs connectes
+app.get("/profil", estConnecte, function (req, res) {
+  res.json(req.session.utilisateur);
+});
+
+// Route accessible uniquement aux administrateurs
+app.delete("/api/utilisateurs/:id", estAdmin, async function (req, res) {
+  // Supprimer un utilisateur
+});
+
+// Proteger tout un groupe de routes
+app.use("/api/admin", estAdmin);
+```
+
+### 6.4. JWT (JSON Web Token)
+
+JWT est une alternative aux sessions. Au lieu de stocker les informations sur le serveur, on les encode dans un token envoye au client. Le client renvoie ce token a chaque requete dans l'en-tete `Authorization`.
+
+```bash
+npm install jsonwebtoken
+```
+
+#### Creer un token
+
+```javascript
+const jwt = require("jsonwebtoken");
+
+const SECRET = process.env.JWT_SECRET || "ma-cle-secrete";
+
+// Creer un token lors de la connexion
+app.post("/connexion", async function (req, res) {
+  try {
+    const { email, motDePasse } = req.body;
+
+    const utilisateur = await utilisateurModel.trouverParEmail(email);
+
+    if (!utilisateur) {
+      return res.status(401).json({ erreur: "Identifiants incorrects" });
+    }
+
+    const correspond = await bcrypt.compare(motDePasse, utilisateur.mot_de_passe);
+
+    if (!correspond) {
+      return res.status(401).json({ erreur: "Identifiants incorrects" });
+    }
+
+    // Creer le token
+    const token = jwt.sign(
+      { id: utilisateur.id, email: utilisateur.email, role: utilisateur.role },
+      SECRET,
+      { expiresIn: "24h" } // Le token expire dans 24 heures
+    );
+
+    res.json({ message: "Connexion reussie", token: token });
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+});
+```
+
+#### Verifier un token (middleware)
+
+```javascript
+// middleware/authJWT.js
+const jwt = require("jsonwebtoken");
+const SECRET = process.env.JWT_SECRET || "ma-cle-secrete";
+
+function verifierToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+
+  if (!authHeader) {
+    return res.status(401).json({ erreur: "Token manquant" });
+  }
+
+  // Le header est au format "Bearer <token>"
+  const token = authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ erreur: "Token mal forme" });
+  }
+
+  try {
+    const decodage = jwt.verify(token, SECRET);
+    req.utilisateur = decodage; // Ajouter les infos de l'utilisateur a la requete
+    next();
+  } catch (erreur) {
+    return res.status(403).json({ erreur: "Token invalide ou expire" });
+  }
+}
+
+module.exports = verifierToken;
+```
+
+Utilisation :
+
+```javascript
+const verifierToken = require("./middleware/authJWT");
+
+// Route protegee par JWT
+app.get("/profil", verifierToken, function (req, res) {
+  res.json(req.utilisateur);
+  // req.utilisateur contient { id, email, role, iat, exp }
+});
+```
+
+Le client doit envoyer le token dans l'en-tete :
+
+```
+GET /profil HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+#### Sessions vs JWT
+
+| Aspect | Sessions | JWT |
+|---|---|---|
+| Stockage | Cote serveur | Cote client (token) |
+| Scalabilite | Moins scalable (etat serveur) | Plus scalable (sans etat) |
+| Deconnexion | Facile (detruire la session) | Plus complexe (token toujours valide jusqu'a expiration) |
+| Usage typique | Applications web classiques | API REST, applications mobiles |
+
+### 6.5. Exercice : systeme de login complet
+
+Table SQL :
+
+```sql
+CREATE TABLE utilisateurs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nom VARCHAR(100) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  mot_de_passe VARCHAR(255) NOT NULL,
+  role ENUM('utilisateur', 'admin') DEFAULT 'utilisateur',
+  date_creation DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+Fichier `models/utilisateurModel.js` :
+
+```javascript
+const pool = require("../db");
+
+async function trouverParEmail(email) {
+  const [lignes] = await pool.execute(
+    "SELECT * FROM utilisateurs WHERE email = ?",
+    [email]
+  );
+  return lignes[0];
+}
+
+async function trouverParId(id) {
+  const [lignes] = await pool.execute(
+    "SELECT id, nom, email, role, date_creation FROM utilisateurs WHERE id = ?",
+    [id]
+  );
+  return lignes[0];
+}
+
+async function creer(nom, email, motDePasseHash) {
+  const [resultat] = await pool.execute(
+    "INSERT INTO utilisateurs (nom, email, mot_de_passe) VALUES (?, ?, ?)",
+    [nom, email, motDePasseHash]
+  );
+  return resultat.insertId;
+}
+
+module.exports = { trouverParEmail, trouverParId, creer };
+```
+
+Fichier `controllers/authController.js` :
+
+```javascript
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const utilisateurModel = require("../models/utilisateurModel");
+
+const SECRET = process.env.JWT_SECRET;
+
+async function inscription(req, res) {
+  try {
+    const { nom, email, motDePasse } = req.body;
+
+    if (!nom || !email || !motDePasse) {
+      return res.status(400).json({
+        erreur: "Tous les champs sont obligatoires"
+      });
+    }
+
+    if (motDePasse.length < 8) {
+      return res.status(400).json({
+        erreur: "Le mot de passe doit contenir au moins 8 caracteres"
+      });
+    }
+
+    const existant = await utilisateurModel.trouverParEmail(email);
+    if (existant) {
+      return res.status(400).json({ erreur: "Cet email est deja utilise" });
+    }
+
+    const hash = await bcrypt.hash(motDePasse, 10);
+    const id = await utilisateurModel.creer(nom, email, hash);
+
+    res.status(201).json({ message: "Compte cree avec succes", id: id });
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+async function connexion(req, res) {
+  try {
+    const { email, motDePasse } = req.body;
+
+    if (!email || !motDePasse) {
+      return res.status(400).json({ erreur: "Email et mot de passe requis" });
+    }
+
+    const utilisateur = await utilisateurModel.trouverParEmail(email);
+
+    if (!utilisateur) {
+      return res.status(401).json({ erreur: "Identifiants incorrects" });
+    }
+
+    const correspond = await bcrypt.compare(motDePasse, utilisateur.mot_de_passe);
+
+    if (!correspond) {
+      return res.status(401).json({ erreur: "Identifiants incorrects" });
+    }
+
+    const token = jwt.sign(
+      { id: utilisateur.id, email: utilisateur.email, role: utilisateur.role },
+      SECRET,
+      { expiresIn: "24h" }
+    );
+
+    res.json({
+      message: "Connexion reussie",
+      token: token,
+      utilisateur: {
+        id: utilisateur.id,
+        nom: utilisateur.nom,
+        email: utilisateur.email,
+        role: utilisateur.role
+      }
+    });
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+async function profil(req, res) {
+  try {
+    const utilisateur = await utilisateurModel.trouverParId(req.utilisateur.id);
+
+    if (!utilisateur) {
+      return res.status(404).json({ erreur: "Utilisateur non trouve" });
+    }
+
+    res.json(utilisateur);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+module.exports = { inscription, connexion, profil };
+```
+
+Fichier `routes/authRoutes.js` :
+
+```javascript
+const express = require("express");
+const router = express.Router();
+const authController = require("../controllers/authController");
+const verifierToken = require("../middleware/authJWT");
+
+router.post("/inscription", authController.inscription);
+router.post("/connexion", authController.connexion);
+router.get("/profil", verifierToken, authController.profil);
+
+module.exports = router;
+```
+
+---
+
+## 7. Gestion des fichiers (upload)
+
+### 7.1. Multer
+
+Multer est un middleware Express pour gerer l'upload de fichiers (multipart/form-data).
+
+```bash
+npm install multer
+```
+
+### 7.2. Configuration de base
+
+```javascript
+const multer = require("multer");
+const path = require("path");
+
+// Configuration du stockage
+const stockage = multer.diskStorage({
+  destination: function (req, fichier, cb) {
+    cb(null, "uploads/"); // Dossier de destination
+  },
+  filename: function (req, fichier, cb) {
+    // Generer un nom unique : timestamp + extension originale
+    const nomUnique = Date.now() + path.extname(fichier.originalname);
+    cb(null, nomUnique);
+  }
+});
+
+// Filtre pour n'accepter que les images
+function filtrerFichier(req, fichier, cb) {
+  const typesAutorises = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
+  if (typesAutorises.includes(fichier.mimetype)) {
+    cb(null, true); // Accepter le fichier
+  } else {
+    cb(new Error("Type de fichier non autorise. Formats acceptes : JPEG, PNG, GIF, WEBP"), false);
+  }
+}
+
+const upload = multer({
+  storage: stockage,
+  fileFilter: filtrerFichier,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // Limite a 5 Mo
+  }
+});
+```
+
+### 7.3. Utilisation dans les routes
+
+```javascript
+const fs = require("fs");
+
+// Creer le dossier uploads s'il n'existe pas
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
+
+// Upload d'un seul fichier (champ "image")
+app.post("/api/produits/:id/image", upload.single("image"), function (req, res) {
+  if (!req.file) {
+    return res.status(400).json({ erreur: "Aucun fichier envoye" });
+  }
+
+  console.log("Fichier recu :", req.file);
+  // req.file contient :
+  // {
+  //   fieldname: "image",
+  //   originalname: "photo.jpg",
+  //   mimetype: "image/jpeg",
+  //   destination: "uploads/",
+  //   filename: "1710500000000.jpg",
+  //   path: "uploads/1710500000000.jpg",
+  //   size: 245678
+  // }
+
+  res.json({
+    message: "Image uploadee",
+    chemin: "/uploads/" + req.file.filename
+  });
+});
+
+// Upload de plusieurs fichiers (maximum 5)
+app.post("/api/galerie", upload.array("photos", 5), function (req, res) {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ erreur: "Aucun fichier envoye" });
+  }
+
+  const chemins = req.files.map(function (f) {
+    return "/uploads/" + f.filename;
+  });
+
+  res.json({ message: req.files.length + " fichiers uploades", chemins: chemins });
+});
+
+// Rendre le dossier uploads accessible publiquement
+app.use("/uploads", express.static("uploads"));
+
+// Gestion des erreurs Multer
+app.use(function (err, req, res, next) {
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({ erreur: "Fichier trop volumineux (max 5 Mo)" });
+    }
+    return res.status(400).json({ erreur: err.message });
+  }
+  if (err.message.includes("Type de fichier")) {
+    return res.status(400).json({ erreur: err.message });
+  }
+  next(err);
+});
+```
+
+---
+
+## 8. Validation des donnees
+
+### 8.1. Validation manuelle
+
+La validation manuelle consiste a verifier les donnees dans le controleur avant de les traiter.
+
+```javascript
+async function creerProduit(req, res) {
+  const { nom, prix, stock } = req.body;
+  const erreurs = [];
+
+  // Verification de la presence
+  if (!nom || nom.trim() === "") {
+    erreurs.push("Le nom est obligatoire");
+  }
+
+  if (prix === undefined || prix === null) {
+    erreurs.push("Le prix est obligatoire");
+  }
+
+  if (stock === undefined || stock === null) {
+    erreurs.push("Le stock est obligatoire");
+  }
+
+  // Verification du type et des contraintes
+  if (nom && nom.length > 100) {
+    erreurs.push("Le nom ne doit pas depasser 100 caracteres");
+  }
+
+  if (prix !== undefined && (typeof prix !== "number" || prix < 0)) {
+    erreurs.push("Le prix doit etre un nombre positif");
+  }
+
+  if (stock !== undefined && (!Number.isInteger(stock) || stock < 0)) {
+    erreurs.push("Le stock doit etre un entier positif ou nul");
+  }
+
+  // S'il y a des erreurs, les retourner
+  if (erreurs.length > 0) {
+    return res.status(400).json({ erreurs: erreurs });
+  }
+
+  // Donnees valides, on continue...
+}
+```
+
+### 8.2. Validation avec express-validator
+
+```bash
+npm install express-validator
+```
+
+```javascript
+const { body, param, validationResult } = require("express-validator");
+
+// Regles de validation pour la creation d'un produit
+const reglesCreationProduit = [
+  body("nom")
+    .notEmpty().withMessage("Le nom est obligatoire")
+    .isLength({ max: 100 }).withMessage("Le nom ne doit pas depasser 100 caracteres")
+    .trim()
+    .escape(),
+
+  body("prix")
+    .notEmpty().withMessage("Le prix est obligatoire")
+    .isFloat({ min: 0 }).withMessage("Le prix doit etre un nombre positif"),
+
+  body("stock")
+    .notEmpty().withMessage("Le stock est obligatoire")
+    .isInt({ min: 0 }).withMessage("Le stock doit etre un entier positif ou nul")
+];
+
+// Middleware pour verifier les erreurs de validation
+function verifierValidation(req, res, next) {
+  const erreurs = validationResult(req);
+
+  if (!erreurs.isEmpty()) {
+    return res.status(400).json({ erreurs: erreurs.array() });
+  }
+
+  next();
+}
+
+// Utilisation dans la route
+router.post(
+  "/",
+  reglesCreationProduit,
+  verifierValidation,
+  produitController.creerProduit
+);
+
+router.put(
+  "/:id",
+  [
+    param("id").isInt({ min: 1 }).withMessage("L'ID doit etre un entier positif"),
+    ...reglesCreationProduit
+  ],
+  verifierValidation,
+  produitController.modifierProduit
+);
+```
+
+Methodes de validation courantes d'express-validator :
+
+| Methode | Description |
+|---|---|
+| `notEmpty()` | Le champ ne doit pas etre vide |
+| `isLength({ min, max })` | Longueur minimale et/ou maximale |
+| `isEmail()` | Doit etre un email valide |
+| `isInt({ min, max })` | Doit etre un entier |
+| `isFloat({ min, max })` | Doit etre un nombre decimal |
+| `isBoolean()` | Doit etre un booleen |
+| `matches(/regex/)` | Doit correspondre a l'expression reguliere |
+| `trim()` | Supprime les espaces en debut et fin (sanitizer) |
+| `escape()` | Echappe les caracteres HTML (sanitizer) |
+| `toInt()` | Convertit en entier (sanitizer) |
+
+---
+
+## 9. CORS
+
+### 9.1. Le probleme du Same-Origin Policy
+
+Le navigateur applique une politique de securite appelee Same-Origin Policy : un script JavaScript execute depuis une origine (protocole + domaine + port) ne peut pas faire de requetes HTTP vers une origine differente.
+
+Exemple : une page servie par `http://localhost:5173` (frontend React/Vue) ne peut pas faire de requete vers `http://localhost:3000` (API Express) car le port est different. Le navigateur bloque la requete.
+
+### 9.2. Le middleware cors
+
+CORS (Cross-Origin Resource Sharing) est un mecanisme qui permet au serveur d'indiquer quelles origines sont autorisees.
+
+```bash
+npm install cors
+```
+
+```javascript
+const cors = require("cors");
+
+// Autoriser TOUTES les origines (a utiliser uniquement en developpement)
+app.use(cors());
+
+// Autoriser uniquement certaines origines (recommande en production)
+app.use(cors({
+  origin: "http://localhost:5173",  // L'URL du frontend
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true  // Autoriser l'envoi de cookies
+}));
+
+// Autoriser plusieurs origines
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:5174", "https://monsite.fr"],
+  methods: ["GET", "POST", "PUT", "DELETE"]
+}));
+```
+
+### 9.3. Quand configurer CORS ?
+
+CORS est necessaire quand le frontend et le backend sont sur des origines differentes :
+
+- En developpement : frontend sur le port 5173, API sur le port 3000
+- En production : frontend sur `https://monsite.fr`, API sur `https://api.monsite.fr`
+
+CORS n'est pas necessaire quand le frontend et l'API sont sur la meme origine (meme protocole, meme domaine, meme port).
+
+---
+
+## 10. Tests d'API
+
+### 10.1. Tests manuels avec Postman ou Thunder Client
+
+Postman est un logiciel autonome et Thunder Client est une extension VS Code. Les deux permettent d'envoyer des requetes HTTP et de visualiser les reponses.
+
+Pour tester une API CRUD de produits :
+
+**Lister les produits :**
+- Methode : GET
+- URL : `http://localhost:3000/api/produits`
+- Body : aucun
+
+**Creer un produit :**
+- Methode : POST
+- URL : `http://localhost:3000/api/produits`
+- Headers : `Content-Type: application/json`
+- Body (JSON) :
+```json
+{
+  "nom": "Casque audio",
+  "prix": 59.99,
+  "stock": 20
+}
+```
+
+**Obtenir un produit :**
+- Methode : GET
+- URL : `http://localhost:3000/api/produits/1`
+
+**Modifier un produit :**
+- Methode : PUT
+- URL : `http://localhost:3000/api/produits/1`
+- Headers : `Content-Type: application/json`
+- Body (JSON) :
+```json
+{
+  "nom": "Casque audio premium",
+  "prix": 79.99,
+  "stock": 15
+}
+```
+
+**Supprimer un produit :**
+- Methode : DELETE
+- URL : `http://localhost:3000/api/produits/1`
+
+**Tester avec un token JWT :**
+- Headers : `Authorization: Bearer eyJhbGciOi...`
+
+### 10.2. Tests automatises avec Supertest
+
+```bash
+npm install supertest jest --save-dev
+```
+
+Dans `package.json` :
+
+```json
+"scripts": {
+  "test": "jest"
+}
+```
+
+Fichier `tests/produits.test.js` :
+
+```javascript
+const request = require("supertest");
+const express = require("express");
+const produitRoutes = require("../routes/produitRoutes");
+
+// Creer une application Express pour les tests
+const app = express();
+app.use(express.json());
+app.use("/api/produits", produitRoutes);
+
+describe("API Produits", function () {
+
+  describe("GET /api/produits", function () {
+    it("doit retourner la liste des produits avec un statut 200", async function () {
+      const reponse = await request(app).get("/api/produits");
+
+      expect(reponse.status).toBe(200);
+      expect(Array.isArray(reponse.body)).toBe(true);
+    });
+  });
+
+  describe("POST /api/produits", function () {
+    it("doit creer un produit avec un statut 201", async function () {
+      const nouveauProduit = {
+        nom: "Clavier test",
+        prix: 49.99,
+        stock: 10
+      };
+
+      const reponse = await request(app)
+        .post("/api/produits")
+        .send(nouveauProduit);
+
+      expect(reponse.status).toBe(201);
+      expect(reponse.body.nom).toBe("Clavier test");
+      expect(reponse.body.prix).toBe(49.99);
+    });
+
+    it("doit retourner 400 si le nom est manquant", async function () {
+      const produitInvalide = {
+        prix: 49.99,
+        stock: 10
+      };
+
+      const reponse = await request(app)
+        .post("/api/produits")
+        .send(produitInvalide);
+
+      expect(reponse.status).toBe(400);
+    });
+  });
+
+  describe("GET /api/produits/:id", function () {
+    it("doit retourner 404 si le produit n'existe pas", async function () {
+      const reponse = await request(app).get("/api/produits/99999");
+
+      expect(reponse.status).toBe(404);
+    });
+  });
+
+  describe("DELETE /api/produits/:id", function () {
+    it("doit retourner 204 apres suppression", async function () {
+      const reponse = await request(app).delete("/api/produits/1");
+
+      expect(reponse.status).toBe(204);
+    });
+  });
+
+});
+```
+
+Lancer les tests :
+
+```bash
+npm test
+```
+
+---
+
+## 11. Deploiement (notions)
+
+### 11.1. Variables d'environnement en production
+
+En production, les variables d'environnement ne viennent pas d'un fichier `.env` mais sont configurees directement sur le serveur ou la plateforme d'hebergement.
+
+```bash
+# Definir les variables d'environnement sur un serveur Linux
+export PORT=3000
+export DB_HOST=localhost
+export DB_USER=app_user
+export DB_PASSWORD=motdepasse_production
+export DB_NAME=ma_boutique_prod
+export JWT_SECRET=une-cle-tres-longue-et-aleatoire
+export NODE_ENV=production
+```
+
+Dans le code, adapter le comportement selon l'environnement :
+
+```javascript
+if (process.env.NODE_ENV === "production") {
+  // Configuration de production
+  app.use(express.static("dist")); // Fichiers compiles du frontend
+} else {
+  // Configuration de developpement
+  app.use(cors()); // CORS ouvert en dev
+}
+```
+
+### 11.2. PM2
+
+PM2 est un gestionnaire de processus pour Node.js en production. Il permet de :
+
+- Garder l'application en marche (redemarrage automatique en cas de crash)
+- Gerer les logs
+- Lancer plusieurs instances (mode cluster)
+
+```bash
+# Installation globale
+npm install pm2 -g
+
+# Demarrer l'application
+pm2 start index.js --name "mon-api"
+
+# Voir les processus en cours
+pm2 list
+
+# Voir les logs
+pm2 logs mon-api
+
+# Redemarrer
+pm2 restart mon-api
+
+# Arreter
+pm2 stop mon-api
+
+# Supprimer du gestionnaire
+pm2 delete mon-api
+
+# Demarrer automatiquement au demarrage du serveur
+pm2 startup
+pm2 save
+```
+
+### 11.3. HTTPS en production
+
+En production, l'API doit etre accessible en HTTPS. Cela se fait generalement via un reverse proxy (Nginx ou Apache) qui gere le certificat SSL et redirige vers l'application Node.js.
+
+Configuration Nginx simplifiee :
+
+```
+server {
+    listen 443 ssl;
+    server_name api.monsite.fr;
+
+    ssl_certificate /etc/letsencrypt/live/api.monsite.fr/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.monsite.fr/privkey.pem;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+---
+
+## 12. Exercices d'examen corriges
+
+### Exercice 1 : Creer un serveur Express basique
+
+**Enonce :** Ecrire le code d'un serveur Express qui ecoute sur le port 3000 et repond "Bienvenue sur l'API" quand on accede a la racine (GET /).
+
+**Correction :**
+
+```javascript
+const express = require("express");
+const app = express();
+
+app.get("/", function (req, res) {
+  res.send("Bienvenue sur l'API");
+});
+
+app.listen(3000, function () {
+  console.log("Serveur demarre sur le port 3000");
+});
+```
+
+---
+
+### Exercice 2 : Creer des routes CRUD pour une ressource "clients"
+
+**Enonce :** Completer le fichier de routes suivant pour implementer un CRUD complet sur la ressource "clients". Utiliser les conventions REST.
+
+```javascript
+const express = require("express");
+const router = express.Router();
+const clientController = require("../controllers/clientController");
+
+// A completer
+```
+
+**Correction :**
+
+```javascript
+const express = require("express");
+const router = express.Router();
+const clientController = require("../controllers/clientController");
+
+router.get("/", clientController.listerClients);
+router.get("/:id", clientController.obtenirClient);
+router.post("/", clientController.creerClient);
+router.put("/:id", clientController.modifierClient);
+router.delete("/:id", clientController.supprimerClient);
+
+module.exports = router;
+```
+
+---
+
+### Exercice 3 : Ecrire le modele d'acces a la base de donnees
+
+**Enonce :** Ecrire le fichier `models/clientModel.js` contenant les fonctions `trouverTous`, `trouverParId`, `creer`, `modifier` et `supprimer` pour la table `clients` (colonnes : id, nom, email, telephone). Utiliser des requetes preparees avec `mysql2/promise`.
+
+**Correction :**
+
+```javascript
+const pool = require("../db");
+
+async function trouverTous() {
+  const [lignes] = await pool.execute("SELECT * FROM clients ORDER BY nom");
+  return lignes;
+}
+
+async function trouverParId(id) {
+  const [lignes] = await pool.execute(
+    "SELECT * FROM clients WHERE id = ?",
+    [id]
+  );
+  return lignes[0];
+}
+
+async function creer(nom, email, telephone) {
+  const [resultat] = await pool.execute(
+    "INSERT INTO clients (nom, email, telephone) VALUES (?, ?, ?)",
+    [nom, email, telephone]
+  );
+  return resultat.insertId;
+}
+
+async function modifier(id, nom, email, telephone) {
+  const [resultat] = await pool.execute(
+    "UPDATE clients SET nom = ?, email = ?, telephone = ? WHERE id = ?",
+    [nom, email, telephone, id]
+  );
+  return resultat.affectedRows;
+}
+
+async function supprimer(id) {
+  const [resultat] = await pool.execute(
+    "DELETE FROM clients WHERE id = ?",
+    [id]
+  );
+  return resultat.affectedRows;
+}
+
+module.exports = { trouverTous, trouverParId, creer, modifier, supprimer };
+```
+
+---
+
+### Exercice 4 : Completer un controleur
+
+**Enonce :** Completer la fonction `creerClient` du controleur. Elle doit valider que les champs `nom` et `email` sont presents, creer le client dans la base de donnees, et retourner le client cree avec un statut 201.
+
+```javascript
+const clientModel = require("../models/clientModel");
+
+async function creerClient(req, res) {
+  // A completer
+}
+```
+
+**Correction :**
+
+```javascript
+const clientModel = require("../models/clientModel");
+
+async function creerClient(req, res) {
+  try {
+    const { nom, email, telephone } = req.body;
+
+    if (!nom || !email) {
+      return res.status(400).json({
+        erreur: "Les champs nom et email sont obligatoires"
+      });
+    }
+
+    const id = await clientModel.creer(nom, email, telephone || null);
+    const nouveauClient = await clientModel.trouverParId(id);
+
+    res.status(201).json(nouveauClient);
+  } catch (erreur) {
+    console.error(erreur);
+    if (erreur.code === "ER_DUP_ENTRY") {
+      return res.status(400).json({ erreur: "Cet email est deja utilise" });
+    }
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+```
+
+---
+
+### Exercice 5 : Identifier les failles de securite
+
+**Enonce :** Le code suivant contient plusieurs failles de securite. Les identifier et les corriger.
+
+```javascript
+const express = require("express");
+const app = express();
+const mysql = require("mysql2/promise");
+
+const pool = mysql.createPool({
+  host: "localhost",
+  user: "root",
+  password: "admin123",
+  database: "boutique"
+});
+
+app.use(express.json());
+
+app.post("/connexion", async function (req, res) {
+  const { email, motDePasse } = req.body;
+
+  const [utilisateurs] = await pool.execute(
+    "SELECT * FROM utilisateurs WHERE email = '" + email + "' AND mot_de_passe = '" + motDePasse + "'"
+  );
+
+  if (utilisateurs.length > 0) {
+    res.json({ message: "Connecte", utilisateur: utilisateurs[0] });
+  } else {
+    res.json({ message: "Email non trouve" });
+  }
+});
+
+app.listen(3000);
+```
+
+**Correction :**
+
+Faille 1 : **Injection SQL.** Les valeurs sont concatenees directement dans la requete SQL. Un attaquant peut injecter du SQL via les champs email ou motDePasse.
+Correction : utiliser des requetes preparees avec des placeholders `?`.
+
+Faille 2 : **Mots de passe en clair.** Le mot de passe est compare directement en SQL, ce qui signifie qu'il est stocke en clair dans la base de donnees.
+Correction : utiliser bcrypt pour hasher les mots de passe et `bcrypt.compare()` pour la verification.
+
+Faille 3 : **Identifiants de base de donnees en dur dans le code.** Le mot de passe de la base de donnees est visible dans le code source.
+Correction : utiliser des variables d'environnement avec dotenv.
+
+Faille 4 : **Message d'erreur revelateur.** Le message "Email non trouve" permet a un attaquant de savoir si un email est enregistre.
+Correction : utiliser un message generique "Identifiants incorrects".
+
+Faille 5 : **Renvoi de toutes les donnees utilisateur.** La reponse contient `utilisateurs[0]` qui inclut le mot de passe (meme hashe).
+Correction : ne retourner que les champs necessaires (id, nom, email, role).
+
+Faille 6 : **Pas de gestion d'erreurs.** Si la requete SQL echoue, le serveur plante.
+Correction : utiliser try/catch.
+
+Code corrige :
+
+```javascript
+require("dotenv").config();
+const express = require("express");
+const app = express();
+const bcrypt = require("bcrypt");
+const mysql = require("mysql2/promise");
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
+});
+
+app.use(express.json());
+
+app.post("/connexion", async function (req, res) {
+  try {
+    const { email, motDePasse } = req.body;
+
+    if (!email || !motDePasse) {
+      return res.status(400).json({ erreur: "Email et mot de passe requis" });
+    }
+
+    const [utilisateurs] = await pool.execute(
+      "SELECT * FROM utilisateurs WHERE email = ?",
+      [email]
+    );
+
+    if (utilisateurs.length === 0) {
+      return res.status(401).json({ erreur: "Identifiants incorrects" });
+    }
+
+    const utilisateur = utilisateurs[0];
+    const correspond = await bcrypt.compare(motDePasse, utilisateur.mot_de_passe);
+
+    if (!correspond) {
+      return res.status(401).json({ erreur: "Identifiants incorrects" });
+    }
+
+    res.json({
+      message: "Connecte",
+      utilisateur: {
+        id: utilisateur.id,
+        nom: utilisateur.nom,
+        email: utilisateur.email,
+        role: utilisateur.role
+      }
+    });
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+});
+
+app.listen(3000);
+```
+
+---
+
+### Exercice 6 : Ecrire un middleware de journalisation
+
+**Enonce :** Ecrire un middleware qui affiche dans la console la methode HTTP, l'URL et la date/heure de chaque requete recue. Expliquer ou le placer dans le code.
+
+**Correction :**
+
+```javascript
+function logger(req, res, next) {
+  const date = new Date().toLocaleString("fr-FR");
+  console.log("[" + date + "] " + req.method + " " + req.url);
+  next();
+}
+
+// Le placer AVANT les routes pour qu'il s'execute a chaque requete
+app.use(logger);
+
+// Routes apres le middleware
+app.get("/api/produits", function (req, res) { /* ... */ });
+```
+
+Le middleware doit etre declare avant les routes car Express execute les middleware dans l'ordre de declaration. S'il est place apres les routes, il ne sera jamais execute (la route aura deja envoye la reponse). L'appel a `next()` est obligatoire pour passer la main au middleware ou a la route suivante.
+
+---
+
+### Exercice 7 : Middleware de verification de role
+
+**Enonce :** Ecrire un middleware `verifierRole` qui accepte un role en parametre et verifie que l'utilisateur connecte possede ce role. Le middleware doit renvoyer une erreur 403 si le role ne correspond pas.
+
+**Correction :**
+
+```javascript
+function verifierRole(roleRequis) {
+  return function (req, res, next) {
+    if (!req.session.utilisateur) {
+      return res.status(401).json({ erreur: "Authentification requise" });
+    }
+
+    if (req.session.utilisateur.role !== roleRequis) {
+      return res.status(403).json({ erreur: "Acces refuse : role " + roleRequis + " requis" });
+    }
+
+    next();
+  };
+}
+
+// Utilisation
+app.delete("/api/produits/:id", verifierRole("admin"), produitController.supprimerProduit);
+app.get("/api/rapports", verifierRole("admin"), rapportController.generer);
+```
+
+La fonction `verifierRole` est une **fabrique de middleware** : elle retourne une fonction middleware. Cela permet de parametrer le middleware avec le role souhaite.
+
+---
+
+### Exercice 8 : Requete SQL avec jointure dans un modele
+
+**Enonce :** La table `commandes` possede une colonne `client_id` qui reference la table `clients`. Ecrire une fonction `trouverCommandesAvecClient` dans le modele qui retourne toutes les commandes avec le nom et l'email du client associe.
+
+Tables :
+
+```sql
+CREATE TABLE clients (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nom VARCHAR(100) NOT NULL,
+  email VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE commandes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  client_id INT NOT NULL,
+  montant DECIMAL(10, 2) NOT NULL,
+  date_commande DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (client_id) REFERENCES clients(id)
+);
+```
+
+**Correction :**
+
+```javascript
+const pool = require("../db");
+
+async function trouverCommandesAvecClient() {
+  const [lignes] = await pool.execute(
+    "SELECT commandes.id, commandes.montant, commandes.date_commande, " +
+    "clients.nom AS client_nom, clients.email AS client_email " +
+    "FROM commandes " +
+    "INNER JOIN clients ON commandes.client_id = clients.id " +
+    "ORDER BY commandes.date_commande DESC"
+  );
+  return lignes;
+}
+
+async function trouverCommandesParClient(clientId) {
+  const [lignes] = await pool.execute(
+    "SELECT commandes.id, commandes.montant, commandes.date_commande " +
+    "FROM commandes " +
+    "WHERE commandes.client_id = ? " +
+    "ORDER BY commandes.date_commande DESC",
+    [clientId]
+  );
+  return lignes;
+}
+
+module.exports = { trouverCommandesAvecClient, trouverCommandesParClient };
+```
+
+---
+
+### Exercice 9 : Gestion de l'upload d'image avec validation
+
+**Enonce :** Completer le code suivant pour configurer Multer afin d'accepter uniquement les fichiers JPEG et PNG, avec une taille maximale de 2 Mo, stockes dans le dossier `uploads/`.
+
+```javascript
+const multer = require("multer");
+const path = require("path");
+
+// A completer : configuration du stockage
+
+// A completer : filtre de fichier
+
+// A completer : creation de l'instance multer
+
+app.post("/api/avatar", /* middleware multer */, function (req, res) {
+  // A completer
+});
+```
+
+**Correction :**
+
+```javascript
+const multer = require("multer");
+const path = require("path");
+
+const stockage = multer.diskStorage({
+  destination: function (req, fichier, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, fichier, cb) {
+    const nomUnique = Date.now() + "-" + Math.round(Math.random() * 1000000) + path.extname(fichier.originalname);
+    cb(null, nomUnique);
+  }
+});
+
+function filtrerFichier(req, fichier, cb) {
+  const typesAutorises = ["image/jpeg", "image/png"];
+
+  if (typesAutorises.includes(fichier.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Seuls les fichiers JPEG et PNG sont acceptes"), false);
+  }
+}
+
+const upload = multer({
+  storage: stockage,
+  fileFilter: filtrerFichier,
+  limits: {
+    fileSize: 2 * 1024 * 1024 // 2 Mo
+  }
+});
+
+app.post("/api/avatar", upload.single("avatar"), function (req, res) {
+  if (!req.file) {
+    return res.status(400).json({ erreur: "Aucun fichier envoye" });
+  }
+
+  res.json({
+    message: "Avatar uploade avec succes",
+    fichier: {
+      nom: req.file.filename,
+      taille: req.file.size,
+      type: req.file.mimetype,
+      chemin: "/uploads/" + req.file.filename
+    }
+  });
+});
+```
+
+---
+
+### Exercice 10 : Architecture MVC complete
+
+**Enonce :** On souhaite gerer une ressource "articles" (id, titre, contenu, auteur, date_publication). Donner la structure de dossiers et ecrire le code complet du modele, du controleur et des routes en architecture MVC.
+
+Table SQL :
+
+```sql
+CREATE TABLE articles (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  titre VARCHAR(200) NOT NULL,
+  contenu TEXT NOT NULL,
+  auteur VARCHAR(100) NOT NULL,
+  date_publication DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Correction :**
+
+Structure de dossiers :
+
+```
+projet/
+  models/
+    articleModel.js
+  controllers/
+    articleController.js
+  routes/
+    articleRoutes.js
+  db.js
+  index.js
+  .env
+  package.json
+```
+
+Fichier `models/articleModel.js` :
+
+```javascript
+const pool = require("../db");
+
+async function trouverTous() {
+  const [lignes] = await pool.execute(
+    "SELECT * FROM articles ORDER BY date_publication DESC"
+  );
+  return lignes;
+}
+
+async function trouverParId(id) {
+  const [lignes] = await pool.execute(
+    "SELECT * FROM articles WHERE id = ?",
+    [id]
+  );
+  return lignes[0];
+}
+
+async function creer(titre, contenu, auteur) {
+  const [resultat] = await pool.execute(
+    "INSERT INTO articles (titre, contenu, auteur) VALUES (?, ?, ?)",
+    [titre, contenu, auteur]
+  );
+  return resultat.insertId;
+}
+
+async function modifier(id, titre, contenu, auteur) {
+  const [resultat] = await pool.execute(
+    "UPDATE articles SET titre = ?, contenu = ?, auteur = ? WHERE id = ?",
+    [titre, contenu, auteur, id]
+  );
+  return resultat.affectedRows;
+}
+
+async function supprimer(id) {
+  const [resultat] = await pool.execute(
+    "DELETE FROM articles WHERE id = ?",
+    [id]
+  );
+  return resultat.affectedRows;
+}
+
+module.exports = { trouverTous, trouverParId, creer, modifier, supprimer };
+```
+
+Fichier `controllers/articleController.js` :
+
+```javascript
+const articleModel = require("../models/articleModel");
+
+async function listerArticles(req, res) {
+  try {
+    const articles = await articleModel.trouverTous();
+    res.json(articles);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+async function obtenirArticle(req, res) {
+  try {
+    const article = await articleModel.trouverParId(req.params.id);
+
+    if (!article) {
+      return res.status(404).json({ erreur: "Article non trouve" });
+    }
+
+    res.json(article);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+async function creerArticle(req, res) {
+  try {
+    const { titre, contenu, auteur } = req.body;
+
+    if (!titre || !contenu || !auteur) {
+      return res.status(400).json({
+        erreur: "Les champs titre, contenu et auteur sont obligatoires"
+      });
+    }
+
+    if (titre.length > 200) {
+      return res.status(400).json({
+        erreur: "Le titre ne doit pas depasser 200 caracteres"
+      });
+    }
+
+    const id = await articleModel.creer(titre, contenu, auteur);
+    const nouvelArticle = await articleModel.trouverParId(id);
+
+    res.status(201).json(nouvelArticle);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+async function modifierArticle(req, res) {
+  try {
+    const { titre, contenu, auteur } = req.body;
+
+    if (!titre || !contenu || !auteur) {
+      return res.status(400).json({
+        erreur: "Les champs titre, contenu et auteur sont obligatoires"
+      });
+    }
+
+    const lignesAffectees = await articleModel.modifier(
+      req.params.id, titre, contenu, auteur
+    );
+
+    if (lignesAffectees === 0) {
+      return res.status(404).json({ erreur: "Article non trouve" });
+    }
+
+    const articleModifie = await articleModel.trouverParId(req.params.id);
+    res.json(articleModifie);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+async function supprimerArticle(req, res) {
+  try {
+    const lignesAffectees = await articleModel.supprimer(req.params.id);
+
+    if (lignesAffectees === 0) {
+      return res.status(404).json({ erreur: "Article non trouve" });
+    }
+
+    res.status(204).send();
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+
+module.exports = {
+  listerArticles,
+  obtenirArticle,
+  creerArticle,
+  modifierArticle,
+  supprimerArticle
+};
+```
+
+Fichier `routes/articleRoutes.js` :
+
+```javascript
+const express = require("express");
+const router = express.Router();
+const articleController = require("../controllers/articleController");
+
+router.get("/", articleController.listerArticles);
+router.get("/:id", articleController.obtenirArticle);
+router.post("/", articleController.creerArticle);
+router.put("/:id", articleController.modifierArticle);
+router.delete("/:id", articleController.supprimerArticle);
+
+module.exports = router;
+```
+
+Fichier `index.js` :
+
+```javascript
+require("dotenv").config();
+const express = require("express");
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+const articleRoutes = require("./routes/articleRoutes");
+
+app.use(express.json());
+app.use("/api/articles", articleRoutes);
+
+app.use(function (req, res) {
+  res.status(404).json({ erreur: "Route non trouvee" });
+});
+
+app.use(function (err, req, res, next) {
+  console.error(err);
+  res.status(500).json({ erreur: "Erreur interne du serveur" });
+});
+
+app.listen(PORT, function () {
+  console.log("Serveur demarre sur le port " + PORT);
+});
+```
+
+---
+
+### Exercice 11 : Proteger des routes avec JWT
+
+**Enonce :** Ecrire un middleware `verifierToken` qui extrait un JWT de l'en-tete `Authorization`, le verifie, et ajoute les informations decodees a `req.utilisateur`. Montrer comment l'appliquer a une route.
+
+**Correction :**
+
+```javascript
+const jwt = require("jsonwebtoken");
+const SECRET = process.env.JWT_SECRET;
+
+function verifierToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+
+  if (!authHeader) {
+    return res.status(401).json({ erreur: "Token manquant" });
+  }
+
+  const parties = authHeader.split(" ");
+
+  if (parties.length !== 2 || parties[0] !== "Bearer") {
+    return res.status(401).json({ erreur: "Format du token invalide" });
+  }
+
+  const token = parties[1];
+
+  try {
+    const decodage = jwt.verify(token, SECRET);
+    req.utilisateur = decodage;
+    next();
+  } catch (erreur) {
+    if (erreur.name === "TokenExpiredError") {
+      return res.status(401).json({ erreur: "Token expire" });
+    }
+    return res.status(403).json({ erreur: "Token invalide" });
+  }
+}
+
+module.exports = verifierToken;
+```
+
+Application :
+
+```javascript
+const verifierToken = require("./middleware/authJWT");
+
+// Route protegee individuelle
+router.post("/", verifierToken, articleController.creerArticle);
+router.put("/:id", verifierToken, articleController.modifierArticle);
+router.delete("/:id", verifierToken, articleController.supprimerArticle);
+
+// Les routes GET restent publiques
+router.get("/", articleController.listerArticles);
+router.get("/:id", articleController.obtenirArticle);
+```
+
+---
+
+### Exercice 12 : Recherche et pagination
+
+**Enonce :** Ecrire une route `GET /api/produits` qui supporte la recherche par nom (parametre `q`) et la pagination (parametres `page` et `limite`). Ecrire le modele correspondant.
+
+**Correction :**
+
+Modele :
+
+```javascript
+async function rechercher(recherche, page, limite) {
+  const offset = (page - 1) * limite;
+
+  let requete = "SELECT * FROM produits";
+  let requeteTotal = "SELECT COUNT(*) AS total FROM produits";
+  const params = [];
+  const paramsTotal = [];
+
+  if (recherche) {
+    requete += " WHERE nom LIKE ?";
+    requeteTotal += " WHERE nom LIKE ?";
+    params.push("%" + recherche + "%");
+    paramsTotal.push("%" + recherche + "%");
+  }
+
+  requete += " ORDER BY nom LIMIT ? OFFSET ?";
+  params.push(limite, offset);
+
+  const [lignes] = await pool.execute(requete, params);
+  const [totalResult] = await pool.execute(requeteTotal, paramsTotal);
+  const total = totalResult[0].total;
+
+  return {
+    donnees: lignes,
+    pagination: {
+      page: page,
+      limite: limite,
+      total: total,
+      totalPages: Math.ceil(total / limite)
+    }
+  };
+}
+```
+
+Controleur :
+
+```javascript
+async function listerProduits(req, res) {
+  try {
+    const recherche = req.query.q || "";
+    const page = parseInt(req.query.page) || 1;
+    const limite = parseInt(req.query.limite) || 10;
+
+    if (page < 1 || limite < 1 || limite > 100) {
+      return res.status(400).json({
+        erreur: "Parametres de pagination invalides"
+      });
+    }
+
+    const resultat = await produitModel.rechercher(recherche, page, limite);
+    res.json(resultat);
+  } catch (erreur) {
+    console.error(erreur);
+    res.status(500).json({ erreur: "Erreur serveur" });
+  }
+}
+```
+
+Exemple d'appels :
+- `GET /api/produits` : premiere page, 10 resultats
+- `GET /api/produits?page=2&limite=5` : deuxieme page, 5 resultats par page
+- `GET /api/produits?q=clavier` : recherche "clavier"
+- `GET /api/produits?q=souris&page=1&limite=20` : recherche paginee
+
+---
+
+## Recapitulatif des commandes essentielles
+
+| Commande | Description |
+|---|---|
+| `npm init -y` | Initialiser un projet Node.js |
+| `npm install express` | Installer Express |
+| `npm install mysql2` | Installer le pilote MySQL |
+| `npm install dotenv` | Installer dotenv |
+| `npm install bcrypt` | Installer bcrypt |
+| `npm install jsonwebtoken` | Installer JWT |
+| `npm install multer` | Installer Multer |
+| `npm install cors` | Installer le middleware CORS |
+| `npm install express-session` | Installer les sessions |
+| `npm install express-validator` | Installer la validation |
+| `npm install nodemon -D` | Installer nodemon (dev) |
+| `npm install supertest jest -D` | Installer les outils de test (dev) |
+| `node index.js` | Lancer le serveur |
+| `npm run dev` | Lancer avec nodemon |
+| `npm test` | Lancer les tests |
+
+---
+
+## Recapitulatif des points de securite
+
+1. **Requetes preparees** : toujours utiliser des placeholders `?` avec mysql2, jamais de concatenation de chaines dans les requetes SQL
+2. **Mots de passe hashes** : utiliser bcrypt, jamais de stockage en clair
+3. **Variables d'environnement** : jamais d'identifiants ni de cles secretes dans le code source
+4. **Fichier .env dans .gitignore** : ne jamais versionner les secrets
+5. **Validation des entrees** : toujours verifier et nettoyer les donnees recues du client
+6. **Messages d'erreur generiques** : ne pas reveler d'informations sur la structure interne (email existant, type de BDD)
+7. **HTTPS en production** : chiffrer les echanges entre le client et le serveur
+8. **httpOnly sur les cookies** : empecher l'acces aux cookies depuis JavaScript cote client
+9. **CORS restrictif en production** : n'autoriser que les origines connues
+10. **Gestion des erreurs** : ne jamais afficher les traces d'erreur au client en production

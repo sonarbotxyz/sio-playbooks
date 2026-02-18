@@ -1,0 +1,3611 @@
+---
+title: "HTML et CSS"
+description: "Guide complet HTML et CSS pour le BTS SIO SLAM"
+category: "Fondamentaux"
+tags: ["html", "css", "web", "frontend"]
+difficulty: "Debutant"
+---
+
+# HTML et CSS — Le guide complet pour le BTS SIO SLAM
+
+---
+
+## Partie 1 — HTML
+
+---
+
+### 1.1 Structure d'une page HTML5
+
+Toute page HTML5 valide respecte une structure precise. Chaque element a un role. Il n'y a rien de facultatif ici.
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Titre de la page</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Le contenu visible de la page -->
+</body>
+</html>
+```
+
+**Explication de chaque ligne :**
+
+**`<!DOCTYPE html>`** — Ce n'est pas une balise HTML. C'est une declaration qui indique au navigateur que le document utilise HTML5. Sans cette declaration, le navigateur peut basculer en "mode quirks" et interpreter le CSS de maniere imprevisible. On la place toujours en premiere ligne, sans rien avant (pas meme un espace).
+
+**`<html lang="fr">`** — Element racine qui contient tout le document. L'attribut `lang` indique la langue du contenu. Les lecteurs d'ecran utilisent cette information pour choisir la voix de synthese vocale. Les moteurs de recherche l'utilisent pour le referencement. En BTS SIO, on met `lang="fr"` pour un site francophone.
+
+**`<head>`** — Contient les metadonnees du document. Rien de ce qui se trouve dans `<head>` n'est affiche directement a l'ecran. On y place :
+- Les balises `<meta>` pour le jeu de caracteres et le viewport
+- Le `<title>` qui apparait dans l'onglet du navigateur
+- Les liens vers les feuilles de style CSS
+- Les liens vers les scripts JavaScript
+
+**`<meta charset="UTF-8">`** — Definit l'encodage des caracteres. UTF-8 prend en charge tous les caracteres internationaux (accents, caracteres chinois, emojis). Sans cette balise, les accents peuvent s'afficher de maniere incorrecte.
+
+**`<meta name="viewport" content="width=device-width, initial-scale=1.0">`** — Indique au navigateur mobile que la largeur de la page doit correspondre a la largeur de l'ecran de l'appareil. Sans cette balise, un site affiche sur mobile apparait en version "bureau reduite", illisible. C'est la base du responsive design.
+
+**`<title>`** — Definit le titre affiche dans l'onglet du navigateur et dans les resultats de recherche Google. Chaque page doit avoir un titre unique et descriptif.
+
+**`<link rel="stylesheet" href="style.css">`** — Lie une feuille de style CSS externe au document. L'attribut `rel` precise la relation (stylesheet = feuille de style). L'attribut `href` donne le chemin vers le fichier CSS.
+
+**`<body>`** — Contient tout le contenu visible de la page : texte, images, liens, formulaires, tableaux. Il n'y a qu'un seul `<body>` par document.
+
+---
+
+### 1.2 Balises de texte
+
+#### Les titres : h1 a h6
+
+```html
+<h1>Titre principal de la page</h1>
+<h2>Sous-titre de section</h2>
+<h3>Sous-sous-titre</h3>
+<h4>Niveau 4</h4>
+<h5>Niveau 5</h5>
+<h6>Niveau 6</h6>
+```
+
+Les titres forment une hierarchie. `<h1>` est le plus important, `<h6>` le moins important. Le navigateur les affiche avec des tailles decroissantes par defaut.
+
+Regles a respecter :
+- Une seule balise `<h1>` par page (le titre principal)
+- Ne pas sauter de niveaux : apres un `<h2>`, on utilise `<h3>`, pas `<h4>`
+- Les titres ne servent pas a "mettre du texte en gros" — ils structurent le contenu pour les lecteurs d'ecran et le SEO
+
+#### Paragraphes et texte en ligne
+
+```html
+<p>Ceci est un paragraphe. Le navigateur ajoute automatiquement
+un espace vertical avant et apres chaque paragraphe.</p>
+
+<p>Un deuxieme paragraphe. Chaque balise <code>&lt;p&gt;</code> cree
+un nouveau bloc de texte.</p>
+```
+
+**`<p>`** — Definit un paragraphe. C'est un element de type "block" : il prend toute la largeur disponible et provoque un retour a la ligne avant et apres.
+
+**`<span>`** — Conteneur generique en ligne (inline). Il ne provoque pas de retour a la ligne. On l'utilise pour appliquer un style a une portion de texte :
+
+```html
+<p>Le prix est de <span style="color: red;">49,99 euros</span> TTC.</p>
+```
+
+**`<strong>`** — Indique une importance forte. Le navigateur l'affiche en **gras** par defaut. Ce n'est pas juste du gras visuel : les lecteurs d'ecran insistent sur le mot.
+
+```html
+<p><strong>Attention :</strong> la date limite est demain.</p>
+```
+
+**`<em>`** — Indique une emphase. Le navigateur l'affiche en *italique* par defaut. Comme `<strong>`, c'est semantique, pas juste visuel.
+
+```html
+<p>Il faut <em>absolument</em> valider le formulaire.</p>
+```
+
+**`<br>`** — Retour a la ligne force. Balise auto-fermante (pas de `</br>`). A utiliser avec parcimonie : pour les adresses postales, les poemes. Ne pas utiliser `<br>` pour creer de l'espace vertical — c'est le role du CSS.
+
+```html
+<p>Jean Dupont<br>
+12 rue de la Paix<br>
+75001 Paris</p>
+```
+
+**`<hr>`** — Ligne de separation horizontale. Balise auto-fermante. Represente une coupure thematique entre des paragraphes.
+
+```html
+<p>Fin de la premiere partie.</p>
+<hr>
+<p>Debut de la deuxieme partie.</p>
+```
+
+---
+
+### 1.3 Listes
+
+#### Liste non ordonnee (a puces)
+
+```html
+<ul>
+  <li>Premier element</li>
+  <li>Deuxieme element</li>
+  <li>Troisieme element</li>
+</ul>
+```
+
+`<ul>` (unordered list) cree une liste a puces. Chaque element est dans une balise `<li>` (list item). L'ordre des elements n'a pas d'importance semantique.
+
+#### Liste ordonnee (numerotee)
+
+```html
+<ol>
+  <li>Premiere etape</li>
+  <li>Deuxieme etape</li>
+  <li>Troisieme etape</li>
+</ol>
+```
+
+`<ol>` (ordered list) cree une liste numerotee. L'ordre est significatif. Le navigateur numerote automatiquement les elements.
+
+On peut preciser le numero de depart avec l'attribut `start` :
+
+```html
+<ol start="5">
+  <li>Cet element porte le numero 5</li>
+  <li>Celui-ci le numero 6</li>
+</ol>
+```
+
+#### Listes imbriquees
+
+```html
+<ul>
+  <li>Fruits
+    <ul>
+      <li>Pomme</li>
+      <li>Poire</li>
+    </ul>
+  </li>
+  <li>Legumes
+    <ul>
+      <li>Carotte</li>
+      <li>Tomate</li>
+    </ul>
+  </li>
+</ul>
+```
+
+La liste imbriquee se place a l'interieur d'un `<li>`, pas a cote.
+
+#### Liste de definitions
+
+```html
+<dl>
+  <dt>HTML</dt>
+  <dd>Langage de balisage pour structurer les pages web.</dd>
+
+  <dt>CSS</dt>
+  <dd>Langage de style pour la mise en forme des pages web.</dd>
+</dl>
+```
+
+`<dl>` (definition list) contient des paires terme/definition. `<dt>` (definition term) est le terme a definir. `<dd>` (definition description) est la definition. Utile pour les glossaires et les FAQ.
+
+---
+
+### 1.4 Liens
+
+```html
+<a href="https://www.example.com">Visiter le site</a>
+```
+
+La balise `<a>` (anchor) cree un lien hypertexte. L'attribut `href` (hypertext reference) contient l'URL de destination.
+
+#### Types de liens
+
+```html
+<!-- Lien absolu (URL complete) -->
+<a href="https://www.example.com/page.html">Lien absolu</a>
+
+<!-- Lien relatif (meme site) -->
+<a href="contact.html">Page contact</a>
+<a href="../images/photo.jpg">Image dans le dossier parent</a>
+
+<!-- Lien vers un email -->
+<a href="mailto:contact@example.com">Envoyer un email</a>
+
+<!-- Lien vers un telephone -->
+<a href="tel:+33612345678">Appeler</a>
+```
+
+#### L'attribut target
+
+```html
+<!-- Ouvre dans le meme onglet (comportement par defaut) -->
+<a href="page.html">Meme onglet</a>
+
+<!-- Ouvre dans un nouvel onglet -->
+<a href="page.html" target="_blank">Nouvel onglet</a>
+```
+
+Valeurs possibles de `target` :
+- `_self` : meme onglet (defaut)
+- `_blank` : nouvel onglet
+- `_parent` : cadre parent (usage rare)
+- `_top` : fenetre complete (usage rare)
+
+Quand on utilise `target="_blank"`, il est recommande d'ajouter `rel="noopener noreferrer"` pour des raisons de securite :
+
+```html
+<a href="https://example.com" target="_blank" rel="noopener noreferrer">Lien securise</a>
+```
+
+#### Ancres (liens internes a la page)
+
+```html
+<!-- Creer une ancre avec un id -->
+<h2 id="section-contact">Contact</h2>
+
+<!-- Lien vers cette ancre -->
+<a href="#section-contact">Aller a la section Contact</a>
+```
+
+Le caractere `#` suivi de l'identifiant permet de naviguer vers un element precis de la page. Cela fonctionne aussi entre pages :
+
+```html
+<a href="page.html#section-contact">Section contact de l'autre page</a>
+```
+
+---
+
+### 1.5 Images
+
+```html
+<img src="photo.jpg" alt="Description de l'image">
+```
+
+La balise `<img>` est auto-fermante (pas de `</img>`). Elle possede deux attributs obligatoires :
+
+**`src`** (source) — Le chemin vers le fichier image. Peut etre relatif ou absolu.
+
+**`alt`** (texte alternatif) — Description textuelle de l'image. **Si vous ne retenez qu'une chose sur l'accessibilite, retenez ceci : l'attribut `alt` est obligatoire.** Il est utilise par :
+- Les lecteurs d'ecran pour les personnes malvoyantes
+- Les moteurs de recherche pour comprendre l'image
+- Le navigateur quand l'image ne charge pas
+
+Si l'image est purement decorative, on met un `alt` vide : `alt=""`. Mais on ne supprime jamais l'attribut.
+
+```html
+<!-- Image avec description -->
+<img src="logo.png" alt="Logo de l'entreprise TechCorp">
+
+<!-- Image decorative -->
+<img src="bordure.png" alt="">
+
+<!-- Image avec dimensions -->
+<img src="photo.jpg" alt="Vue de Paris" width="800" height="600">
+```
+
+Les attributs `width` et `height` permettent de reserver l'espace avant le chargement de l'image, evitant un "saut" de la page (cumulative layout shift).
+
+#### La balise figure
+
+```html
+<figure>
+  <img src="graphique.png" alt="Evolution du chiffre d'affaires 2020-2024">
+  <figcaption>Figure 1 : Evolution du chiffre d'affaires entre 2020 et 2024</figcaption>
+</figure>
+```
+
+`<figure>` regroupe une image et sa legende. `<figcaption>` est le texte de legende visible sous (ou au-dessus de) l'image.
+
+---
+
+### 1.6 Tableaux HTML
+
+**Les tableaux sont un sujet recurrent a l'examen.** Il faut maitriser la structure complete, y compris `colspan` et `rowspan`.
+
+#### Structure de base
+
+```html
+<table>
+  <thead>
+    <tr>
+      <th>Nom</th>
+      <th>Prenom</th>
+      <th>Age</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Dupont</td>
+      <td>Jean</td>
+      <td>25</td>
+    </tr>
+    <tr>
+      <td>Martin</td>
+      <td>Marie</td>
+      <td>30</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+**Explication de chaque balise :**
+
+| Balise | Role |
+|--------|------|
+| `<table>` | Conteneur du tableau entier |
+| `<thead>` | En-tete du tableau (ligne de titres de colonnes) |
+| `<tbody>` | Corps du tableau (lignes de donnees) |
+| `<tfoot>` | Pied du tableau (totaux, resume) |
+| `<tr>` | Table Row — une ligne du tableau |
+| `<th>` | Table Header — cellule d'en-tete (texte en gras et centre par defaut) |
+| `<td>` | Table Data — cellule de donnees |
+
+#### colspan et rowspan
+
+`colspan` permet a une cellule de s'etendre sur plusieurs colonnes.
+`rowspan` permet a une cellule de s'etendre sur plusieurs lignes.
+
+**Exemple avec colspan :**
+
+```html
+<table>
+  <thead>
+    <tr>
+      <th colspan="3">Resultats annuels</th>
+    </tr>
+    <tr>
+      <th>Trimestre</th>
+      <th>Ventes</th>
+      <th>Benefice</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>T1</td>
+      <td>15 000</td>
+      <td>3 000</td>
+    </tr>
+    <tr>
+      <td>T2</td>
+      <td>18 000</td>
+      <td>4 500</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+La premiere ligne contient une seule cellule `<th>` qui s'etend sur 3 colonnes. Visuellement, le titre "Resultats annuels" est centre au-dessus des trois colonnes.
+
+**Exemple avec rowspan :**
+
+```html
+<table>
+  <thead>
+    <tr>
+      <th>Categorie</th>
+      <th>Produit</th>
+      <th>Prix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="2">Fruits</td>
+      <td>Pomme</td>
+      <td>1,50</td>
+    </tr>
+    <tr>
+      <td>Poire</td>
+      <td>2,00</td>
+    </tr>
+    <tr>
+      <td rowspan="2">Legumes</td>
+      <td>Carotte</td>
+      <td>0,80</td>
+    </tr>
+    <tr>
+      <td>Tomate</td>
+      <td>1,20</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+La cellule "Fruits" s'etend sur 2 lignes. La deuxieme ligne `<tr>` ne contient que 2 cellules `<td>` au lieu de 3, car la premiere colonne est deja occupee par le `rowspan`.
+
+Resultat visuel :
+
+```
++----------+---------+------+
+| Categorie| Produit | Prix |
++----------+---------+------+
+| Fruits   | Pomme   | 1,50 |
+|          +---------+------+
+|          | Poire   | 2,00 |
++----------+---------+------+
+| Legumes  | Carotte | 0,80 |
+|          +---------+------+
+|          | Tomate  | 1,20 |
++----------+---------+------+
+```
+
+**Exemple combinant colspan et rowspan :**
+
+```html
+<table>
+  <thead>
+    <tr>
+      <th rowspan="2">Employe</th>
+      <th colspan="2">Heures travaillees</th>
+    </tr>
+    <tr>
+      <th>Semaine 1</th>
+      <th>Semaine 2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Dupont</td>
+      <td>35</td>
+      <td>38</td>
+    </tr>
+    <tr>
+      <td>Martin</td>
+      <td>40</td>
+      <td>37</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td>Total</td>
+      <td>75</td>
+      <td>75</td>
+    </tr>
+  </tfoot>
+</table>
+```
+
+Resultat :
+
+```
++----------+---------------------+
+| Employe  | Heures travaillees  |
+|          +----------+----------+
+|          | Semaine 1| Semaine 2|
++----------+----------+----------+
+| Dupont   | 35       | 38       |
++----------+----------+----------+
+| Martin   | 40       | 37       |
++----------+----------+----------+
+| Total    | 75       | 75       |
++----------+----------+----------+
+```
+
+L'attribut `scope` sur les `<th>` ameliore l'accessibilite :
+
+```html
+<th scope="col">Nom</th>   <!-- en-tete de colonne -->
+<th scope="row">Total</th> <!-- en-tete de ligne -->
+```
+
+La balise `<caption>` ajoute un titre au tableau :
+
+```html
+<table>
+  <caption>Liste des employes du service informatique</caption>
+  <!-- ... -->
+</table>
+```
+
+---
+
+### 1.7 Formulaires
+
+Les formulaires permettent de collecter des donnees aupres de l'utilisateur. Ils sont presents dans presque toutes les applications web et constituent un sujet majeur de l'examen.
+
+#### Structure de base
+
+```html
+<form action="/traitement.php" method="POST">
+  <label for="nom">Nom :</label>
+  <input type="text" id="nom" name="nom">
+
+  <button type="submit">Envoyer</button>
+</form>
+```
+
+**`<form>`** — Conteneur du formulaire. Deux attributs essentiels :
+- `action` : URL vers laquelle les donnees sont envoyees
+- `method` : methode HTTP utilisee (GET ou POST)
+
+**`<label>`** — Etiquette associee a un champ. L'attribut `for` doit correspondre a l'`id` du champ associe. Quand on clique sur le label, le champ correspondant recoit le focus. C'est indispensable pour l'accessibilite.
+
+**`<input>`** — Champ de saisie. L'attribut `type` determine son comportement. L'attribut `name` est le nom de la donnee envoyee au serveur. Sans `name`, la donnee du champ n'est pas transmise.
+
+**`<button type="submit">`** — Bouton de soumission du formulaire.
+
+#### Methode GET vs POST
+
+**GET** envoie les donnees dans l'URL :
+
+```
+https://example.com/recherche?q=html&langue=fr
+```
+
+Caracteristiques de GET :
+- Les donnees sont visibles dans la barre d'adresse
+- L'URL peut etre mise en favoris (y compris les parametres)
+- Limitee en taille (environ 2000 caracteres selon le navigateur)
+- Les donnees restent dans l'historique du navigateur
+- Adaptee pour : recherche, filtrage, pagination
+
+**POST** envoie les donnees dans le corps de la requete HTTP :
+
+Caracteristiques de POST :
+- Les donnees ne sont pas visibles dans l'URL
+- Pas de limite de taille pratique
+- L'URL ne peut pas etre mise en favoris avec les donnees
+- Adaptee pour : inscription, connexion, envoi de fichiers, modification de donnees
+
+**Regle simple : GET pour lire, POST pour ecrire.** Si le formulaire modifie des donnees sur le serveur (creation de compte, ajout en base de donnees), on utilise POST. Si le formulaire ne fait que consulter (recherche, filtre), on utilise GET.
+
+#### Tous les types d'input
+
+```html
+<!-- Texte simple -->
+<input type="text" name="nom" placeholder="Votre nom">
+
+<!-- Mot de passe (caracteres masques) -->
+<input type="password" name="mdp" placeholder="Mot de passe">
+
+<!-- Email (validation automatique du format) -->
+<input type="email" name="email" placeholder="votre@email.com">
+
+<!-- Nombre (fleches haut/bas) -->
+<input type="number" name="age" min="0" max="120" step="1">
+
+<!-- Date (selecteur de date natif) -->
+<input type="date" name="naissance">
+
+<!-- Case a cocher -->
+<input type="checkbox" id="cgu" name="cgu" value="accepte">
+<label for="cgu">J'accepte les conditions</label>
+
+<!-- Boutons radio (un seul choix possible dans un groupe) -->
+<input type="radio" id="homme" name="genre" value="homme">
+<label for="homme">Homme</label>
+<input type="radio" id="femme" name="genre" value="femme">
+<label for="femme">Femme</label>
+
+<!-- Envoi de fichier -->
+<input type="file" name="document" accept=".pdf,.jpg,.png">
+
+<!-- Champ cache (non visible par l'utilisateur) -->
+<input type="hidden" name="id_utilisateur" value="42">
+
+<!-- Bouton de soumission -->
+<input type="submit" value="Envoyer">
+
+<!-- Couleur -->
+<input type="color" name="couleur_preferee">
+
+<!-- Plage (curseur) -->
+<input type="range" name="volume" min="0" max="100">
+
+<!-- Telephone -->
+<input type="tel" name="telephone" pattern="[0-9]{10}">
+
+<!-- URL -->
+<input type="url" name="site_web" placeholder="https://example.com">
+
+<!-- Recherche -->
+<input type="search" name="recherche" placeholder="Rechercher...">
+```
+
+Pour les boutons radio, le `name` doit etre identique dans tout le groupe pour que le navigateur sache qu'un seul choix est possible. Le `value` est la valeur envoyee au serveur.
+
+Pour les cases a cocher, chaque checkbox peut avoir un `name` different ou le meme `name` si on veut envoyer plusieurs valeurs (dans ce cas, on utilise `name="langages[]"` en PHP).
+
+#### Attributs de validation
+
+```html
+<!-- Champ obligatoire -->
+<input type="text" name="nom" required>
+
+<!-- Texte d'indication -->
+<input type="text" name="ville" placeholder="Paris">
+
+<!-- Expression reguliere -->
+<input type="text" name="code_postal" pattern="[0-9]{5}"
+       title="5 chiffres attendus">
+
+<!-- Valeurs min et max -->
+<input type="number" name="quantite" min="1" max="99">
+
+<!-- Longueur min et max -->
+<input type="text" name="pseudo" minlength="3" maxlength="20">
+
+<!-- Champ en lecture seule (envoye avec le formulaire) -->
+<input type="text" name="ref" value="REF-001" readonly>
+
+<!-- Champ desactive (NON envoye avec le formulaire) -->
+<input type="text" name="ancien" value="obsolete" disabled>
+```
+
+Difference entre `readonly` et `disabled` :
+- `readonly` : le champ est non modifiable mais sa valeur est envoyee au serveur
+- `disabled` : le champ est non modifiable et sa valeur n'est PAS envoyee au serveur
+
+L'attribut `title` fournit un message d'aide quand la validation par `pattern` echoue.
+
+#### Autres elements de formulaire
+
+**`<select>` — Liste deroulante :**
+
+```html
+<label for="pays">Pays :</label>
+<select id="pays" name="pays">
+  <option value="">-- Choisir --</option>
+  <option value="fr">France</option>
+  <option value="be">Belgique</option>
+  <option value="ch" selected>Suisse</option>
+</select>
+```
+
+L'attribut `selected` pre-selectionne une option. L'attribut `multiple` permet de selectionner plusieurs valeurs (avec Ctrl+clic).
+
+On peut grouper les options :
+
+```html
+<select name="ville">
+  <optgroup label="France">
+    <option value="paris">Paris</option>
+    <option value="lyon">Lyon</option>
+  </optgroup>
+  <optgroup label="Belgique">
+    <option value="bruxelles">Bruxelles</option>
+  </optgroup>
+</select>
+```
+
+**`<textarea>` — Zone de texte multiligne :**
+
+```html
+<label for="message">Message :</label>
+<textarea id="message" name="message" rows="5" cols="40"
+          placeholder="Votre message..."></textarea>
+```
+
+Les attributs `rows` et `cols` definissent la taille visible (modifiable en CSS). Contrairement a `<input>`, le contenu par defaut se place entre les balises ouvrante et fermante.
+
+**`<fieldset>` et `<legend>` — Regroupement de champs :**
+
+```html
+<fieldset>
+  <legend>Informations personnelles</legend>
+
+  <label for="prenom">Prenom :</label>
+  <input type="text" id="prenom" name="prenom">
+
+  <label for="nom">Nom :</label>
+  <input type="text" id="nom" name="nom">
+</fieldset>
+```
+
+`<fieldset>` trace un cadre visuel autour d'un groupe de champs. `<legend>` est le titre de ce groupe. C'est particulierement utile pour l'accessibilite et la clarte des formulaires longs.
+
+**`<button>` — Les trois types :**
+
+```html
+<!-- Soumet le formulaire (type par defaut dans un <form>) -->
+<button type="submit">Envoyer</button>
+
+<!-- Reinitialise le formulaire -->
+<button type="reset">Effacer</button>
+
+<!-- Bouton generique (pour JavaScript) -->
+<button type="button">Calculer</button>
+```
+
+---
+
+### 1.8 Balises semantiques HTML5
+
+Les balises semantiques decrivent le role du contenu. Elles n'ont pas d'impact visuel par defaut (elles se comportent comme des `<div>`), mais elles sont essentielles pour l'accessibilite, le referencement et la lisibilite du code.
+
+```html
+<body>
+  <header>
+    <h1>Mon Site</h1>
+    <nav>
+      <ul>
+        <li><a href="/">Accueil</a></li>
+        <li><a href="/services">Services</a></li>
+        <li><a href="/contact">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section>
+      <h2>Nos services</h2>
+      <article>
+        <h3>Developpement web</h3>
+        <p>Nous creons des sites web sur mesure.</p>
+      </article>
+      <article>
+        <h3>Hebergement</h3>
+        <p>Solutions d'hebergement performantes.</p>
+      </article>
+    </section>
+
+    <aside>
+      <h2>Actualites</h2>
+      <p>Nouveau service disponible en mars.</p>
+    </aside>
+  </main>
+
+  <footer>
+    <p>Copyright 2024 - Mon Site</p>
+  </footer>
+</body>
+```
+
+| Balise | Role |
+|--------|------|
+| `<header>` | En-tete de la page ou d'une section. Contient souvent le logo, le titre et la navigation. |
+| `<nav>` | Bloc de navigation principale. Contient les liens de navigation du site. |
+| `<main>` | Contenu principal de la page. Un seul `<main>` par page. |
+| `<section>` | Section thematique du contenu. Regroupe des contenus lies par un meme theme. |
+| `<article>` | Contenu autonome et redistribuable (un article de blog, un commentaire, un produit). |
+| `<aside>` | Contenu complementaire, tangentiellement lie au contenu principal (barre laterale, encadre). |
+| `<footer>` | Pied de page. Contient souvent les mentions legales, les liens secondaires. |
+
+**Quand utiliser quoi :** Si le contenu a du sens sorti de son contexte (dans un flux RSS par exemple), c'est un `<article>`. Si le contenu regroupe des elements lies par un theme, c'est une `<section>`. Si le contenu est complementaire, c'est un `<aside>`.
+
+---
+
+### 1.9 Attributs globaux
+
+Les attributs globaux peuvent etre utilises sur n'importe quelle balise HTML.
+
+**`id`** — Identifiant unique dans la page. Deux elements ne doivent jamais avoir le meme `id`. Utilise pour les ancres, le CSS (`#mon-id`) et JavaScript (`getElementById`).
+
+```html
+<div id="contenu-principal">...</div>
+```
+
+**`class`** — Classe CSS. Plusieurs elements peuvent avoir la meme classe. Un element peut avoir plusieurs classes separees par des espaces.
+
+```html
+<p class="texte-important rouge">Attention</p>
+```
+
+**`style`** — Style CSS en ligne. A eviter en production (on prefere les feuilles de style externes).
+
+```html
+<p style="color: blue; font-size: 18px;">Texte bleu</p>
+```
+
+**`title`** — Info-bulle qui apparait au survol de la souris.
+
+```html
+<abbr title="Brevet de Technicien Superieur">BTS</abbr>
+```
+
+**`data-*`** — Attributs personnalises pour stocker des donnees. Le nom apres `data-` est libre. Accessible en JavaScript via `element.dataset`.
+
+```html
+<div data-id="42" data-categorie="informatique">
+  Cet element stocke des donnees personnalisees.
+</div>
+```
+
+En JavaScript : `element.dataset.id` renvoie `"42"`, `element.dataset.categorie` renvoie `"informatique"`.
+
+---
+
+### 1.10 Caracteres speciaux (entites HTML)
+
+Certains caracteres ont une signification speciale en HTML. Pour les afficher en tant que texte, on utilise des entites :
+
+| Entite | Caractere | Description |
+|--------|-----------|-------------|
+| `&amp;` | & | Esperluette |
+| `&lt;` | < | Inferieur (debut de balise) |
+| `&gt;` | > | Superieur (fin de balise) |
+| `&nbsp;` | (espace insecable) | Espace qui ne provoque pas de retour a la ligne |
+| `&eacute;` | e accent aigu | Rarement necessaire si UTF-8 est declare |
+| `&copy;` | symbole copyright | Symbole copyright |
+| `&euro;` | symbole euro | Symbole euro |
+| `&quot;` | " | Guillemet double |
+| `&apos;` | ' | Apostrophe |
+
+En pratique, avec l'encodage UTF-8 declare dans le `<head>`, on peut taper directement les caracteres accentues. Les entites obligatoires sont `&amp;`, `&lt;` et `&gt;` car ces caracteres sont interpretes par le navigateur.
+
+---
+
+### 1.11 Validation W3C
+
+Le W3C (World Wide Web Consortium) definit les standards du web. Un document HTML valide respecte ces standards.
+
+Pourquoi valider :
+- Un code valide est interprete de maniere identique par tous les navigateurs
+- Un code invalide peut provoquer des comportements imprevisibles
+- Les outils d'accessibilite fonctionnent mieux avec du code valide
+- C'est une bonne pratique professionnelle attendue a l'examen
+
+Outil de validation : https://validator.w3.org/
+
+Erreurs frequentes :
+- Oubli de fermer une balise
+- Attribut `alt` manquant sur les images
+- Elements imbriues incorrectement (`<p><div>...</div></p>` est invalide)
+- `id` duplique dans la page
+- Balise `<li>` en dehors d'un `<ul>` ou `<ol>`
+
+---
+
+## Partie 2 — CSS
+
+---
+
+### 2.1 Les trois facons d'inclure du CSS
+
+#### CSS en ligne (inline)
+
+```html
+<p style="color: red; font-size: 18px;">Texte rouge</p>
+```
+
+Le style est applique directement sur l'element via l'attribut `style`. A eviter en production car :
+- Impossible de reutiliser le style
+- Melange structure (HTML) et presentation (CSS)
+- Specificite tres elevee, difficile a surcharger
+
+#### CSS interne
+
+```html
+<head>
+  <style>
+    p {
+      color: blue;
+      font-size: 16px;
+    }
+  </style>
+</head>
+```
+
+Le CSS est place dans une balise `<style>` dans le `<head>`. Acceptable pour une page unique ou un prototype, mais le style n'est pas reutilisable entre pages.
+
+#### CSS externe (bonne pratique)
+
+```html
+<head>
+  <link rel="stylesheet" href="style.css">
+</head>
+```
+
+Le CSS est dans un fichier separe (`.css`). C'est la methode recommandee car :
+- Separation nette entre structure et presentation
+- Le fichier CSS est mis en cache par le navigateur (chargement plus rapide)
+- Reutilisable sur toutes les pages du site
+- Maintenance facilitee
+
+---
+
+### 2.2 Selecteurs CSS
+
+Un selecteur designe les elements HTML auxquels on veut appliquer un style. C'est la base du CSS.
+
+#### Selecteurs simples
+
+```css
+/* Selecteur de balise : cible toutes les balises <p> */
+p {
+  color: black;
+}
+
+/* Selecteur de classe : cible tous les elements ayant class="important" */
+.important {
+  font-weight: bold;
+}
+
+/* Selecteur d'identifiant : cible l'element ayant id="titre" */
+#titre {
+  font-size: 32px;
+}
+
+/* Selecteur universel : cible tous les elements */
+* {
+  margin: 0;
+  padding: 0;
+}
+```
+
+#### Combinateurs
+
+```css
+/* Descendant (espace) : tous les <a> contenus dans un <nav>, a n'importe quel niveau */
+nav a {
+  text-decoration: none;
+}
+
+/* Enfant direct (>) : les <li> qui sont enfants directs de <ul> */
+ul > li {
+  list-style: square;
+}
+
+/* Adjacent (+) : le <p> qui suit immediatement un <h2> */
+h2 + p {
+  font-size: 18px;
+}
+
+/* General (~) : tous les <p> qui suivent un <h2> (meme niveau) */
+h2 ~ p {
+  color: gray;
+}
+```
+
+Exemple pour comprendre la difference entre descendant et enfant direct :
+
+```html
+<div class="conteneur">
+  <p>Paragraphe enfant direct</p>
+  <section>
+    <p>Paragraphe descendant (petit-enfant)</p>
+  </section>
+</div>
+```
+
+```css
+/* Cible les deux paragraphes */
+.conteneur p { color: blue; }
+
+/* Cible uniquement le premier paragraphe */
+.conteneur > p { color: red; }
+```
+
+#### Pseudo-classes
+
+Les pseudo-classes ciblent un element dans un etat particulier.
+
+```css
+/* Survol de la souris */
+a:hover {
+  color: red;
+}
+
+/* Element qui a le focus (clic ou tabulation) */
+input:focus {
+  border-color: blue;
+  outline: none;
+}
+
+/* Premier enfant de son parent */
+li:first-child {
+  font-weight: bold;
+}
+
+/* Dernier enfant de son parent */
+li:last-child {
+  border-bottom: none;
+}
+
+/* Enieme enfant (ici les elements pairs) */
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+/* Enieme enfant (ici le 3eme) */
+li:nth-child(3) {
+  color: red;
+}
+
+/* Tous les 3 elements a partir du 1er */
+li:nth-child(3n+1) {
+  font-weight: bold;
+}
+
+/* Negation : tous les <p> sauf ceux avec la classe .intro */
+p:not(.intro) {
+  text-indent: 2em;
+}
+
+/* Premier element d'un type donne dans son parent */
+p:first-of-type {
+  font-size: 20px;
+}
+
+/* Dernier element d'un type donne dans son parent */
+p:last-of-type {
+  margin-bottom: 0;
+}
+```
+
+#### Pseudo-elements
+
+Les pseudo-elements ciblent une partie d'un element ou creent du contenu genere.
+
+```css
+/* Insere du contenu avant l'element */
+.obligatoire::before {
+  content: "* ";
+  color: red;
+}
+
+/* Insere du contenu apres l'element */
+.lien-externe::after {
+  content: " (externe)";
+  font-size: 12px;
+}
+
+/* Premiere ligne d'un paragraphe */
+p::first-line {
+  font-weight: bold;
+}
+
+/* Premiere lettre d'un paragraphe */
+p::first-letter {
+  font-size: 200%;
+  float: left;
+}
+
+/* Texte selectionne par l'utilisateur */
+::selection {
+  background-color: yellow;
+  color: black;
+}
+```
+
+La propriete `content` est obligatoire pour `::before` et `::after`, meme si elle est vide (`content: ""`). Sans elle, le pseudo-element n'est pas genere.
+
+#### Selecteurs d'attributs
+
+```css
+/* Elements ayant l'attribut title */
+[title] {
+  cursor: help;
+}
+
+/* Elements dont l'attribut type vaut exactement "text" */
+input[type="text"] {
+  border: 1px solid gray;
+}
+
+/* Attribut commencant par une valeur */
+a[href^="https"] {
+  color: green;
+}
+
+/* Attribut se terminant par une valeur */
+a[href$=".pdf"] {
+  color: red;
+}
+
+/* Attribut contenant une valeur */
+a[href*="example"] {
+  font-weight: bold;
+}
+```
+
+#### Groupement de selecteurs
+
+```css
+/* Meme style pour plusieurs selecteurs */
+h1, h2, h3 {
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+```
+
+La virgule signifie "ou" : on applique le meme style a `<h1>`, `<h2>` et `<h3>`.
+
+---
+
+### 2.3 Specificite CSS
+
+Quand plusieurs regles CSS ciblent le meme element, le navigateur doit decider laquelle appliquer. C'est le calcul de specificite.
+
+**Si vous ne maitrisez pas la specificite, vous perdrez des points.** C'est un sujet d'examen classique.
+
+#### Calcul de la specificite
+
+Chaque selecteur a un poids exprime en quatre niveaux (a, b, c, d) :
+
+| Niveau | Poids | Concerne |
+|--------|-------|----------|
+| a | 1000 | Style en ligne (`style=""`) |
+| b | 100 | Selecteur d'identifiant (`#id`) |
+| c | 10 | Selecteur de classe (`.classe`), pseudo-classe (`:hover`), attribut (`[type]`) |
+| d | 1 | Selecteur de balise (`p`, `div`), pseudo-element (`::before`) |
+
+Le selecteur universel `*`, les combinateurs (`>`, `+`, `~`, espace) et la pseudo-classe `:not()` elle-meme n'ajoutent rien a la specificite (mais le contenu de `:not()` est compte).
+
+#### Exemples de calcul
+
+```css
+p                    /* 0,0,0,1 = 1 */
+.intro               /* 0,0,1,0 = 10 */
+p.intro              /* 0,0,1,1 = 11 */
+#header              /* 0,1,0,0 = 100 */
+#header .nav li      /* 0,1,1,1 = 111 */
+#header .nav li a:hover  /* 0,1,2,2 = 122 */
+```
+
+Exercice de calcul :
+
+```css
+/* Regle 1 : specificite = 0,0,1,1 = 11 */
+div.important { color: red; }
+
+/* Regle 2 : specificite = 0,1,0,0 = 100 */
+#contenu { color: blue; }
+
+/* Regle 3 : specificite = 0,0,0,1 = 1 */
+div { color: green; }
+
+/* Regle 4 : specificite = 0,0,2,0 = 20 */
+.important.urgent { color: orange; }
+```
+
+Pour un `<div id="contenu" class="important urgent">`, la couleur sera bleue car la regle 2 a la specificite la plus elevee (100).
+
+#### Regles de cascade
+
+1. Les declarations avec `!important` l'emportent sur tout (sauf sur un autre `!important` de specificite superieure)
+2. Les styles en ligne (`style=""`) l'emportent sur les feuilles de style
+3. A specificite egale, la derniere regle declaree l'emporte
+4. Les styles de l'auteur (le developpeur) l'emportent sur les styles par defaut du navigateur
+
+```css
+p { color: red !important; }  /* L'emporte sur tout, meme un id */
+#texte { color: blue; }       /* Ne s'applique pas si !important est present */
+```
+
+`!important` est a eviter autant que possible. C'est un signe de mauvaise architecture CSS. On l'utilise en dernier recours.
+
+---
+
+### 2.4 Le modele de boite (box model)
+
+Chaque element HTML est represente comme une boite rectangulaire. Cette boite est composee de quatre zones, de l'interieur vers l'exterieur :
+
+```
++---------------------------------------------+
+|                  margin                      |
+|  +---------------------------------------+  |
+|  |              border                   |  |
+|  |  +---------------------------------+  |  |
+|  |  |           padding               |  |  |
+|  |  |  +---------------------------+  |  |  |
+|  |  |  |                           |  |  |  |
+|  |  |  |         content           |  |  |  |
+|  |  |  |                           |  |  |  |
+|  |  |  +---------------------------+  |  |  |
+|  |  |                                 |  |  |
+|  |  +---------------------------------+  |  |
+|  |                                       |  |
+|  +---------------------------------------+  |
+|                                              |
++---------------------------------------------+
+```
+
+**Content** — Le contenu de l'element (texte, image). Sa taille est definie par `width` et `height`.
+
+**Padding** — Espace interieur entre le contenu et la bordure. Le fond (background) s'etend dans le padding.
+
+**Border** — Bordure visible autour de l'element.
+
+**Margin** — Espace exterieur entre l'element et les elements voisins. Le fond ne s'etend PAS dans la marge. La marge est toujours transparente.
+
+```css
+div {
+  width: 300px;
+  height: 200px;
+  padding: 20px;
+  border: 2px solid black;
+  margin: 10px;
+}
+```
+
+#### content-box vs border-box
+
+Par defaut, `width` et `height` definissent la taille du **contenu seul** (content-box). Le padding et la bordure s'ajoutent :
+
+```
+Largeur totale = width + padding-left + padding-right + border-left + border-right
+               = 300 + 20 + 20 + 2 + 2
+               = 344px
+```
+
+Cela rend les calculs penibles. La solution est `border-box` :
+
+```css
+* {
+  box-sizing: border-box;
+}
+```
+
+Avec `border-box`, `width` et `height` incluent le padding et la bordure. Le contenu se reduit pour que la boite totale fasse exactement la taille specifiee :
+
+```
+Largeur totale = width = 300px
+Largeur du contenu = 300 - 20 - 20 - 2 - 2 = 256px
+```
+
+**En pratique, on utilise toujours `box-sizing: border-box` sur tous les elements.** C'est plus intuitif et evite les erreurs de calcul.
+
+#### Proprietes detaillees
+
+```css
+/* Padding : 4 valeurs (haut, droite, bas, gauche — sens horaire) */
+padding: 10px 20px 10px 20px;
+
+/* Padding : 2 valeurs (vertical, horizontal) */
+padding: 10px 20px;
+
+/* Padding : 1 valeur (identique partout) */
+padding: 10px;
+
+/* Padding individuel */
+padding-top: 10px;
+padding-right: 20px;
+padding-bottom: 10px;
+padding-left: 20px;
+
+/* Meme logique pour margin */
+margin: 10px 20px 10px 20px;
+margin: 0 auto; /* Centre horizontalement un bloc ayant une width definie */
+
+/* Border */
+border: 2px solid #333;           /* raccourci */
+border-width: 2px;
+border-style: solid;               /* solid, dashed, dotted, double, none */
+border-color: #333;
+border-radius: 8px;                /* coins arrondis */
+border-radius: 50%;                /* cercle (si width = height) */
+border-top: 1px dashed red;        /* bordure uniquement en haut */
+```
+
+#### Fusion des marges (margin collapsing)
+
+Quand deux marges verticales se touchent, elles fusionnent : seule la plus grande s'applique.
+
+```html
+<p style="margin-bottom: 30px;">Premier</p>
+<p style="margin-top: 20px;">Second</p>
+```
+
+L'espace entre les deux paragraphes est de 30px (la plus grande des deux marges), pas 50px. Ce comportement ne s'applique qu'aux marges verticales, pas aux marges horizontales.
+
+---
+
+### 2.5 Proprietes de texte
+
+```css
+/* Police de caracteres */
+font-family: Arial, Helvetica, sans-serif;
+```
+
+On specifie plusieurs polices separees par des virgules. Le navigateur utilise la premiere disponible. La derniere valeur est une famille generique (`serif`, `sans-serif`, `monospace`, `cursive`, `fantasy`).
+
+```css
+/* Taille du texte */
+font-size: 16px;      /* en pixels (fixe) */
+font-size: 1rem;      /* relatif a la taille racine (html) */
+font-size: 1.2em;     /* relatif a la taille du parent */
+
+/* Graisse (epaisseur) */
+font-weight: normal;   /* = 400 */
+font-weight: bold;     /* = 700 */
+font-weight: 300;      /* semi-leger */
+font-weight: 900;      /* tres gras */
+
+/* Style */
+font-style: italic;
+font-style: normal;
+
+/* Couleur du texte */
+color: red;                 /* nom de couleur */
+color: #ff0000;             /* hexadecimal */
+color: #f00;                /* hexadecimal raccourci */
+color: rgb(255, 0, 0);      /* rouge, vert, bleu (0-255) */
+color: rgba(255, 0, 0, 0.5); /* avec transparence (0-1) */
+color: hsl(0, 100%, 50%);   /* teinte, saturation, luminosite */
+
+/* Alignement du texte */
+text-align: left;     /* aligne a gauche (defaut) */
+text-align: center;   /* centre */
+text-align: right;    /* aligne a droite */
+text-align: justify;  /* justifie (alignement des deux cotes) */
+
+/* Decoration */
+text-decoration: none;         /* supprime le soulignement des liens */
+text-decoration: underline;    /* souligne */
+text-decoration: line-through; /* barre */
+text-decoration: overline;     /* ligne au-dessus */
+
+/* Hauteur de ligne (interligne) */
+line-height: 1.5;     /* 1.5 fois la taille de la police (recommande) */
+line-height: 24px;    /* valeur fixe */
+
+/* Espacement entre les lettres */
+letter-spacing: 2px;
+
+/* Espacement entre les mots */
+word-spacing: 5px;
+
+/* Transformation */
+text-transform: uppercase;    /* TOUT EN MAJUSCULES */
+text-transform: lowercase;    /* tout en minuscules */
+text-transform: capitalize;   /* Premiere Lettre En Majuscule */
+
+/* Indentation de la premiere ligne */
+text-indent: 2em;
+
+/* Gestion du debordement de texte */
+white-space: nowrap;          /* empeche le retour a la ligne */
+overflow: hidden;              /* cache le debordement */
+text-overflow: ellipsis;       /* ajoute "..." si le texte deborde */
+```
+
+---
+
+### 2.6 Proprietes de fond (background)
+
+```css
+/* Couleur de fond */
+background-color: #f0f0f0;
+background-color: transparent;   /* par defaut */
+
+/* Image de fond */
+background-image: url("fond.jpg");
+
+/* Repetition */
+background-repeat: repeat;      /* repete en X et Y (defaut) */
+background-repeat: repeat-x;    /* repete uniquement horizontalement */
+background-repeat: repeat-y;    /* repete uniquement verticalement */
+background-repeat: no-repeat;   /* ne repete pas */
+
+/* Position */
+background-position: center;           /* centre */
+background-position: top right;        /* en haut a droite */
+background-position: 50% 50%;          /* centre (en pourcentage) */
+background-position: 10px 20px;        /* decalage depuis le coin haut-gauche */
+
+/* Taille */
+background-size: cover;    /* couvre toute la zone (peut rogner) */
+background-size: contain;  /* contenu entier visible (peut laisser du vide) */
+background-size: 200px 100px; /* dimensions exactes */
+background-size: 100% auto;  /* largeur 100%, hauteur proportionnelle */
+
+/* Attachement (defilement) */
+background-attachment: scroll;  /* defile avec la page (defaut) */
+background-attachment: fixed;   /* reste fixe (effet parallaxe) */
+
+/* Raccourci */
+background: #f0f0f0 url("fond.jpg") no-repeat center/cover;
+
+/* Degradé */
+background: linear-gradient(to right, #ff0000, #0000ff);
+background: linear-gradient(135deg, #ff0000, #ff9900, #0000ff);
+background: radial-gradient(circle, #ff0000, #0000ff);
+```
+
+---
+
+### 2.7 La propriete display
+
+La propriete `display` determine comment un element se comporte dans le flux de la page.
+
+#### block
+
+```css
+div { display: block; }
+```
+
+L'element occupe toute la largeur disponible. Il commence sur une nouvelle ligne. On peut definir `width`, `height`, `margin` et `padding` dans toutes les directions. Exemples d'elements block par defaut : `<div>`, `<p>`, `<h1>`-`<h6>`, `<ul>`, `<section>`.
+
+#### inline
+
+```css
+span { display: inline; }
+```
+
+L'element ne prend que la largeur de son contenu. Il ne provoque pas de retour a la ligne. On ne peut PAS definir `width` et `height`. Les `margin-top` et `margin-bottom` sont ignorees. Exemples d'elements inline par defaut : `<span>`, `<a>`, `<strong>`, `<em>`, `<img>`.
+
+#### inline-block
+
+```css
+.bouton { display: inline-block; }
+```
+
+Combine les deux : l'element est en ligne (pas de retour a la ligne), mais on peut definir `width`, `height`, `margin` et `padding` dans toutes les directions. Utile pour les boutons et les elements de navigation cote a cote.
+
+#### none
+
+```css
+.cache { display: none; }
+```
+
+L'element est completement retire du flux. Il n'occupe aucun espace et n'est pas affiche. C'est different de `visibility: hidden` qui cache l'element mais conserve son espace.
+
+#### flex et grid
+
+Traites en detail dans les sections 2.10 et 2.11.
+
+---
+
+### 2.8 La propriete position
+
+La propriete `position` determine comment un element est positionne dans la page. Elle est combinee avec `top`, `right`, `bottom` et `left` pour definir le decalage.
+
+#### static (defaut)
+
+```css
+div { position: static; }
+```
+
+L'element suit le flux normal du document. Les proprietes `top`, `right`, `bottom`, `left` et `z-index` n'ont aucun effet.
+
+#### relative
+
+```css
+.decale {
+  position: relative;
+  top: 10px;
+  left: 20px;
+}
+```
+
+L'element est decale par rapport a sa position normale. Il conserve sa place dans le flux (l'espace qu'il occupait reste reserve). Les autres elements ne bougent pas.
+
+Cas concret : decaler legerement un element ou servir de reference pour un enfant en `position: absolute`.
+
+#### absolute
+
+```css
+.popup {
+  position: absolute;
+  top: 50px;
+  right: 10px;
+}
+```
+
+L'element est retire du flux. Il ne prend plus de place. Il est positionne par rapport a son plus proche ancetre ayant une position autre que `static` (relative, absolute, fixed ou sticky). Si aucun ancetre n'est positionne, il se positionne par rapport au `<body>`.
+
+Cas concret : menus deroulants, infobulles, badges de notification.
+
+```html
+<div style="position: relative;">
+  <img src="produit.jpg" alt="Produit">
+  <span style="position: absolute; top: 5px; right: 5px;
+               background: red; color: white; padding: 2px 8px;">
+    -30%
+  </span>
+</div>
+```
+
+Le badge "-30%" se positionne dans le coin superieur droit de l'image car le `<div>` parent est en `position: relative`.
+
+#### fixed
+
+```css
+.barre-navigation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
+```
+
+L'element est retire du flux et positionne par rapport a la fenetre du navigateur (viewport). Il reste fixe meme quand on fait defiler la page.
+
+Cas concret : barre de navigation fixe en haut de page, bouton "retour en haut".
+
+#### sticky
+
+```css
+.en-tete-tableau {
+  position: sticky;
+  top: 0;
+  background: white;
+}
+```
+
+L'element se comporte comme `relative` jusqu'a ce que le defilement atteigne un seuil (defini par `top`, `bottom`, etc.). A partir de ce seuil, il se comporte comme `fixed`.
+
+Cas concret : en-tete de tableau qui reste visible pendant le defilement, barre laterale qui "colle" en haut de page.
+
+#### z-index
+
+```css
+.au-dessus {
+  position: relative;
+  z-index: 10;
+}
+.en-dessous {
+  position: relative;
+  z-index: 1;
+}
+```
+
+`z-index` controle l'ordre d'empilement des elements positionnes (tous sauf `static`). Une valeur plus elevee place l'element au-dessus. Sans `z-index`, les elements sont empiles dans l'ordre d'apparition dans le HTML.
+
+---
+
+### 2.9 Proprietes de dimension et debordement
+
+```css
+/* Dimensions */
+width: 300px;
+height: 200px;
+min-width: 200px;       /* largeur minimale */
+max-width: 800px;       /* largeur maximale */
+min-height: 100px;
+max-height: 500px;
+
+/* Debordement */
+overflow: visible;      /* le contenu deborde (defaut) */
+overflow: hidden;       /* le contenu qui deborde est cache */
+overflow: scroll;       /* barres de defilement toujours visibles */
+overflow: auto;         /* barres de defilement si necessaire */
+
+/* Controle individuel */
+overflow-x: auto;       /* defilement horizontal si necessaire */
+overflow-y: hidden;     /* pas de defilement vertical */
+```
+
+---
+
+### 2.10 Flexbox
+
+Flexbox est un modele de mise en page unidimensionnel (une ligne ou une colonne a la fois). Il simplifie considerablement l'alignement et la distribution de l'espace.
+
+#### Le conteneur flex
+
+On active Flexbox en appliquant `display: flex` sur le conteneur parent. Les enfants directs deviennent des "flex items".
+
+```css
+.conteneur {
+  display: flex;
+}
+```
+
+```html
+<div class="conteneur">
+  <div class="item">A</div>
+  <div class="item">B</div>
+  <div class="item">C</div>
+</div>
+```
+
+Par defaut, les items sont places en ligne, de gauche a droite.
+
+#### flex-direction
+
+Definit la direction de l'axe principal.
+
+```css
+flex-direction: row;            /* de gauche a droite (defaut) */
+flex-direction: row-reverse;    /* de droite a gauche */
+flex-direction: column;         /* de haut en bas */
+flex-direction: column-reverse; /* de bas en haut */
+```
+
+Avec `row`, l'axe principal est horizontal et l'axe secondaire est vertical.
+Avec `column`, l'axe principal est vertical et l'axe secondaire est horizontal.
+
+#### justify-content
+
+Controle l'alignement des items sur l'axe principal.
+
+```css
+justify-content: flex-start;     /* debut de l'axe (defaut) */
+justify-content: flex-end;       /* fin de l'axe */
+justify-content: center;         /* centre */
+justify-content: space-between;  /* espace egal entre les items, pas aux extremites */
+justify-content: space-around;   /* espace egal autour de chaque item */
+justify-content: space-evenly;   /* espace strictement egal partout */
+```
+
+Representation visuelle avec `flex-direction: row` :
+
+```
+flex-start:      |A B C              |
+flex-end:        |              A B C|
+center:          |       A B C       |
+space-between:   |A        B        C|
+space-around:    |  A      B      C  |
+space-evenly:    |   A     B     C   |
+```
+
+#### align-items
+
+Controle l'alignement des items sur l'axe secondaire (perpendiculaire a l'axe principal).
+
+```css
+align-items: stretch;      /* les items s'etirent pour remplir le conteneur (defaut) */
+align-items: flex-start;   /* alignes en haut (si direction row) */
+align-items: flex-end;     /* alignes en bas */
+align-items: center;       /* centres verticalement */
+align-items: baseline;     /* alignes sur la ligne de base du texte */
+```
+
+#### flex-wrap
+
+Par defaut, tous les items sont forces sur une seule ligne, meme s'ils debordent.
+
+```css
+flex-wrap: nowrap;     /* une seule ligne (defaut) */
+flex-wrap: wrap;       /* retour a la ligne si necessaire */
+flex-wrap: wrap-reverse; /* retour a la ligne en sens inverse */
+```
+
+#### gap
+
+Espace entre les items. Plus propre que d'utiliser des marges.
+
+```css
+gap: 20px;              /* meme espace vertical et horizontal */
+gap: 10px 20px;         /* vertical horizontal */
+row-gap: 10px;          /* espace entre les lignes */
+column-gap: 20px;       /* espace entre les colonnes */
+```
+
+#### Proprietes des flex items
+
+```css
+/* flex-grow : capacite a grandir pour occuper l'espace disponible */
+.item { flex-grow: 0; }  /* ne grandit pas (defaut) */
+.item { flex-grow: 1; }  /* grandit pour prendre l'espace disponible */
+```
+
+Si trois items ont `flex-grow: 1`, ils se partagent l'espace equitablement. Si le premier a `flex-grow: 2` et les deux autres `flex-grow: 1`, le premier prend deux fois plus d'espace supplementaire.
+
+```css
+/* flex-shrink : capacite a retrecir si l'espace est insuffisant */
+.item { flex-shrink: 1; }  /* peut retrecir (defaut) */
+.item { flex-shrink: 0; }  /* ne retrecit pas */
+
+/* flex-basis : taille initiale de l'item avant distribution de l'espace */
+.item { flex-basis: auto; }   /* taille basee sur le contenu (defaut) */
+.item { flex-basis: 200px; }  /* taille initiale de 200px */
+.item { flex-basis: 33.33%; } /* un tiers du conteneur */
+
+/* Raccourci flex (grow, shrink, basis) */
+.item { flex: 1; }           /* equivalent a flex: 1 1 0% */
+.item { flex: 0 0 200px; }   /* taille fixe de 200px, ne grandit ni ne retrecit */
+
+/* align-self : surcharge align-items pour un item specifique */
+.item-special { align-self: center; }
+
+/* order : change l'ordre d'affichage (sans modifier le HTML) */
+.premier { order: -1; }  /* affiche en premier */
+.dernier { order: 99; }  /* affiche en dernier */
+```
+
+#### Centrage parfait avec Flexbox
+
+```css
+.conteneur {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+```
+
+Ces trois lignes centrent parfaitement un element horizontalement et verticalement. C'est l'un des usages les plus courants de Flexbox.
+
+#### Exemple : barre de navigation
+
+```html
+<nav class="navbar">
+  <a href="/" class="logo">MonSite</a>
+  <ul class="nav-links">
+    <li><a href="/services">Services</a></li>
+    <li><a href="/about">A propos</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+```
+
+```css
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #333;
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 20px;
+}
+
+.navbar a {
+  color: white;
+  text-decoration: none;
+}
+```
+
+Le logo est pousse a gauche, les liens a droite, grace a `space-between`. Les liens sont alignes horizontalement grace au `display: flex` sur la liste.
+
+---
+
+### 2.11 CSS Grid
+
+CSS Grid est un modele de mise en page bidimensionnel (lignes et colonnes simultanement). Il est complementaire a Flexbox.
+
+#### Concepts de base
+
+```css
+.grille {
+  display: grid;
+  grid-template-columns: 200px 1fr 200px;
+  grid-template-rows: auto 1fr auto;
+  gap: 20px;
+}
+```
+
+```html
+<div class="grille">
+  <div>Colonne 1</div>
+  <div>Colonne 2 (flexible)</div>
+  <div>Colonne 3</div>
+</div>
+```
+
+#### grid-template-columns et grid-template-rows
+
+Definissent la structure de la grille.
+
+```css
+/* 3 colonnes de tailles fixes */
+grid-template-columns: 200px 400px 200px;
+
+/* 3 colonnes flexibles (fractions de l'espace disponible) */
+grid-template-columns: 1fr 2fr 1fr;
+
+/* Melange fixe et flexible */
+grid-template-columns: 250px 1fr;
+
+/* Repetition */
+grid-template-columns: repeat(3, 1fr);    /* 3 colonnes egales */
+grid-template-columns: repeat(4, 200px);  /* 4 colonnes de 200px */
+
+/* Responsive avec minmax */
+grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+/* Cree autant de colonnes que possible, chacune entre 250px et 1fr */
+
+/* Lignes */
+grid-template-rows: 80px 1fr 60px;  /* en-tete, contenu, pied */
+```
+
+**L'unite `fr`** (fraction) represente une fraction de l'espace disponible. Si on a `1fr 2fr`, le deuxieme element prend deux fois plus d'espace que le premier.
+
+**`repeat()`** evite de repeter les memes valeurs. `repeat(3, 1fr)` est equivalent a `1fr 1fr 1fr`.
+
+**`minmax(min, max)`** definit une taille minimale et maximale. Tres utile pour le responsive.
+
+**`auto-fill`** dans `repeat()` cree autant de colonnes que l'espace le permet.
+
+**`auto-fit`** fonctionne comme `auto-fill` mais les colonnes vides sont repliees a 0px.
+
+#### Placer les elements
+
+```css
+.element {
+  grid-column: 1 / 3;    /* de la ligne de grille 1 a la ligne 3 (occupe 2 colonnes) */
+  grid-row: 1 / 2;       /* de la ligne 1 a la ligne 2 (1 ligne) */
+}
+
+/* Raccourcis */
+grid-column: 1 / span 2;  /* commence a 1, s'etend sur 2 colonnes */
+grid-column: 2;            /* colonne 2 uniquement */
+grid-row: 1 / -1;          /* de la premiere a la derniere ligne */
+```
+
+Les numeros de ligne commencent a 1 et incluent les bords de la grille. Pour 3 colonnes, il y a 4 lignes de grille (1, 2, 3, 4). La valeur -1 designe la derniere ligne.
+
+#### Exemple de layout complet
+
+```html
+<div class="page">
+  <header class="entete">En-tete</header>
+  <nav class="navigation">Navigation</nav>
+  <main class="contenu">Contenu principal</main>
+  <aside class="lateral">Barre laterale</aside>
+  <footer class="pied">Pied de page</footer>
+</div>
+```
+
+```css
+.page {
+  display: grid;
+  grid-template-columns: 200px 1fr 250px;
+  grid-template-rows: 80px 1fr 60px;
+  min-height: 100vh;
+  gap: 10px;
+}
+
+.entete {
+  grid-column: 1 / -1;   /* toute la largeur */
+}
+
+.navigation {
+  grid-column: 1 / 2;
+}
+
+.contenu {
+  grid-column: 2 / 3;
+}
+
+.lateral {
+  grid-column: 3 / 4;
+}
+
+.pied {
+  grid-column: 1 / -1;   /* toute la largeur */
+}
+```
+
+#### grid-template-areas (methode alternative)
+
+```css
+.page {
+  display: grid;
+  grid-template-columns: 200px 1fr 250px;
+  grid-template-rows: 80px 1fr 60px;
+  grid-template-areas:
+    "entete  entete   entete"
+    "nav     contenu  lateral"
+    "pied    pied     pied";
+}
+
+.entete     { grid-area: entete; }
+.navigation { grid-area: nav; }
+.contenu    { grid-area: contenu; }
+.lateral    { grid-area: lateral; }
+.pied       { grid-area: pied; }
+```
+
+Cette syntaxe est tres lisible : on "dessine" la mise en page avec des noms.
+
+---
+
+### 2.12 Responsive design
+
+Le responsive design consiste a adapter la mise en page a toutes les tailles d'ecran.
+
+#### Media queries
+
+```css
+/* Styles par defaut (mobile) */
+body {
+  font-size: 16px;
+}
+
+/* Ecrans de 768px et plus (tablettes) */
+@media (min-width: 768px) {
+  body {
+    font-size: 18px;
+  }
+}
+
+/* Ecrans de 1024px et plus (ordinateurs) */
+@media (min-width: 1024px) {
+  body {
+    font-size: 20px;
+  }
+}
+```
+
+Syntaxe : `@media (condition) { regles CSS }`.
+
+Conditions courantes :
+- `min-width` : largeur minimale du viewport
+- `max-width` : largeur maximale du viewport
+- `orientation: portrait` ou `orientation: landscape`
+
+Breakpoints courants :
+- 480px : petits telephones
+- 768px : tablettes en portrait
+- 1024px : tablettes en paysage / petits ordinateurs
+- 1200px : ecrans d'ordinateurs standards
+- 1440px : grands ecrans
+
+#### Mobile-first vs Desktop-first
+
+**Mobile-first** (recommande) : on ecrit les styles pour mobile par defaut, puis on ajoute des media queries avec `min-width` pour les ecrans plus grands.
+
+```css
+/* Mobile par defaut */
+.conteneur { flex-direction: column; }
+
+/* Tablette et plus */
+@media (min-width: 768px) {
+  .conteneur { flex-direction: row; }
+}
+```
+
+**Desktop-first** : on ecrit les styles pour desktop par defaut, puis on ajoute des media queries avec `max-width` pour les ecrans plus petits.
+
+```css
+/* Desktop par defaut */
+.conteneur { flex-direction: row; }
+
+/* Mobile */
+@media (max-width: 767px) {
+  .conteneur { flex-direction: column; }
+}
+```
+
+Mobile-first est prefere car il force a concevoir d'abord pour le plus contraint (petit ecran, connexion lente), puis a enrichir pour les ecrans plus grands.
+
+#### Unites relatives
+
+| Unite | Reference | Usage typique |
+|-------|-----------|---------------|
+| `%` | Element parent | Largeurs fluides |
+| `em` | Taille de police du parent | Marges, paddings relatifs a la police |
+| `rem` | Taille de police de `<html>` (16px par defaut) | Taille de texte et espacement coherents |
+| `vh` | 1% de la hauteur du viewport | Sections plein ecran (`height: 100vh`) |
+| `vw` | 1% de la largeur du viewport | Elements proportionnels a la largeur de l'ecran |
+
+```css
+html {
+  font-size: 16px; /* 1rem = 16px */
+}
+
+h1 {
+  font-size: 2rem;    /* 32px */
+}
+
+.conteneur {
+  width: 90%;          /* 90% de la largeur du parent */
+  max-width: 1200px;   /* ne depasse pas 1200px */
+  margin: 0 auto;      /* centre horizontalement */
+}
+
+.hero {
+  height: 100vh;       /* pleine hauteur de l'ecran */
+}
+```
+
+#### Images responsives
+
+```css
+img {
+  max-width: 100%;
+  height: auto;
+}
+```
+
+Ces deux lignes garantissent qu'une image ne depasse jamais la largeur de son conteneur tout en conservant ses proportions. A appliquer systematiquement.
+
+#### Exemple complet de page responsive
+
+```css
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.conteneur {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Navigation */
+.nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  background: #333;
+}
+
+.nav a {
+  color: white;
+  text-decoration: none;
+  padding: 5px 10px;
+}
+
+/* Grille de cartes */
+.cartes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.carte {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+/* Tablette */
+@media (min-width: 768px) {
+  .nav {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .cartes {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .cartes {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+```
+
+---
+
+### 2.13 Transitions et animations
+
+#### Transitions
+
+Une transition anime le passage d'un etat a un autre (par exemple, au survol).
+
+```css
+.bouton {
+  background-color: #333;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.bouton:hover {
+  background-color: #666;
+}
+```
+
+La syntaxe de `transition` :
+
+```css
+transition: propriete duree timing-function delai;
+
+/* Exemples */
+transition: background-color 0.3s ease;
+transition: all 0.5s ease-in-out;
+transition: color 0.2s linear, background-color 0.3s ease;
+```
+
+**propriete** : quelle propriete animer (`all` pour toutes, ou une propriete specifique).
+
+**duree** : duree de l'animation (en secondes `s` ou millisecondes `ms`).
+
+**timing-function** : courbe de vitesse.
+- `ease` : lent au debut et a la fin (defaut)
+- `linear` : vitesse constante
+- `ease-in` : lent au debut
+- `ease-out` : lent a la fin
+- `ease-in-out` : lent au debut et a la fin
+
+**delai** (optionnel) : temps d'attente avant le debut de la transition.
+
+```css
+/* Proprietes individuelles */
+transition-property: background-color;
+transition-duration: 0.3s;
+transition-timing-function: ease;
+transition-delay: 0s;
+```
+
+#### Animations avec @keyframes
+
+Les animations permettent des transitions plus complexes avec plusieurs etapes.
+
+```css
+@keyframes apparition {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.element {
+  animation: apparition 0.5s ease forwards;
+}
+```
+
+Syntaxe avec pourcentages pour plus d'etapes :
+
+```css
+@keyframes rebond {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
+  70% {
+    transform: translateY(-15px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.element {
+  animation: rebond 1s ease infinite;
+}
+```
+
+Proprietes de `animation` :
+
+```css
+animation-name: rebond;            /* nom de l'animation (@keyframes) */
+animation-duration: 1s;            /* duree */
+animation-timing-function: ease;   /* courbe de vitesse */
+animation-delay: 0s;               /* delai avant le debut */
+animation-iteration-count: infinite; /* nombre de repetitions (ou un chiffre) */
+animation-direction: alternate;    /* joue en avant puis en arriere */
+animation-fill-mode: forwards;     /* conserve l'etat final apres l'animation */
+
+/* Raccourci */
+animation: nom duree timing-function delai iteration direction fill-mode;
+```
+
+#### La propriete transform
+
+`transform` modifie visuellement un element sans affecter le flux.
+
+```css
+transform: translateX(50px);       /* decale horizontalement */
+transform: translateY(-20px);      /* decale verticalement */
+transform: translate(50px, -20px); /* decale en X et Y */
+transform: scale(1.5);            /* agrandit de 150% */
+transform: scale(0.8);            /* reduit a 80% */
+transform: rotate(45deg);         /* tourne de 45 degres */
+transform: skew(10deg);           /* deforme en biais */
+
+/* Combinaison */
+transform: translate(50px, 0) rotate(45deg) scale(1.2);
+```
+
+---
+
+### 2.14 Variables CSS (custom properties)
+
+Les variables CSS permettent de stocker des valeurs reutilisables.
+
+```css
+:root {
+  --couleur-primaire: #3498db;
+  --couleur-secondaire: #2ecc71;
+  --couleur-texte: #333;
+  --police-principale: Arial, sans-serif;
+  --espacement: 20px;
+  --rayon-bordure: 8px;
+}
+
+body {
+  color: var(--couleur-texte);
+  font-family: var(--police-principale);
+}
+
+.bouton {
+  background-color: var(--couleur-primaire);
+  padding: var(--espacement);
+  border-radius: var(--rayon-bordure);
+}
+
+.bouton-secondaire {
+  background-color: var(--couleur-secondaire);
+}
+```
+
+`:root` represente l'element `<html>`. Les variables declarees dans `:root` sont accessibles partout dans le document.
+
+On peut fournir une valeur de repli :
+
+```css
+color: var(--couleur-texte, black);
+/* Utilise black si --couleur-texte n'est pas definie */
+```
+
+Les variables peuvent etre redefinies dans un contexte specifique :
+
+```css
+.theme-sombre {
+  --couleur-texte: #fff;
+  --couleur-fond: #222;
+}
+```
+
+---
+
+## Partie 3 — Bonnes pratiques
+
+---
+
+### 3.1 Organisation des fichiers
+
+Structure typique d'un projet web :
+
+```
+mon-projet/
+  index.html
+  pages/
+    contact.html
+    services.html
+  css/
+    style.css
+    reset.css
+  js/
+    script.js
+  images/
+    logo.png
+    photo-equipe.jpg
+  fonts/
+    police-personnalisee.woff2
+```
+
+Regles :
+- Un fichier HTML par page
+- Un ou plusieurs fichiers CSS (separer le reset, le layout, les composants si le projet est grand)
+- Les images dans un dossier dedie
+- Noms de fichiers en minuscules, sans espaces ni accents (utiliser des tirets)
+
+### 3.2 Nommage des classes — BEM simplifie
+
+BEM (Block Element Modifier) est une convention de nommage des classes CSS.
+
+**Block** : composant autonome (`carte`, `menu`, `formulaire`).
+**Element** : partie d'un block, separee par deux underscores (`carte__titre`, `carte__image`).
+**Modifier** : variante, separee par deux tirets (`carte--mise-en-avant`, `bouton--desactive`).
+
+```html
+<div class="carte carte--mise-en-avant">
+  <img class="carte__image" src="photo.jpg" alt="Photo">
+  <h3 class="carte__titre">Titre</h3>
+  <p class="carte__description">Description du contenu.</p>
+  <a class="carte__lien" href="#">En savoir plus</a>
+</div>
+```
+
+```css
+.carte {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.carte--mise-en-avant {
+  border-color: #3498db;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.carte__titre {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.carte__image {
+  width: 100%;
+  border-radius: 4px;
+}
+```
+
+Avantages : pas de conflits de noms, code lisible, on sait immediatement a quel composant appartient chaque classe.
+
+### 3.3 Accessibilite de base
+
+- **Contraste** : le texte doit etre suffisamment contrastant par rapport au fond. Ratio minimum de 4.5:1 pour le texte normal.
+- **Taille de texte** : minimum 16px pour le corps du texte. Ne jamais utiliser des tailles inferieures a 12px.
+- **Navigation clavier** : tous les elements interactifs doivent etre accessibles au clavier (Tab pour naviguer, Entree pour activer). Ne pas supprimer le `outline` du focus sans le remplacer.
+- **Attribut `alt`** sur toutes les images.
+- **Labels** associes a tous les champs de formulaire.
+- **Balises semantiques** pour la structure.
+- **Langue** declaree sur `<html lang="fr">`.
+
+```css
+/* MAUVAIS : supprime l'indicateur de focus */
+*:focus { outline: none; }
+
+/* BON : remplace par un indicateur visible */
+*:focus {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+```
+
+### 3.4 Validation W3C CSS
+
+Outil : https://jigsaw.w3.org/css-validator/
+
+Erreurs frequentes :
+- Proprietes inventees ou mal orthographiees
+- Unites manquantes (`width: 100` au lieu de `width: 100px`)
+- Valeurs invalides pour une propriete
+
+### 3.5 Reset et Normalize CSS
+
+Les navigateurs appliquent des styles par defaut differents. Un "reset CSS" remet tout a zero :
+
+```css
+/* Reset minimal */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul, ol {
+  list-style: none;
+}
+```
+
+Normalize.css est une alternative qui conserve les styles par defaut utiles tout en corrigeant les incoherences entre navigateurs.
+
+---
+
+## Partie 4 — Exercices d'examen corriges
+
+---
+
+### Exercice 1 — Formulaire d'inscription complet
+
+**Enonce :** Creer un formulaire d'inscription contenant : nom, prenom, email, mot de passe, confirmation de mot de passe, date de naissance, genre (radio), acceptation des CGU (checkbox), bouton d'envoi. Tous les champs sont obligatoires. Le formulaire envoie les donnees en POST vers `/inscription`.
+
+**Solution :**
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formulaire d'inscription</title>
+</head>
+<body>
+  <h1>Inscription</h1>
+
+  <form action="/inscription" method="POST">
+    <fieldset>
+      <legend>Informations personnelles</legend>
+
+      <div>
+        <label for="nom">Nom :</label>
+        <input type="text" id="nom" name="nom" required
+               placeholder="Dupont" maxlength="50">
+      </div>
+
+      <div>
+        <label for="prenom">Prenom :</label>
+        <input type="text" id="prenom" name="prenom" required
+               placeholder="Jean" maxlength="50">
+      </div>
+
+      <div>
+        <label for="date-naissance">Date de naissance :</label>
+        <input type="date" id="date-naissance" name="date_naissance" required>
+      </div>
+
+      <div>
+        <p>Genre :</p>
+        <input type="radio" id="homme" name="genre" value="homme" required>
+        <label for="homme">Homme</label>
+
+        <input type="radio" id="femme" name="genre" value="femme">
+        <label for="femme">Femme</label>
+
+        <input type="radio" id="autre" name="genre" value="autre">
+        <label for="autre">Autre</label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Identifiants</legend>
+
+      <div>
+        <label for="email">Email :</label>
+        <input type="email" id="email" name="email" required
+               placeholder="jean.dupont@example.com">
+      </div>
+
+      <div>
+        <label for="mdp">Mot de passe :</label>
+        <input type="password" id="mdp" name="mot_de_passe" required
+               minlength="8" placeholder="8 caracteres minimum">
+      </div>
+
+      <div>
+        <label for="mdp-confirm">Confirmation :</label>
+        <input type="password" id="mdp-confirm" name="confirmation_mdp" required
+               minlength="8" placeholder="Repetez le mot de passe">
+      </div>
+    </fieldset>
+
+    <div>
+      <input type="checkbox" id="cgu" name="cgu" value="accepte" required>
+      <label for="cgu">J'accepte les conditions generales d'utilisation</label>
+    </div>
+
+    <button type="submit">S'inscrire</button>
+  </form>
+</body>
+</html>
+```
+
+**Points importants :**
+- `method="POST"` car on cree des donnees sur le serveur
+- `required` sur tous les champs obligatoires
+- `type="email"` pour la validation automatique du format
+- `minlength="8"` sur le mot de passe
+- Les boutons radio partagent le meme `name="genre"` pour former un groupe
+- `required` sur le premier radio suffit pour rendre le groupe obligatoire
+- Chaque `<label>` est lie a son `<input>` par `for`/`id`
+- `<fieldset>` et `<legend>` regroupent les champs de maniere logique
+
+---
+
+### Exercice 2 — Tableau de donnees avec colspan et rowspan
+
+**Enonce :** Creer un tableau representant les ventes trimestrielles de trois produits sur deux ans. L'en-tete doit avoir une ligne "Annee" qui s'etend sur les colonnes des trimestres, et la colonne "Produit" qui s'etend sur deux lignes d'en-tete. Ajouter une ligne de total par annee.
+
+**Solution :**
+
+```html
+<table>
+  <caption>Ventes trimestrielles (en milliers d'euros)</caption>
+  <thead>
+    <tr>
+      <th rowspan="2" scope="col">Produit</th>
+      <th colspan="4" scope="colgroup">2023</th>
+      <th colspan="4" scope="colgroup">2024</th>
+    </tr>
+    <tr>
+      <th scope="col">T1</th>
+      <th scope="col">T2</th>
+      <th scope="col">T3</th>
+      <th scope="col">T4</th>
+      <th scope="col">T1</th>
+      <th scope="col">T2</th>
+      <th scope="col">T3</th>
+      <th scope="col">T4</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Logiciel A</th>
+      <td>120</td>
+      <td>135</td>
+      <td>110</td>
+      <td>150</td>
+      <td>140</td>
+      <td>155</td>
+      <td>130</td>
+      <td>170</td>
+    </tr>
+    <tr>
+      <th scope="row">Logiciel B</th>
+      <td>80</td>
+      <td>95</td>
+      <td>70</td>
+      <td>100</td>
+      <td>90</td>
+      <td>105</td>
+      <td>85</td>
+      <td>120</td>
+    </tr>
+    <tr>
+      <th scope="row">Service C</th>
+      <td>200</td>
+      <td>210</td>
+      <td>190</td>
+      <td>230</td>
+      <td>220</td>
+      <td>240</td>
+      <td>210</td>
+      <td>260</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <th scope="row">Total</th>
+      <td>400</td>
+      <td>440</td>
+      <td>370</td>
+      <td>480</td>
+      <td>450</td>
+      <td>500</td>
+      <td>425</td>
+      <td>550</td>
+    </tr>
+  </tfoot>
+</table>
+```
+
+**Points importants :**
+- `rowspan="2"` sur "Produit" pour s'etendre sur les deux lignes d'en-tete
+- `colspan="4"` sur chaque annee pour couvrir les 4 trimestres
+- La deuxieme ligne du `<thead>` ne contient que 8 `<th>` (pas 9) car la premiere colonne est deja occupee par le rowspan
+- `scope` ameliore l'accessibilite
+- `<caption>` donne un titre au tableau
+- `<tfoot>` pour la ligne de total
+
+---
+
+### Exercice 3 — Page structuree avec balises semantiques
+
+**Enonce :** Creer la structure HTML complete d'un site d'entreprise avec : en-tete (logo + navigation), contenu principal avec deux sections (services et equipe), barre laterale (actualites), et pied de page.
+
+**Solution :**
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechCorp - Solutions informatiques</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <div class="conteneur">
+      <a href="/" class="logo">
+        <img src="images/logo.png" alt="TechCorp">
+      </a>
+      <nav>
+        <ul>
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/equipe">Equipe</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="conteneur">
+    <section id="services">
+      <h2>Nos services</h2>
+
+      <article>
+        <h3>Developpement web</h3>
+        <p>Nous concevons des applications web sur mesure
+           adaptees a vos besoins.</p>
+      </article>
+
+      <article>
+        <h3>Hebergement</h3>
+        <p>Solutions d'hebergement securisees et performantes
+           pour vos projets.</p>
+      </article>
+
+      <article>
+        <h3>Maintenance</h3>
+        <p>Suivi et maintenance de vos systemes informatiques
+           24h/24.</p>
+      </article>
+    </section>
+
+    <section id="equipe">
+      <h2>Notre equipe</h2>
+
+      <article>
+        <figure>
+          <img src="images/jean.jpg" alt="Portrait de Jean Dupont">
+          <figcaption>Jean Dupont - Directeur technique</figcaption>
+        </figure>
+        <p>15 ans d'experience en developpement logiciel.</p>
+      </article>
+
+      <article>
+        <figure>
+          <img src="images/marie.jpg" alt="Portrait de Marie Martin">
+          <figcaption>Marie Martin - Chef de projet</figcaption>
+        </figure>
+        <p>Certifiee PMP, specialiste en methodologies agiles.</p>
+      </article>
+    </section>
+
+    <aside>
+      <h2>Actualites</h2>
+      <article>
+        <h3>Nouveau partenariat</h3>
+        <p><time datetime="2024-03-15">15 mars 2024</time></p>
+        <p>TechCorp signe un accord avec DataSoft pour
+           renforcer son offre cloud.</p>
+      </article>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="conteneur">
+      <p>Copyright 2024 TechCorp - Tous droits reserves</p>
+      <nav>
+        <ul>
+          <li><a href="/mentions-legales">Mentions legales</a></li>
+          <li><a href="/politique-confidentialite">Politique de confidentialite</a></li>
+        </ul>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
+```
+
+---
+
+### Exercice 4 — Specificite CSS
+
+**Enonce :** Pour le HTML suivant, determiner la couleur appliquee a chaque element. Justifier par le calcul de specificite.
+
+```html
+<div id="page">
+  <p class="intro important">Paragraphe 1</p>
+  <p class="texte">Paragraphe 2</p>
+  <p>Paragraphe 3</p>
+</div>
+```
+
+```css
+/* Regle A */ p { color: black; }
+/* Regle B */ .intro { color: blue; }
+/* Regle C */ #page p { color: green; }
+/* Regle D */ #page .intro { color: red; }
+/* Regle E */ .intro.important { color: orange; }
+/* Regle F */ div p.texte { color: purple; }
+```
+
+**Solution :**
+
+Calcul des specificites :
+
+| Regle | Selecteur | Calcul | Specificite |
+|-------|-----------|--------|-------------|
+| A | `p` | 0,0,0,1 | 1 |
+| B | `.intro` | 0,0,1,0 | 10 |
+| C | `#page p` | 0,1,0,1 | 101 |
+| D | `#page .intro` | 0,1,1,0 | 110 |
+| E | `.intro.important` | 0,0,2,0 | 20 |
+| F | `div p.texte` | 0,0,1,2 | 12 |
+
+**Paragraphe 1** (`class="intro important"`) :
+- Regle A (1), B (10), C (101), D (110), E (20) s'appliquent
+- D a la specificite la plus elevee (110)
+- Couleur : **rouge**
+
+**Paragraphe 2** (`class="texte"`) :
+- Regle A (1), C (101), F (12) s'appliquent
+- C a la specificite la plus elevee (101)
+- Couleur : **verte**
+
+**Paragraphe 3** (pas de classe) :
+- Regle A (1), C (101) s'appliquent
+- C a la specificite la plus elevee (101)
+- Couleur : **verte**
+
+---
+
+### Exercice 5 — Layout Flexbox
+
+**Enonce :** Creer un pied de page a trois colonnes : la premiere contient le logo et une description, la deuxieme des liens de navigation, la troisieme les coordonnees. Sur mobile, les colonnes passent en vertical.
+
+**Solution :**
+
+```html
+<footer class="pied-de-page">
+  <div class="pied-de-page__conteneur">
+    <div class="pied-de-page__colonne">
+      <img src="logo.png" alt="Logo MonSite" class="pied-de-page__logo">
+      <p>MonSite est une entreprise specialisee dans
+         les solutions numeriques depuis 2010.</p>
+    </div>
+    <div class="pied-de-page__colonne">
+      <h3>Navigation</h3>
+      <ul>
+        <li><a href="/">Accueil</a></li>
+        <li><a href="/services">Services</a></li>
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="/contact">Contact</a></li>
+      </ul>
+    </div>
+    <div class="pied-de-page__colonne">
+      <h3>Contact</h3>
+      <p>12 rue de la Paix<br>75001 Paris</p>
+      <p>Telephone : 01 23 45 67 89</p>
+      <p>Email : contact@monsite.fr</p>
+    </div>
+  </div>
+  <div class="pied-de-page__bas">
+    <p>Copyright 2024 MonSite - Tous droits reserves</p>
+  </div>
+</footer>
+```
+
+```css
+.pied-de-page {
+  background-color: #2c3e50;
+  color: #ecf0f1;
+  padding: 40px 20px 20px;
+}
+
+.pied-de-page__conteneur {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pied-de-page__colonne {
+  flex: 1;
+}
+
+.pied-de-page__colonne h3 {
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.pied-de-page__colonne ul {
+  list-style: none;
+  padding: 0;
+}
+
+.pied-de-page__colonne li {
+  margin-bottom: 8px;
+}
+
+.pied-de-page__colonne a {
+  color: #bdc3c7;
+  text-decoration: none;
+}
+
+.pied-de-page__colonne a:hover {
+  color: #ecf0f1;
+}
+
+.pied-de-page__logo {
+  max-width: 150px;
+  margin-bottom: 15px;
+}
+
+.pied-de-page__bas {
+  border-top: 1px solid #7f8c8d;
+  margin-top: 30px;
+  padding-top: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+@media (min-width: 768px) {
+  .pied-de-page__conteneur {
+    flex-direction: row;
+  }
+}
+```
+
+**Points importants :**
+- `flex-direction: column` par defaut (mobile-first)
+- Passage a `flex-direction: row` a partir de 768px
+- `flex: 1` sur chaque colonne pour une repartition egale
+- Convention BEM pour le nommage des classes
+
+---
+
+### Exercice 6 — Reproduire une maquette (carte produit)
+
+**Enonce :** Creer une carte produit contenant : une image en haut, un titre, une description, un prix (mis en evidence), un bouton "Ajouter au panier". La carte a des coins arrondis, une ombre portee, et une legere animation au survol.
+
+**Solution :**
+
+```html
+<div class="carte-produit">
+  <img class="carte-produit__image" src="produit.jpg"
+       alt="Casque audio sans fil noir">
+  <div class="carte-produit__contenu">
+    <h3 class="carte-produit__titre">Casque audio sans fil</h3>
+    <p class="carte-produit__description">
+      Casque Bluetooth avec reduction de bruit active.
+      Autonomie de 30 heures. Compatible avec tous les appareils.
+    </p>
+    <p class="carte-produit__prix">89,99 &euro;</p>
+    <button class="carte-produit__bouton" type="button">
+      Ajouter au panier
+    </button>
+  </div>
+</div>
+```
+
+```css
+.carte-produit {
+  width: 300px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.carte-produit:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.carte-produit__image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.carte-produit__contenu {
+  padding: 20px;
+}
+
+.carte-produit__titre {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.carte-produit__description {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 15px;
+}
+
+.carte-produit__prix {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #e74c3c;
+  margin-bottom: 15px;
+}
+
+.carte-produit__bouton {
+  width: 100%;
+  padding: 12px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.carte-produit__bouton:hover {
+  background-color: #2980b9;
+}
+
+.carte-produit__bouton:focus {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+```
+
+**Points importants :**
+- `overflow: hidden` sur la carte pour que l'image respecte le `border-radius`
+- `object-fit: cover` pour que l'image remplisse son espace sans deformation
+- Transitions sur la carte (survol) et le bouton
+- Style de focus pour l'accessibilite clavier
+
+---
+
+### Exercice 7 — CSS Grid : mise en page complete
+
+**Enonce :** Creer une mise en page avec : un en-tete sur toute la largeur, une barre laterale a gauche (250px), un contenu principal flexible, et un pied de page sur toute la largeur. La hauteur minimale est celle du viewport. Sur mobile, tout passe en colonne.
+
+**Solution :**
+
+```html
+<div class="page">
+  <header class="page__entete">En-tete du site</header>
+  <nav class="page__sidebar">
+    <ul>
+      <li><a href="#">Tableau de bord</a></li>
+      <li><a href="#">Utilisateurs</a></li>
+      <li><a href="#">Parametres</a></li>
+      <li><a href="#">Rapports</a></li>
+    </ul>
+  </nav>
+  <main class="page__contenu">
+    <h1>Contenu principal</h1>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+       Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+  </main>
+  <footer class="page__pied">Pied de page</footer>
+</div>
+```
+
+```css
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.page {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+}
+
+.page__entete {
+  background-color: #2c3e50;
+  color: white;
+  padding: 20px;
+}
+
+.page__sidebar {
+  background-color: #34495e;
+  color: white;
+  padding: 20px;
+}
+
+.page__sidebar ul {
+  list-style: none;
+}
+
+.page__sidebar li {
+  margin-bottom: 10px;
+}
+
+.page__sidebar a {
+  color: #bdc3c7;
+  text-decoration: none;
+}
+
+.page__sidebar a:hover {
+  color: white;
+}
+
+.page__contenu {
+  padding: 30px;
+}
+
+.page__pied {
+  background-color: #2c3e50;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .page {
+    grid-template-columns: 250px 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .page__entete {
+    grid-column: 1 / -1;
+  }
+
+  .page__pied {
+    grid-column: 1 / -1;
+  }
+}
+```
+
+---
+
+### Exercice 8 — Formulaire style avec CSS et responsive
+
+**Enonce :** Creer un formulaire de contact (nom, email, sujet via select, message via textarea, bouton envoyer) avec un style soigne. Les champs occupent toute la largeur sur mobile. Sur desktop, nom et email sont cote a cote.
+
+**Solution :**
+
+```html
+<div class="formulaire-contact">
+  <h2>Contactez-nous</h2>
+  <form action="/contact" method="POST">
+    <div class="formulaire-contact__ligne">
+      <div class="formulaire-contact__champ">
+        <label for="contact-nom">Nom complet</label>
+        <input type="text" id="contact-nom" name="nom"
+               required placeholder="Jean Dupont">
+      </div>
+      <div class="formulaire-contact__champ">
+        <label for="contact-email">Adresse email</label>
+        <input type="email" id="contact-email" name="email"
+               required placeholder="jean@example.com">
+      </div>
+    </div>
+
+    <div class="formulaire-contact__champ">
+      <label for="contact-sujet">Sujet</label>
+      <select id="contact-sujet" name="sujet" required>
+        <option value="">-- Choisir un sujet --</option>
+        <option value="info">Demande d'information</option>
+        <option value="devis">Demande de devis</option>
+        <option value="support">Support technique</option>
+        <option value="autre">Autre</option>
+      </select>
+    </div>
+
+    <div class="formulaire-contact__champ">
+      <label for="contact-message">Message</label>
+      <textarea id="contact-message" name="message" rows="6"
+                required placeholder="Votre message..."></textarea>
+    </div>
+
+    <button type="submit" class="formulaire-contact__bouton">
+      Envoyer le message
+    </button>
+  </form>
+</div>
+```
+
+```css
+.formulaire-contact {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 30px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.formulaire-contact h2 {
+  margin-bottom: 25px;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.formulaire-contact__ligne {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.formulaire-contact__champ {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+.formulaire-contact__champ label {
+  margin-bottom: 6px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.formulaire-contact__champ input,
+.formulaire-contact__champ select,
+.formulaire-contact__champ textarea {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.formulaire-contact__champ input:focus,
+.formulaire-contact__champ select:focus,
+.formulaire-contact__champ textarea:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+.formulaire-contact__champ textarea {
+  resize: vertical;
+}
+
+.formulaire-contact__bouton {
+  width: 100%;
+  padding: 14px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.formulaire-contact__bouton:hover {
+  background-color: #2980b9;
+}
+
+.formulaire-contact__bouton:focus {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+
+@media (min-width: 600px) {
+  .formulaire-contact__ligne {
+    flex-direction: row;
+  }
+
+  .formulaire-contact__ligne .formulaire-contact__champ {
+    flex: 1;
+  }
+}
+```
+
+---
+
+### Exercice 9 — Tableau style avec CSS
+
+**Enonce :** Styliser un tableau de notes d'etudiants avec : lignes alternees en couleur, en-tete avec fond colore, bordures fines, survol des lignes, et alignement correct des nombres a droite.
+
+**Solution :**
+
+```html
+<table class="tableau-notes">
+  <caption>Notes du module Developpement Web - Semestre 2</caption>
+  <thead>
+    <tr>
+      <th scope="col">Etudiant</th>
+      <th scope="col">TP1</th>
+      <th scope="col">TP2</th>
+      <th scope="col">Examen</th>
+      <th scope="col">Moyenne</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Dupont Jean</td>
+      <td>14</td>
+      <td>16</td>
+      <td>12</td>
+      <td>13,5</td>
+    </tr>
+    <tr>
+      <td>Martin Marie</td>
+      <td>18</td>
+      <td>15</td>
+      <td>17</td>
+      <td>16,8</td>
+    </tr>
+    <tr>
+      <td>Bernard Luc</td>
+      <td>8</td>
+      <td>10</td>
+      <td>7</td>
+      <td>8,0</td>
+    </tr>
+    <tr>
+      <td>Petit Sophie</td>
+      <td>12</td>
+      <td>13</td>
+      <td>14</td>
+      <td>13,2</td>
+    </tr>
+    <tr>
+      <td>Moreau Paul</td>
+      <td>16</td>
+      <td>14</td>
+      <td>15</td>
+      <td>15,0</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+```css
+.tableau-notes {
+  width: 100%;
+  max-width: 800px;
+  margin: 20px auto;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+}
+
+.tableau-notes caption {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: left;
+  color: #333;
+}
+
+.tableau-notes th,
+.tableau-notes td {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+}
+
+.tableau-notes thead th {
+  background-color: #2c3e50;
+  color: white;
+  text-align: left;
+  font-weight: bold;
+}
+
+/* Aligner les nombres a droite */
+.tableau-notes td:nth-child(n+2) {
+  text-align: right;
+}
+
+.tableau-notes thead th:nth-child(n+2) {
+  text-align: right;
+}
+
+/* Lignes alternees */
+.tableau-notes tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+/* Survol des lignes */
+.tableau-notes tbody tr:hover {
+  background-color: #e8f4fd;
+}
+
+/* Mettre en evidence les moyennes insuffisantes */
+.tableau-notes tbody td:last-child {
+  font-weight: bold;
+}
+```
+
+**Points importants :**
+- `border-collapse: collapse` pour que les bordures adjacentes fusionnent
+- `nth-child(even)` pour les lignes alternees
+- `nth-child(n+2)` pour cibler toutes les colonnes a partir de la deuxieme (les notes)
+- Les nombres sont alignes a droite pour faciliter la lecture comparative
+
+---
+
+### Exercice 10 — Page responsive complete
+
+**Enonce :** Creer une page d'accueil responsive avec : une section "hero" en plein ecran, une grille de 3 services (cartes), une section "a propos" avec texte et image cote a cote, et un pied de page. Mobile-first.
+
+**Solution :**
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebAgency - Accueil</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="conteneur header__inner">
+      <a href="/" class="header__logo">WebAgency</a>
+      <nav class="header__nav">
+        <ul>
+          <li><a href="#services">Services</a></li>
+          <li><a href="#apropos">A propos</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero__contenu">
+      <h1>Creez votre presence numerique</h1>
+      <p>Solutions web sur mesure pour les entreprises ambitieuses.</p>
+      <a href="#contact" class="hero__bouton">Nous contacter</a>
+    </div>
+  </section>
+
+  <section id="services" class="services">
+    <div class="conteneur">
+      <h2>Nos services</h2>
+      <div class="services__grille">
+        <div class="service-carte">
+          <h3>Design</h3>
+          <p>Interfaces modernes et intuitives concues
+             pour vos utilisateurs.</p>
+        </div>
+        <div class="service-carte">
+          <h3>Developpement</h3>
+          <p>Applications web performantes avec les
+             technologies les plus recentes.</p>
+        </div>
+        <div class="service-carte">
+          <h3>Referencement</h3>
+          <p>Optimisation pour les moteurs de recherche
+             pour une visibilite maximale.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="apropos" class="apropos">
+    <div class="conteneur apropos__inner">
+      <div class="apropos__texte">
+        <h2>A propos de nous</h2>
+        <p>Fondee en 2015, WebAgency accompagne les entreprises
+           dans leur transformation numerique. Notre equipe de
+           15 experts conçoit des solutions adaptees a chaque projet.</p>
+        <p>Nous croyons que chaque entreprise merite une presence
+           en ligne de qualite, accessible et performante.</p>
+      </div>
+      <div class="apropos__image">
+        <img src="images/equipe.jpg" alt="L'equipe WebAgency en reunion">
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="conteneur">
+      <p>Copyright 2024 WebAgency - Tous droits reserves</p>
+    </div>
+  </footer>
+
+</body>
+</html>
+```
+
+```css
+/* === RESET === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+ul {
+  list-style: none;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* === BASE === */
+:root {
+  --couleur-primaire: #2c3e50;
+  --couleur-accent: #3498db;
+  --couleur-texte: #333;
+  --couleur-texte-clair: #666;
+  --couleur-fond: #f8f9fa;
+  --espacement: 20px;
+  --rayon: 8px;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+  color: var(--couleur-texte);
+}
+
+.conteneur {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* === HEADER === */
+.header {
+  background-color: var(--couleur-primaire);
+  color: white;
+  padding: 15px 0;
+}
+
+.header__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.header__logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.header__nav ul {
+  display: flex;
+  gap: 20px;
+}
+
+.header__nav a {
+  color: #bdc3c7;
+  transition: color 0.3s ease;
+}
+
+.header__nav a:hover {
+  color: white;
+}
+
+/* === HERO === */
+.hero {
+  background-color: var(--couleur-primaire);
+  color: white;
+  padding: 80px var(--espacement);
+  text-align: center;
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero h1 {
+  font-size: 2rem;
+  margin-bottom: 15px;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  color: #bdc3c7;
+}
+
+.hero__bouton {
+  display: inline-block;
+  padding: 14px 30px;
+  background-color: var(--couleur-accent);
+  color: white;
+  border-radius: var(--rayon);
+  font-size: 1.1rem;
+  transition: background-color 0.3s ease;
+}
+
+.hero__bouton:hover {
+  background-color: #2980b9;
+}
+
+/* === SERVICES === */
+.services {
+  padding: 60px 0;
+  background-color: var(--couleur-fond);
+}
+
+.services h2 {
+  text-align: center;
+  margin-bottom: 40px;
+  font-size: 1.8rem;
+}
+
+.services__grille {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.service-carte {
+  background-color: white;
+  padding: 30px;
+  border-radius: var(--rayon);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.service-carte h3 {
+  margin-bottom: 15px;
+  color: var(--couleur-accent);
+}
+
+.service-carte p {
+  color: var(--couleur-texte-clair);
+}
+
+/* === A PROPOS === */
+.apropos {
+  padding: 60px 0;
+}
+
+.apropos__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.apropos__texte h2 {
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+}
+
+.apropos__texte p {
+  margin-bottom: 15px;
+  color: var(--couleur-texte-clair);
+}
+
+.apropos__image img {
+  border-radius: var(--rayon);
+}
+
+/* === FOOTER === */
+.footer {
+  background-color: var(--couleur-primaire);
+  color: #bdc3c7;
+  padding: 20px 0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* === RESPONSIVE TABLETTE === */
+@media (min-width: 768px) {
+  .header__inner {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .hero h1 {
+    font-size: 2.5rem;
+  }
+
+  .services__grille {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .apropos__inner {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .apropos__texte,
+  .apropos__image {
+    flex: 1;
+  }
+}
+
+/* === RESPONSIVE DESKTOP === */
+@media (min-width: 1024px) {
+  .hero {
+    min-height: 80vh;
+  }
+
+  .hero h1 {
+    font-size: 3rem;
+  }
+
+  .services__grille {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+```
+
+**Points importants :**
+- Approche mobile-first : les styles de base sont pour mobile, les media queries ajoutent des regles pour les ecrans plus grands
+- Variables CSS pour les couleurs et valeurs reutilisees
+- Grid pour la grille de services (1 colonne sur mobile, 2 sur tablette, 3 sur desktop)
+- Flexbox pour le header et la section "a propos"
+- Reset CSS minimal en debut de fichier
+- Unites `rem` pour les tailles de texte
+- `max-width: 1200px` sur le conteneur pour limiter la largeur sur grands ecrans

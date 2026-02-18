@@ -1,0 +1,2534 @@
+---
+title: "Tests unitaires et de non-regression"
+description: "Guide complet sur les tests logiciels pour le BTS SIO SLAM"
+category: "Qualite et Securite"
+tags: ["tests", "unitaires", "non-regression", "qualite"]
+difficulty: "Intermediaire"
+---
+
+# Tests unitaires et de non-regression
+
+---
+
+## Pourquoi tester ?
+
+### Le probleme concret
+
+Vous developpez une application de gestion de commandes. Vous ajoutez une fonctionnalite de code promo. Vous livrez. Le lendemain, le client vous appelle, furieux : le calcul du total TTC ne fonctionne plus pour les commandes sans code promo. Vous avez casse une fonctionnalite qui marchait parfaitement depuis 6 mois.
+
+Ce scenario est le quotidien des equipes qui ne testent pas leur code.
+
+### Analogie
+
+Un medecin qui prescrit un medicament sans verifier les interactions avec les autres traitements du patient. Le nouveau medicament guerit le symptome vise, mais provoque des effets secondaires graves. En developpement, c'est exactement la meme chose : chaque modification peut avoir des effets de bord imprevisibles.
+
+### Le cout d'un bug selon le moment de sa decouverte
+
+| Moment de decouverte | Cout relatif | Exemple concret |
+|---|---|---|
+| En developpement | 1x | Le developpeur corrige immediatement |
+| En phase de test | 10x | Il faut identifier, reproduire, corriger, re-tester |
+| En production | 100x | Perte de donnees, perte de clients, image degradee |
+
+Un bug decouvert en production peut couter des milliers d'euros (arret de service, support client, correctif en urgence, deploiement hors horaires). Le meme bug detecte par un test unitaire aurait coute 5 minutes de correction.
+
+### La pyramide des tests
+
+```
+         /\
+        /  \
+       / E2E\        ← Peu nombreux, lents, couteux
+      /------\
+     / Integr.\      ← Nombre moyen, vitesse moyenne
+    /----------\
+   /  Unitaires \    ← Tres nombreux, tres rapides, peu couteux
+  /--------------\
+```
+
+- **Tests unitaires** : testent UNE fonction ou UNE methode, isoles du reste. Rapides (millisecondes). On en ecrit des centaines.
+- **Tests d'integration** : testent que plusieurs composants fonctionnent ensemble (controleur + service + base de donnees). Plus lents.
+- **Tests E2E (end-to-end)** : testent l'application complete du point de vue de l'utilisateur (simuler des clics dans un navigateur). Les plus lents et les plus fragiles.
+
+La base de la pyramide doit etre la plus large : la majorite de vos tests doivent etre des tests unitaires.
+
+---
+
+## Tests unitaires
+
+### Definition
+
+Un test unitaire verifie le comportement d'UNE seule unite de code (une fonction, une methode) de maniere isolee. Il ne depend pas d'une base de donnees, d'un fichier, d'un reseau ou d'un autre composant externe.
+
+### Le pattern AAA
+
+Tout test unitaire suit la meme structure en trois etapes :
+
+1. **Arrange** (Preparer) : mettre en place les donnees et le contexte necessaires
+2. **Act** (Executer) : appeler la fonction ou la methode a tester
+3. **Assert** (Verifier) : comparer le resultat obtenu avec le resultat attendu
+
+Ce pattern est universel. Il s'applique en JavaScript, en C#, en Python, en Java, dans tous les langages.
+
+---
+
+### Exemple introductif : le bug qui aurait pu etre evite
+
+Voici une fonction de calcul de prix TTC. Elle contient un bug :
+
+```javascript
+// calcul.js — VERSION BUGGEE
+function calculerTTC(prixHT, tauxTVA) {
+  return prixHT + prixHT * tauxTVA;
+}
+```
+
+Le developpeur l'utilise et tout semble fonctionner. Mais un jour, quelqu'un appelle `calculerTTC(-50, 0.2)`. La fonction renvoie -60 sans lever d'erreur. Un prix negatif n'a aucun sens.
+
+Autre probleme : `calculerTTC(100, null)` renvoie `100` (car `100 * null` vaut `0` en JavaScript). Aucune erreur, mais un resultat silencieusement faux.
+
+Si des tests unitaires avaient ete ecrits des le depart, ces bugs auraient ete detectes immediatement.
+
+---
+
+### Tests unitaires en JavaScript avec Jest
+
+#### Installation
+
+```bash
+mkdir mon-projet && cd mon-projet
+npm init -y
+npm install --save-dev jest
+```
+
+#### Configuration du package.json
+
+```json
+{
+  "name": "mon-projet",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
+```
+
+Pour lancer les tests :
+
+```bash
+npm test
+```
+
+Jest detecte automatiquement tous les fichiers dont le nom se termine par `.test.js` ou `.spec.js`.
+
+#### Le code a tester (version corrigee)
+
+```javascript
+// calcul.js
+function calculerTTC(prixHT, tauxTVA) {
+  if (typeof prixHT !== 'number' || typeof tauxTVA !== 'number') {
+    throw new Error('Les parametres doivent etre des nombres');
+  }
+  if (prixHT < 0) {
+    throw new Error('Le prix HT ne peut pas etre negatif');
+  }
+  if (tauxTVA < 0 || tauxTVA > 1) {
+    throw new Error('Le taux de TVA doit etre compris entre 0 et 1');
+  }
+  return Math.round((prixHT + prixHT * tauxTVA) * 100) / 100;
+}
+
+module.exports = { calculerTTC };
+```
+
+#### Le fichier de test complet
+
+```javascript
+// calcul.test.js
+const { calculerTTC } = require('./calcul');
+
+describe('calculerTTC', () => {
+
+  // --- Cas normaux (happy path) ---
+
+  test('calcule le TTC avec TVA a 20%', () => {
+    // Arrange
+    const prixHT = 100;
+    const tauxTVA = 0.2;
+
+    // Act
+    const resultat = calculerTTC(prixHT, tauxTVA);
+
+    // Assert
+    expect(resultat).toBe(120);
+  });
+
+  test('calcule le TTC avec TVA a 5.5%', () => {
+    const resultat = calculerTTC(200, 0.055);
+    expect(resultat).toBe(211);
+  });
+
+  test('calcule le TTC avec TVA a 0%', () => {
+    const resultat = calculerTTC(50, 0);
+    expect(resultat).toBe(50);
+  });
+
+  test('calcule le TTC pour un prix HT de 0', () => {
+    const resultat = calculerTTC(0, 0.2);
+    expect(resultat).toBe(0);
+  });
+
+  // --- Cas limites ---
+
+  test('gere les nombres a virgule avec precision', () => {
+    const resultat = calculerTTC(19.99, 0.2);
+    expect(resultat).toBe(23.99);
+  });
+
+  test('gere un tres grand prix', () => {
+    const resultat = calculerTTC(999999.99, 0.2);
+    expect(resultat).toBe(1199999.99);
+  });
+
+  // --- Cas d'erreur ---
+
+  test('leve une erreur si le prix HT est negatif', () => {
+    expect(() => calculerTTC(-50, 0.2)).toThrow(
+      'Le prix HT ne peut pas etre negatif'
+    );
+  });
+
+  test('leve une erreur si le taux de TVA est superieur a 1', () => {
+    expect(() => calculerTTC(100, 1.5)).toThrow(
+      'Le taux de TVA doit etre compris entre 0 et 1'
+    );
+  });
+
+  test('leve une erreur si le taux de TVA est negatif', () => {
+    expect(() => calculerTTC(100, -0.1)).toThrow(
+      'Le taux de TVA doit etre compris entre 0 et 1'
+    );
+  });
+
+  test('leve une erreur si le prix HT est null', () => {
+    expect(() => calculerTTC(null, 0.2)).toThrow(
+      'Les parametres doivent etre des nombres'
+    );
+  });
+
+  test('leve une erreur si le prix HT est undefined', () => {
+    expect(() => calculerTTC(undefined, 0.2)).toThrow(
+      'Les parametres doivent etre des nombres'
+    );
+  });
+
+  test('leve une erreur si le prix HT est une chaine', () => {
+    expect(() => calculerTTC('cent', 0.2)).toThrow(
+      'Les parametres doivent etre des nombres'
+    );
+  });
+});
+```
+
+#### Les assertions Jest essentielles
+
+| Assertion | Usage | Exemple |
+|---|---|---|
+| `expect(x).toBe(y)` | Egalite stricte (===) pour primitives | `expect(2+2).toBe(4)` |
+| `expect(x).toEqual(y)` | Egalite profonde pour objets/tableaux | `expect([1,2]).toEqual([1,2])` |
+| `expect(x).toBeTruthy()` | Verifie que la valeur est "truthy" | `expect('hello').toBeTruthy()` |
+| `expect(x).toBeFalsy()` | Verifie que la valeur est "falsy" | `expect(0).toBeFalsy()` |
+| `expect(x).toBeNull()` | Verifie que la valeur est null | `expect(null).toBeNull()` |
+| `expect(x).toBeUndefined()` | Verifie que la valeur est undefined | `expect(undefined).toBeUndefined()` |
+| `expect(x).toBeGreaterThan(y)` | Superieur strict | `expect(5).toBeGreaterThan(3)` |
+| `expect(x).toBeLessThanOrEqual(y)` | Inferieur ou egal | `expect(3).toBeLessThanOrEqual(3)` |
+| `expect(x).toContain(y)` | Tableau ou chaine contient y | `expect([1,2,3]).toContain(2)` |
+| `expect(fn).toThrow()` | La fonction leve une exception | `expect(() => fn()).toThrow()` |
+| `expect(fn).toThrow('msg')` | L'exception contient ce message | `expect(() => fn()).toThrow('erreur')` |
+
+**Attention** : `toBe` compare par reference pour les objets. Pour comparer le contenu de deux objets ou tableaux, utiliser `toEqual`.
+
+```javascript
+// PIEGE CLASSIQUE
+const a = { nom: 'Alice' };
+const b = { nom: 'Alice' };
+expect(a).toBe(b);    // ECHEC — ce ne sont pas le meme objet en memoire
+expect(a).toEqual(b);  // SUCCES — meme contenu
+```
+
+#### Organiser les tests avec describe, it, test
+
+`describe` cree un bloc de tests regroupes. `test` (ou son alias `it`) definit un test individuel.
+
+```javascript
+describe('MonModule', () => {
+  describe('maFonction', () => {
+    test('cas normal', () => { /* ... */ });
+    test('cas limite', () => { /* ... */ });
+    test('cas erreur', () => { /* ... */ });
+  });
+
+  describe('autreFonction', () => {
+    test('cas normal', () => { /* ... */ });
+  });
+});
+```
+
+`test` et `it` sont strictement identiques. `it` permet une lecture plus naturelle en anglais ("it should return...") mais en examen BTS SIO, les deux sont acceptes.
+
+#### Hooks : beforeEach, afterEach, beforeAll, afterAll
+
+Les hooks permettent de factoriser du code qui se repete entre les tests.
+
+```javascript
+describe('CompteBancaire', () => {
+  let compte;
+
+  // Execute AVANT CHAQUE test
+  beforeEach(() => {
+    compte = new CompteBancaire('Dupont', 1000);
+  });
+
+  // Execute APRES CHAQUE test
+  afterEach(() => {
+    // Nettoyage si necessaire
+  });
+
+  test('crediter augmente le solde', () => {
+    compte.crediter(500);
+    expect(compte.getSolde()).toBe(1500);
+  });
+
+  test('debiter diminue le solde', () => {
+    compte.debiter(200);
+    expect(compte.getSolde()).toBe(800);
+  });
+});
+```
+
+| Hook | Moment d'execution | Usage courant |
+|---|---|---|
+| `beforeEach` | Avant chaque test du bloc | Reinitialiser les donnees de test |
+| `afterEach` | Apres chaque test du bloc | Nettoyer (fermer connexions, vider tableaux) |
+| `beforeAll` | Une seule fois avant tous les tests du bloc | Initialisation couteuse (connexion BDD de test) |
+| `afterAll` | Une seule fois apres tous les tests du bloc | Fermeture de ressources partagees |
+
+**Regle importante** : utiliser `beforeEach` plutot que `beforeAll` pour garantir l'independance des tests. Chaque test doit partir d'un etat propre.
+
+---
+
+### Tests unitaires en C# avec MSTest
+
+#### Structure d'un projet de test
+
+Dans Visual Studio :
+1. Solution existante avec le projet principal (ex: `MonApplication`)
+2. Ajouter un nouveau projet de type "Projet de test MSTest" (ex: `MonApplication.Tests`)
+3. Ajouter une reference vers le projet principal
+
+Structure typique :
+
+```
+MonApplication/
+  ├── MonApplication/
+  │   ├── Calcul.cs
+  │   └── CompteBancaire.cs
+  └── MonApplication.Tests/
+      ├── CalculTests.cs
+      └── CompteBancaireTests.cs
+```
+
+#### Le code a tester
+
+```csharp
+// Calcul.cs
+namespace MonApplication
+{
+    public class Calcul
+    {
+        public static double CalculerTTC(double prixHT, double tauxTVA)
+        {
+            if (prixHT < 0)
+                throw new ArgumentException("Le prix HT ne peut pas etre negatif");
+            if (tauxTVA < 0 || tauxTVA > 1)
+                throw new ArgumentException("Le taux de TVA doit etre entre 0 et 1");
+
+            return Math.Round(prixHT + prixHT * tauxTVA, 2);
+        }
+    }
+}
+```
+
+#### Le fichier de test complet
+
+```csharp
+// CalculTests.cs
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using MonApplication;
+
+namespace MonApplication.Tests
+{
+    [TestClass]
+    public class CalculTests
+    {
+        // --- Cas normaux ---
+
+        [TestMethod]
+        public void CalculerTTC_PrixHT100_TVA20_Retourne120()
+        {
+            // Arrange
+            double prixHT = 100;
+            double tauxTVA = 0.2;
+
+            // Act
+            double resultat = Calcul.CalculerTTC(prixHT, tauxTVA);
+
+            // Assert
+            Assert.AreEqual(120, resultat);
+        }
+
+        [TestMethod]
+        public void CalculerTTC_PrixHT200_TVA055_Retourne211()
+        {
+            double resultat = Calcul.CalculerTTC(200, 0.055);
+            Assert.AreEqual(211, resultat);
+        }
+
+        [TestMethod]
+        public void CalculerTTC_PrixHT0_TVA20_Retourne0()
+        {
+            double resultat = Calcul.CalculerTTC(0, 0.2);
+            Assert.AreEqual(0, resultat);
+        }
+
+        [TestMethod]
+        public void CalculerTTC_TVA0_RetournePrixHTInchange()
+        {
+            double resultat = Calcul.CalculerTTC(50, 0);
+            Assert.AreEqual(50, resultat);
+        }
+
+        // --- Cas d'erreur ---
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void CalculerTTC_PrixHTNegatif_LeveException()
+        {
+            Calcul.CalculerTTC(-50, 0.2);
+        }
+
+        [TestMethod]
+        public void CalculerTTC_TVASuperieure1_LeveArgumentException()
+        {
+            Assert.ThrowsException<ArgumentException>(
+                () => Calcul.CalculerTTC(100, 1.5)
+            );
+        }
+
+        [TestMethod]
+        public void CalculerTTC_TVANegative_LeveArgumentException()
+        {
+            Assert.ThrowsException<ArgumentException>(
+                () => Calcul.CalculerTTC(100, -0.1)
+            );
+        }
+    }
+}
+```
+
+#### Les attributs MSTest essentiels
+
+| Attribut | Role |
+|---|---|
+| `[TestClass]` | Marque une classe comme contenant des tests |
+| `[TestMethod]` | Marque une methode comme etant un test |
+| `[TestInitialize]` | Methode executee avant chaque test (equivalent de `beforeEach`) |
+| `[TestCleanup]` | Methode executee apres chaque test (equivalent de `afterEach`) |
+| `[ClassInitialize]` | Methode executee une fois avant tous les tests de la classe |
+| `[ClassCleanup]` | Methode executee une fois apres tous les tests de la classe |
+| `[ExpectedException(typeof(...))]` | Le test attend qu'une exception soit levee |
+
+#### Les assertions MSTest essentielles
+
+| Assertion | Usage |
+|---|---|
+| `Assert.AreEqual(attendu, obtenu)` | Egalite de valeur |
+| `Assert.AreNotEqual(a, b)` | Inegalite |
+| `Assert.IsTrue(condition)` | La condition est vraie |
+| `Assert.IsFalse(condition)` | La condition est fausse |
+| `Assert.IsNull(objet)` | L'objet est null |
+| `Assert.IsNotNull(objet)` | L'objet n'est pas null |
+| `Assert.ThrowsException<T>(() => ...)` | La lambda leve une exception de type T |
+| `Assert.IsInstanceOfType(objet, typeof(T))` | L'objet est du type attendu |
+
+**Attention a l'ordre des parametres** : `Assert.AreEqual(attendu, obtenu)`. L'attendu vient en premier. Inverser les deux ne fait pas echouer le test mais rend le message d'erreur confus.
+
+#### Exemple avec TestInitialize
+
+```csharp
+[TestClass]
+public class CompteBancaireTests
+{
+    private CompteBancaire _compte;
+
+    [TestInitialize]
+    public void Initialiser()
+    {
+        // Execute avant chaque [TestMethod]
+        _compte = new CompteBancaire("Dupont", 1000);
+    }
+
+    [TestMethod]
+    public void Crediter_Montant500_SoldeAugmenteDe500()
+    {
+        _compte.Crediter(500);
+        Assert.AreEqual(1500, _compte.GetSolde());
+    }
+
+    [TestMethod]
+    public void Debiter_Montant200_SoldeDiminueDe200()
+    {
+        _compte.Debiter(200);
+        Assert.AreEqual(800, _compte.GetSolde());
+    }
+
+    [TestCleanup]
+    public void Nettoyer()
+    {
+        _compte = null;
+    }
+}
+```
+
+---
+
+### Que tester ? Les trois categories de cas
+
+Pour chaque fonction, il faut systematiquement tester trois categories :
+
+#### 1. Les cas normaux (happy path)
+
+Le cas ou tout se passe comme prevu. L'utilisateur fournit des donnees valides et la fonction renvoie le resultat attendu.
+
+```javascript
+test('calculer la moyenne de notes valides', () => {
+  expect(calculerMoyenne([12, 14, 16])).toBe(14);
+});
+```
+
+```csharp
+[TestMethod]
+public void CalculerMoyenne_NotesValides_RetourneMoyenne()
+{
+    double resultat = Calcul.CalculerMoyenne(new double[] { 12, 14, 16 });
+    Assert.AreEqual(14, resultat);
+}
+```
+
+#### 2. Les cas limites (edge cases)
+
+Les valeurs aux frontieres : zero, un seul element, tableau vide, tres grand nombre, chaine vide.
+
+```javascript
+test('moyenne d\'un seul element', () => {
+  expect(calculerMoyenne([15])).toBe(15);
+});
+
+test('moyenne avec des zeros', () => {
+  expect(calculerMoyenne([0, 0, 0])).toBe(0);
+});
+
+test('tableau vide leve une erreur', () => {
+  expect(() => calculerMoyenne([])).toThrow();
+});
+```
+
+```csharp
+[TestMethod]
+public void CalculerMoyenne_UnSeulElement_RetourneCetElement()
+{
+    double resultat = Calcul.CalculerMoyenne(new double[] { 15 });
+    Assert.AreEqual(15, resultat);
+}
+
+[TestMethod]
+[ExpectedException(typeof(ArgumentException))]
+public void CalculerMoyenne_TableauVide_LeveException()
+{
+    Calcul.CalculerMoyenne(new double[] { });
+}
+```
+
+#### 3. Les cas d'erreur
+
+Les entrees invalides, les situations anormales.
+
+```javascript
+test('null en parametre leve une erreur', () => {
+  expect(() => calculerMoyenne(null)).toThrow();
+});
+
+test('tableau contenant des non-nombres leve une erreur', () => {
+  expect(() => calculerMoyenne([12, 'abc', 16])).toThrow();
+});
+```
+
+```csharp
+[TestMethod]
+[ExpectedException(typeof(ArgumentNullException))]
+public void CalculerMoyenne_Null_LeveException()
+{
+    Calcul.CalculerMoyenne(null);
+}
+```
+
+#### Checklist : pour chaque fonction, se demander
+
+- Que se passe-t-il avec une valeur de 0 ?
+- Que se passe-t-il avec une valeur negative ?
+- Que se passe-t-il avec null ou undefined ?
+- Que se passe-t-il avec une chaine vide ?
+- Que se passe-t-il avec un tableau vide ?
+- Que se passe-t-il avec un tres grand nombre ?
+- Que se passe-t-il avec le mauvais type de donnee ?
+
+---
+
+### Couverture de code
+
+La couverture de code (code coverage) mesure le pourcentage de lignes de code qui sont executees au moins une fois par les tests.
+
+- **Couverture de 80%** signifie que 80% des lignes du code source sont traversees par au moins un test.
+- **Couverture de 100%** ne signifie PAS que le code est sans bug. Elle signifie que chaque ligne a ete executee, mais pas que chaque combinaison d'entrees a ete testee.
+
+Pourquoi 100% n'est pas toujours l'objectif :
+- Certaines lignes sont triviales (getters/setters simples)
+- Le cout marginal de tester les derniers 5% est souvent disproportionne
+- Un objectif raisonnable se situe entre 70% et 90%
+- La qualite des tests compte plus que la quantite
+
+Pour mesurer la couverture avec Jest :
+
+```bash
+npx jest --coverage
+```
+
+Jest genere un rapport indiquant, fichier par fichier, le pourcentage de lignes couvertes, de branches couvertes et de fonctions couvertes.
+
+---
+
+## Tests de non-regression
+
+### Definition
+
+Une regression est une fonctionnalite qui fonctionnait correctement et qui ne fonctionne plus apres une modification du code.
+
+### Analogie
+
+Vous appelez un plombier pour reparer un robinet dans la cuisine. Il repare le robinet. Vous allez dans la salle de bain : la douche ne fonctionne plus. Le plombier a casse quelque chose en intervenant sur la plomberie de la cuisine. C'est exactement ce qui se passe quand une modification de code introduit un bug dans une partie du programme qui n'a pas ete modifiee directement.
+
+### Pourquoi les regressions arrivent
+
+- Le code est interconnecte : modifier la fonction A peut affecter la fonction B qui l'appelle
+- Un developpeur ne connait pas forcement tout le code du projet
+- Une "petite" modification peut avoir des effets en cascade
+
+### Le principe du test de non-regression
+
+Le test de non-regression n'est pas un type de test different. C'est une **pratique** : conserver tous les tests existants et les relancer apres chaque modification du code.
+
+Si tous les tests passent apres votre modification : pas de regression detectee.
+Si un test existant echoue apres votre modification : vous avez introduit une regression. Il faut corriger avant de livrer.
+
+### Demonstration concrete
+
+#### Etape 1 : le code initial qui fonctionne
+
+```javascript
+// panier.js
+class Panier {
+  constructor() {
+    this.articles = [];
+  }
+
+  ajouter(article) {
+    if (!article || !article.nom || typeof article.prix !== 'number') {
+      throw new Error('Article invalide');
+    }
+    if (article.prix < 0) {
+      throw new Error('Le prix ne peut pas etre negatif');
+    }
+    this.articles.push(article);
+  }
+
+  calculerTotal() {
+    return this.articles.reduce((total, article) => total + article.prix, 0);
+  }
+
+  getNombreArticles() {
+    return this.articles.length;
+  }
+}
+
+module.exports = { Panier };
+```
+
+#### Etape 2 : les tests existants (tous verts)
+
+```javascript
+// panier.test.js
+const { Panier } = require('./panier');
+
+describe('Panier', () => {
+  let panier;
+
+  beforeEach(() => {
+    panier = new Panier();
+  });
+
+  test('panier vide a un total de 0', () => {
+    expect(panier.calculerTotal()).toBe(0);
+  });
+
+  test('panier vide contient 0 articles', () => {
+    expect(panier.getNombreArticles()).toBe(0);
+  });
+
+  test('ajouter un article augmente le nombre d\'articles', () => {
+    panier.ajouter({ nom: 'Stylo', prix: 2.50 });
+    expect(panier.getNombreArticles()).toBe(1);
+  });
+
+  test('le total correspond a la somme des prix', () => {
+    panier.ajouter({ nom: 'Stylo', prix: 2.50 });
+    panier.ajouter({ nom: 'Cahier', prix: 5.00 });
+    expect(panier.calculerTotal()).toBe(7.50);
+  });
+
+  test('ajouter un article invalide leve une erreur', () => {
+    expect(() => panier.ajouter(null)).toThrow('Article invalide');
+  });
+
+  test('ajouter un article avec prix negatif leve une erreur', () => {
+    expect(() => panier.ajouter({ nom: 'X', prix: -5 })).toThrow(
+      'Le prix ne peut pas etre negatif'
+    );
+  });
+});
+```
+
+Resultat : 6 tests, 6 passes. Tout est vert.
+
+#### Etape 3 : ajout d'une fonctionnalite (code promo)
+
+Un developpeur ajoute la gestion des codes promo. Il modifie `calculerTotal` :
+
+```javascript
+// panier.js — MODIFICATION BUGGEE
+calculerTotal(codePromo) {
+  let total = this.articles.reduce((t, a) => t + a.prix, 0);
+  if (codePromo === 'PROMO10') {
+    total = total * 0.9;
+  }
+  return total;
+}
+```
+
+Le developpeur teste manuellement avec un code promo : ca fonctionne. Il est satisfait et s'apprete a livrer.
+
+#### Etape 4 : les tests de non-regression detectent le probleme
+
+Le developpeur lance les tests existants :
+
+```
+npm test
+```
+
+Resultat :
+
+```
+PASS  panier.test.js
+  Panier
+    ✓ panier vide a un total de 0
+    ✓ panier vide contient 0 articles
+    ✓ ajouter un article augmente le nombre d'articles
+    ✓ le total correspond a la somme des prix
+    ✓ ajouter un article invalide leve une erreur
+    ✓ ajouter un article avec prix negatif leve une erreur
+
+6 passed
+```
+
+Dans ce cas, les tests passent car la modification n'a pas casse le comportement existant (la methode sans argument fonctionne toujours). Mais imaginons que le developpeur ait fait une erreur differente :
+
+```javascript
+// panier.js — MODIFICATION BUGGEE (version 2)
+calculerTotal(codePromo) {
+  let total = this.articles.reduce((t, a) => t + a.prix, 0);
+  if (codePromo) {
+    total = total * 0.9;  // Bug : n'importe quel code promo donne -10%
+  }
+  return Math.round(total);  // Bug : arrondit a l'entier au lieu de garder les centimes
+}
+```
+
+Resultat des tests :
+
+```
+FAIL  panier.test.js
+  Panier
+    ✓ panier vide a un total de 0
+    ✓ panier vide contient 0 articles
+    ✓ ajouter un article augmente le nombre d'articles
+    ✗ le total correspond a la somme des prix
+      Expected: 7.5
+      Received: 8
+    ✓ ajouter un article invalide leve une erreur
+    ✓ ajouter un article avec prix negatif leve une erreur
+
+1 failed, 5 passed
+```
+
+Le test "le total correspond a la somme des prix" echoue. Le `Math.round()` a casse le calcul existant. C'est une **regression**. Sans ce test, le bug serait passe en production.
+
+#### Etape 5 : corriger puis ajouter les nouveaux tests
+
+Le developpeur corrige le bug, puis ajoute des tests pour la nouvelle fonctionnalite :
+
+```javascript
+// Nouveaux tests a ajouter au fichier existant
+test('code promo PROMO10 applique 10% de reduction', () => {
+  panier.ajouter({ nom: 'Stylo', prix: 100 });
+  expect(panier.calculerTotal('PROMO10')).toBe(90);
+});
+
+test('code promo invalide ne change pas le total', () => {
+  panier.ajouter({ nom: 'Stylo', prix: 100 });
+  expect(panier.calculerTotal('CODEBIDON')).toBe(100);
+});
+
+test('sans code promo le total reste inchange', () => {
+  panier.ajouter({ nom: 'Stylo', prix: 100 });
+  expect(panier.calculerTotal()).toBe(100);
+});
+```
+
+### Le workflow de non-regression
+
+```
+1. Modifier le code
+2. Lancer TOUS les tests (anciens + nouveaux)
+3. Si un test ancien echoue → REGRESSION → corriger le code
+4. Si tous les tests passent → commit et push
+5. Jamais supprimer un ancien test parce qu'il echoue
+```
+
+Regle absolue : on ne supprime jamais un test existant sous pretexte qu'il echoue apres une modification. Si le test echoue, c'est le code qui doit etre corrige, pas le test. La seule exception est si le comportement attendu a volontairement change (et dans ce cas, on met a jour le test en connaissance de cause).
+
+### Le meme exemple en C#
+
+```csharp
+// Panier.cs
+namespace MonApplication
+{
+    public class Panier
+    {
+        private List<Article> _articles = new List<Article>();
+
+        public void Ajouter(Article article)
+        {
+            if (article == null || string.IsNullOrEmpty(article.Nom))
+                throw new ArgumentException("Article invalide");
+            if (article.Prix < 0)
+                throw new ArgumentException("Le prix ne peut pas etre negatif");
+            _articles.Add(article);
+        }
+
+        public double CalculerTotal(string codePromo = null)
+        {
+            double total = _articles.Sum(a => a.Prix);
+            if (codePromo == "PROMO10")
+                total = Math.Round(total * 0.9, 2);
+            return total;
+        }
+
+        public int GetNombreArticles()
+        {
+            return _articles.Count;
+        }
+    }
+
+    public class Article
+    {
+        public string Nom { get; set; }
+        public double Prix { get; set; }
+    }
+}
+```
+
+```csharp
+// PanierTests.cs
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using MonApplication;
+
+namespace MonApplication.Tests
+{
+    [TestClass]
+    public class PanierTests
+    {
+        private Panier _panier;
+
+        [TestInitialize]
+        public void Initialiser()
+        {
+            _panier = new Panier();
+        }
+
+        [TestMethod]
+        public void CalculerTotal_PanierVide_Retourne0()
+        {
+            Assert.AreEqual(0, _panier.CalculerTotal());
+        }
+
+        [TestMethod]
+        public void GetNombreArticles_PanierVide_Retourne0()
+        {
+            Assert.AreEqual(0, _panier.GetNombreArticles());
+        }
+
+        [TestMethod]
+        public void Ajouter_ArticleValide_IncrementeCompteur()
+        {
+            _panier.Ajouter(new Article { Nom = "Stylo", Prix = 2.50 });
+            Assert.AreEqual(1, _panier.GetNombreArticles());
+        }
+
+        [TestMethod]
+        public void CalculerTotal_DeuxArticles_RetourneSomme()
+        {
+            _panier.Ajouter(new Article { Nom = "Stylo", Prix = 2.50 });
+            _panier.Ajouter(new Article { Nom = "Cahier", Prix = 5.00 });
+            Assert.AreEqual(7.50, _panier.CalculerTotal());
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Ajouter_Null_LeveException()
+        {
+            _panier.Ajouter(null);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Ajouter_PrixNegatif_LeveException()
+        {
+            _panier.Ajouter(new Article { Nom = "X", Prix = -5 });
+        }
+
+        // --- Tests de la nouvelle fonctionnalite code promo ---
+
+        [TestMethod]
+        public void CalculerTotal_CodePROMO10_AppliqueReduction10Pourcent()
+        {
+            _panier.Ajouter(new Article { Nom = "Livre", Prix = 100 });
+            Assert.AreEqual(90, _panier.CalculerTotal("PROMO10"));
+        }
+
+        [TestMethod]
+        public void CalculerTotal_CodeInvalide_PasDeReduction()
+        {
+            _panier.Ajouter(new Article { Nom = "Livre", Prix = 100 });
+            Assert.AreEqual(100, _panier.CalculerTotal("FAUX"));
+        }
+
+        [TestMethod]
+        public void CalculerTotal_SansCodePromo_PasDeReduction()
+        {
+            _panier.Ajouter(new Article { Nom = "Livre", Prix = 100 });
+            Assert.AreEqual(100, _panier.CalculerTotal());
+        }
+    }
+}
+```
+
+### Integration avec Git et CI/CD (notions)
+
+#### Pre-commit hooks
+
+Un hook pre-commit est un script qui s'execute automatiquement avant chaque `git commit`. Si les tests echouent, le commit est bloque.
+
+```bash
+# .git/hooks/pre-commit
+#!/bin/sh
+npm test
+if [ $? -ne 0 ]; then
+  echo "Les tests echouent. Commit annule."
+  exit 1
+fi
+```
+
+Avec l'outil `husky` (plus pratique) :
+
+```bash
+npm install --save-dev husky
+npx husky init
+echo "npm test" > .husky/pre-commit
+```
+
+#### CI/CD (Integration Continue / Deploiement Continu)
+
+La CI/CD automatise l'execution des tests a chaque push sur le depot Git.
+
+Principe : a chaque fois qu'un developpeur pousse du code, un serveur (GitHub Actions, GitLab CI, Jenkins) :
+1. Recupere le code
+2. Installe les dependances
+3. Lance tous les tests
+4. Si un test echoue : le push est signale en rouge, la mise en production est bloquee
+
+Cela garantit qu'aucune regression n'atteint la branche principale ou la production.
+
+---
+
+## Tests d'integration
+
+### Definition
+
+Un test d'integration verifie que plusieurs composants fonctionnent correctement ensemble. Contrairement au test unitaire qui isole une seule fonction, le test d'integration teste le chemin complet : une requete HTTP arrive, passe par le routeur, appelle le controleur, interroge la base de donnees et renvoie une reponse.
+
+### Exemple avec Supertest (JavaScript)
+
+Supertest permet de tester des routes Express sans demarrer le serveur.
+
+```javascript
+// app.js
+const express = require('express');
+const app = express();
+app.use(express.json());
+
+const utilisateurs = [
+  { id: 1, nom: 'Dupont' },
+  { id: 2, nom: 'Martin' }
+];
+
+app.get('/api/utilisateurs', (req, res) => {
+  res.json(utilisateurs);
+});
+
+app.get('/api/utilisateurs/:id', (req, res) => {
+  const user = utilisateurs.find(u => u.id === parseInt(req.params.id));
+  if (!user) return res.status(404).json({ message: 'Non trouve' });
+  res.json(user);
+});
+
+module.exports = app;
+```
+
+```javascript
+// app.test.js
+const request = require('supertest');
+const app = require('./app');
+
+describe('API Utilisateurs', () => {
+  test('GET /api/utilisateurs retourne la liste', async () => {
+    const response = await request(app).get('/api/utilisateurs');
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(2);
+    expect(response.body[0].nom).toBe('Dupont');
+  });
+
+  test('GET /api/utilisateurs/1 retourne un utilisateur', async () => {
+    const response = await request(app).get('/api/utilisateurs/1');
+    expect(response.status).toBe(200);
+    expect(response.body.nom).toBe('Dupont');
+  });
+
+  test('GET /api/utilisateurs/999 retourne 404', async () => {
+    const response = await request(app).get('/api/utilisateurs/999');
+    expect(response.status).toBe(404);
+  });
+});
+```
+
+Installation : `npm install --save-dev supertest`
+
+### Mocking : simuler les dependances
+
+#### Pourquoi mocker ?
+
+Un test unitaire ne doit pas dependre d'elements externes (base de donnees, API tierce, systeme de fichiers). Le mocking consiste a remplacer une dependance reelle par un simulacre controle.
+
+Avantages :
+- Tests plus rapides (pas de connexion BDD)
+- Tests independants (pas besoin que la BDD soit demarree)
+- Tests reproductibles (les donnees sont toujours les memes)
+- Tests isoles (un bug dans la BDD ne fait pas echouer un test unitaire)
+
+#### jest.mock() en JavaScript
+
+```javascript
+// userService.js
+const db = require('./database');
+
+async function getUtilisateur(id) {
+  const user = await db.findById(id);
+  if (!user) throw new Error('Utilisateur non trouve');
+  return user;
+}
+
+module.exports = { getUtilisateur };
+```
+
+```javascript
+// userService.test.js
+const { getUtilisateur } = require('./userService');
+const db = require('./database');
+
+// Remplacer le module database par un faux
+jest.mock('./database');
+
+describe('getUtilisateur', () => {
+  test('retourne l\'utilisateur si trouve', async () => {
+    // Arrange : configurer le faux
+    db.findById.mockResolvedValue({ id: 1, nom: 'Dupont' });
+
+    // Act
+    const user = await getUtilisateur(1);
+
+    // Assert
+    expect(user.nom).toBe('Dupont');
+    expect(db.findById).toHaveBeenCalledWith(1);
+  });
+
+  test('leve une erreur si non trouve', async () => {
+    db.findById.mockResolvedValue(null);
+
+    await expect(getUtilisateur(999)).rejects.toThrow('Utilisateur non trouve');
+  });
+});
+```
+
+`jest.mock('./database')` remplace automatiquement toutes les fonctions exportees par le module `database` par des fonctions factices (mock functions). On peut ensuite definir ce qu'elles retournent avec `mockResolvedValue` (pour les promesses) ou `mockReturnValue` (pour les valeurs synchrones).
+
+#### Moq en C#
+
+```csharp
+// IUtilisateurRepository.cs
+public interface IUtilisateurRepository
+{
+    Utilisateur TrouverParId(int id);
+}
+
+// UtilisateurService.cs
+public class UtilisateurService
+{
+    private readonly IUtilisateurRepository _repo;
+
+    public UtilisateurService(IUtilisateurRepository repo)
+    {
+        _repo = repo;
+    }
+
+    public string GetNomComplet(int id)
+    {
+        var user = _repo.TrouverParId(id);
+        if (user == null)
+            throw new InvalidOperationException("Utilisateur non trouve");
+        return user.Prenom + " " + user.Nom;
+    }
+}
+```
+
+```csharp
+// UtilisateurServiceTests.cs
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+
+[TestClass]
+public class UtilisateurServiceTests
+{
+    [TestMethod]
+    public void GetNomComplet_UtilisateurExiste_RetourneNomComplet()
+    {
+        // Arrange
+        var mockRepo = new Mock<IUtilisateurRepository>();
+        mockRepo.Setup(r => r.TrouverParId(1))
+                .Returns(new Utilisateur { Prenom = "Jean", Nom = "Dupont" });
+
+        var service = new UtilisateurService(mockRepo.Object);
+
+        // Act
+        string resultat = service.GetNomComplet(1);
+
+        // Assert
+        Assert.AreEqual("Jean Dupont", resultat);
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(InvalidOperationException))]
+    public void GetNomComplet_UtilisateurInexistant_LeveException()
+    {
+        var mockRepo = new Mock<IUtilisateurRepository>();
+        mockRepo.Setup(r => r.TrouverParId(999))
+                .Returns((Utilisateur)null);
+
+        var service = new UtilisateurService(mockRepo.Object);
+        service.GetNomComplet(999);
+    }
+}
+```
+
+Installation de Moq : `Install-Package Moq` dans le gestionnaire de packages NuGet.
+
+---
+
+## Jeux de donnees de test
+
+### Principe
+
+Les donnees de test doivent etre :
+- **Realistes** : ressembler a de vraies donnees (pas "aaa" ou "test123")
+- **Controlees** : on sait exactement ce qu'elles contiennent
+- **Independantes** : chaque test cree ses propres donnees ou part d'un etat connu
+- **Nettoyees** : les donnees d'un test ne polluent pas le suivant
+
+### Fixtures
+
+Une fixture est un jeu de donnees predefinies, charge avant les tests.
+
+```javascript
+// fixtures/utilisateurs.js
+const utilisateursFixture = [
+  { id: 1, nom: 'Dupont', email: 'dupont@email.fr', age: 30 },
+  { id: 2, nom: 'Martin', email: 'martin@email.fr', age: 25 },
+  { id: 3, nom: 'Bernard', email: 'bernard@email.fr', age: 45 }
+];
+
+module.exports = { utilisateursFixture };
+```
+
+```javascript
+// utilisateur.test.js
+const { utilisateursFixture } = require('./fixtures/utilisateurs');
+
+describe('filtrerParAge', () => {
+  test('retourne les utilisateurs de plus de 28 ans', () => {
+    const resultat = filtrerParAge(utilisateursFixture, 28);
+    expect(resultat).toHaveLength(2);
+    expect(resultat[0].nom).toBe('Dupont');
+    expect(resultat[1].nom).toBe('Bernard');
+  });
+});
+```
+
+### Factories
+
+Une factory est une fonction qui genere des donnees de test a la demande, avec des valeurs par defaut qu'on peut surcharger.
+
+```javascript
+// factories/utilisateur.factory.js
+function creerUtilisateur(surcharges = {}) {
+  return {
+    id: 1,
+    nom: 'Dupont',
+    prenom: 'Jean',
+    email: 'jean.dupont@email.fr',
+    age: 30,
+    actif: true,
+    ...surcharges
+  };
+}
+
+module.exports = { creerUtilisateur };
+```
+
+```javascript
+const { creerUtilisateur } = require('./factories/utilisateur.factory');
+
+test('utilisateur inactif ne peut pas se connecter', () => {
+  const user = creerUtilisateur({ actif: false });
+  expect(() => connecter(user)).toThrow();
+});
+
+test('utilisateur mineur a des restrictions', () => {
+  const user = creerUtilisateur({ age: 16 });
+  expect(aDesRestrictions(user)).toBe(true);
+});
+```
+
+### Nettoyage entre les tests
+
+```javascript
+describe('operations BDD', () => {
+  beforeEach(async () => {
+    // Reinitialiser la base de donnees de test
+    await db.query('DELETE FROM utilisateurs');
+    await db.query("INSERT INTO utilisateurs (nom) VALUES ('Dupont')");
+  });
+
+  afterAll(async () => {
+    await db.close();
+  });
+
+  test('ajouter un utilisateur', async () => {
+    await ajouterUtilisateur({ nom: 'Martin' });
+    const count = await db.query('SELECT COUNT(*) FROM utilisateurs');
+    expect(count).toBe(2);
+  });
+});
+```
+
+---
+
+## TDD (Test-Driven Development) -- notions
+
+### Le cycle Rouge-Vert-Refactor
+
+Le TDD inverse l'ordre habituel : on ecrit le test AVANT le code.
+
+**Rouge** : ecrire un test qui echoue (le code n'existe pas encore)
+**Vert** : ecrire le minimum de code pour faire passer le test
+**Refactor** : ameliorer le code sans changer le comportement (les tests doivent rester verts)
+
+### Exercice TDD : developper une calculatrice
+
+#### Etape 1 : Rouge -- ecrire le premier test
+
+```javascript
+// calculatrice.test.js
+const { Calculatrice } = require('./calculatrice');
+
+describe('Calculatrice', () => {
+  test('additionner 2 et 3 retourne 5', () => {
+    const calc = new Calculatrice();
+    expect(calc.additionner(2, 3)).toBe(5);
+  });
+});
+```
+
+On lance le test : il echoue car le fichier `calculatrice.js` n'existe pas.
+
+#### Etape 2 : Vert -- ecrire le minimum de code
+
+```javascript
+// calculatrice.js
+class Calculatrice {
+  additionner(a, b) {
+    return a + b;
+  }
+}
+
+module.exports = { Calculatrice };
+```
+
+On relance le test : il passe.
+
+#### Etape 3 : ajouter un nouveau test (Rouge)
+
+```javascript
+test('diviser 10 par 2 retourne 5', () => {
+  const calc = new Calculatrice();
+  expect(calc.diviser(10, 2)).toBe(5);
+});
+
+test('diviser par 0 leve une erreur', () => {
+  const calc = new Calculatrice();
+  expect(() => calc.diviser(10, 0)).toThrow('Division par zero');
+});
+```
+
+Les tests echouent : `diviser` n'existe pas.
+
+#### Etape 4 : Vert
+
+```javascript
+diviser(a, b) {
+  if (b === 0) throw new Error('Division par zero');
+  return a / b;
+}
+```
+
+Tous les tests passent.
+
+#### Etape 5 : Refactor
+
+On peut ameliorer le code (ajouter des validations, factoriser) tant que les tests restent verts.
+
+### Avantages du TDD
+
+- Le code est teste par construction : la couverture est naturelle
+- Le test definit le comportement attendu avant l'implementation : on reflechit d'abord a "quoi" avant "comment"
+- Le design du code est guide par les tests : les fonctions trop complexes sont difficiles a tester, ce qui force a les simplifier
+
+---
+
+## Bonnes pratiques
+
+### Un test = un comportement
+
+Chaque test verifie une seule chose. Si un test echoue, on sait immediatement ce qui est casse.
+
+```javascript
+// MAUVAIS : teste plusieurs choses
+test('le panier fonctionne', () => {
+  const panier = new Panier();
+  panier.ajouter({ nom: 'A', prix: 10 });
+  expect(panier.getNombreArticles()).toBe(1);
+  expect(panier.calculerTotal()).toBe(10);
+  panier.ajouter({ nom: 'B', prix: 20 });
+  expect(panier.getNombreArticles()).toBe(2);
+  expect(panier.calculerTotal()).toBe(30);
+});
+
+// BON : un test par comportement
+test('ajouter un article incremente le compteur', () => {
+  const panier = new Panier();
+  panier.ajouter({ nom: 'A', prix: 10 });
+  expect(panier.getNombreArticles()).toBe(1);
+});
+
+test('le total est la somme des prix', () => {
+  const panier = new Panier();
+  panier.ajouter({ nom: 'A', prix: 10 });
+  panier.ajouter({ nom: 'B', prix: 20 });
+  expect(panier.calculerTotal()).toBe(30);
+});
+```
+
+### Noms de tests explicites
+
+La convention de nommage la plus courante en BTS SIO : `methode_scenario_resultatAttendu`
+
+```csharp
+[TestMethod]
+public void Debiter_MontantSuperieurAuSolde_LeveException() { }
+
+[TestMethod]
+public void Debiter_MontantValide_DiminueLeSolde() { }
+
+[TestMethod]
+public void Crediter_MontantNegatif_LeveException() { }
+
+[TestMethod]
+public void GetSolde_ApresCreation_RetourneSoldeInitial() { }
+```
+
+En JavaScript, la convention est plus libre mais le test doit decrire le comportement :
+
+```javascript
+test('debiter un montant superieur au solde leve une erreur', () => { });
+test('debiter un montant valide diminue le solde', () => { });
+```
+
+### F.I.R.S.T.
+
+Cinq proprietes que chaque test doit respecter :
+
+| Lettre | Propriete | Signification |
+|---|---|---|
+| F | Fast | Un test doit s'executer en quelques millisecondes |
+| I | Independent | Aucun test ne doit dependre d'un autre test ou de l'ordre d'execution |
+| R | Repeatable | Executer le test 100 fois doit donner 100 fois le meme resultat |
+| S | Self-validating | Le test dit clairement "passe" ou "echoue", pas besoin de verification humaine |
+| T | Timely | Les tests sont ecrits au bon moment (idealement avant ou en meme temps que le code) |
+
+### Tests independants
+
+L'ordre d'execution ne doit pas compter. Chaque test doit pouvoir s'executer seul.
+
+```javascript
+// MAUVAIS : le deuxieme test depend du premier
+let panier = new Panier();
+
+test('ajouter un article', () => {
+  panier.ajouter({ nom: 'A', prix: 10 });
+  expect(panier.getNombreArticles()).toBe(1);
+});
+
+test('le total est 10', () => {
+  // Depend du fait que le test precedent a ajoute un article
+  expect(panier.calculerTotal()).toBe(10);
+});
+
+// BON : chaque test est autonome
+describe('Panier', () => {
+  let panier;
+  beforeEach(() => { panier = new Panier(); });
+
+  test('ajouter un article', () => {
+    panier.ajouter({ nom: 'A', prix: 10 });
+    expect(panier.getNombreArticles()).toBe(1);
+  });
+
+  test('total avec un article', () => {
+    panier.ajouter({ nom: 'A', prix: 10 });
+    expect(panier.calculerTotal()).toBe(10);
+  });
+});
+```
+
+---
+
+## Methodologie d'examen
+
+### Comment les tests tombent a l'examen BTS SIO SLAM
+
+Les exercices sur les tests se presentent sous plusieurs formes :
+
+1. **On vous donne une classe, vous devez ecrire les tests** : il faut identifier tous les cas (normaux, limites, erreurs)
+2. **On vous donne du code et des tests, vous devez identifier les tests manquants** : chercher les cas limites non couverts
+3. **On vous donne un test, vous devez expliquer ce qu'il verifie** : lire le test et decrire en francais le comportement teste
+4. **On vous donne un test qui ne fonctionne pas, vous devez le corriger** : trouver l'erreur de syntaxe ou de logique
+
+### Les pieges classiques
+
+1. **Confondre `toBe` et `toEqual`** : `toBe` pour les primitives, `toEqual` pour les objets et tableaux
+2. **Oublier la fonction flechee avec `toThrow`** : `expect(() => fn()).toThrow()` et non `expect(fn()).toThrow()`
+3. **Oublier `async/await`** avec les tests asynchrones
+4. **Inverser attendu/obtenu** dans `Assert.AreEqual(attendu, obtenu)` en C#
+5. **Oublier `[TestMethod]`** : la methode existe mais n'est pas executee comme test
+6. **Tests dependants** : un test qui ne passe que si un autre test est execute avant
+7. **Tester l'implementation au lieu du comportement** : verifier que la methode utilise une boucle `for` plutot que de verifier qu'elle retourne le bon resultat
+8. **Oublier de tester les cas d'erreur** : ne tester que le happy path
+
+### Checklist avant de rendre sa copie
+
+- [ ] Chaque methode publique a au moins un test
+- [ ] Les cas normaux sont testes
+- [ ] Les cas limites sont testes (0, negatif, vide, null)
+- [ ] Les cas d'erreur sont testes (exceptions)
+- [ ] Le pattern AAA est respecte (Arrange, Act, Assert)
+- [ ] Les noms des tests sont explicites
+- [ ] Les tests sont independants (pas de dependance entre eux)
+- [ ] Les assertions sont correctes (`toBe` vs `toEqual`, ordre des parametres)
+- [ ] La syntaxe `expect(() => fn()).toThrow()` est utilisee pour les exceptions
+- [ ] En C#, `[TestClass]` et `[TestMethod]` sont presents
+
+---
+
+## Exercices d'examen corriges
+
+### Exercice 1 : ecrire les tests pour CompteBancaire (JavaScript)
+
+**Enonce** : Voici la classe CompteBancaire. Ecrivez les tests unitaires complets.
+
+```javascript
+// CompteBancaire.js
+class CompteBancaire {
+  constructor(titulaire, soldeInitial = 0) {
+    if (!titulaire || titulaire.trim() === '') {
+      throw new Error('Le titulaire est obligatoire');
+    }
+    if (soldeInitial < 0) {
+      throw new Error('Le solde initial ne peut pas etre negatif');
+    }
+    this.titulaire = titulaire;
+    this.solde = soldeInitial;
+  }
+
+  crediter(montant) {
+    if (montant <= 0) {
+      throw new Error('Le montant doit etre positif');
+    }
+    this.solde += montant;
+  }
+
+  debiter(montant) {
+    if (montant <= 0) {
+      throw new Error('Le montant doit etre positif');
+    }
+    if (montant > this.solde) {
+      throw new Error('Solde insuffisant');
+    }
+    this.solde -= montant;
+  }
+
+  getSolde() {
+    return this.solde;
+  }
+
+  getTitulaire() {
+    return this.titulaire;
+  }
+}
+
+module.exports = { CompteBancaire };
+```
+
+**Corrige** :
+
+```javascript
+// CompteBancaire.test.js
+const { CompteBancaire } = require('./CompteBancaire');
+
+describe('CompteBancaire', () => {
+  let compte;
+
+  beforeEach(() => {
+    compte = new CompteBancaire('Dupont', 1000);
+  });
+
+  // --- Constructeur ---
+
+  describe('constructeur', () => {
+    test('cree un compte avec titulaire et solde initial', () => {
+      const c = new CompteBancaire('Martin', 500);
+      expect(c.getTitulaire()).toBe('Martin');
+      expect(c.getSolde()).toBe(500);
+    });
+
+    test('solde initial par defaut est 0', () => {
+      const c = new CompteBancaire('Martin');
+      expect(c.getSolde()).toBe(0);
+    });
+
+    test('titulaire vide leve une erreur', () => {
+      expect(() => new CompteBancaire('')).toThrow('Le titulaire est obligatoire');
+    });
+
+    test('titulaire null leve une erreur', () => {
+      expect(() => new CompteBancaire(null)).toThrow('Le titulaire est obligatoire');
+    });
+
+    test('titulaire avec espaces uniquement leve une erreur', () => {
+      expect(() => new CompteBancaire('   ')).toThrow('Le titulaire est obligatoire');
+    });
+
+    test('solde initial negatif leve une erreur', () => {
+      expect(() => new CompteBancaire('Dupont', -100)).toThrow(
+        'Le solde initial ne peut pas etre negatif'
+      );
+    });
+  });
+
+  // --- crediter ---
+
+  describe('crediter', () => {
+    test('crediter 500 augmente le solde de 500', () => {
+      compte.crediter(500);
+      expect(compte.getSolde()).toBe(1500);
+    });
+
+    test('crediter 0.01 augmente le solde', () => {
+      compte.crediter(0.01);
+      expect(compte.getSolde()).toBeCloseTo(1000.01);
+    });
+
+    test('crediter un montant de 0 leve une erreur', () => {
+      expect(() => compte.crediter(0)).toThrow('Le montant doit etre positif');
+    });
+
+    test('crediter un montant negatif leve une erreur', () => {
+      expect(() => compte.crediter(-100)).toThrow('Le montant doit etre positif');
+    });
+  });
+
+  // --- debiter ---
+
+  describe('debiter', () => {
+    test('debiter 200 diminue le solde de 200', () => {
+      compte.debiter(200);
+      expect(compte.getSolde()).toBe(800);
+    });
+
+    test('debiter la totalite du solde met le solde a 0', () => {
+      compte.debiter(1000);
+      expect(compte.getSolde()).toBe(0);
+    });
+
+    test('debiter plus que le solde leve une erreur', () => {
+      expect(() => compte.debiter(1500)).toThrow('Solde insuffisant');
+    });
+
+    test('debiter un montant de 0 leve une erreur', () => {
+      expect(() => compte.debiter(0)).toThrow('Le montant doit etre positif');
+    });
+
+    test('debiter un montant negatif leve une erreur', () => {
+      expect(() => compte.debiter(-100)).toThrow('Le montant doit etre positif');
+    });
+  });
+
+  // --- getSolde ---
+
+  describe('getSolde', () => {
+    test('retourne le solde actuel', () => {
+      expect(compte.getSolde()).toBe(1000);
+    });
+
+    test('retourne le solde apres operations', () => {
+      compte.crediter(500);
+      compte.debiter(200);
+      expect(compte.getSolde()).toBe(1300);
+    });
+  });
+});
+```
+
+---
+
+### Exercice 2 : ecrire les tests pour CompteBancaire (C#)
+
+**Enonce** : Meme classe en C#. Ecrivez les tests MSTest.
+
+```csharp
+// CompteBancaire.cs
+namespace Banque
+{
+    public class CompteBancaire
+    {
+        public string Titulaire { get; private set; }
+        public double Solde { get; private set; }
+
+        public CompteBancaire(string titulaire, double soldeInitial = 0)
+        {
+            if (string.IsNullOrWhiteSpace(titulaire))
+                throw new ArgumentException("Le titulaire est obligatoire");
+            if (soldeInitial < 0)
+                throw new ArgumentException("Le solde initial ne peut pas etre negatif");
+            Titulaire = titulaire;
+            Solde = soldeInitial;
+        }
+
+        public void Crediter(double montant)
+        {
+            if (montant <= 0)
+                throw new ArgumentException("Le montant doit etre positif");
+            Solde += montant;
+        }
+
+        public void Debiter(double montant)
+        {
+            if (montant <= 0)
+                throw new ArgumentException("Le montant doit etre positif");
+            if (montant > Solde)
+                throw new InvalidOperationException("Solde insuffisant");
+            Solde -= montant;
+        }
+    }
+}
+```
+
+**Corrige** :
+
+```csharp
+// CompteBancaireTests.cs
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Banque;
+
+namespace Banque.Tests
+{
+    [TestClass]
+    public class CompteBancaireTests
+    {
+        private CompteBancaire _compte;
+
+        [TestInitialize]
+        public void Initialiser()
+        {
+            _compte = new CompteBancaire("Dupont", 1000);
+        }
+
+        // --- Constructeur ---
+
+        [TestMethod]
+        public void Constructeur_TitulaireEtSolde_CreeLCompte()
+        {
+            var c = new CompteBancaire("Martin", 500);
+            Assert.AreEqual("Martin", c.Titulaire);
+            Assert.AreEqual(500, c.Solde);
+        }
+
+        [TestMethod]
+        public void Constructeur_SansSolde_SoldeEstZero()
+        {
+            var c = new CompteBancaire("Martin");
+            Assert.AreEqual(0, c.Solde);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Constructeur_TitulaireVide_LeveException()
+        {
+            new CompteBancaire("");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Constructeur_TitulaireNull_LeveException()
+        {
+            new CompteBancaire(null);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Constructeur_SoldeNegatif_LeveException()
+        {
+            new CompteBancaire("Dupont", -100);
+        }
+
+        // --- Crediter ---
+
+        [TestMethod]
+        public void Crediter_Montant500_SoldeAugmente()
+        {
+            _compte.Crediter(500);
+            Assert.AreEqual(1500, _compte.Solde);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Crediter_MontantZero_LeveException()
+        {
+            _compte.Crediter(0);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Crediter_MontantNegatif_LeveException()
+        {
+            _compte.Crediter(-100);
+        }
+
+        // --- Debiter ---
+
+        [TestMethod]
+        public void Debiter_Montant200_SoldeDiminue()
+        {
+            _compte.Debiter(200);
+            Assert.AreEqual(800, _compte.Solde);
+        }
+
+        [TestMethod]
+        public void Debiter_TotaliteDuSolde_SoldeEstZero()
+        {
+            _compte.Debiter(1000);
+            Assert.AreEqual(0, _compte.Solde);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void Debiter_MontantSuperieurAuSolde_LeveException()
+        {
+            _compte.Debiter(1500);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Debiter_MontantZero_LeveException()
+        {
+            _compte.Debiter(0);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Debiter_MontantNegatif_LeveException()
+        {
+            _compte.Debiter(-100);
+        }
+    }
+}
+```
+
+---
+
+### Exercice 3 : identifier les tests manquants
+
+**Enonce** : Voici une fonction et ses tests. Quels cas ne sont pas testes ?
+
+```javascript
+// estMajeur.js
+function estMajeur(age) {
+  if (typeof age !== 'number') throw new Error('Age invalide');
+  return age >= 18;
+}
+```
+
+```javascript
+// estMajeur.test.js (incomplet)
+describe('estMajeur', () => {
+  test('25 ans est majeur', () => {
+    expect(estMajeur(25)).toBe(true);
+  });
+
+  test('10 ans n\'est pas majeur', () => {
+    expect(estMajeur(10)).toBe(false);
+  });
+});
+```
+
+**Corrige** : Les cas manquants sont :
+
+```javascript
+// Cas limite : exactement 18 ans (la frontiere)
+test('18 ans est majeur', () => {
+  expect(estMajeur(18)).toBe(true);
+});
+
+// Cas limite : juste en dessous de la frontiere
+test('17 ans n\'est pas majeur', () => {
+  expect(estMajeur(17)).toBe(false);
+});
+
+// Cas limite : age de 0
+test('0 an n\'est pas majeur', () => {
+  expect(estMajeur(0)).toBe(false);
+});
+
+// Cas d'erreur : age negatif (comportement a verifier)
+test('age negatif', () => {
+  // Selon la specification, -5 devrait-il lever une erreur
+  // ou retourner false ? La fonction actuelle retourne false.
+  expect(estMajeur(-5)).toBe(false);
+});
+
+// Cas d'erreur : parametre non-nombre
+test('chaine de caracteres leve une erreur', () => {
+  expect(() => estMajeur('vingt')).toThrow('Age invalide');
+});
+
+test('null leve une erreur', () => {
+  expect(() => estMajeur(null)).toThrow('Age invalide');
+});
+
+test('undefined leve une erreur', () => {
+  expect(() => estMajeur(undefined)).toThrow('Age invalide');
+});
+```
+
+Les tests les plus importants qui manquaient : les **cas limites** (17 et 18 ans, la frontiere exacte) et les **cas d'erreur** (types invalides).
+
+---
+
+### Exercice 4 : lire un test et expliquer ce qu'il verifie
+
+**Enonce** : Que verifie chacun de ces tests ?
+
+```javascript
+describe('GestionStock', () => {
+  let stock;
+
+  beforeEach(() => {
+    stock = new GestionStock();
+    stock.ajouterProduit({ ref: 'P001', nom: 'Stylo', quantite: 50 });
+  });
+
+  test('test 1', () => {
+    stock.vendre('P001', 10);
+    expect(stock.getQuantite('P001')).toBe(40);
+  });
+
+  test('test 2', () => {
+    expect(() => stock.vendre('P001', 60)).toThrow();
+  });
+
+  test('test 3', () => {
+    expect(() => stock.vendre('P999', 1)).toThrow();
+  });
+
+  test('test 4', () => {
+    stock.vendre('P001', 50);
+    expect(stock.getQuantite('P001')).toBe(0);
+  });
+});
+```
+
+**Corrige** :
+
+- **Test 1** : Verifie que la vente de 10 unites du produit P001 (qui en a 50) diminue la quantite a 40. C'est le cas normal (happy path).
+- **Test 2** : Verifie que la vente de 60 unites du produit P001 (qui n'en a que 50) leve une exception. On ne peut pas vendre plus que le stock disponible.
+- **Test 3** : Verifie que la vente d'un produit inexistant (reference P999) leve une exception.
+- **Test 4** : Verifie que la vente de la totalite du stock (50 sur 50) met la quantite a 0. C'est un cas limite : la vente de l'exacte quantite disponible doit fonctionner.
+
+---
+
+### Exercice 5 : corriger un test qui ne fonctionne pas
+
+**Enonce** : Ces tests ne fonctionnent pas. Trouvez et corrigez les erreurs.
+
+```javascript
+// TESTS AVEC ERREURS
+const { Calculatrice } = require('./calculatrice');
+
+describe('Calculatrice', () => {
+  test('addition de 2 et 3', () => {
+    const calc = new Calculatrice();
+    const resultat = calc.additionner(2, 3);
+    expect(resultat).toEqual(5);  // A
+  });
+
+  test('division par zero leve une erreur', () => {
+    const calc = new Calculatrice();
+    expect(calc.diviser(10, 0)).toThrow();  // B
+  });
+
+  test('multiplication retourne un objet correct', () => {
+    const calc = new Calculatrice();
+    const resultat = calc.multiplier(3, 4);
+    expect(resultat).toBe({ valeur: 12 });  // C
+  });
+});
+```
+
+**Corrige** :
+
+- **Test A** : Fonctionne, mais `toBe(5)` serait plus adapte que `toEqual(5)` pour une primitive. Ce n'est pas une erreur bloquante, le test passe.
+- **Test B** : **ERREUR**. `expect(calc.diviser(10, 0)).toThrow()` execute immediatement `calc.diviser(10, 0)`, ce qui leve l'exception AVANT que `toThrow()` puisse la capturer. Il faut passer une **fonction** (callback) a `expect` :
+
+```javascript
+// CORRIGE
+expect(() => calc.diviser(10, 0)).toThrow();
+```
+
+- **Test C** : **ERREUR**. `toBe` compare par reference. Deux objets `{ valeur: 12 }` crees separement ne sont pas le meme objet en memoire. Il faut utiliser `toEqual` pour comparer le contenu :
+
+```javascript
+// CORRIGE
+expect(resultat).toEqual({ valeur: 12 });
+```
+
+---
+
+### Exercice 6 : ecrire les tests pour une classe GestionNotes (C#)
+
+**Enonce** : Ecrivez les tests MSTest pour cette classe.
+
+```csharp
+namespace Ecole
+{
+    public class GestionNotes
+    {
+        private List<double> _notes = new List<double>();
+
+        public void AjouterNote(double note)
+        {
+            if (note < 0 || note > 20)
+                throw new ArgumentOutOfRangeException("La note doit etre entre 0 et 20");
+            _notes.Add(note);
+        }
+
+        public double CalculerMoyenne()
+        {
+            if (_notes.Count == 0)
+                throw new InvalidOperationException("Aucune note");
+            return _notes.Average();
+        }
+
+        public double GetMeilleure()
+        {
+            if (_notes.Count == 0)
+                throw new InvalidOperationException("Aucune note");
+            return _notes.Max();
+        }
+
+        public int GetNombreNotes()
+        {
+            return _notes.Count;
+        }
+    }
+}
+```
+
+**Corrige** :
+
+```csharp
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Ecole;
+
+namespace Ecole.Tests
+{
+    [TestClass]
+    public class GestionNotesTests
+    {
+        private GestionNotes _gestion;
+
+        [TestInitialize]
+        public void Initialiser()
+        {
+            _gestion = new GestionNotes();
+        }
+
+        // --- AjouterNote ---
+
+        [TestMethod]
+        public void AjouterNote_NoteValide_IncrementeCompteur()
+        {
+            _gestion.AjouterNote(15);
+            Assert.AreEqual(1, _gestion.GetNombreNotes());
+        }
+
+        [TestMethod]
+        public void AjouterNote_Note0_Acceptee()
+        {
+            _gestion.AjouterNote(0);
+            Assert.AreEqual(1, _gestion.GetNombreNotes());
+        }
+
+        [TestMethod]
+        public void AjouterNote_Note20_Acceptee()
+        {
+            _gestion.AjouterNote(20);
+            Assert.AreEqual(1, _gestion.GetNombreNotes());
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentOutOfRangeException))]
+        public void AjouterNote_NoteNegative_LeveException()
+        {
+            _gestion.AjouterNote(-1);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentOutOfRangeException))]
+        public void AjouterNote_NoteSuperieureA20_LeveException()
+        {
+            _gestion.AjouterNote(21);
+        }
+
+        // --- CalculerMoyenne ---
+
+        [TestMethod]
+        public void CalculerMoyenne_PlusieursNotes_RetourneMoyenne()
+        {
+            _gestion.AjouterNote(10);
+            _gestion.AjouterNote(14);
+            _gestion.AjouterNote(18);
+            Assert.AreEqual(14, _gestion.CalculerMoyenne());
+        }
+
+        [TestMethod]
+        public void CalculerMoyenne_UneSeuleNote_RetourneCetteNote()
+        {
+            _gestion.AjouterNote(16);
+            Assert.AreEqual(16, _gestion.CalculerMoyenne());
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void CalculerMoyenne_AucuneNote_LeveException()
+        {
+            _gestion.CalculerMoyenne();
+        }
+
+        // --- GetMeilleure ---
+
+        [TestMethod]
+        public void GetMeilleure_PlusieursNotes_RetourneMax()
+        {
+            _gestion.AjouterNote(10);
+            _gestion.AjouterNote(18);
+            _gestion.AjouterNote(14);
+            Assert.AreEqual(18, _gestion.GetMeilleure());
+        }
+
+        [TestMethod]
+        public void GetMeilleure_NotesIdentiques_RetourneCetteNote()
+        {
+            _gestion.AjouterNote(12);
+            _gestion.AjouterNote(12);
+            Assert.AreEqual(12, _gestion.GetMeilleure());
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void GetMeilleure_AucuneNote_LeveException()
+        {
+            _gestion.GetMeilleure();
+        }
+
+        // --- GetNombreNotes ---
+
+        [TestMethod]
+        public void GetNombreNotes_Vide_Retourne0()
+        {
+            Assert.AreEqual(0, _gestion.GetNombreNotes());
+        }
+
+        [TestMethod]
+        public void GetNombreNotes_ApresTroisAjouts_Retourne3()
+        {
+            _gestion.AjouterNote(10);
+            _gestion.AjouterNote(12);
+            _gestion.AjouterNote(14);
+            Assert.AreEqual(3, _gestion.GetNombreNotes());
+        }
+    }
+}
+```
+
+---
+
+### Exercice 7 : test de non-regression -- ajouter une fonctionnalite
+
+**Enonce** : Voici une classe et ses tests. Ajoutez une methode `vider()` qui vide le panier. Ecrivez les tests pour cette nouvelle methode SANS casser les tests existants.
+
+Code existant :
+
+```javascript
+class Panier {
+  constructor() { this.articles = []; }
+  ajouter(article) { this.articles.push(article); }
+  calculerTotal() {
+    return this.articles.reduce((t, a) => t + a.prix, 0);
+  }
+  getNombreArticles() { return this.articles.length; }
+}
+```
+
+Tests existants (tous verts) :
+
+```javascript
+describe('Panier', () => {
+  let panier;
+  beforeEach(() => { panier = new Panier(); });
+
+  test('panier vide = total 0', () => {
+    expect(panier.calculerTotal()).toBe(0);
+  });
+  test('ajouter augmente le compteur', () => {
+    panier.ajouter({ nom: 'A', prix: 10 });
+    expect(panier.getNombreArticles()).toBe(1);
+  });
+  test('total = somme des prix', () => {
+    panier.ajouter({ nom: 'A', prix: 10 });
+    panier.ajouter({ nom: 'B', prix: 20 });
+    expect(panier.calculerTotal()).toBe(30);
+  });
+});
+```
+
+**Corrige** :
+
+Ajout de la methode :
+
+```javascript
+vider() {
+  this.articles = [];
+}
+```
+
+Tests a ajouter (les tests existants ne changent pas) :
+
+```javascript
+// AJOUTER a la suite des tests existants
+describe('vider', () => {
+  test('vider un panier avec des articles remet le compteur a 0', () => {
+    panier.ajouter({ nom: 'A', prix: 10 });
+    panier.ajouter({ nom: 'B', prix: 20 });
+    panier.vider();
+    expect(panier.getNombreArticles()).toBe(0);
+  });
+
+  test('vider un panier remet le total a 0', () => {
+    panier.ajouter({ nom: 'A', prix: 10 });
+    panier.vider();
+    expect(panier.calculerTotal()).toBe(0);
+  });
+
+  test('vider un panier deja vide ne leve pas d\'erreur', () => {
+    expect(() => panier.vider()).not.toThrow();
+    expect(panier.getNombreArticles()).toBe(0);
+  });
+});
+```
+
+Verification de non-regression : les 3 anciens tests + les 3 nouveaux tests doivent tous passer.
+
+---
+
+### Exercice 8 : corriger un test C# qui ne fonctionne pas
+
+**Enonce** : Ces tests MSTest ne fonctionnent pas. Identifiez et corrigez chaque erreur.
+
+```csharp
+// TESTS AVEC ERREURS
+namespace MonApp.Tests
+{
+    public class CalculTests  // Erreur A
+    {
+        [TestMethod]
+        public void Additionner_2Et3_Retourne5()
+        {
+            double resultat = Calcul.Additionner(2, 3);
+            Assert.AreEqual(resultat, 5);  // Erreur B
+        }
+
+        public void Soustraire_5Et3_Retourne2()  // Erreur C
+        {
+            double resultat = Calcul.Soustraire(5, 3);
+            Assert.AreEqual(2, resultat);
+        }
+
+        [TestMethod]
+        public void Diviser_ParZero_LeveException()
+        {
+            double resultat = Calcul.Diviser(10, 0);  // Erreur D
+            Assert.ThrowsException<DivideByZeroException>(
+                () => Calcul.Diviser(10, 0)
+            );
+        }
+    }
+}
+```
+
+**Corrige** :
+
+- **Erreur A** : La classe n'a pas l'attribut `[TestClass]`. Sans cet attribut, aucun test de la classe ne sera detecte et execute.
+
+```csharp
+[TestClass]
+public class CalculTests
+```
+
+- **Erreur B** : L'ordre des parametres de `Assert.AreEqual` est inverse. Le premier parametre doit etre la valeur attendue, le second la valeur obtenue.
+
+```csharp
+Assert.AreEqual(5, resultat);  // attendu, obtenu
+```
+
+- **Erreur C** : La methode n'a pas l'attribut `[TestMethod]`. Elle ne sera pas executee comme test.
+
+```csharp
+[TestMethod]
+public void Soustraire_5Et3_Retourne2()
+```
+
+- **Erreur D** : `Calcul.Diviser(10, 0)` est appele directement en dehors du `ThrowsException`, ce qui leve l'exception immediatement et fait planter le test. Il faut supprimer cette ligne.
+
+```csharp
+[TestMethod]
+public void Diviser_ParZero_LeveException()
+{
+    Assert.ThrowsException<DivideByZeroException>(
+        () => Calcul.Diviser(10, 0)
+    );
+}
+```
+
+---
+
+### Exercice 9 : exercice de synthese -- GestionUtilisateurs
+
+**Enonce** : On vous donne l'interface suivante. Ecrivez la classe ET ses tests (approche TDD).
+
+```
+GestionUtilisateurs :
+  - inscrire(nom, email, age) → ajoute un utilisateur
+    - le nom ne doit pas etre vide
+    - l'email doit contenir un @
+    - l'age doit etre >= 13
+    - deux utilisateurs ne peuvent pas avoir le meme email
+  - trouverParEmail(email) → retourne l'utilisateur ou null
+  - compter() → retourne le nombre d'inscrits
+  - supprimerParEmail(email) → supprime l'utilisateur
+    - leve une erreur si l'email n'existe pas
+```
+
+**Corrige -- les tests** :
+
+```javascript
+const { GestionUtilisateurs } = require('./GestionUtilisateurs');
+
+describe('GestionUtilisateurs', () => {
+  let gestion;
+
+  beforeEach(() => {
+    gestion = new GestionUtilisateurs();
+  });
+
+  // --- inscrire ---
+
+  describe('inscrire', () => {
+    test('inscrire un utilisateur valide augmente le compteur', () => {
+      gestion.inscrire('Dupont', 'dupont@email.fr', 25);
+      expect(gestion.compter()).toBe(1);
+    });
+
+    test('inscrire avec nom vide leve une erreur', () => {
+      expect(() => gestion.inscrire('', 'a@b.fr', 25))
+        .toThrow('Le nom est obligatoire');
+    });
+
+    test('inscrire avec email sans @ leve une erreur', () => {
+      expect(() => gestion.inscrire('Dupont', 'email.fr', 25))
+        .toThrow('Email invalide');
+    });
+
+    test('inscrire avec age inferieur a 13 leve une erreur', () => {
+      expect(() => gestion.inscrire('Dupont', 'a@b.fr', 12))
+        .toThrow('Age minimum 13 ans');
+    });
+
+    test('inscrire avec age de 13 fonctionne', () => {
+      gestion.inscrire('Dupont', 'a@b.fr', 13);
+      expect(gestion.compter()).toBe(1);
+    });
+
+    test('inscrire deux fois le meme email leve une erreur', () => {
+      gestion.inscrire('Dupont', 'dupont@email.fr', 25);
+      expect(() => gestion.inscrire('Martin', 'dupont@email.fr', 30))
+        .toThrow('Email deja utilise');
+    });
+  });
+
+  // --- trouverParEmail ---
+
+  describe('trouverParEmail', () => {
+    test('retourne l\'utilisateur si existant', () => {
+      gestion.inscrire('Dupont', 'dupont@email.fr', 25);
+      const user = gestion.trouverParEmail('dupont@email.fr');
+      expect(user).toEqual({ nom: 'Dupont', email: 'dupont@email.fr', age: 25 });
+    });
+
+    test('retourne null si email inexistant', () => {
+      const user = gestion.trouverParEmail('inconnu@email.fr');
+      expect(user).toBeNull();
+    });
+  });
+
+  // --- compter ---
+
+  describe('compter', () => {
+    test('retourne 0 au depart', () => {
+      expect(gestion.compter()).toBe(0);
+    });
+
+    test('retourne le nombre correct apres inscriptions', () => {
+      gestion.inscrire('A', 'a@b.fr', 20);
+      gestion.inscrire('B', 'b@b.fr', 20);
+      gestion.inscrire('C', 'c@b.fr', 20);
+      expect(gestion.compter()).toBe(3);
+    });
+  });
+
+  // --- supprimerParEmail ---
+
+  describe('supprimerParEmail', () => {
+    test('supprime l\'utilisateur et decremente le compteur', () => {
+      gestion.inscrire('Dupont', 'dupont@email.fr', 25);
+      gestion.supprimerParEmail('dupont@email.fr');
+      expect(gestion.compter()).toBe(0);
+    });
+
+    test('l\'utilisateur n\'est plus trouvable apres suppression', () => {
+      gestion.inscrire('Dupont', 'dupont@email.fr', 25);
+      gestion.supprimerParEmail('dupont@email.fr');
+      expect(gestion.trouverParEmail('dupont@email.fr')).toBeNull();
+    });
+
+    test('supprimer un email inexistant leve une erreur', () => {
+      expect(() => gestion.supprimerParEmail('inconnu@email.fr'))
+        .toThrow('Utilisateur non trouve');
+    });
+  });
+});
+```
+
+**Corrige -- le code** :
+
+```javascript
+class GestionUtilisateurs {
+  constructor() {
+    this.utilisateurs = [];
+  }
+
+  inscrire(nom, email, age) {
+    if (!nom || nom.trim() === '')
+      throw new Error('Le nom est obligatoire');
+    if (!email || !email.includes('@'))
+      throw new Error('Email invalide');
+    if (age < 13)
+      throw new Error('Age minimum 13 ans');
+    if (this.utilisateurs.some(u => u.email === email))
+      throw new Error('Email deja utilise');
+    this.utilisateurs.push({ nom, email, age });
+  }
+
+  trouverParEmail(email) {
+    return this.utilisateurs.find(u => u.email === email) || null;
+  }
+
+  compter() {
+    return this.utilisateurs.length;
+  }
+
+  supprimerParEmail(email) {
+    const index = this.utilisateurs.findIndex(u => u.email === email);
+    if (index === -1) throw new Error('Utilisateur non trouve');
+    this.utilisateurs.splice(index, 1);
+  }
+}
+
+module.exports = { GestionUtilisateurs };
+```
+
+---
+
+### Exercice 10 : identifier ce que teste un fichier de test complet
+
+**Enonce** : Lisez ce fichier de test et repondez aux questions.
+
+```csharp
+[TestClass]
+public class ConvertisseurTests
+{
+    [TestMethod]
+    public void CelsiusVersKelvin_0Celsius_Retourne273()
+    {
+        Assert.AreEqual(273.15, Convertisseur.CelsiusVersKelvin(0));
+    }
+
+    [TestMethod]
+    public void CelsiusVersKelvin_100Celsius_Retourne373()
+    {
+        Assert.AreEqual(373.15, Convertisseur.CelsiusVersKelvin(100));
+    }
+
+    [TestMethod]
+    public void CelsiusVersKelvin_Moins273_Retourne0()
+    {
+        Assert.AreEqual(0, Convertisseur.CelsiusVersKelvin(-273.15));
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentException))]
+    public void CelsiusVersKelvin_SousZeroAbsolu_LeveException()
+    {
+        Convertisseur.CelsiusVersKelvin(-300);
+    }
+}
+```
+
+**Questions et reponses** :
+
+1. **Quelle fonction est testee ?** La methode `CelsiusVersKelvin` de la classe `Convertisseur`.
+
+2. **Quelle est la formule utilisee ?** Kelvin = Celsius + 273.15 (visible dans les valeurs attendues).
+
+3. **Quel est le cas limite teste ?** Le zero absolu (-273.15 degres Celsius = 0 Kelvin). C'est la temperature la plus basse physiquement possible.
+
+4. **Pourquoi le dernier test attend une exception ?** Parce que -300 degres Celsius est en dessous du zero absolu, ce qui est physiquement impossible. La fonction refuse cette valeur.
+
+5. **Quel test manque-t-il ?** Un test avec une valeur positive simple (ex: 25 degres Celsius = 298.15 Kelvin) et un test avec des decimales (ex: 36.6 degres Celsius).
+
+---
+
+## Resume des concepts cles pour l'examen
+
+| Concept | Definition courte |
+|---|---|
+| Test unitaire | Teste UNE fonction isolement |
+| Pattern AAA | Arrange, Act, Assert |
+| Test de non-regression | Relancer les anciens tests pour verifier qu'on n'a rien casse |
+| Regression | Bug introduit dans du code qui fonctionnait |
+| Couverture de code | Pourcentage de code execute par les tests |
+| Mocking | Simuler une dependance (BDD, API) |
+| TDD | Ecrire le test avant le code (Rouge-Vert-Refactor) |
+| F.I.R.S.T. | Fast, Independent, Repeatable, Self-validating, Timely |
+| `toBe` vs `toEqual` | Primitives vs objets/tableaux |
+| `expect(() => fn()).toThrow()` | Tester qu'une exception est levee |
+| `[TestClass]` / `[TestMethod]` | Attributs obligatoires en MSTest |
+| `Assert.AreEqual(attendu, obtenu)` | Attention a l'ordre des parametres |
+| beforeEach | Reinitialise l'etat avant chaque test |
+| Pyramide des tests | Beaucoup d'unitaires, moins d'integration, peu d'E2E |
