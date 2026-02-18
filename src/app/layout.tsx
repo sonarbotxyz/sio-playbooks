@@ -25,20 +25,22 @@ const fontMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'BTS SIO — Ton arme secrete pour l\'examen',
+    default: 'Reussir mon BTS SIO — Playbooks SLAM, SISR, Maths et Droit',
     template: '%s | Reussir mon BTS SIO',
   },
-  description: 'SLAM, SISR, Maths, Droit — tout le programme BTS SIO en playbooks ultra-detailles avec exercices corriges. Gratuit.',
+  description: 'SLAM, SISR, Maths, Droit — tout le programme BTS SIO en playbooks ultra-detailles avec exercices corriges. 39 playbooks gratuits pour zero impasse le jour de l\'examen.',
+  metadataBase: new URL('https://www.reussirmonbtssio.com'),
   openGraph: {
     type: 'website',
-    siteName: 'BTS SIO SLAM',
-    title: 'BTS SIO SLAM -- Le guide ultime',
-    description: '14 playbooks couvrant l\'integralite du programme BTS SIO option SLAM. De l\'algorithmique au C# WinForms.',
+    siteName: 'Reussir mon BTS SIO',
+    title: 'Reussir mon BTS SIO — 39 playbooks pour zero impasse',
+    description: '39 playbooks couvrant l\'integralite du programme BTS SIO : SLAM, SISR, Mathematiques et Droit du numerique. Exercices corriges, schemas, zero blabla.',
+    url: 'https://www.reussirmonbtssio.com',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'BTS SIO SLAM -- Le guide ultime',
-    description: '14 playbooks pour reussir le BTS SIO option SLAM.',
+    title: 'Reussir mon BTS SIO — 39 playbooks gratuits',
+    description: 'SLAM, SISR, Maths, Droit — tout le BTS SIO en playbooks ultra-detailles. Gratuit.',
   },
   robots: {
     index: true,
@@ -54,8 +56,9 @@ export default function RootLayout({
   const websiteJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'BTS SIO SLAM',
-    description: '14 playbooks pour reussir le BTS SIO option SLAM.',
+    name: 'Reussir mon BTS SIO',
+    url: 'https://www.reussirmonbtssio.com',
+    description: '39 playbooks couvrant l\'integralite du programme BTS SIO : SLAM, SISR, Mathematiques et Droit du numerique.',
   }
 
   return (
