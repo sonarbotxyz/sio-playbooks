@@ -48,9 +48,9 @@ export default function HomePage() {
           </div>
 
           <p className="text-lg sm:text-xl text-dark-200 max-w-xl mx-auto leading-relaxed mb-10 animate-fade-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
-            {guides.length} playbooks. SLAM, SISR, maths, droit.
+            Tout le programme, zero impasse.
             <br className="hidden sm:block" />
-            Chaque concept explique, chaque exercice corrige.
+            SLAM, SISR, maths, droit — {guides.length} playbooks avec exercices corriges.
           </p>
 
           {/* CTA */}
