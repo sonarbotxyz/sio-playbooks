@@ -17,7 +17,6 @@ export default function HomePage() {
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
   })
 
-  // Group guides by category
   const groupedGuides: Record<string, typeof guides> = {}
   categories.forEach(cat => {
     groupedGuides[cat] = guides.filter(g => g.frontmatter.category === cat)
@@ -26,73 +25,105 @@ export default function HomePage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
-        {/* Subtle grid pattern */}
-        <div className="absolute inset-0" style={{
-          backgroundImage: 'linear-gradient(rgba(0,82,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,82,255,0.03) 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+        {/* Animated gradient mesh background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-1/2 -left-1/4 w-[800px] h-[800px] rounded-full bg-gradient-to-br from-base-blue/8 via-base-blue/4 to-transparent blur-[100px] animate-glow-pulse" />
+          <div className="absolute -bottom-1/3 -right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-tl from-blue-400/6 via-indigo-400/4 to-transparent blur-[80px] animate-glow-pulse" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full bg-gradient-to-b from-base-blue/5 to-transparent blur-[60px] animate-glow-pulse" style={{ animationDelay: '3s' }} />
+        </div>
+
+        {/* Dot grid pattern */}
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]" style={{
+          backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
         }} />
 
-        {/* Dual glow orbs */}
-        <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] bg-base-blue/6 rounded-full blur-[150px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-base-blue/4 rounded-full blur-[120px] pointer-events-none" />
+        <div className="relative z-10 text-center px-4 sm:px-6 py-24 max-w-4xl mx-auto">
+          {/* Badge */}
+          <div className="animate-fade-up" style={{ animationDelay: '0.1s', opacity: 0 }}>
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase bg-base-blue/8 dark:bg-base-blue/12 text-base-blue border border-base-blue/15 dark:border-base-blue/20 mb-8">
+              <span className="w-1.5 h-1.5 rounded-full bg-base-blue animate-pulse" />
+              {guides.length} playbooks disponibles
+            </span>
+          </div>
 
-        <div className="relative z-10 text-center px-4 sm:px-6 py-24 max-w-3xl mx-auto">
+          {/* Main headline */}
           <div className="animate-fade-up" style={{ animationDelay: '0.2s', opacity: 0 }}>
-            <div className="font-display font-extrabold text-6xl sm:text-7xl md:text-8xl lg:text-9xl tracking-tight leading-none mb-4">
-              <span className="gradient-text">{totalHours}h</span>
-            </div>
-            <h1 className="font-display font-extrabold text-2xl sm:text-3xl md:text-4xl text-gray-900 dark:text-white tracking-tight leading-tight mb-6">
-              pour reussir ton BTS SIO.
+            <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-gray-900 dark:text-white tracking-tight leading-[1.1] mb-6">
+              Tout le programme.
+              <br />
+              <span className="gradient-text">Zero impasse.</span>
             </h1>
           </div>
 
-          <p className="text-lg sm:text-xl text-gray-500 dark:text-dark-200 max-w-xl mx-auto leading-relaxed mb-10 animate-fade-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
-            Tout le programme, zero impasse.
+          {/* Subtitle */}
+          <p className="text-lg sm:text-xl text-gray-500 dark:text-dark-200 max-w-2xl mx-auto leading-relaxed mb-10 animate-fade-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
+            SLAM, SISR, maths, droit — chaque concept explique, chaque exercice corrige.
             <br className="hidden sm:block" />
-            SLAM, SISR, maths, droit — {guides.length} playbooks avec exercices corriges.
+            <span className="text-gray-900 dark:text-white font-semibold">{totalHours} heures</span> de contenu structure pour reussir ton BTS SIO.
           </p>
 
-          {/* CTA */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up" style={{ animationDelay: '0.5s', opacity: 0 }}>
+          {/* CTA buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-up" style={{ animationDelay: '0.5s', opacity: 0 }}>
             <Link
-              href="/guides"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-base-blue text-white font-display font-semibold text-sm hover:bg-base-blue-dark transition-colors glow-blue-strong"
+              href="#categories"
+              className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-base-blue text-white font-display font-semibold text-sm hover:bg-base-blue-dark transition-all duration-200 shadow-lg shadow-base-blue/25 hover:shadow-xl hover:shadow-base-blue/30 hover:-translate-y-0.5"
             >
-              Voir tous les playbooks
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+              Commencer les revisions
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
                 <path d="M3 8h10M9 4l4 4-4 4" />
               </svg>
             </Link>
             <Link
-              href="#categories"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gray-100 dark:bg-dark-700 border border-gray-200 dark:border-dark-500 text-gray-900 dark:text-dark-100 font-display font-semibold text-sm hover:bg-gray-200 dark:hover:bg-dark-650 hover:border-gray-300 dark:hover:border-dark-400 transition-colors"
+              href="/guides"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-500 text-gray-700 dark:text-dark-100 font-display font-semibold text-sm hover:bg-gray-50 dark:hover:bg-dark-700 hover:border-gray-300 dark:hover:border-dark-400 transition-all duration-200"
             >
-              Explorer par categorie
+              Voir tous les playbooks
             </Link>
           </div>
 
-          {/* Stats */}
-          <div className="flex items-center justify-center gap-8 sm:gap-12 mt-16 animate-fade-up" style={{ animationDelay: '0.65s', opacity: 0 }}>
-            <div className="text-center">
+          {/* Stats cards */}
+          <div className="grid grid-cols-3 gap-3 sm:gap-4 mt-16 max-w-lg mx-auto animate-fade-up" style={{ animationDelay: '0.65s', opacity: 0 }}>
+            <div className="bg-white/60 dark:bg-dark-800/60 backdrop-blur-sm rounded-xl border border-gray-200/60 dark:border-dark-600/60 p-4 text-center">
               <div className="font-display font-extrabold text-2xl sm:text-3xl text-gray-900 dark:text-white">{guides.length}</div>
-              <div className="text-xs text-gray-400 dark:text-dark-300 font-medium uppercase tracking-wider mt-1">Playbooks</div>
+              <div className="text-[11px] text-gray-400 dark:text-dark-300 font-medium uppercase tracking-wider mt-0.5">Playbooks</div>
             </div>
-            <div className="w-px h-10 bg-gray-200 dark:bg-dark-600" />
-            <div className="text-center">
+            <div className="bg-white/60 dark:bg-dark-800/60 backdrop-blur-sm rounded-xl border border-gray-200/60 dark:border-dark-600/60 p-4 text-center">
+              <div className="font-display font-extrabold text-2xl sm:text-3xl text-base-blue">{totalHours}h</div>
+              <div className="text-[11px] text-gray-400 dark:text-dark-300 font-medium uppercase tracking-wider mt-0.5">De contenu</div>
+            </div>
+            <div className="bg-white/60 dark:bg-dark-800/60 backdrop-blur-sm rounded-xl border border-gray-200/60 dark:border-dark-600/60 p-4 text-center">
               <div className="font-display font-extrabold text-2xl sm:text-3xl text-gray-900 dark:text-white">{categories.length}</div>
-              <div className="text-xs text-gray-400 dark:text-dark-300 font-medium uppercase tracking-wider mt-1">Categories</div>
+              <div className="text-[11px] text-gray-400 dark:text-dark-300 font-medium uppercase tracking-wider mt-0.5">Categories</div>
             </div>
           </div>
-        </div>
 
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white dark:from-dark-900 to-transparent pointer-events-none z-10" />
+          {/* Scroll indicator */}
+          <div className="mt-16 animate-fade-up flex justify-center" style={{ animationDelay: '0.8s', opacity: 0 }}>
+            <Link href="#categories" className="group flex flex-col items-center gap-2 text-gray-400 dark:text-dark-400 hover:text-base-blue transition-colors">
+              <span className="text-xs font-medium uppercase tracking-wider">Explorer</span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="animate-bounce">
+                <path d="M4 6l4 4 4-4" />
+              </svg>
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* Category sections */}
       <section id="categories" className="max-w-content mx-auto px-4 sm:px-6 py-20">
-        <div className="space-y-20">
+        {/* Section header */}
+        <div className="text-center mb-16">
+          <h2 className="font-display font-extrabold text-2xl sm:text-3xl text-gray-900 dark:text-white tracking-tight mb-3">
+            Explorer par categorie
+          </h2>
+          <p className="text-gray-500 dark:text-dark-300 max-w-md mx-auto">
+            {guides.length} playbooks couvrant les options SLAM et SISR du BTS SIO.
+          </p>
+        </div>
+
+        <div className="space-y-16">
           {categories.map(category => {
             const colors = getCategoryColor(category)
             const catGuides = groupedGuides[category]
