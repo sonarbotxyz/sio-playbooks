@@ -8,7 +8,7 @@ export function GuideCard({ guide }: { guide: Guide }) {
   return (
     <Link
       href={`/guides/${guide.slug}`}
-      className="group block rounded-xl bg-dark-800 border border-dark-600 hover-glow overflow-hidden"
+      className="group block rounded-xl bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-600 hover-glow overflow-hidden"
     >
       {/* Category gradient bar */}
       <div className={`h-1 bg-gradient-to-r ${colors.gradient}`} />
@@ -20,18 +20,18 @@ export function GuideCard({ guide }: { guide: Guide }) {
             <span>{colors.icon}</span>
             {guide.frontmatter.category}
           </span>
-          <span className="text-xs text-dark-300 font-mono">
+          <span className="text-xs text-gray-400 dark:text-dark-300 font-mono">
             {guide.readTime}
           </span>
         </div>
 
         {/* Title */}
-        <h3 className="font-display font-semibold text-dark-100 group-hover:text-base-blue-light transition-colors leading-snug">
+        <h3 className="font-display font-semibold text-gray-900 dark:text-dark-100 group-hover:text-base-blue-light transition-colors leading-snug">
           {guide.frontmatter.title}
         </h3>
 
         {/* Description */}
-        <p className="text-sm text-dark-300 leading-relaxed line-clamp-2">
+        <p className="text-sm text-gray-500 dark:text-dark-300 leading-relaxed line-clamp-2">
           {guide.frontmatter.description}
         </p>
 

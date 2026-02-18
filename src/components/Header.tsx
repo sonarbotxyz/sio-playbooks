@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { ThemeToggle } from './ThemeToggle'
 
 const NAV_ITEMS = [
   { label: 'Playbooks', href: '/guides' },
@@ -18,7 +19,7 @@ export function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <span className="font-display font-bold text-lg text-dark-100 tracking-tight">
+            <span className="font-display font-bold text-lg text-gray-900 dark:text-dark-100 tracking-tight">
               BTS SIO <span className="text-base-blue">Playbooks</span>
             </span>
           </Link>
@@ -32,35 +33,39 @@ export function Header() {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
                     ? 'text-base-blue-light bg-base-blue/10'
-                    : 'text-dark-200 hover:text-dark-100 hover:bg-dark-700'
+                    : 'text-gray-500 dark:text-dark-200 hover:text-gray-900 dark:hover:text-dark-100 hover:bg-gray-100 dark:hover:bg-dark-700'
                 }`}
               >
                 {item.label}
               </Link>
             ))}
+            <ThemeToggle />
           </nav>
 
           {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-lg text-dark-200 hover:text-dark-100 hover:bg-dark-700 transition-colors"
-            aria-label="Toggle menu"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-              {mobileOpen ? (
-                <path d="M5 5l10 10M15 5L5 15" />
-              ) : (
-                <path d="M3 5h14M3 10h14M3 15h14" />
-              )}
-            </svg>
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle />
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="p-2 rounded-lg text-gray-500 dark:text-dark-200 hover:text-gray-900 dark:hover:text-dark-100 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                {mobileOpen ? (
+                  <path d="M5 5l10 10M15 5L5 15" />
+                ) : (
+                  <path d="M3 5h14M3 10h14M3 15h14" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-dark-600">
-          <div className="px-4 py-3 space-y-1 bg-dark-800/95 backdrop-blur-xl">
+        <div className="md:hidden border-t border-gray-200 dark:border-dark-600">
+          <div className="px-4 py-3 space-y-1 bg-white/95 dark:bg-dark-800/95 backdrop-blur-xl">
             {NAV_ITEMS.map(item => (
               <Link
                 key={item.href}
@@ -69,7 +74,7 @@ export function Header() {
                 className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                   pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
                     ? 'text-base-blue-light bg-base-blue/10'
-                    : 'text-dark-200 hover:text-dark-100 hover:bg-dark-700'
+                    : 'text-gray-500 dark:text-dark-200 hover:text-gray-900 dark:hover:text-dark-100 hover:bg-gray-100 dark:hover:bg-dark-700'
                 }`}
               >
                 {item.label}

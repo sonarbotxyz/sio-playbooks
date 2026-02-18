@@ -159,17 +159,17 @@ export default async function GuidePage({
 
           {/* Next guide suggestion */}
           {nextGuide && nextGuide.slug !== slug && (
-            <div className="mt-16 pt-12 border-t border-dark-700">
-              <p className="text-xs font-medium text-dark-400 uppercase tracking-wider mb-4">Next guide</p>
+            <div className="mt-16 pt-12 border-t border-gray-200 dark:border-dark-700">
+              <p className="text-xs font-medium text-gray-400 dark:text-dark-400 uppercase tracking-wider mb-4">Next guide</p>
               <Link
                 href={`/guides/${nextGuide.slug}`}
-                className="group block rounded-xl bg-dark-800 border border-dark-600 hover-glow p-6 max-w-lg"
+                className="group block rounded-xl bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-600 hover-glow p-6 max-w-lg"
               >
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${nextColors.bg} ${nextColors.text} ${nextColors.border} border mb-3`}>
                   <span>{nextColors.icon}</span>
                   {nextGuide.frontmatter.category}
                 </span>
-                <h3 className="font-display font-semibold text-lg text-dark-100 group-hover:text-base-blue-light transition-colors mb-2">
+                <h3 className="font-display font-semibold text-lg text-gray-900 dark:text-dark-100 group-hover:text-base-blue-light transition-colors mb-2">
                   {nextGuide.frontmatter.title}
                 </h3>
                 <div className="flex items-center gap-2 text-sm font-medium text-base-blue group-hover:text-base-blue-light transition-colors">

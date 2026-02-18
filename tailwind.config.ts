@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
@@ -75,6 +76,154 @@ const config: Config = {
         },
       },
       typography: {
+        light: {
+          css: {
+            maxWidth: '720px',
+            color: '#4a4a5a',
+            fontFamily: 'var(--font-body), system-ui, sans-serif',
+            lineHeight: '1.85',
+            fontSize: '1.0625rem',
+            p: {
+              marginTop: '1.35em',
+              marginBottom: '1.35em',
+            },
+            a: {
+              color: '#0052FF',
+              textDecoration: 'none',
+              fontWeight: '500',
+              borderBottom: '1.5px solid rgba(0, 82, 255, 0.3)',
+              transition: 'border-color 0.25s ease, color 0.25s ease',
+              '&:hover': {
+                borderBottomColor: '#0052FF',
+                color: '#003ECB',
+              },
+            },
+            'h1, h2, h3, h4': {
+              fontFamily: 'var(--font-display), system-ui, sans-serif',
+              fontWeight: '700',
+              color: '#1a1a2e',
+              letterSpacing: '-0.025em',
+            },
+            h1: {
+              fontSize: '2.1em',
+              marginTop: '0',
+              marginBottom: '0.85em',
+              lineHeight: '1.15',
+            },
+            h2: {
+              marginTop: '2.8em',
+              marginBottom: '0.85em',
+              fontSize: '1.55em',
+              lineHeight: '1.2',
+              paddingBottom: '0.6em',
+              borderBottom: '1px solid #e5e7eb',
+            },
+            h3: {
+              marginTop: '2.2em',
+              marginBottom: '0.65em',
+              fontSize: '1.3em',
+              lineHeight: '1.3',
+            },
+            h4: {
+              marginTop: '1.6em',
+              marginBottom: '0.5em',
+              fontSize: '1.1em',
+              lineHeight: '1.35',
+            },
+            code: {
+              color: '#0052FF',
+              fontFamily: 'var(--font-mono), monospace',
+              fontWeight: '500',
+              fontSize: '0.84em',
+              backgroundColor: 'rgba(0, 82, 255, 0.08)',
+              padding: '0.2em 0.45em',
+              borderRadius: '0.3rem',
+              border: '1px solid rgba(0, 82, 255, 0.12)',
+            },
+            'code::before': { content: '""' },
+            'code::after': { content: '""' },
+            pre: {
+              fontFamily: 'var(--font-mono), monospace',
+              backgroundColor: '#f8f9fa',
+              color: '#374151',
+              borderRadius: '0.75rem',
+              padding: '1.4rem 1.6rem',
+              overflowX: 'auto',
+              border: '1px solid #e5e7eb',
+              fontSize: '0.84rem',
+              lineHeight: '1.75',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+            },
+            'pre code': {
+              backgroundColor: 'transparent',
+              padding: '0',
+              color: 'inherit',
+              fontSize: 'inherit',
+              fontWeight: '400',
+              border: 'none',
+            },
+            blockquote: {
+              borderLeftColor: '#0052FF',
+              borderLeftWidth: '3px',
+              fontStyle: 'normal',
+              color: '#6b7280',
+              backgroundColor: 'rgba(0, 82, 255, 0.04)',
+              padding: '1.1rem 1.4rem',
+              borderRadius: '0 0.625rem 0.625rem 0',
+              fontSize: '0.975em',
+            },
+            'blockquote p:first-of-type::before': { content: '""' },
+            'blockquote p:last-of-type::after': { content: '""' },
+            table: {
+              fontSize: '0.875rem',
+              fontFamily: 'var(--font-body), system-ui, sans-serif',
+            },
+            'thead th': {
+              color: '#1a1a2e',
+              fontWeight: '600',
+              fontFamily: 'var(--font-body), system-ui, sans-serif',
+              borderBottomColor: '#e5e7eb',
+              padding: '0.8rem 1rem',
+              fontSize: '0.8rem',
+              letterSpacing: '0.03em',
+              textTransform: 'uppercase',
+            },
+            'thead': {
+              borderBottomColor: '#e5e7eb',
+            },
+            'tbody td': {
+              borderBottomColor: '#f3f4f6',
+              padding: '0.8rem 1rem',
+            },
+            'tbody tr': {
+              borderBottomColor: '#f3f4f6',
+            },
+            hr: {
+              borderColor: '#e5e7eb',
+              marginTop: '2.8em',
+              marginBottom: '2.8em',
+            },
+            strong: {
+              color: '#1a1a2e',
+              fontWeight: '650',
+            },
+            li: {
+              marginTop: '0.35em',
+              marginBottom: '0.35em',
+            },
+            'ul > li::marker': {
+              color: '#0052FF',
+            },
+            'ol > li::marker': {
+              color: '#0052FF',
+              fontWeight: '600',
+            },
+            img: {
+              borderRadius: '0.75rem',
+              border: '1px solid #e5e7eb',
+            },
+          },
+        },
         dark: {
           css: {
             maxWidth: '720px',

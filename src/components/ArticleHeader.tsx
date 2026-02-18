@@ -8,7 +8,7 @@ export function ArticleHeader({ frontmatter }: { frontmatter: GuideFrontmatter }
     <header className="relative py-16 sm:py-20">
       {/* Background gradient accent */}
       <div className={`absolute inset-0 bg-gradient-to-br ${colors.gradient} opacity-[0.04]`} />
-      <div className="absolute inset-0 bg-gradient-to-t from-dark-900 via-dark-900/80 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-dark-900 via-white/80 dark:via-dark-900/80 to-transparent" />
 
       <div className="relative max-w-content mx-auto px-4 sm:px-6">
         {/* Category pill */}
@@ -18,17 +18,17 @@ export function ArticleHeader({ frontmatter }: { frontmatter: GuideFrontmatter }
         </span>
 
         {/* Title */}
-        <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-[2.75rem] text-dark-100 leading-[1.12] tracking-tight mb-5">
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-[2.75rem] text-gray-900 dark:text-dark-100 leading-[1.12] tracking-tight mb-5">
           {frontmatter.title}
         </h1>
 
         {/* Description */}
-        <p className="text-lg text-dark-200 leading-relaxed mb-6 max-w-[600px]">
+        <p className="text-lg text-gray-500 dark:text-dark-200 leading-relaxed mb-6 max-w-[600px]">
           {frontmatter.description}
         </p>
 
         {/* Meta row */}
-        <div className="flex flex-wrap items-center gap-4 text-sm text-dark-300">
+        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 dark:text-dark-300">
           {frontmatter.readTime && (
             <span className="flex items-center gap-1.5 font-mono text-xs">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">

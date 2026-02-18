@@ -42,12 +42,12 @@ export default function HomePage() {
             <div className="font-display font-extrabold text-6xl sm:text-7xl md:text-8xl lg:text-9xl tracking-tight leading-none mb-4">
               <span className="gradient-text">{totalHours}h</span>
             </div>
-            <h1 className="font-display font-extrabold text-2xl sm:text-3xl md:text-4xl text-white tracking-tight leading-tight mb-6">
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl md:text-4xl text-gray-900 dark:text-white tracking-tight leading-tight mb-6">
               pour reussir ton BTS SIO.
             </h1>
           </div>
 
-          <p className="text-lg sm:text-xl text-dark-200 max-w-xl mx-auto leading-relaxed mb-10 animate-fade-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
+          <p className="text-lg sm:text-xl text-gray-500 dark:text-dark-200 max-w-xl mx-auto leading-relaxed mb-10 animate-fade-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
             Tout le programme, zero impasse.
             <br className="hidden sm:block" />
             SLAM, SISR, maths, droit — {guides.length} playbooks avec exercices corriges.
@@ -66,7 +66,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="#categories"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-dark-700 border border-dark-500 text-dark-100 font-display font-semibold text-sm hover:bg-dark-650 hover:border-dark-400 transition-colors"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gray-100 dark:bg-dark-700 border border-gray-200 dark:border-dark-500 text-gray-900 dark:text-dark-100 font-display font-semibold text-sm hover:bg-gray-200 dark:hover:bg-dark-650 hover:border-gray-300 dark:hover:border-dark-400 transition-colors"
             >
               Explorer par categorie
             </Link>
@@ -75,19 +75,19 @@ export default function HomePage() {
           {/* Stats */}
           <div className="flex items-center justify-center gap-8 sm:gap-12 mt-16 animate-fade-up" style={{ animationDelay: '0.65s', opacity: 0 }}>
             <div className="text-center">
-              <div className="font-display font-extrabold text-2xl sm:text-3xl text-white">{guides.length}</div>
-              <div className="text-xs text-dark-300 font-medium uppercase tracking-wider mt-1">Playbooks</div>
+              <div className="font-display font-extrabold text-2xl sm:text-3xl text-gray-900 dark:text-white">{guides.length}</div>
+              <div className="text-xs text-gray-400 dark:text-dark-300 font-medium uppercase tracking-wider mt-1">Playbooks</div>
             </div>
-            <div className="w-px h-10 bg-dark-600" />
+            <div className="w-px h-10 bg-gray-200 dark:bg-dark-600" />
             <div className="text-center">
-              <div className="font-display font-extrabold text-2xl sm:text-3xl text-white">{categories.length}</div>
-              <div className="text-xs text-dark-300 font-medium uppercase tracking-wider mt-1">Categories</div>
+              <div className="font-display font-extrabold text-2xl sm:text-3xl text-gray-900 dark:text-white">{categories.length}</div>
+              <div className="text-xs text-gray-400 dark:text-dark-300 font-medium uppercase tracking-wider mt-1">Categories</div>
             </div>
           </div>
         </div>
 
         {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-dark-900 to-transparent pointer-events-none z-10" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white dark:from-dark-900 to-transparent pointer-events-none z-10" />
       </section>
 
       {/* Category sections */}
@@ -106,8 +106,8 @@ export default function HomePage() {
                     <span>{colors.icon}</span>
                     {category}
                   </span>
-                  <div className="flex-1 h-px bg-dark-700" />
-                  <span className="text-xs text-dark-400 font-mono">
+                  <div className="flex-1 h-px bg-gray-200 dark:bg-dark-700" />
+                  <span className="text-xs text-gray-400 dark:text-dark-400 font-mono">
                     {catGuides.length} {catGuides.length === 1 ? 'playbook' : 'playbooks'}
                   </span>
                 </div>

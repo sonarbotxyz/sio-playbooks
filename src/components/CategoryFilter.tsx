@@ -25,7 +25,7 @@ export function CategoryFilter({ guides, categories }: { guides: Guide[]; catego
           className={`category-pill px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
             !active
               ? 'active bg-base-blue/15 border-base-blue text-base-blue-light'
-              : 'bg-dark-800 border-dark-600 text-dark-300 hover:text-dark-100'
+              : 'bg-gray-50 dark:bg-dark-800 border-gray-200 dark:border-dark-600 text-gray-500 dark:text-dark-300 hover:text-gray-900 dark:hover:text-dark-100'
           }`}
         >
           All
@@ -39,7 +39,7 @@ export function CategoryFilter({ guides, categories }: { guides: Guide[]; catego
               className={`category-pill px-4 py-2 rounded-lg text-sm font-medium border transition-all flex items-center gap-1.5 ${
                 active === cat
                   ? `active ${colors.bg} ${colors.border} ${colors.text}`
-                  : 'bg-dark-800 border-dark-600 text-dark-300 hover:text-dark-100'
+                  : 'bg-gray-50 dark:bg-dark-800 border-gray-200 dark:border-dark-600 text-gray-500 dark:text-dark-300 hover:text-gray-900 dark:hover:text-dark-100'
               }`}
             >
               <span className="text-xs">{colors.icon}</span>
@@ -58,7 +58,7 @@ export function CategoryFilter({ guides, categories }: { guides: Guide[]; catego
 
       {filtered.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-dark-300 text-sm">No guides in this category yet.</p>
+          <p className="text-gray-400 dark:text-dark-300 text-sm">No guides in this category yet.</p>
         </div>
       )}
     </div>

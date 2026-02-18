@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { JetBrains_Mono, Outfit } from 'next/font/google'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
+import { ThemeProvider } from '@/components/ThemeProvider'
 import './globals.css'
 
 const fontDisplay = Outfit({
@@ -58,17 +59,19 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="fr" className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable}`}>
-      <body className="font-body bg-dark-900 text-dark-100 min-h-screen flex flex-col antialiased">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-        />
-        <Header />
-        <main className="flex-1">
-          {children}
-        </main>
-        <Footer />
+    <html lang="fr" className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable}`} suppressHydrationWarning>
+      <body className="font-body bg-white dark:bg-dark-900 text-gray-800 dark:text-dark-100 min-h-screen flex flex-col antialiased">
+        <ThemeProvider>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+          />
+          <Header />
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   )

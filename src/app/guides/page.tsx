@@ -20,10 +20,10 @@ export default function GuidesPage() {
       <div className="max-w-content mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-white tracking-tight mb-3">
+          <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-gray-900 dark:text-white tracking-tight mb-3">
             Tous les playbooks
           </h1>
-          <p className="text-dark-200 text-lg max-w-lg">
+          <p className="text-gray-500 dark:text-dark-200 text-lg max-w-lg">
             {guides.length} playbooks couvrant tout le programme BTS SIO SLAM.
           </p>
         </div>

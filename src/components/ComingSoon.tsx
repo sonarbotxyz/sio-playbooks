@@ -11,13 +11,13 @@ export function ComingSoon({ title }: { title: string }) {
               <path d="M12 6v6l4 2" />
             </svg>
           </div>
-          <h1 className="font-display font-bold text-2xl sm:text-3xl text-dark-100 mb-3">
+          <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900 dark:text-dark-100 mb-3">
             Coming Soon
           </h1>
-          <p className="text-dark-300 mb-2">
-            <span className="text-dark-200 font-medium">{title}</span>
+          <p className="text-gray-500 dark:text-dark-300 mb-2">
+            <span className="text-gray-700 dark:text-dark-200 font-medium">{title}</span>
           </p>
-          <p className="text-dark-400 text-sm mb-8">
+          <p className="text-gray-400 dark:text-dark-400 text-sm mb-8">
             This guide is being finalized and will be published shortly.
           </p>
           <Link
