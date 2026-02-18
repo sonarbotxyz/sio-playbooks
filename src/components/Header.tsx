@@ -31,13 +31,10 @@ export function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-base-blue flex items-center justify-center shadow-md shadow-base-blue/20">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 3h4v4H3V3zm6 0h4v4H9V3zM3 9h4v4H3V9zm6 2h4v2H9v-2z" fill="white" opacity="0.9"/>
-              </svg>
-            </div>
+            <img src="/logo-dark.png" alt="Logo" className="w-8 h-8 block dark:hidden" />
+            <img src="/logo-light.png" alt="Logo" className="w-8 h-8 hidden dark:block" />
             <span className="font-display font-bold text-[15px] text-gray-900 dark:text-white tracking-tight">
-              Reussir mon <span className="text-base-blue">BTS SIO</span>
+              Réussir mon BTS SIO
             </span>
           </Link>
 
