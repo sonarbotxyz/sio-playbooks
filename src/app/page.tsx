@@ -33,15 +33,15 @@ export default function HomePage() {
 
         <div className="relative z-10 text-center px-4 sm:px-6 py-24 max-w-3xl mx-auto">
           <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white tracking-tight leading-[1.05] mb-6 animate-fade-up" style={{ animationDelay: '0.2s', opacity: 0 }}>
-            BTS SIO SLAM
+            BTS SIO
             <br />
-            <span className="gradient-text">Le guide ultime pour reussir ton examen</span>
+            <span className="gradient-text">Ton arme secrete pour l&apos;examen.</span>
           </h1>
 
           <p className="text-lg sm:text-xl text-dark-200 max-w-xl mx-auto leading-relaxed mb-10 animate-fade-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
-            14 playbooks couvrant l&apos;integralite du programme BTS SIO option SLAM.
+            SLAM. SISR. Maths. Droit. Tout le programme BTS SIO
             <br className="hidden sm:block" />
-            De l&apos;algorithmique au C# WinForms.
+            en playbooks ultra-detailles, avec exercices corriges.
           </p>
 
           {/* CTA */}

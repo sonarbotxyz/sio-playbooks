@@ -1,0 +1,1412 @@
+---
+title: "Droit informatique et RGPD"
+description: "Cadre juridique du développeur : RGPD, CNIL, contrats, propriété intellectuelle, responsabilités, licences"
+category: "Qualité et Sécurité"
+tags: ["rgpd", "cnil", "droit", "propriété intellectuelle", "licences", "gdpr"]
+difficulty: "Intermédiaire"
+---
+
+# Droit informatique et RGPD
+
+Bible de revision pour le BTS SIO SLAM -- composante E3. Ce playbook couvre l'integralite du cadre juridique que tout developpeur doit maitriser : protection des donnees personnelles, propriete intellectuelle, contrats, responsabilite et cybercriminalite.
+
+---
+
+## Table des matieres
+
+1. [Introduction au droit informatique](#1-introduction-au-droit-informatique)
+2. [Le RGPD : principes fondamentaux](#2-le-rgpd--principes-fondamentaux)
+3. [Les 6 bases legales du traitement](#3-les-6-bases-legales-du-traitement)
+4. [Droits des personnes concernees](#4-droits-des-personnes-concernees)
+5. [La CNIL](#5-la-cnil)
+6. [Le DPO](#6-le-dpo--delegue-a-la-protection-des-donnees)
+7. [Registre des traitements](#7-registre-des-traitements)
+8. [AIPD -- Analyse d'Impact](#8-aipd--analyse-dimpact-relative-a-la-protection-des-donnees)
+9. [Privacy by Design et Privacy by Default](#9-privacy-by-design-et-privacy-by-default)
+10. [Notification de violations](#10-notification-de-violations-de-donnees)
+11. [Transferts hors UE](#11-transferts-de-donnees-hors-union-europeenne)
+12. [Propriete intellectuelle](#12-propriete-intellectuelle)
+13. [Le logiciel et le droit d'auteur](#13-le-logiciel-et-le-droit-dauteur)
+14. [Licences logicielles](#14-licences-logicielles)
+15. [Contrats informatiques](#15-contrats-informatiques)
+16. [Responsabilite du developpeur](#16-responsabilite-du-developpeur)
+17. [Secret professionnel et confidentialite](#17-secret-professionnel-et-clause-de-confidentialite)
+18. [Cybercriminalite](#18-cybercriminalite)
+19. [La LCEN](#19-la-lcen--loi-pour-la-confiance-dans-leconomie-numerique)
+20. [Cookies et traceurs](#20-cookies-et-traceurs)
+21. [Cas pratiques d'examen](#21-cas-pratiques-dexamen)
+
+---
+
+## 1. Introduction au droit informatique
+
+### 1.1 Pourquoi un developpeur doit connaitre le droit
+
+Le developpeur n'est pas un simple technicien. Il concoit des systemes qui collectent, traitent et stockent des donnees personnelles. Il integre des composants logiciels soumis a des licences. Il livre des prestations encadrees par des contrats. Ignorer le droit, c'est s'exposer a trois categories de risques :
+
+- **Risques penaux** : un acces non autorise a un systeme informatique est puni de 2 ans d'emprisonnement et 60 000 euros d'amende (article 323-1 du Code penal).
+- **Risques civils** : un logiciel non conforme au RGPD peut engager la responsabilite du prestataire et de son client. Les amendes administratives atteignent 20 millions d'euros ou 4 % du chiffre d'affaires annuel mondial.
+- **Risques professionnels** : la violation d'une clause de confidentialite ou d'une licence open source peut entrainer la rupture d'un contrat et des poursuites.
+
+### 1.2 Les sources du droit informatique
+
+Le droit informatique n'est pas un code autonome. Il puise dans plusieurs branches :
+
+| Source | Exemples |
+|---|---|
+| Droit europeen | RGPD (Reglement 2016/679), Directive ePrivacy (2002/58/CE), Digital Services Act |
+| Lois francaises | Loi Informatique et Libertes (1978, modifiee), LCEN (2004), Code penal (art. 323-1 a 323-8), Code de la propriete intellectuelle |
+| Jurisprudence | Arrets de la CJUE (Schrems I et II), decisions de la CNIL |
+| Normes contractuelles | CGU, CGV, SLA, contrats de developpement, licences logicielles |
+
+### 1.3 Les acteurs cles
+
+- **Le responsable de traitement** : la personne morale ou physique qui determine les finalites et les moyens du traitement de donnees personnelles.
+- **Le sous-traitant** : celui qui traite des donnees pour le compte du responsable (hebergeur cloud, prestataire SaaS, developpeur freelance).
+- **La personne concernee** : toute personne physique identifiee ou identifiable dont les donnees sont traitees.
+- **L'autorite de controle** : en France, la CNIL (Commission Nationale de l'Informatique et des Libertes).
+
+---
+
+## 2. Le RGPD : principes fondamentaux
+
+### 2.1 Presentation generale
+
+Le Reglement General sur la Protection des Donnees (RGPD) est un reglement europeen entre en application le 25 mai 2018. Il s'applique directement dans tous les Etats membres sans transposition. Il remplace la directive 95/46/CE.
+
+**Champ d'application territorial** (article 3) : le RGPD s'applique des lors que :
+- Le responsable de traitement ou le sous-traitant est etabli dans l'UE, quel que soit le lieu du traitement.
+- Le traitement concerne des personnes se trouvant dans l'UE, si le responsable offre des biens/services a ces personnes ou suit leur comportement.
+
+**Donnee a caractere personnel** (article 4) : toute information se rapportant a une personne physique identifiee ou identifiable. Exemples : nom, adresse IP, cookie, numero de securite sociale, donnees de geolocalisation, identifiant en ligne.
+
+**Traitement** : toute operation effectuee sur des donnees personnelles (collecte, enregistrement, organisation, conservation, modification, extraction, consultation, utilisation, communication, effacement, destruction).
+
+### 2.2 Les 7 principes du RGPD (article 5)
+
+#### Principe 1 -- Liceite, loyaute et transparence
+
+Tout traitement doit reposer sur une base legale (voir chapitre 3). Le traitement doit etre loyal : la personne ne doit pas etre trompee sur l'usage de ses donnees. La transparence impose d'informer clairement la personne concernee.
+
+**Exemple concret** : une application mobile qui collecte la geolocalisation pour afficher la meteo mais revend ces donnees a des annonceurs sans en informer l'utilisateur viole ce principe.
+
+#### Principe 2 -- Limitation des finalites
+
+Les donnees sont collectees pour des finalites determinees, explicites et legitimes. Elles ne peuvent pas etre traitees ulterieurement de maniere incompatible avec ces finalites.
+
+**Exemple concret** : un site e-commerce collecte des adresses e-mail pour la livraison. Il ne peut pas les utiliser pour du demarchage commercial sans base legale distincte.
+
+#### Principe 3 -- Minimisation des donnees
+
+Seules les donnees adequates, pertinentes et limitees a ce qui est necessaire au regard des finalites sont collectees.
+
+**Exemple concret** : un formulaire d'inscription a une newsletter ne doit pas exiger la date de naissance, l'adresse postale et le numero de telephone si seul l'e-mail est necessaire.
+
+#### Principe 4 -- Exactitude
+
+Les donnees doivent etre exactes et tenues a jour. Des mesures raisonnables doivent etre prises pour rectifier ou effacer les donnees inexactes.
+
+**Exemple concret** : un systeme RH doit permettre aux salaries de mettre a jour leur adresse et leur situation familiale.
+
+#### Principe 5 -- Limitation de la conservation
+
+Les donnees sont conservees sous une forme permettant l'identification des personnes pendant une duree n'excedant pas celle necessaire aux finalites.
+
+**Durees de reference courantes** :
+
+| Type de donnee | Duree indicative |
+|---|---|
+| Donnees de prospect n'ayant pas repondu | 3 ans apres le dernier contact |
+| Donnees client (contrat) | Duree du contrat + prescription (5 ans) |
+| Donnees de log de connexion | 1 an (obligation legale pour les FAI) |
+| Donnees de candidature non retenue | 2 ans maximum |
+| Videoprotection | 1 mois |
+
+#### Principe 6 -- Integrite et confidentialite
+
+Le responsable de traitement doit garantir une securite appropriee : protection contre le traitement non autorise ou illicite, la perte, la destruction ou les degats accidentels.
+
+**Mesures techniques attendues** : chiffrement, pseudonymisation, controle d'acces, journalisation, sauvegardes, tests d'intrusion.
+
+#### Principe 7 -- Responsabilite (accountability)
+
+Le responsable de traitement doit etre en mesure de demontrer sa conformite. Ce principe impose une logique de documentation et de preuve :
+- Registre des traitements
+- Analyses d'impact
+- Politiques de confidentialite
+- Preuves de consentement
+- Contrats de sous-traitance (article 28)
+
+### 2.3 Donnees sensibles (article 9)
+
+Certaines categories de donnees font l'objet d'une interdiction de principe :
+- Origine raciale ou ethnique
+- Opinions politiques
+- Convictions religieuses ou philosophiques
+- Appartenance syndicale
+- Donnees genetiques et biometriques
+- Donnees de sante
+- Donnees relatives a la vie sexuelle ou l'orientation sexuelle
+
+**Exceptions** : consentement explicite, obligations en droit du travail, interets vitaux, traitement par une association a caractere religieux/politique/syndical, donnees manifestement rendues publiques, medecine preventive, recherche scientifique sous conditions.
+
+---
+
+## 3. Les 6 bases legales du traitement
+
+L'article 6 du RGPD enumere de maniere exhaustive les six bases legales sur lesquelles un traitement peut reposer. Le responsable de traitement doit en choisir une **avant** de commencer le traitement et la documenter.
+
+### 3.1 Le consentement (article 6.1.a)
+
+La personne a donne son consentement pour une ou plusieurs finalites specifiques.
+
+**Conditions de validite** (article 7) :
+- **Libre** : pas de desequilibre de pouvoir, pas de consequence negative en cas de refus, pas de couplage avec un service (interdiction du "cookie wall" sauf conditions tres strictes).
+- **Specifique** : un consentement par finalite. Un consentement global ("j'accepte tout") est invalide.
+- **Eclaire** : l'information doit etre claire, accessible, comprehensible.
+- **Univoque** : un acte positif clair (case a cocher non pre-cochee, clic sur un bouton). Le silence ne vaut pas consentement.
+
+**Retrait** : le consentement doit pouvoir etre retire a tout moment, aussi facilement qu'il a ete donne.
+
+**Preuve** : le responsable de traitement doit etre en mesure de demontrer que le consentement a ete obtenu.
+
+**Cas pratique** : une case pre-cochee dans un formulaire d'inscription ne constitue pas un consentement valide (CJUE, arret Planet49, 1er octobre 2019).
+
+### 3.2 L'execution d'un contrat (article 6.1.b)
+
+Le traitement est necessaire a l'execution d'un contrat auquel la personne est partie, ou a l'execution de mesures precontractuelles prises a sa demande.
+
+**Exemples** :
+- Traitement de l'adresse de livraison pour expedier une commande.
+- Traitement des coordonnees bancaires pour le paiement.
+- Envoi d'un devis demande par un prospect.
+
+**Limite** : cette base ne couvre pas le profilage publicitaire lie a un achat.
+
+### 3.3 L'obligation legale (article 6.1.c)
+
+Le traitement est necessaire au respect d'une obligation legale a laquelle le responsable est soumis.
+
+**Exemples** :
+- Conservation des factures pendant 10 ans (Code de commerce).
+- Transmission des donnees salariales a l'URSSAF.
+- Conservation des donnees de connexion par un FAI pendant 1 an (LCEN).
+
+### 3.4 La sauvegarde des interets vitaux (article 6.1.d)
+
+Le traitement est necessaire a la sauvegarde des interets vitaux de la personne concernee ou d'une autre personne physique.
+
+**Usage** : situations d'urgence medicale ou humanitaire. Base rarement utilisee.
+
+**Exemple** : transmission du groupe sanguin d'une personne inconsciente aux secours.
+
+### 3.5 La mission d'interet public (article 6.1.e)
+
+Le traitement est necessaire a l'execution d'une mission d'interet public ou relevant de l'exercice de l'autorite publique.
+
+**Exemples** : fichiers de police, registres d'etat civil, statistiques publiques (INSEE).
+
+### 3.6 L'interet legitime (article 6.1.f)
+
+Le traitement est necessaire aux fins des interets legitimes poursuivis par le responsable ou un tiers, a moins que ne prevalent les interets ou les droits et libertes fondamentaux de la personne.
+
+**Test en trois etapes (balance des interets)** :
+1. L'interet poursuivi est-il legitime ? (securite du reseau, prevention de la fraude, prospection commerciale)
+2. Le traitement est-il necessaire pour atteindre cet objectif ?
+3. Les droits de la personne sont-ils prevalents ? (nature des donnees, attentes raisonnables, impact sur la personne)
+
+**Exemples** :
+- Videosurveillance des locaux d'une entreprise.
+- Envoi de prospection commerciale a des clients existants (sous reserve du droit d'opposition).
+- Securisation d'un reseau informatique par analyse des logs.
+
+**Attention** : cette base n'est pas disponible pour les traitements effectues par les autorites publiques dans le cadre de leurs missions.
+
+### 3.7 Tableau recapitulatif
+
+| Base legale | Cas d'usage type | Droit d'opposition |
+|---|---|---|
+| Consentement | Newsletter, cookies non essentiels, geolocalisation marketing | Retrait a tout moment |
+| Contrat | Livraison, facturation, SAV | Non (necessaire au contrat) |
+| Obligation legale | Declarations fiscales, conservation legale | Non |
+| Interets vitaux | Urgence medicale | Non |
+| Mission publique | Administration, justice | Oui (article 21) |
+| Interet legitime | Securite, prospection B2B | Oui (article 21) |
+
+---
+
+## 4. Droits des personnes concernees
+
+Le RGPD confere aux personnes un ensemble de droits exercables aupres du responsable de traitement. Le delai de reponse est d'un mois, prolongeable de deux mois en cas de complexite.
+
+### 4.1 Droit d'acces (article 15)
+
+La personne a le droit d'obtenir :
+- La confirmation que ses donnees sont ou non traitees.
+- Une copie des donnees personnelles faisant l'objet du traitement.
+- Des informations sur les finalites, les categories de donnees, les destinataires, la duree de conservation, l'existence des autres droits, la source des donnees si elles n'ont pas ete collectees directement.
+
+**Mise en oeuvre technique** : prevoir une fonctionnalite d'export des donnees dans l'application (format lisible : JSON, CSV).
+
+### 4.2 Droit de rectification (article 16)
+
+La personne peut exiger la rectification de donnees inexactes et le completement de donnees incompletes.
+
+**Mise en oeuvre technique** : formulaire de modification du profil utilisateur, procedure de mise a jour en base de donnees.
+
+### 4.3 Droit a l'effacement -- droit a l'oubli (article 17)
+
+La personne peut demander l'effacement de ses donnees dans les cas suivants :
+- Les donnees ne sont plus necessaires aux finalites.
+- La personne retire son consentement (et il n'existe pas d'autre base legale).
+- La personne exerce son droit d'opposition.
+- Le traitement est illicite.
+- L'effacement est impose par une obligation legale.
+- Les donnees ont ete collectees dans le cadre de services de la societe de l'information proposes a un mineur.
+
+**Exceptions** : le droit a l'effacement ne s'applique pas si le traitement est necessaire a l'exercice du droit a la liberte d'expression, au respect d'une obligation legale, a des fins archivistiques d'interet public, a la constatation ou l'exercice de droits en justice.
+
+**Cas jurisprudentiel** : CJUE, arret Google Spain (13 mai 2014) -- un particulier peut demander le dereferencement de liens le concernant dans un moteur de recherche.
+
+**Mise en oeuvre technique** : fonctionnalite "Supprimer mon compte" avec suppression effective des donnees en base (pas seulement une desactivation). Attention aux sauvegardes et aux logs.
+
+### 4.4 Droit a la portabilite (article 20)
+
+La personne a le droit de recevoir ses donnees dans un format structure, couramment utilise et lisible par machine (JSON, CSV, XML). Elle peut demander le transfert direct de ses donnees a un autre responsable de traitement.
+
+**Conditions** : ce droit s'applique uniquement aux traitements fondes sur le consentement ou le contrat, et aux traitements automatises.
+
+**Mise en oeuvre technique** : endpoint d'API d'export `/api/user/export` retournant les donnees au format JSON.
+
+### 4.5 Droit d'opposition (article 21)
+
+La personne peut s'opposer a un traitement fonde sur l'interet legitime ou la mission d'interet public. Le responsable doit cesser le traitement sauf s'il demontre des motifs legitimes et imperieux.
+
+**Cas particulier -- prospection commerciale** : le droit d'opposition est absolu. Aucune justification n'est requise. Le traitement doit cesser immediatement.
+
+**Mise en oeuvre technique** : lien de desinscription dans chaque e-mail commercial, mecanisme d'opt-out dans l'application.
+
+### 4.6 Droit a la limitation du traitement (article 18)
+
+La personne peut demander le gel du traitement (les donnees sont conservees mais ne sont plus utilisees) dans quatre cas :
+- Contestation de l'exactitude des donnees (le temps de la verification).
+- Traitement illicite et la personne prefere la limitation a l'effacement.
+- Le responsable n'a plus besoin des donnees mais la personne en a besoin pour la constatation de droits en justice.
+- La personne a exerce son droit d'opposition (le temps de la verification des motifs).
+
+### 4.7 Droit relatif aux decisions automatisees et au profilage (article 22)
+
+La personne a le droit de ne pas faire l'objet d'une decision fondee exclusivement sur un traitement automatise, y compris le profilage, produisant des effets juridiques ou l'affectant de maniere significative.
+
+**Exceptions** : la decision est necessaire a la conclusion ou l'execution d'un contrat, autorisee par le droit de l'UE ou d'un Etat membre, fondee sur le consentement explicite.
+
+**Exemple** : un algorithme de credit scoring qui refuse automatiquement un pret sans intervention humaine viole ce droit (sauf exception).
+
+**Garanties minimales** : droit d'obtenir une intervention humaine, d'exprimer son point de vue, de contester la decision.
+
+### 4.8 Tableau recapitulatif des droits
+
+| Droit | Article | Base legale concernee | Delai de reponse |
+|---|---|---|---|
+| Acces | 15 | Toutes | 1 mois |
+| Rectification | 16 | Toutes | 1 mois |
+| Effacement | 17 | Toutes (avec exceptions) | 1 mois |
+| Portabilite | 20 | Consentement, contrat | 1 mois |
+| Opposition | 21 | Interet legitime, mission publique | Sans delai (prospection) |
+| Limitation | 18 | Toutes (cas specifiques) | 1 mois |
+| Decision automatisee | 22 | Toutes | 1 mois |
+
+---
+
+## 5. La CNIL
+
+### 5.1 Presentation
+
+La Commission Nationale de l'Informatique et des Libertes (CNIL) est l'autorite administrative independante francaise chargee de veiller a la protection des donnees personnelles. Creee par la loi Informatique et Libertes du 6 janvier 1978, elle est composee de 18 membres.
+
+### 5.2 Missions
+
+1. **Informer et proteger les droits** : la CNIL repond aux demandes des particuliers et des professionnels, publie des guides et des recommandations.
+2. **Accompagner la conformite** : elle aide les organismes a se mettre en conformite (referentiels, labels, bac a sable reglementaire).
+3. **Anticiper et innover** : veille technologique, analyses prospectives (IA, biometrie, blockchain).
+4. **Controler et sanctionner** : controles sur place, en ligne, sur pieces et sur audition.
+
+### 5.3 Pouvoirs de controle
+
+La CNIL peut mener quatre types de controles :
+- **Sur place** : agents assermentees dans les locaux de l'organisme.
+- **En ligne** : consultation des sites web, applications, API accessibles publiquement.
+- **Sur pieces** : demande de documents et d'informations par courrier.
+- **Sur audition** : convocation de representants de l'organisme.
+
+### 5.4 Pouvoirs de sanction
+
+La formation restreinte de la CNIL peut prononcer :
+
+| Sanction | Detail |
+|---|---|
+| Rappel a l'ordre | Avertissement sans amende |
+| Mise en demeure | Obligation de se conformer dans un delai fixe |
+| Limitation ou interdiction du traitement | Suspension temporaire ou definitive |
+| Amende administrative | Jusqu'a 10 M EUR ou 2 % du CA pour les manquements aux obligations du responsable ; jusqu'a 20 M EUR ou 4 % du CA pour les manquements aux droits des personnes et aux principes |
+| Astreinte | Montant journalier pour forcer l'execution d'une decision |
+| Publicite de la sanction | Publication de la decision sur le site de la CNIL |
+
+### 5.5 Sanctions notables (exemples concrets)
+
+- **Google LLC (2019)** : 50 millions d'euros pour manque de transparence, information insuffisante et consentement non valide pour la personnalisation publicitaire.
+- **Amazon Europe (2021)** : 746 millions d'euros par la CNPD luxembourgeoise pour ciblage publicitaire sans consentement valide.
+- **Meta / Facebook (2022)** : 60 millions d'euros par la CNIL pour non-respect des regles sur les cookies (pas de mecanisme de refus aussi simple que l'acceptation).
+- **Clearview AI (2022)** : 20 millions d'euros par la CNIL pour collecte et utilisation illicites de photographies faciales sans base legale.
+- **Criteo (2023)** : 40 millions d'euros pour manquements lies au consentement et a l'information des personnes dans le cadre du ciblage publicitaire.
+
+### 5.6 Procedure de plainte
+
+1. La personne tente d'exercer ses droits aupres du responsable de traitement.
+2. En l'absence de reponse dans un mois, elle depose une plainte aupres de la CNIL (formulaire en ligne).
+3. La CNIL instruit la plainte, peut proceder a un controle.
+4. La formation restreinte prononce une sanction si necessaire.
+5. La decision est susceptible de recours devant le Conseil d'Etat.
+
+---
+
+## 6. Le DPO -- Delegue a la Protection des Donnees
+
+### 6.1 Role (articles 37 a 39)
+
+Le DPO (Data Protection Officer) est le referent interne en matiere de protection des donnees. Ses missions :
+- Informer et conseiller le responsable de traitement, le sous-traitant et les employes.
+- Controler le respect du RGPD et des politiques internes.
+- Dispenser des conseils en matiere d'AIPD.
+- Cooperer avec l'autorite de controle (CNIL).
+- Etre le point de contact des personnes concernees.
+
+### 6.2 Designation obligatoire (article 37)
+
+La designation d'un DPO est obligatoire dans trois cas :
+1. Le traitement est effectue par une autorite publique ou un organisme public.
+2. Les activites de base du responsable consistent en des operations de traitement qui exigent un suivi regulier et systematique a grande echelle des personnes.
+3. Les activites de base du responsable consistent en un traitement a grande echelle de donnees sensibles ou de donnees relatives a des condamnations penales.
+
+### 6.3 Statut et independance
+
+- Le DPO peut etre interne (salarie) ou externe (prestataire).
+- Il ne recoit aucune instruction en ce qui concerne l'exercice de ses missions.
+- Il ne peut etre releve de ses fonctions ou penalise pour l'exercice de ses missions.
+- Il rend compte directement au niveau le plus eleve de la direction.
+- Il est soumis au secret professionnel.
+
+### 6.4 Competences requises
+
+Le DPO doit posseder des connaissances specialisees du droit et des pratiques en matiere de protection des donnees. Il n'existe pas de certification obligatoire, mais la CNIL propose un referentiel de certification.
+
+---
+
+## 7. Registre des traitements
+
+### 7.1 Obligation (article 30)
+
+Tout responsable de traitement et tout sous-traitant employant plus de 250 personnes doivent tenir un registre des activites de traitement. En dessous de ce seuil, le registre est obligatoire si le traitement :
+- N'est pas occasionnel.
+- Est susceptible de comporter un risque pour les droits et libertes.
+- Porte sur des donnees sensibles ou des donnees relatives a des condamnations penales.
+
+**En pratique** : la CNIL recommande a tous les organismes de tenir un registre, quelle que soit leur taille.
+
+### 7.2 Contenu obligatoire (responsable de traitement)
+
+Pour chaque traitement, le registre doit mentionner :
+
+| Element | Exemple |
+|---|---|
+| Nom et coordonnees du responsable | SAS ExempleTech, 12 rue de la Paix, Paris |
+| Finalites du traitement | Gestion de la paie des salaries |
+| Categories de personnes concernees | Salaries, stagiaires |
+| Categories de donnees | Nom, prenom, adresse, numero de securite sociale, salaire |
+| Categories de destinataires | Service comptabilite, URSSAF, mutuelle |
+| Transferts hors UE | Non (ou : vers les Etats-Unis, base sur clauses contractuelles types) |
+| Duree de conservation | 5 ans apres le depart du salarie |
+| Mesures de securite | Chiffrement AES-256, controle d'acces RBAC, sauvegardes quotidiennes |
+
+### 7.3 Contenu obligatoire (sous-traitant)
+
+Le sous-traitant tient un registre de toutes les categories d'activites de traitement effectuees pour le compte d'un responsable :
+- Nom et coordonnees du sous-traitant et de chaque responsable pour le compte duquel il agit.
+- Categories de traitements effectues.
+- Transferts hors UE.
+- Mesures de securite.
+
+### 7.4 Exemple de registre simplifie
+
+```
+Traitement n. 1 : Gestion des utilisateurs de l'application mobile
+- Responsable : SAS ExempleTech
+- DPO : Marie Dupont (dpo@exempletech.fr)
+- Finalite : creation et gestion des comptes utilisateurs
+- Base legale : execution du contrat (CGU)
+- Personnes concernees : utilisateurs de l'application
+- Donnees : nom, prenom, e-mail, mot de passe (hache), date d'inscription
+- Destinataires : equipe technique interne, hebergeur OVH (sous-traitant)
+- Transfert hors UE : non
+- Conservation : duree de vie du compte + 3 ans apres suppression
+- Securite : HTTPS, bcrypt pour les mots de passe, acces restreint en BDD
+```
+
+---
+
+## 8. AIPD -- Analyse d'Impact relative a la Protection des Donnees
+
+### 8.1 Definition et obligation (articles 35 et 36)
+
+L'AIPD (ou PIA -- Privacy Impact Assessment) est une etude approfondie visant a evaluer les risques d'un traitement pour les droits et libertes des personnes. Elle est obligatoire lorsque le traitement est susceptible d'engendrer un risque eleve.
+
+### 8.2 Quand realiser une AIPD
+
+La CNIL a publie une liste de 14 types de traitements necessitant une AIPD. De maniere generale, une AIPD est requise lorsque le traitement combine au moins deux des criteres suivants :
+1. Evaluation ou scoring (y compris profilage).
+2. Decision automatisee avec effet juridique ou significatif.
+3. Surveillance systematique.
+4. Donnees sensibles ou hautement personnelles.
+5. Traitement a grande echelle.
+6. Croisement de jeux de donnees.
+7. Donnees de personnes vulnerables (mineurs, patients, salaries).
+8. Usage innovant de technologies (biometrie, IA, IoT).
+9. Traitement empechant l'exercice d'un droit ou l'utilisation d'un service.
+
+### 8.3 Contenu de l'AIPD
+
+Une AIPD comporte quatre volets :
+
+1. **Description du traitement** : nature, portee, contexte, finalites, base legale, donnees traitees, flux de donnees.
+2. **Evaluation de la necessite et de la proportionnalite** : le traitement est-il necessaire ? Les donnees sont-elles minimisees ? Les droits des personnes sont-ils respectes ?
+3. **Evaluation des risques** : pour chaque risque, estimation de la gravite (negligeable, limitee, importante, maximale) et de la vraisemblance (negligeable, limitee, importante, maximale).
+4. **Mesures prevues** : mesures techniques et organisationnelles pour attenuer les risques identifies.
+
+### 8.4 Outil PIA de la CNIL
+
+La CNIL met a disposition un logiciel open source gratuit (PIA) pour realiser des AIPD. Il guide l'utilisateur a travers les quatre volets et genere un rapport.
+
+### 8.5 Consultation prealable (article 36)
+
+Si, apres l'AIPD, le risque residuel demeure eleve et que le responsable ne parvient pas a le reduire, il doit consulter la CNIL avant de mettre en oeuvre le traitement. La CNIL dispose de 8 semaines pour rendre son avis (prolongeables de 6 semaines).
+
+---
+
+## 9. Privacy by Design et Privacy by Default
+
+### 9.1 Protection des donnees des la conception (article 25.1)
+
+Le responsable de traitement doit, des la conception du traitement et lors de chaque evolution, mettre en oeuvre des mesures techniques et organisationnelles appropriees pour integrer les principes de protection des donnees.
+
+**Traduction pour le developpeur** :
+- Pseudonymiser les donnees des que possible.
+- Minimiser la collecte dans les formulaires.
+- Chiffrer les donnees sensibles en base.
+- Prevoir les mecanismes d'exercice des droits dans l'architecture (export, suppression, rectification).
+- Implementer le controle d'acces des la premiere version.
+- Journaliser les acces aux donnees personnelles.
+
+### 9.2 Protection des donnees par defaut (article 25.2)
+
+Par defaut, seules les donnees strictement necessaires a chaque finalite specifique sont traitees. Ce principe concerne la quantite de donnees, l'etendue du traitement, la duree de conservation et l'accessibilite.
+
+**Traduction pour le developpeur** :
+- Les parametres de confidentialite sont au maximum par defaut (profil prive, pas de partage).
+- Les cases de consentement ne sont pas pre-cochees.
+- Les donnees ne sont pas accessibles a un nombre indetermine de personnes par defaut.
+- La duree de conservation est la plus courte possible par defaut.
+
+### 9.3 Exemples concrets d'implementation
+
+| Principe | Implementation technique |
+|---|---|
+| Minimisation | Formulaire avec champs obligatoires reduits au strict necessaire |
+| Pseudonymisation | Remplacer le nom par un identifiant interne dans les tables analytiques |
+| Chiffrement | AES-256 pour les donnees sensibles en base, TLS 1.3 en transit |
+| Limitation de la conservation | Cron job de purge automatique des comptes inactifs depuis 3 ans |
+| Controle d'acces | RBAC (Role-Based Access Control) avec principe du moindre privilege |
+| Portabilite | Endpoint API `/api/me/export` au format JSON |
+| Effacement | Endpoint API `/api/me/delete` avec suppression en cascade |
+| Journalisation | Table `audit_log` tracant qui a accede a quelles donnees et quand |
+
+---
+
+## 10. Notification de violations de donnees
+
+### 10.1 Definition (article 4.12)
+
+Une violation de donnees a caractere personnel est une violation de la securite entrainant, de maniere accidentelle ou illicite, la destruction, la perte, l'alteration, la divulgation non autorisee de donnees personnelles, ou l'acces non autorise a de telles donnees.
+
+**Trois types de violations** :
+- **Violation de confidentialite** : acces ou divulgation non autorise (ex : fuite de base de donnees).
+- **Violation d'integrite** : alteration non autorisee (ex : modification frauduleuse de donnees medicales).
+- **Violation de disponibilite** : perte d'acces ou destruction (ex : ransomware, incendie du data center).
+
+### 10.2 Notification a la CNIL (article 33)
+
+Le responsable de traitement doit notifier la violation a la CNIL **dans les 72 heures** apres en avoir pris connaissance, sauf si la violation n'est pas susceptible d'engendrer un risque pour les droits et libertes des personnes.
+
+**Contenu de la notification** :
+- Nature de la violation (type, nombre de personnes et d'enregistrements concernes).
+- Nom et coordonnees du DPO ou du point de contact.
+- Consequences probables de la violation.
+- Mesures prises ou envisagees pour remedier a la violation et en attenuer les effets.
+
+**Si le delai de 72 heures ne peut etre respecte** : la notification doit etre accompagnee de l'explication du retard. Les informations peuvent etre communiquees de maniere echelonnee.
+
+### 10.3 Communication aux personnes concernees (article 34)
+
+Lorsque la violation est susceptible d'engendrer un **risque eleve** pour les droits et libertes, le responsable doit egalement en informer les personnes concernees dans les meilleurs delais.
+
+**Exceptions** : la communication n'est pas necessaire si :
+- Les donnees etaient chiffrees (mesures de protection rendant les donnees incomprehensibles).
+- Des mesures ulterieures garantissent que le risque eleve n'est plus susceptible de se materialiser.
+- La communication exigerait des efforts disproportionnes (dans ce cas, communication publique).
+
+### 10.4 Documentation interne
+
+Le responsable de traitement doit documenter toute violation, quelles que soient ses consequences : faits, effets, mesures prises. Ce registre des violations permet a la CNIL de verifier le respect de l'obligation de notification.
+
+### 10.5 Schema de decision
+
+```
+Violation detectee
+    |
+    v
+Risque pour les droits et libertes ?
+    |                    |
+   Non                  Oui
+    |                    |
+    v                    v
+Documentation      Notification CNIL (72h)
+interne                  |
+uniquement               v
+                   Risque eleve ?
+                    |          |
+                   Non        Oui
+                    |          |
+                    v          v
+               Documentation  Notification CNIL
+               interne        + Communication
+                              aux personnes
+```
+
+---
+
+## 11. Transferts de donnees hors Union europeenne
+
+### 11.1 Principe (articles 44 a 49)
+
+Le RGPD interdit par principe le transfert de donnees personnelles vers un pays tiers (hors EEE) qui n'assure pas un niveau de protection adequat. Plusieurs mecanismes permettent d'encadrer ces transferts.
+
+### 11.2 Decision d'adequation (article 45)
+
+La Commission europeenne peut constater qu'un pays tiers assure un niveau de protection adequat. Les transferts sont alors autorises sans garantie supplementaire.
+
+**Pays beneficiant d'une decision d'adequation** (liste non exhaustive) : Andorre, Argentine, Canada (secteur prive sous PIPEDA), Iles Feroe, Guernesey, Israel, Japon, Jersey, Nouvelle-Zelande, Coree du Sud, Royaume-Uni, Suisse, Uruguay, Etats-Unis (Data Privacy Framework depuis juillet 2023).
+
+**Cas jurisprudentiel majeur** :
+- **Schrems I (2015)** : la CJUE invalide le Safe Harbor UE-US, jugeant que la surveillance de masse par la NSA ne garantit pas une protection adequate.
+- **Schrems II (2020)** : la CJUE invalide le Privacy Shield UE-US pour les memes raisons. Les clauses contractuelles types restent valides mais doivent etre evaluees au cas par cas.
+- **Data Privacy Framework (2023)** : nouveau cadre UE-US, en vigueur mais potentiellement menace par un futur Schrems III.
+
+### 11.3 Clauses contractuelles types (article 46.2.c)
+
+Les CCT sont des contrats types adoptes par la Commission europeenne. L'exportateur et l'importateur de donnees les signent pour garantir un niveau de protection equivalent au RGPD.
+
+**Nouvelles CCT (juin 2021)** : quatre modules couvrant les differentes configurations :
+- Module 1 : responsable vers responsable.
+- Module 2 : responsable vers sous-traitant.
+- Module 3 : sous-traitant vers sous-traitant.
+- Module 4 : sous-traitant vers responsable.
+
+**Obligation supplementaire** : l'exportateur doit realiser une evaluation d'impact du transfert (Transfer Impact Assessment) pour verifier que la legislation du pays importateur ne remet pas en cause les garanties des CCT.
+
+### 11.4 Regles d'entreprise contraignantes (article 47)
+
+Les BCR (Binding Corporate Rules) sont des politiques internes adoptees par un groupe multinational et approuvees par l'autorite de controle chef de file. Elles autorisent les transferts intra-groupe.
+
+### 11.5 Derogations (article 49)
+
+En l'absence de decision d'adequation ou de garanties appropriees, le transfert est possible dans des cas limites :
+- Consentement explicite et informe de la personne.
+- Necessite pour l'execution d'un contrat.
+- Motifs importants d'interet public.
+- Defense de droits en justice.
+- Sauvegarde des interets vitaux.
+
+---
+
+## 12. Propriete intellectuelle
+
+### 12.1 Les trois piliers de la propriete intellectuelle
+
+La propriete intellectuelle se divise en deux branches :
+
+**Propriete litteraire et artistique** :
+- **Droit d'auteur** : protege les oeuvres de l'esprit (textes, musiques, logiciels, bases de donnees).
+- **Droits voisins** : protegent les artistes-interpretes, producteurs de phonogrammes et videogrammes, entreprises de communication audiovisuelle.
+
+**Propriete industrielle** :
+- **Brevets** : protegent les inventions techniques (duree : 20 ans, depot a l'INPI).
+- **Marques** : protegent les signes distinctifs (duree : 10 ans, renouvelable indefiniment).
+- **Dessins et modeles** : protegent l'apparence d'un produit (duree : 5 ans, renouvelable jusqu'a 25 ans).
+
+### 12.2 Droit d'auteur et logiciel
+
+Le logiciel est protege par le droit d'auteur (article L112-2 du Code de la propriete intellectuelle). Aucune formalite de depot n'est requise : la protection nait de la creation.
+
+**Ce qui est protege** : le code source, le code objet, le materiel de conception preparatoire (specifications detaillees, maquettes fonctionnelles), la documentation technique integree.
+
+**Ce qui n'est pas protege** : les idees, les algorithmes en tant que concepts mathematiques, les fonctionnalites, les interfaces utilisateur (sauf si elles presentent une originalite particuliere), les langages de programmation.
+
+### 12.3 Brevets et logiciel
+
+En droit europeen, le logiciel "en tant que tel" n'est pas brevetable (article 52 de la Convention sur le brevet europeen). Cependant, un logiciel qui produit un "effet technique supplementaire" au-dela de l'interaction normale entre le programme et l'ordinateur peut etre brevete.
+
+**Exemples brevetables** : systeme de freinage ABS pilote par logiciel, algorithme de compression d'image ameliorant les performances materielles.
+
+### 12.4 Marques
+
+Une marque est un signe distinctif (mot, logo, son, couleur) qui identifie les produits ou services d'une entreprise. Elle se depose a l'INPI (France), a l'EUIPO (UE) ou a l'OMPI (international).
+
+**Pertinence pour le developpeur** : ne pas utiliser le nom ou le logo d'une marque deposee dans une application sans autorisation. Verifier la disponibilite d'un nom de domaine et d'un nom d'application avant le lancement.
+
+---
+
+## 13. Le logiciel et le droit d'auteur
+
+### 13.1 Protection automatique
+
+Le logiciel est une oeuvre de l'esprit au sens de l'article L112-2 13 du CPI. La protection est automatique des lors que le logiciel est original, c'est-a-dire qu'il porte l'empreinte de la personnalite de son auteur.
+
+**Critere d'originalite** : en matiere de logiciel, la jurisprudence retient un "apport intellectuel" de l'auteur se manifestant par des choix personnalises dans la structure du programme, l'enchainement des instructions, l'organisation des donnees.
+
+**Preuve de la date de creation** : depot aupres de l'APP (Agence pour la Protection des Programmes), depot chez un huissier, enveloppe Soleau a l'INPI (pour les creations non logicielles), utilisation d'un systeme d'horodatage (commit Git signe, blockchain).
+
+### 13.2 Droits patrimoniaux (article L122-6)
+
+Le titulaire du droit d'auteur sur un logiciel dispose de droits exclusifs :
+- **Droit de reproduction** : copie du logiciel sous quelque forme que ce soit (installation, compilation, duplication).
+- **Droit de modification** : traduction, adaptation, arrangement, toute modification du code source.
+- **Droit de mise sur le marche** : distribution, location, mise a disposition du public.
+
+**Duree** : 70 ans apres la mort de l'auteur (ou 70 ans apres la publication pour les oeuvres collectives).
+
+### 13.3 Droits moraux
+
+En matiere de logiciel, les droits moraux sont reduits par rapport au regime general du droit d'auteur :
+- **Droit de paternite** : l'auteur peut exiger la mention de son nom.
+- **Droit de divulgation** : l'auteur decide de rendre le logiciel public.
+- **Pas de droit de retrait et de repentir** pour les logiciels.
+- **Droit au respect de l'oeuvre** : limite -- l'auteur ne peut s'opposer aux modifications raisonnablement necessaires a l'exploitation du logiciel.
+
+### 13.4 Regime salarial (article L113-9)
+
+**Disposition derogatoire majeure** : lorsqu'un logiciel est cree par un salarie dans l'exercice de ses fonctions ou d'apres les instructions de son employeur, les droits patrimoniaux sont automatiquement devolus a l'employeur. Le salarie conserve ses droits moraux.
+
+**Conditions** :
+- Existence d'un contrat de travail (pas de stage, pas de freelance).
+- Creation dans l'exercice des fonctions ou sur instruction de l'employeur.
+- Pas de clause contraire dans le contrat de travail.
+
+**Pour les freelances et les stagiaires** : les droits patrimoniaux restent chez le createur sauf cession expresse par contrat.
+
+### 13.5 Oeuvre collective vs oeuvre de collaboration
+
+| | Oeuvre collective | Oeuvre de collaboration |
+|---|---|---|
+| Definition | Creee a l'initiative et sous la direction d'une personne qui la divulgue sous son nom | Creee par plusieurs auteurs qui y contribuent de maniere concertee |
+| Titularite des droits | La personne physique ou morale qui l'a initiee | Copropriete de tous les co-auteurs |
+| Exemple en informatique | Logiciel d'entreprise coordonne par un chef de projet | Projet open source avec contributeurs identifies |
+| Exploitation | Le titulaire decide seul | Decision unanime des co-auteurs (ou accord contractuel) |
+
+### 13.6 Exceptions au droit d'auteur sur le logiciel (article L122-6-1)
+
+L'utilisateur legitime d'un logiciel peut, sans autorisation :
+- **Copie de sauvegarde** : realiser une copie de sauvegarde si elle est necessaire a l'utilisation du logiciel.
+- **Etude du fonctionnement** : observer, etudier ou tester le fonctionnement du logiciel pour determiner les idees et principes a la base de ses elements (lors d'operations normales de chargement, affichage, execution).
+- **Decompilation** : decompiler le logiciel pour assurer l'interoperabilite avec un autre logiciel, sous conditions strictes (information non disponible autrement, limitee aux parties necessaires a l'interoperabilite, resultats non communiques a des tiers sauf pour l'interoperabilite).
+
+---
+
+## 14. Licences logicielles
+
+### 14.1 Distinction fondamentale
+
+| Licence proprietaire | Licence libre / open source |
+|---|---|
+| Le code source n'est pas distribue | Le code source est accessible |
+| Droits d'utilisation limites et definis par un CLUF | Droits d'utilisation, modification, redistribution |
+| Paiement d'une redevance (souvent) | Gratuite (souvent, mais pas obligatoirement) |
+| Exemples : Microsoft Office, Adobe CC, Oracle DB | Exemples : Linux, Firefox, LibreOffice |
+
+### 14.2 Licences libres : les grandes familles
+
+#### Licences permissives
+
+Autorisent la reutilisation du code dans des logiciels proprietaires. Obligations minimales.
+
+**MIT License** :
+- Autorisation de copier, modifier, distribuer, utiliser commercialement.
+- Seule obligation : inclure le texte de la licence et la notice de copyright.
+- Aucune obligation de redistribuer le code source.
+- Pas de garantie.
+
+**Apache License 2.0** :
+- Memes droits que MIT.
+- Obligation supplementaire : mentionner les modifications apportees, inclure un fichier NOTICE.
+- Concession de licence de brevet par les contributeurs.
+- Protection contre les reclamations de brevets.
+
+**BSD (2-clause et 3-clause)** :
+- Tres proche de MIT.
+- La 3-clause ajoute l'interdiction d'utiliser le nom des contributeurs pour promouvoir un derive sans autorisation.
+
+#### Licences copyleft
+
+Imposent que toute redistribution du code (modifie ou non) se fasse sous la meme licence.
+
+**GPL v3 (GNU General Public License)** :
+- Le code source doit etre distribue avec le logiciel ou rendu accessible.
+- Toute oeuvre derivee doit etre distribuee sous GPL.
+- Clause anti-tivoisation (empeche les restrictions materielles).
+- Incompatible avec certaines licences proprietaires.
+
+**LGPL (Lesser GPL)** :
+- Permet de lier dynamiquement (sans contamination) un logiciel proprietaire a une bibliotheque LGPL.
+- Si la bibliotheque elle-meme est modifiee, les modifications doivent etre redistribuees sous LGPL.
+
+**AGPL (Affero GPL)** :
+- Comme GPL, mais s'applique aussi aux logiciels utilises via un reseau (SaaS).
+- Un utilisateur qui accede au logiciel via le web a droit au code source.
+
+#### Licences Creative Commons
+
+Principalement utilisees pour les contenus (textes, images, donnees) et non pour le code :
+
+| Licence | Signification |
+|---|---|
+| CC BY | Attribution requise |
+| CC BY-SA | Attribution + partage dans les memes conditions (copyleft) |
+| CC BY-NC | Attribution + pas d'utilisation commerciale |
+| CC BY-ND | Attribution + pas de modification |
+| CC BY-NC-SA | Attribution + non commercial + partage a l'identique |
+| CC0 | Domaine public (renonciation a tous les droits) |
+
+### 14.3 Comprendre les obligations : tableau comparatif
+
+| Obligation | MIT | Apache 2.0 | GPL v3 | LGPL v3 | AGPL v3 |
+|---|---|---|---|---|---|
+| Inclure la licence | Oui | Oui | Oui | Oui | Oui |
+| Mentionner les modifications | Non | Oui | Oui | Oui | Oui |
+| Distribuer le code source | Non | Non | Oui | Partiellement | Oui (y compris SaaS) |
+| Oeuvres derivees sous meme licence | Non | Non | Oui | Non (sauf modification de la lib) | Oui |
+| Concession de brevet | Non | Oui | Oui | Oui | Oui |
+| Usage commercial autorise | Oui | Oui | Oui | Oui | Oui |
+
+### 14.4 Risques juridiques lies aux licences
+
+- **Contamination copyleft** : utiliser du code GPL dans un logiciel proprietaire oblige a passer l'ensemble du logiciel sous GPL. Ignorer cette obligation constitue une contrefacon.
+- **Non-respect des clauses d'attribution** : meme les licences permissives exigent la mention du copyright. Ne pas le faire constitue une violation.
+- **Cas jurisprudentiel** : Free Software Foundation v. Cisco (2008) -- Cisco a du publier le code source de ses routeurs utilisant du code GPL apres une action en justice de la FSF.
+
+---
+
+## 15. Contrats informatiques
+
+### 15.1 Typologie des contrats informatiques
+
+#### Contrat de developpement (ou de realisation)
+
+Objet : conception et realisation d'un logiciel sur mesure.
+
+**Clauses essentielles** :
+- Description detaillee des fonctionnalites (cahier des charges, specifications).
+- Planning de livraison (jalons, livrables).
+- Conditions de recette (criteres d'acceptation, procedure de test, delai de validation).
+- Clause de propriete intellectuelle (cession des droits patrimoniaux, perimetre de la cession).
+- Prix et modalites de paiement (forfait, regie, mixte).
+- Garantie (duree, perimetre : bugs, conformite aux specifications).
+- Clause de reversibilite (acces au code source, documentation).
+
+#### Contrat de maintenance
+
+Objet : assurer le bon fonctionnement d'un logiciel apres sa mise en production.
+
+**Trois niveaux de maintenance** :
+- **Corrective** : correction des bugs et anomalies.
+- **Evolutive** : ajout de nouvelles fonctionnalites, adaptations reglementaires.
+- **Preventive** : mises a jour de securite, optimisation des performances.
+
+**Clauses essentielles** : perimetre de la maintenance, delais d'intervention (GTI) et de resolution (GTR), horaires de support, modalites de signalement (ticketing).
+
+#### Contrat SLA (Service Level Agreement)
+
+Objet : definir les niveaux de service garantis pour un service informatique (hebergement, SaaS).
+
+**Indicateurs types** :
+
+| Indicateur | Definition | Valeur type |
+|---|---|---|
+| Disponibilite | Pourcentage de temps de fonctionnement | 99,9 % (soit 8h45 d'indisponibilite/an) |
+| GTI | Garantie de Temps d'Intervention | 1h pour les incidents critiques |
+| GTR | Garantie de Temps de Retablissement | 4h pour les incidents critiques |
+| RPO | Recovery Point Objective | Perte de donnees maximale toleree (ex : 1h) |
+| RTO | Recovery Time Objective | Duree maximale d'interruption toleree (ex : 4h) |
+
+**Penalites** : le SLA prevoit generalement des penalites financieres (credits de service) en cas de non-respect des engagements.
+
+#### Contrat de licence (CLUF)
+
+Objet : definir les conditions d'utilisation d'un logiciel proprietaire.
+
+**Clauses types** : nombre d'utilisateurs ou de postes, duree de la licence, territoire, restrictions d'utilisation (interdiction de decompiler, de sous-licencier), limitation de responsabilite.
+
+#### Contrat d'hebergement
+
+Objet : mise a disposition d'une infrastructure technique.
+
+**Clauses essentielles** : localisation des serveurs (important pour le RGPD), mesures de securite physique et logique, politique de sauvegarde, conditions de reversibilite, SLA.
+
+### 15.2 La recette
+
+La recette (ou validation) est une phase contractuelle essentielle. Elle marque le transfert de responsabilite du prestataire vers le client.
+
+**Procedure type** :
+1. Livraison du logiciel par le prestataire.
+2. Tests par le client selon les criteres definis au cahier des charges.
+3. Emission d'un proces-verbal de recette (PV de recette) : acceptation, acceptation avec reserves, ou refus motive.
+4. Le delai de recette est generalement fixe contractuellement (15 a 30 jours). En l'absence de reponse, la recette est reputee acquise (recette tacite).
+
+### 15.3 Clause de propriete intellectuelle
+
+C'est la clause la plus sensible d'un contrat de developpement. En l'absence de cession expresse, les droits patrimoniaux restent chez le developpeur (sauf regime salarial).
+
+**Elements a preciser** :
+- Nature des droits cedes (reproduction, modification, distribution).
+- Etendue geographique et temporelle de la cession.
+- Supports et modes d'exploitation.
+- Caractere exclusif ou non exclusif de la cession.
+- Sort du code source (livraison, depot en sequestre chez un tiers comme l'APP).
+
+**Article L131-3 du CPI** : la cession des droits d'auteur doit mentionner distinctement chacun des droits cedes, l'etendue, la destination, le lieu et la duree de la cession. Toute clause non prevue est reputee non cedee.
+
+---
+
+## 16. Responsabilite du developpeur
+
+### 16.1 Obligation de moyens vs obligation de resultat
+
+| | Obligation de moyens | Obligation de resultat |
+|---|---|---|
+| Definition | Le prestataire s'engage a mettre en oeuvre tous les moyens raisonnables pour atteindre l'objectif | Le prestataire s'engage a atteindre un resultat determine |
+| Charge de la preuve | Le client doit prouver que le prestataire n'a pas mis en oeuvre les moyens suffisants (faute) | Le prestataire doit prouver l'existence d'une cause etrangere (force majeure, fait du client) |
+| Exemples | Conseil, audit de securite, assistance technique | Livraison d'un logiciel conforme au cahier des charges, hebergement avec SLA |
+
+**En pratique** : un contrat de developpement au forfait est generalement qualifie d'obligation de resultat. Un contrat en regie releve plutot de l'obligation de moyens.
+
+### 16.2 Les trois conditions de la responsabilite civile
+
+Pour engager la responsabilite d'un developpeur, le client doit prouver :
+1. **Une faute** : non-respect du contrat, negligence, violation d'une norme.
+2. **Un dommage** : prejudice materiel (perte financiere), immateriel (atteinte a l'image) ou moral.
+3. **Un lien de causalite** : la faute est la cause directe du dommage.
+
+### 16.3 Limitation de responsabilite
+
+Les contrats informatiques contiennent generalement des clauses limitatives de responsabilite :
+- Plafond d'indemnisation (montant du contrat, multiple du contrat).
+- Exclusion des dommages indirects (perte de chiffre d'affaires, perte de donnees, manque a gagner).
+- Exclusion de responsabilite pour force majeure.
+
+**Limites** : une clause limitative de responsabilite ne peut couvrir une faute lourde ou un dol (faute intentionnelle). Elle est egalement inopposable en cas de dommage corporel.
+
+### 16.4 Responsabilite penale
+
+Le developpeur peut engager sa responsabilite penale en cas de :
+- Acces frauduleux a un systeme informatique (meme par curiosite).
+- Introduction volontaire de code malveillant.
+- Atteinte au secret des correspondances electroniques.
+- Non-respect des obligations RGPD (si le developpeur agit en tant que responsable de traitement).
+
+---
+
+## 17. Secret professionnel et clause de confidentialite
+
+### 17.1 Le secret professionnel
+
+Le secret professionnel est une obligation legale qui s'impose a certaines professions (medecins, avocats, experts-comptables). Sa violation est punie par l'article 226-13 du Code penal (1 an d'emprisonnement et 15 000 euros d'amende).
+
+Le developpeur n'est pas soumis au secret professionnel par la loi, mais il peut y etre soumis par contrat.
+
+### 17.2 La clause de confidentialite (NDA)
+
+La clause de confidentialite (ou accord de non-divulgation, NDA -- Non-Disclosure Agreement) est une stipulation contractuelle par laquelle les parties s'engagent a ne pas divulguer les informations confidentielles auxquelles elles ont acces.
+
+**Elements essentiels** :
+- Definition des informations confidentielles (code source, donnees clients, savoir-faire, strategies commerciales).
+- Duree de l'obligation (souvent 2 a 5 ans apres la fin du contrat, parfois illimitee).
+- Exceptions : informations deja publiques, informations obtenues independamment, divulgation imposee par la loi.
+- Personnes autorisees a acceder aux informations (liste restrictive).
+- Sanctions en cas de violation (dommages-interets, clause penale, resiliation du contrat).
+- Obligation de restitution ou de destruction des informations a la fin du contrat.
+
+### 17.3 Application au developpeur
+
+Le developpeur a acces a des informations sensibles : code source, architecture technique, donnees de production, credentials, strategies metier du client. La clause de confidentialite est quasi systematique dans les contrats de prestation informatique.
+
+**Points d'attention** :
+- Ne pas copier le code source du client sur un depot personnel.
+- Ne pas reutiliser des composants specifiques developpes pour un client dans un autre projet sans autorisation.
+- Ne pas discuter des projets clients sur des forums publics ou reseaux sociaux.
+- Securiser les acces (mots de passe, cles SSH, tokens API) et les revoquer en fin de mission.
+
+---
+
+## 18. Cybercriminalite
+
+### 18.1 Cadre legal francais
+
+Les infractions informatiques sont principalement definies aux articles 323-1 a 323-8 du Code penal, issus de la loi Godfrain du 5 janvier 1988.
+
+### 18.2 Les infractions
+
+#### Acces frauduleux a un systeme informatique (article 323-1)
+
+"Le fait d'acceder ou de se maintenir, frauduleusement, dans tout ou partie d'un systeme de traitement automatise de donnees est puni de trois ans d'emprisonnement et de 100 000 euros d'amende."
+
+**Circonstances aggravantes** : lorsque l'acces entraine la suppression ou la modification de donnees, ou l'alteration du fonctionnement du systeme : 5 ans et 150 000 euros.
+
+**Jurisprudence importante** : l'acces est frauduleux des lors que la personne savait ne pas etre autorisee a acceder au systeme, meme en l'absence de dispositif de securite (Cass. crim., 30 octobre 2001 -- l'absence de protection ne vaut pas autorisation d'acces).
+
+**Cas concret** : un developpeur qui utilise des identifiants d'un ancien employeur pour acceder a un systeme commet un acces frauduleux.
+
+#### Atteinte au fonctionnement (article 323-2)
+
+"Le fait d'entraver ou de fausser le fonctionnement d'un systeme de traitement automatise de donnees est puni de cinq ans d'emprisonnement et de 150 000 euros d'amende."
+
+**Exemples** : attaque DDoS, deploiement d'un ransomware, introduction d'une bombe logique.
+
+#### Atteinte aux donnees (article 323-3)
+
+"Le fait d'introduire frauduleusement des donnees dans un systeme de traitement automatise, de supprimer ou de modifier frauduleusement les donnees qu'il contient est puni de cinq ans d'emprisonnement et de 150 000 euros d'amende."
+
+**Exemples** : defacement d'un site web, injection SQL modifiant des donnees, suppression volontaire de bases de donnees.
+
+#### Mise a disposition d'outils (article 323-3-1)
+
+La detention, la mise a disposition ou l'importation d'outils destines a commettre les infractions ci-dessus sont punies des memes peines.
+
+**Exception** : les outils utilises a des fins de recherche en securite ou de test autorise (pentesting avec autorisation ecrite) ne tombent pas sous le coup de cette infraction.
+
+#### Participation a un groupe (article 323-4)
+
+La participation a un groupement ou une entente en vue de commettre ces infractions est punie des peines prevues pour l'infraction preparee.
+
+### 18.3 Infractions complementaires
+
+| Infraction | Article | Peine |
+|---|---|---|
+| Usurpation d'identite en ligne | 226-4-1 | 1 an, 15 000 EUR |
+| Atteinte au secret des correspondances electroniques | 226-15 | 1 an, 45 000 EUR |
+| Collecte frauduleuse de donnees personnelles | 226-18 | 5 ans, 300 000 EUR |
+| Escroquerie en ligne | 313-1 | 5 ans, 375 000 EUR |
+| Contrefacon de logiciel | L335-2 CPI | 3 ans, 300 000 EUR |
+
+### 18.4 La reponse judiciaire
+
+**Acteurs specialises** :
+- OCLCTIC (Office Central de Lutte contre la Criminalite liee aux Technologies de l'Information et de la Communication).
+- BEFTI (Brigade d'Enquetes sur les Fraudes aux Technologies de l'Information) a Paris.
+- Parquet specialise J3 du TJ de Paris (cybercriminalite).
+- ANSSI (Agence Nationale de la Securite des Systemes d'Information) : role de conseil et de prevention, pas de role judiciaire.
+
+---
+
+## 19. La LCEN -- Loi pour la Confiance dans l'Economie Numerique
+
+### 19.1 Presentation
+
+La loi n. 2004-575 du 21 juin 2004 pour la confiance dans l'economie numerique (LCEN) transpose la directive europeenne 2000/31/CE sur le commerce electronique. Elle definit le cadre juridique des services de la societe de l'information.
+
+### 19.2 Distinction hebergeur / editeur
+
+C'est la distinction la plus importante de la LCEN.
+
+| | Editeur de contenu | Hebergeur |
+|---|---|---|
+| Definition | Personne qui cree ou selectionne le contenu publie | Personne qui stocke des contenus fournis par des tiers |
+| Responsabilite | Responsabilite de plein droit pour le contenu publie | Responsabilite limitee : pas de surveillance generale, responsable uniquement s'il a connaissance du caractere illicite et n'agit pas promptement |
+| Exemples | Journal en ligne, blog personnel, site vitrine | OVH, AWS, YouTube (pour les videos des utilisateurs), hebergeur de forum |
+| Fondement | Droit commun (responsabilite civile et penale) | Article 6 LCEN |
+
+**Procedure de notification** (article 6.I.5) : pour engager la responsabilite d'un hebergeur, le notifiant doit adresser une notification comprenant :
+- Son identite.
+- La description des faits litigieux et leur localisation precise (URL).
+- Les motifs pour lesquels le contenu doit etre retire (reference aux textes legaux).
+- La copie de la correspondance adressee a l'auteur ou l'editeur demandant le retrait.
+
+**Sanctions** : l'hebergeur qui ne retire pas promptement un contenu manifestement illicite apres notification encourt une responsabilite penale et civile.
+
+### 19.3 Mentions legales obligatoires (article 6.III)
+
+Tout site web professionnel doit afficher les mentions legales suivantes :
+
+**Pour une personne morale** :
+- Denomination ou raison sociale.
+- Forme juridique (SAS, SARL, etc.).
+- Montant du capital social.
+- Adresse du siege social.
+- Numero d'immatriculation (RCS, RM).
+- Numero de telephone et adresse e-mail.
+- Nom du directeur de la publication.
+- Nom, denomination ou raison sociale et adresse de l'hebergeur.
+
+**Pour une personne physique** :
+- Nom, prenom.
+- Adresse de domicile (ou adresse du siege si activite professionnelle).
+- Numero de telephone et adresse e-mail.
+- Nom du directeur de la publication.
+- Coordonnees de l'hebergeur.
+
+**Activite commerciale** : numero de TVA intracommunautaire, conditions generales de vente.
+
+**Activite reglementee** : reference aux regles professionnelles applicables, nom de l'autorite ayant delivre l'autorisation.
+
+**Sanction** : l'absence de mentions legales est punie d'un an d'emprisonnement et de 75 000 euros d'amende pour les personnes physiques, 375 000 euros pour les personnes morales.
+
+### 19.4 Obligation de conservation des donnees d'identification
+
+Les hebergeurs et les fournisseurs d'acces doivent conserver les donnees permettant l'identification des createurs de contenu pendant un an. Ces donnees ne peuvent etre communiquees qu'a l'autorite judiciaire.
+
+### 19.5 Commerce electronique
+
+La LCEN encadre egalement le commerce electronique :
+- Obligation d'information prealable (identite du vendeur, caracteristiques du produit, prix TTC, frais de livraison).
+- Double clic : le processus de commande doit comporter une etape de verification avant la validation definitive.
+- Droit de retractation : 14 jours pour les contrats a distance (Code de la consommation, articles L221-18 et suivants).
+
+---
+
+## 20. Cookies et traceurs
+
+### 20.1 Cadre juridique
+
+Les cookies sont regis par :
+- La **directive ePrivacy** (2002/58/CE, modifiee en 2009).
+- L'**article 82 de la loi Informatique et Libertes** (transposition en droit francais).
+- Les **lignes directrices de la CNIL** du 17 septembre 2020 et la recommandation du 1er octobre 2020.
+
+### 20.2 Principe : consentement prealable
+
+Le depot de cookies ou de traceurs sur le terminal de l'utilisateur et la lecture de ces cookies necessitent le **consentement prealable** de l'utilisateur, sauf exceptions.
+
+### 20.3 Cookies exemptes de consentement
+
+Certains cookies sont strictement necessaires au fonctionnement du service et ne necessitent pas de consentement :
+- Cookies d'authentification (maintien de la session).
+- Cookies de panier d'achat.
+- Cookies de personnalisation de l'interface (langue, accessibilite).
+- Cookies de mesure d'audience sous conditions strictes (finalite limitee a la mesure d'audience pour le compte exclusif de l'editeur, pas de recoupement avec d'autres traitements, duree de conservation limitee a 13 mois pour le cookie et 25 mois pour les donnees).
+
+**Outils de mesure d'audience exemptes** : la CNIL a reconnu que certaines configurations d'outils (comme Matomo / ex-Piwik avec les parametres recommandes) peuvent etre exemptees.
+
+### 20.4 Cookies necessitant le consentement
+
+- Cookies publicitaires et de ciblage.
+- Cookies de reseaux sociaux (boutons de partage).
+- Cookies de mesure d'audience non exemptes (Google Analytics dans sa configuration standard).
+- Cookies de personnalisation avancee (profilage).
+
+### 20.5 Regles du bandeau de consentement
+
+Les lignes directrices de la CNIL imposent :
+
+1. **Information claire et complete** : l'utilisateur doit etre informe de la finalite de chaque cookie, de l'identite des destinataires.
+2. **Refus aussi simple que l'acceptation** : un bouton "Refuser" doit etre aussi visible et accessible que le bouton "Accepter". Un simple lien "Parametrer" en petits caracteres a cote d'un gros bouton "Accepter" est non conforme.
+3. **Pas de cookie wall** : conditionner l'acces au site a l'acceptation des cookies est interdit (sauf si une alternative reelle est proposee).
+4. **Pas de cases pre-cochees** : les cookies non essentiels ne doivent pas etre actives par defaut.
+5. **Granularite** : l'utilisateur doit pouvoir accepter ou refuser les cookies par finalite (publicite, analyse, reseaux sociaux).
+6. **Preuve du consentement** : l'editeur doit pouvoir demontrer que l'utilisateur a consenti.
+7. **Duree de validite** : le consentement ou le refus est valable 6 mois. Au-dela, il faut redemander.
+
+### 20.6 Sanctions liees aux cookies
+
+- **Google** : 150 millions d'euros (CNIL, 2022) pour l'absence de bouton de refus aussi simple que l'acceptation sur google.fr.
+- **Facebook** : 60 millions d'euros (CNIL, 2022) pour le meme motif sur facebook.com.
+- **Microsoft** : 60 millions d'euros (CNIL, 2022) pour les cookies sur bing.com.
+
+### 20.7 Implementation technique
+
+```html
+<!-- Exemple simplifie de bandeau de consentement -->
+<div id="cookie-banner">
+  <p>Nous utilisons des cookies pour analyser le trafic
+     et ameliorer votre experience.
+     <a href="/politique-cookies">En savoir plus</a>
+  </p>
+  <button id="accept-all">Tout accepter</button>
+  <button id="refuse-all">Tout refuser</button>
+  <button id="customize">Personnaliser</button>
+</div>
+```
+
+**Bonnes pratiques techniques** :
+- Ne deposer aucun cookie non essentiel avant le consentement.
+- Stocker le choix de l'utilisateur dans un cookie technique (exempt de consentement).
+- Bloquer les scripts tiers (Google Analytics, Facebook Pixel) jusqu'a l'obtention du consentement.
+- Proposer un lien "Gerer mes cookies" accessible a tout moment (footer du site).
+
+---
+
+## 21. Cas pratiques d'examen
+
+### Exercice 1 -- Analyse de conformite RGPD d'un formulaire
+
+**Enonce** : une entreprise de e-commerce collecte les donnees suivantes via son formulaire d'inscription : nom, prenom, adresse e-mail, mot de passe, date de naissance, numero de telephone, adresse postale, profession, nombre d'enfants, revenus mensuels. L'inscription permet uniquement d'acheter des vetements en ligne. Identifiez les problemes de conformite.
+
+**Correction** :
+
+1. **Violation du principe de minimisation** (article 5.1.c) : la profession, le nombre d'enfants et les revenus mensuels ne sont pas necessaires a l'achat de vetements. Ces champs doivent etre supprimes ou rendus facultatifs avec une finalite distincte.
+2. **Date de naissance** : potentiellement justifiable pour verifier la majorite ou pour une offre d'anniversaire, mais doit etre documentee dans le registre des traitements avec une finalite explicite.
+3. **Numero de telephone** : justifiable pour la livraison (contact par le transporteur), mais ne doit pas etre obligatoire si l'e-mail suffit pour le suivi de commande.
+4. **Base legale** : l'inscription au compte releve de l'execution du contrat (article 6.1.b). Les donnees de prospection commerciale (newsletter) necessitent une base legale distincte (consentement ou interet legitime avec opt-out).
+5. **Information** : le formulaire doit comporter une mention d'information (finalites, base legale, duree de conservation, droits de la personne, coordonnees du DPO).
+
+---
+
+### Exercice 2 -- Identification d'une violation de donnees
+
+**Enonce** : un developpeur constate qu'un fichier de sauvegarde de la base de donnees clients (50 000 enregistrements : nom, e-mail, adresse, historique d'achats) a ete accessible publiquement sur le serveur pendant 3 jours suite a une erreur de configuration. Quelles sont les obligations ?
+
+**Correction** :
+
+1. **Qualification** : il s'agit d'une violation de confidentialite (acces non autorise a des donnees personnelles).
+2. **Documentation** : l'incident doit etre consigne dans le registre des violations, meme si aucune exploitation des donnees n'est demontree.
+3. **Notification a la CNIL** : obligatoire dans les 72 heures suivant la decouverte. Le volume de donnees (50 000 personnes) et leur nature (adresse, historique d'achats) representent un risque pour les droits et libertes.
+4. **Communication aux personnes** : probable. Le risque est eleve car les donnees permettent l'identification directe et l'adresse postale peut etre utilisee a des fins de fraude. Les personnes doivent etre informees de la nature de la violation, des consequences probables et des mesures prises.
+5. **Mesures correctives** : correction de la configuration, changement des mots de passe si des credentials etaient dans la base, audit de securite, mise en place de controles automatises.
+
+---
+
+### Exercice 3 -- Redaction de mentions legales
+
+**Enonce** : redigez les mentions legales pour le site web de la societe "DevSolutions SAS", capital social 10 000 euros, siegeant au 42 avenue Victor Hugo 75016 Paris, immatriculee au RCS de Paris sous le numero 123 456 789, hebergee par OVH SAS. Le directeur de la publication est Pierre Martin.
+
+**Correction** :
+
+```
+MENTIONS LEGALES
+
+Editeur du site :
+DevSolutions SAS au capital de 10 000 euros
+Siege social : 42 avenue Victor Hugo, 75016 Paris
+RCS Paris 123 456 789
+Numero de TVA intracommunautaire : FR XX 123456789
+Telephone : [a completer]
+E-mail : [a completer]
+
+Directeur de la publication :
+Pierre Martin
+
+Hebergeur :
+OVH SAS
+2 rue Kellermann, 59100 Roubaix
+Telephone : 1007
+
+Donnees personnelles :
+Conformement au RGPD et a la loi Informatique et Libertes,
+vous disposez d'un droit d'acces, de rectification, d'effacement,
+de portabilite, de limitation et d'opposition au traitement
+de vos donnees personnelles.
+Pour exercer ces droits : [adresse e-mail DPO ou formulaire].
+En cas de litige, vous pouvez adresser une reclamation
+a la CNIL (www.cnil.fr).
+```
+
+---
+
+### Exercice 4 -- Choix de licence
+
+**Enonce** : un developpeur cree une bibliotheque de composants graphiques. Il souhaite que la communaute puisse l'utiliser librement, y compris dans des projets commerciaux et proprietaires, mais il veut que son nom soit toujours mentionne. Quelle licence recommander ?
+
+**Correction** :
+
+La licence **MIT** est la plus appropriee :
+- Elle autorise l'utilisation, la copie, la modification et la distribution, y compris a des fins commerciales.
+- Elle impose de conserver la notice de copyright et le texte de la licence dans toutes les copies.
+- Elle n'impose pas de redistribuer le code source des oeuvres derivees (pas de copyleft), ce qui permet l'integration dans des projets proprietaires.
+
+**Pourquoi pas les autres ?**
+- GPL : imposerait le copyleft, empechant l'utilisation dans des projets proprietaires. Contraire a l'objectif.
+- Apache 2.0 : possible egalement, avec en plus une clause de concession de brevet. Plus adapte si des brevets sont en jeu.
+- CC BY : adaptee aux contenus mais pas recommandee pour du code source.
+
+---
+
+### Exercice 5 -- Analyse d'un contrat de developpement
+
+**Enonce** : un contrat de developpement stipule : "Le prestataire cede au client l'ensemble de ses droits de propriete intellectuelle sur le logiciel." Le contrat ne contient aucune autre precision sur la cession. Ce contrat est-il valide sur ce point ?
+
+**Correction** :
+
+Non, cette clause est **insuffisante** au regard de l'article L131-3 du Code de la propriete intellectuelle :
+
+1. **Absence de delimitation des droits cedes** : la cession doit mentionner distinctement chacun des droits cedes (reproduction, representation, adaptation, traduction).
+2. **Absence d'etendue** : la clause ne precise pas le territoire (France, monde entier), la duree (limitee ou pour toute la duree de protection), les supports et modes d'exploitation.
+3. **Absence de destination** : la clause ne precise pas la finalite de l'exploitation (usage interne, commercialisation, sous-licence).
+4. **Consequence** : les droits non expressement enumeres sont reputes non cedes. En cas de litige, un tribunal interpreterait la clause de maniere restrictive, ce qui pourrait limiter considerablement les droits du client.
+
+**Clause corrigee** :
+"Le prestataire cede au client, a titre exclusif, pour le monde entier et pour toute la duree de protection legale, les droits de reproduction, de modification, d'adaptation et de distribution du logiciel, sur tout support et par tout procede connu ou inconnu a ce jour, aux fins d'exploitation commerciale et d'usage interne."
+
+---
+
+### Exercice 6 -- Consentement invalide
+
+**Enonce** : un site de jeux en ligne affiche le message suivant lors de l'inscription : "En vous inscrivant, vous acceptez nos CGU, notre politique de confidentialite et vous consentez a recevoir des offres commerciales de nos partenaires." Une case unique pre-cochee accompagne ce texte. Identifiez les problemes.
+
+**Correction** :
+
+1. **Case pre-cochee** : le consentement n'est pas donne par un acte positif clair. La case doit etre decochee par defaut (CJUE, arret Planet49, 2019).
+2. **Consentement non specifique** : l'acceptation des CGU, la politique de confidentialite et la prospection commerciale sont regroupees dans un seul acte. Chaque finalite doit faire l'objet d'un consentement distinct.
+3. **Consentement non libre** : le consentement a la prospection est couple a l'inscription au service. L'utilisateur ne peut pas s'inscrire sans accepter la prospection, ce qui viole le principe de liberte du consentement.
+4. **Absence de granularite** : "nos partenaires" est trop vague. L'utilisateur doit pouvoir connaitre l'identite des destinataires.
+
+**Correction a apporter** :
+- Decocher la case par defaut.
+- Separer en trois actes : acceptation des CGU (necessaire au contrat), prise de connaissance de la politique de confidentialite (information), consentement a la prospection (case distincte, decochee).
+- Lister les partenaires ou renvoyer vers une liste accessible.
+
+---
+
+### Exercice 7 -- Privacy by Design
+
+**Enonce** : vous concevez une application de suivi medical pour des patients diabetiques. L'application collecte la glycemie quotidienne, le poids, les repas et les medicaments. Quelles mesures de Privacy by Design devez-vous implementer ?
+
+**Correction** :
+
+1. **Donnees sensibles** : les donnees de sante relevent de l'article 9 du RGPD. Base legale : consentement explicite du patient ou necessite pour les soins de sante (article 9.2.h).
+2. **AIPD obligatoire** : traitement de donnees de sante a grande echelle impliquant des personnes vulnerables.
+3. **Minimisation** : ne collecter que les donnees strictement necessaires au suivi medical. Ne pas demander l'adresse postale si le suivi est entierement numerique.
+4. **Chiffrement** : chiffrement de bout en bout des donnees de sante. Chiffrement au repos (AES-256) et en transit (TLS 1.3).
+5. **Pseudonymisation** : stocker les donnees medicales avec un identifiant technique, decorrele du nom du patient. La table de correspondance est stockee separement avec un controle d'acces renforce.
+6. **Controle d'acces** : seuls le patient et son medecin traitant accedent aux donnees. Authentification forte (MFA).
+7. **Journalisation** : tracer tout acces aux donnees de sante (qui, quand, quelles donnees).
+8. **Portabilite** : prevoir l'export des donnees dans un format interoperable (FHIR, HL7 ou a defaut JSON structure).
+9. **Effacement** : permettre au patient de supprimer ses donnees et son compte. Attention a la conservation legale (dossier medical : 20 ans).
+10. **Hebergement** : hebergeur certifie HDS (Hebergeur de Donnees de Sante), obligation legale en France (article L1111-8 du Code de la sante publique).
+11. **Consentement** : consentement explicite, informe, recueilli via un ecran dedie avec explication de chaque categorie de donnees et de chaque finalite.
+
+---
+
+### Exercice 8 -- Transfert hors UE
+
+**Enonce** : une entreprise francaise utilise un service SaaS americain pour sa gestion de relation client (CRM). Le SaaS stocke les donnees de clients europeens sur des serveurs aux Etats-Unis. Analysez la legalite de ce transfert.
+
+**Correction** :
+
+1. **Qualification** : il s'agit d'un transfert de donnees personnelles vers un pays tiers (Etats-Unis).
+2. **Decision d'adequation** : depuis juillet 2023, le Data Privacy Framework (DPF) UE-US est en vigueur. Si le fournisseur SaaS est certifie DPF, le transfert est autorise sans garantie supplementaire.
+3. **Verification** : consulter la liste des entreprises certifiees sur dataprivacyframework.gov. Si le fournisseur y figure, le transfert est legal.
+4. **Si le fournisseur n'est pas certifie DPF** : le transfert doit etre encadre par des clauses contractuelles types (CCT, module 2 -- responsable vers sous-traitant). L'entreprise francaise doit realiser un Transfer Impact Assessment pour evaluer si la legislation americaine (notamment FISA 702 et l'Executive Order 12333) remet en cause les garanties des CCT.
+5. **Contrat de sous-traitance** (article 28 RGPD) : l'entreprise francaise (responsable de traitement) doit conclure un contrat avec le SaaS (sous-traitant) detaillant la nature du traitement, les categories de donnees, les mesures de securite, l'obligation de notification des violations, les conditions de sous-traitance ulterieure.
+6. **Registre** : le transfert doit etre mentionne dans le registre des traitements.
+
+---
+
+### Exercice 9 -- Cybercriminalite
+
+**Enonce** : un ancien salarie d'une entreprise utilise ses anciens identifiants (non revoques) pour acceder au systeme d'information de son ex-employeur et consulter des documents internes. Qualifiez les faits et les sanctions encourues.
+
+**Correction** :
+
+1. **Qualification penale** : acces frauduleux a un systeme de traitement automatise de donnees (article 323-1 du Code penal). L'ancien salarie n'est plus autorise a acceder au systeme. Le fait que ses identifiants n'aient pas ete revoques ne constitue pas une autorisation.
+2. **Peine encourue** : 3 ans d'emprisonnement et 100 000 euros d'amende. Si l'acces a entraine la suppression ou la modification de donnees, ou l'alteration du fonctionnement du systeme : 5 ans et 150 000 euros.
+3. **Maintien frauduleux** : meme si l'acces initial n'etait pas frauduleux (identifiants valides), le maintien dans le systeme en sachant ne plus etre autorise constitue une infraction.
+4. **Responsabilite de l'employeur** : l'employeur pourrait etre questionne sur l'absence de revocation des acces, ce qui constitue un manquement a l'obligation de securite (article 32 RGPD). La CNIL pourrait sanctionner l'employeur pour defaut de mesures de securite appropriees.
+5. **Possible violation de confidentialite** : si l'ancien salarie avait signe une clause de confidentialite (NDA), la consultation de documents internes constitue egalement une violation contractuelle ouvrant droit a des dommages-interets.
+
+---
+
+### Exercice 10 -- Cookies et bandeau de consentement
+
+**Enonce** : un site web affiche le bandeau suivant : "Ce site utilise des cookies pour ameliorer votre experience. Continuer la navigation vaut acceptation." Aucun bouton de refus n'est propose. Le site depose des cookies Google Analytics et Facebook Pixel des l'arrivee sur la page. Listez toutes les non-conformites.
+
+**Correction** :
+
+1. **Cookies deposes avant consentement** : les cookies Google Analytics (dans sa configuration standard) et Facebook Pixel sont des cookies de mesure d'audience non exemptes et des cookies publicitaires. Ils necessitent un consentement prealable et ne doivent pas etre deposes avant que l'utilisateur ait consenti.
+2. **Poursuite de la navigation ne vaut pas consentement** : la CNIL a expressement indique dans ses lignes directrices de 2020 que la simple poursuite de la navigation ne constitue pas un acte positif clair de consentement.
+3. **Absence de bouton de refus** : l'utilisateur doit pouvoir refuser les cookies aussi facilement qu'il les accepte. Un bouton "Tout refuser" doit etre present au meme niveau que "Tout accepter" (CNIL, decisions Google/Facebook 2022).
+4. **Information insuffisante** : le bandeau ne mentionne pas les finalites specifiques des cookies, ni l'identite des tiers (Google, Facebook).
+5. **Absence de granularite** : l'utilisateur ne peut pas choisir quels cookies accepter et lesquels refuser (par finalite).
+6. **Absence de lien vers la politique de cookies** : un lien vers une page detaillant l'ensemble des cookies utilises, leurs finalites et leur duree doit etre present.
+7. **Absence de moyen de gerer les cookies a posteriori** : un lien "Gerer mes cookies" doit etre accessible a tout moment (typiquement dans le footer).
+
+**Bandeau conforme** :
+```
+Ce site utilise des cookies. Certains sont essentiels au fonctionnement
+du site, d'autres nous permettent de mesurer l'audience et d'afficher
+des publicites personnalisees via nos partenaires (Google, Facebook).
+[En savoir plus]
+
+[Tout accepter]  [Tout refuser]  [Personnaliser mes choix]
+```
+
+---
+
+### Exercice 11 -- DPO et registre
+
+**Enonce** : une startup de 15 salaries developpe une application de sante connectee utilisee par 200 000 patients. Le dirigeant estime qu'un DPO n'est pas necessaire car l'entreprise compte moins de 250 salaries. A-t-il raison ? Doit-elle tenir un registre des traitements ?
+
+**Correction** :
+
+1. **DPO** : le dirigeant a **tort**. Le seuil de 250 salaries n'est pas un critere pour la designation du DPO. L'obligation de designer un DPO depend de la nature des traitements (article 37 RGPD). Ici, l'activite de base de l'entreprise consiste en un traitement a grande echelle de donnees de sante (categorie particuliere au sens de l'article 9). La designation d'un DPO est donc **obligatoire**.
+2. **Registre des traitements** : obligatoire. Meme si l'entreprise compte moins de 250 salaries, le traitement porte sur des donnees sensibles (donnees de sante) et n'est pas occasionnel. Les deux exceptions a l'exemption sont reunies.
+3. **AIPD** : egalement obligatoire (donnees de sante, grande echelle, personnes vulnerables).
+4. **Hebergement HDS** : obligatoire pour les donnees de sante en France.
+
+---
+
+### Exercice 12 -- Obligation de moyens vs resultat
+
+**Enonce** : une entreprise commande le developpement d'un site e-commerce au forfait pour 50 000 euros. Le cahier des charges precise que le site doit supporter 10 000 utilisateurs simultanes. Apres livraison, le site plante au-dela de 500 utilisateurs. Le prestataire affirme avoir "fait de son mieux". Analysez la situation.
+
+**Correction** :
+
+1. **Qualification** : un contrat au forfait avec un cahier des charges precisant des performances mesurables (10 000 utilisateurs simultanes) constitue une **obligation de resultat**. Le prestataire s'engage a livrer un site conforme aux specifications.
+2. **Inexecution** : le site supporte 500 utilisateurs au lieu de 10 000. Le resultat promis n'est pas atteint. La defense "avoir fait de son mieux" est inoperante dans une obligation de resultat.
+3. **Charge de la preuve** : c'est au prestataire de prouver que l'inexecution est due a une cause etrangere (force majeure, fait du client). Le client n'a pas a prouver une faute.
+4. **Recours du client** : il peut demander l'execution forcee (mise en conformite du site), une reduction du prix, la resolution du contrat avec restitution des sommes versees, et des dommages-interets pour le prejudice subi (retard de lancement, manque a gagner).
+5. **Clause de recette** : si le client a signe un PV de recette sans reserve, sa position est affaiblie. D'ou l'importance de tester serieusement avant d'accepter la livraison.
+
+---
+
+## Synthese des textes a connaitre
+
+| Texte | Objet | Points cles |
+|---|---|---|
+| RGPD (2016/679) | Protection des donnees personnelles | 7 principes, 6 bases legales, droits des personnes, DPO, AIPD, notification 72h |
+| Loi Informatique et Libertes (1978, modifiee) | Transposition et complement du RGPD en droit francais | CNIL, cookies (art. 82), sanctions specifiques |
+| LCEN (2004) | Commerce electronique, responsabilite des hebergeurs | Distinction hebergeur/editeur, mentions legales |
+| Code penal (323-1 a 323-8) | Cybercriminalite | Acces frauduleux, atteinte aux donnees, atteinte au fonctionnement |
+| Code de la propriete intellectuelle | Droit d'auteur, brevets, marques | Protection du logiciel, regime salarial, cession de droits |
+| Directive ePrivacy (2002/58/CE) | Cookies et communications electroniques | Consentement, cookies exemptes |
+
+---
+
+## Points cles a retenir pour l'examen E3
+
+1. Le RGPD repose sur 7 principes et 6 bases legales. Savoir les enumerer et les appliquer a un cas concret.
+2. Le consentement doit etre libre, specifique, eclaire et univoque. Une case pre-cochee n'est pas un consentement valide.
+3. La notification a la CNIL en cas de violation : 72 heures.
+4. Le DPO est obligatoire pour les traitements a grande echelle de donnees sensibles, pas en fonction du nombre de salaries.
+5. L'AIPD est obligatoire pour les traitements a risque eleve (croiser au moins deux criteres du WP29).
+6. Privacy by Design = integrer la protection des donnees des la conception. Privacy by Default = parametres les plus protecteurs par defaut.
+7. Le logiciel est protege par le droit d'auteur sans formalite. En regime salarial, les droits patrimoniaux sont devolus a l'employeur.
+8. La cession de droits d'auteur doit etre precise (article L131-3 CPI) : droits cedes, territoire, duree, destination.
+9. GPL = copyleft (contamination). MIT = permissif (attribution uniquement). Savoir les distinguer.
+10. L'acces frauduleux a un systeme est punissable meme en l'absence de dispositif de securite.
+11. La LCEN distingue hebergeur (responsabilite attenuee) et editeur (responsabilite pleine).
+12. Les cookies non essentiels necessitent un consentement prealable. Refuser doit etre aussi simple qu'accepter.

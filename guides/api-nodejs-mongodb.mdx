@@ -1,0 +1,3595 @@
+---
+title: "API REST avec Node.js, Express et MongoDB"
+description: "Construire des API professionnelles : CRUD, authentification JWT, validation, middleware, deploiement"
+category: "Programmation"
+tags: ["node.js", "express", "mongodb", "api", "rest", "jwt"]
+difficulty: "Intermediaire"
+---
+
+# API REST avec Node.js, Express et MongoDB
+
+---
+
+## Table des matieres
+
+1. [Introduction aux API REST](#1-introduction-aux-api-rest)
+2. [Installation et configuration](#2-installation-et-configuration)
+3. [Structure d'un projet Express](#3-structure-dun-projet-express)
+4. [Mongoose : schemas, modeles, validations](#4-mongoose--schemas-modeles-validations)
+5. [CRUD complet](#5-crud-complet)
+6. [Middleware Express](#6-middleware-express)
+7. [Authentification JWT](#7-authentification-jwt)
+8. [Validation des donnees](#8-validation-des-donnees)
+9. [Gestion d'erreurs](#9-gestion-derreurs)
+10. [Relations MongoDB](#10-relations-mongodb)
+11. [Pagination, filtrage, tri](#11-pagination-filtrage-tri)
+12. [Upload de fichiers avec Multer](#12-upload-de-fichiers-avec-multer)
+13. [Variables d'environnement](#13-variables-denvironnement)
+14. [Tests avec Postman](#14-tests-avec-postman)
+15. [Securite](#15-securite)
+16. [Deploiement](#16-deploiement)
+17. [Exercices d'examen corriges](#17-exercices-dexamen-corriges)
+
+---
+
+## 1. Introduction aux API REST
+
+### 1.1 Qu'est-ce qu'une API REST ?
+
+Une API (Application Programming Interface) REST (REpresentational State Transfer) est une interface permettant a des applications de communiquer entre elles via le protocole HTTP. REST est un style architectural defini par Roy Fielding en 2000, reposant sur six contraintes fondamentales.
+
+**Contraintes REST :**
+
+| Contrainte | Description |
+|---|---|
+| Client-Serveur | Separation stricte entre le client (consommateur) et le serveur (fournisseur de donnees) |
+| Sans etat (Stateless) | Chaque requete contient toutes les informations necessaires a son traitement. Le serveur ne conserve aucun etat de session |
+| Mise en cache (Cacheable) | Les reponses doivent indiquer si elles peuvent etre mises en cache |
+| Interface uniforme | Les ressources sont identifiees par des URI. Les representations sont manipulees via des methodes HTTP standardisees |
+| Systeme en couches | L'architecture peut comporter des intermediaires (proxy, load balancer) transparents pour le client |
+| Code a la demande (optionnel) | Le serveur peut envoyer du code executable au client |
+
+### 1.2 Ressources et URI
+
+En REST, tout est **ressource**. Une ressource est une entite identifiable par une URI (Uniform Resource Identifier).
+
+**Conventions de nommage des URI :**
+
+```
+GET    /api/utilisateurs          -> Collection de tous les utilisateurs
+GET    /api/utilisateurs/42       -> Utilisateur specifique (id = 42)
+GET    /api/utilisateurs/42/articles -> Articles de l'utilisateur 42
+POST   /api/utilisateurs          -> Creer un utilisateur
+PUT    /api/utilisateurs/42       -> Remplacer l'utilisateur 42
+PATCH  /api/utilisateurs/42       -> Modifier partiellement l'utilisateur 42
+DELETE /api/utilisateurs/42       -> Supprimer l'utilisateur 42
+```
+
+**Regles :**
+- Utiliser des noms au pluriel (pas de verbes dans l'URI)
+- Utiliser des minuscules et des tirets pour les mots composes
+- Ne jamais inclure l'action dans l'URI (`/api/supprimerUtilisateur` est incorrect)
+- Imbriquer les ressources pour exprimer les relations
+
+### 1.3 Verbes HTTP
+
+| Methode | Action | Idempotent | Corps de requete | Corps de reponse |
+|---|---|---|---|---|
+| GET | Lire une ou plusieurs ressources | Oui | Non | Oui |
+| POST | Creer une nouvelle ressource | Non | Oui | Oui |
+| PUT | Remplacer entierement une ressource | Oui | Oui | Oui |
+| PATCH | Modifier partiellement une ressource | Non | Oui | Oui |
+| DELETE | Supprimer une ressource | Oui | Non | Optionnel |
+| HEAD | Identique a GET sans corps de reponse | Oui | Non | Non |
+| OPTIONS | Obtenir les methodes supportees | Oui | Non | Oui |
+
+**Idempotent** signifie que repeter la meme requete produit le meme resultat. POST n'est pas idempotent car chaque appel cree une nouvelle ressource.
+
+### 1.4 Codes de statut HTTP
+
+Les codes de statut sont regroupes en cinq classes :
+
+**2xx -- Succes :**
+
+| Code | Signification | Utilisation |
+|---|---|---|
+| 200 | OK | Requete reussie (GET, PUT, PATCH) |
+| 201 | Created | Ressource creee avec succes (POST) |
+| 204 | No Content | Succes sans corps de reponse (DELETE) |
+
+**3xx -- Redirection :**
+
+| Code | Signification | Utilisation |
+|---|---|---|
+| 301 | Moved Permanently | Ressource deplacee definitivement |
+| 304 | Not Modified | Ressource non modifiee (cache valide) |
+
+**4xx -- Erreur client :**
+
+| Code | Signification | Utilisation |
+|---|---|---|
+| 400 | Bad Request | Requete mal formee, donnees invalides |
+| 401 | Unauthorized | Authentification requise ou echouee |
+| 403 | Forbidden | Authentifie mais pas autorise |
+| 404 | Not Found | Ressource inexistante |
+| 409 | Conflict | Conflit (ex. : doublon d'email) |
+| 422 | Unprocessable Entity | Donnees valides syntaxiquement mais semantiquement incorrectes |
+| 429 | Too Many Requests | Limite de debit depassee |
+
+**5xx -- Erreur serveur :**
+
+| Code | Signification | Utilisation |
+|---|---|---|
+| 500 | Internal Server Error | Erreur generique du serveur |
+| 502 | Bad Gateway | Reponse invalide d'un serveur amont |
+| 503 | Service Unavailable | Serveur temporairement indisponible |
+
+### 1.5 Format JSON
+
+JSON (JavaScript Object Notation) est le format d'echange standard des API REST modernes.
+
+```json
+{
+  "id": 1,
+  "nom": "Dupont",
+  "prenom": "Marie",
+  "email": "marie.dupont@exemple.fr",
+  "age": 25,
+  "actif": true,
+  "roles": ["utilisateur", "editeur"],
+  "adresse": {
+    "rue": "12 rue de la Paix",
+    "ville": "Paris",
+    "codePostal": "75002"
+  }
+}
+```
+
+**Types JSON :** string, number, boolean, null, object, array.
+
+**En-tetes HTTP importants pour JSON :**
+- `Content-Type: application/json` -- indique que le corps de la requete est du JSON
+- `Accept: application/json` -- indique que le client attend du JSON en reponse
+
+---
+
+## 2. Installation et configuration
+
+### 2.1 Prerequis
+
+**Node.js** est un environnement d'execution JavaScript cote serveur, construit sur le moteur V8 de Chrome. **npm** (Node Package Manager) est le gestionnaire de paquets fourni avec Node.js.
+
+Installation de Node.js (version LTS recommandee) :
+
+```bash
+# Verifier l'installation
+node --version    # v20.x.x ou superieur
+npm --version     # 10.x.x ou superieur
+```
+
+### 2.2 Initialisation du projet
+
+```bash
+# Creer le dossier du projet
+mkdir api-gestion-livres
+cd api-gestion-livres
+
+# Initialiser le projet Node.js
+npm init -y
+```
+
+Le fichier `package.json` genere :
+
+```json
+{
+  "name": "api-gestion-livres",
+  "version": "1.0.0",
+  "description": "API REST de gestion de livres",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
+```
+
+### 2.3 Installation des dependances
+
+```bash
+# Dependances de production
+npm install express mongoose dotenv cors helmet morgan express-validator
+npm install bcryptjs jsonwebtoken multer express-rate-limit
+
+# Dependances de developpement
+npm install --save-dev nodemon
+```
+
+**Role de chaque paquet :**
+
+| Paquet | Role |
+|---|---|
+| express | Framework web minimaliste pour Node.js |
+| mongoose | ODM (Object Document Mapper) pour MongoDB |
+| dotenv | Chargement des variables d'environnement depuis un fichier .env |
+| cors | Middleware pour gerer le Cross-Origin Resource Sharing |
+| helmet | Middleware de securite (en-tetes HTTP) |
+| morgan | Logger de requetes HTTP |
+| express-validator | Validation et assainissement des donnees de requete |
+| bcryptjs | Hachage de mots de passe |
+| jsonwebtoken | Creation et verification de tokens JWT |
+| multer | Gestion de l'upload de fichiers (multipart/form-data) |
+| express-rate-limit | Limitation du debit de requetes |
+| nodemon | Redemarrage automatique du serveur en developpement |
+
+### 2.4 MongoDB
+
+MongoDB est une base de donnees NoSQL orientee documents. Les donnees sont stockees sous forme de documents BSON (Binary JSON) dans des collections.
+
+**Vocabulaire MongoDB vs SQL :**
+
+| SQL | MongoDB |
+|---|---|
+| Base de donnees | Base de donnees |
+| Table | Collection |
+| Ligne | Document |
+| Colonne | Champ |
+| Cle primaire | _id (genere automatiquement) |
+| Jointure | Populate / Lookup |
+
+**Installation locale :**
+
+```bash
+# macOS avec Homebrew
+brew tap mongodb/brew
+brew install mongodb-community
+brew services start mongodb-community
+
+# Verification
+mongosh
+```
+
+**Alternative cloud : MongoDB Atlas**
+
+MongoDB Atlas fournit une base de donnees hebergee gratuitement (cluster M0). La chaine de connexion est de la forme :
+
+```
+mongodb+srv://utilisateur:motdepasse@cluster.xxxxx.mongodb.net/nom_base?retryWrites=true&w=majority
+```
+
+### 2.5 Premier serveur Express
+
+Fichier `server.js` :
+
+```javascript
+const express = require('express');
+const mongoose = require('mongoose');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware de base
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Route de test
+app.get('/', (req, res) => {
+  res.json({ message: 'API en fonctionnement' });
+});
+
+// Connexion a MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('Connexion a MongoDB reussie');
+    app.listen(PORT, () => {
+      console.log(`Serveur demarre sur le port ${PORT}`);
+    });
+  })
+  .catch((erreur) => {
+    console.error('Erreur de connexion a MongoDB :', erreur.message);
+    process.exit(1);
+  });
+```
+
+Fichier `.env` :
+
+```
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/api_livres
+JWT_SECRET=cle_secrete_tres_longue_et_complexe_a_changer
+JWT_EXPIRES_IN=24h
+JWT_REFRESH_EXPIRES_IN=7d
+```
+
+Fichier `.gitignore` :
+
+```
+node_modules/
+.env
+uploads/
+```
+
+Lancer le serveur :
+
+```bash
+npm run dev
+```
+
+---
+
+## 3. Structure d'un projet Express
+
+### 3.1 Organisation des dossiers
+
+Une structure claire et modulaire est essentielle pour la maintenabilite du code :
+
+```
+api-gestion-livres/
+  config/
+    db.js                  # Configuration de la connexion MongoDB
+  controllers/
+    livreController.js     # Logique metier des livres
+    auteurController.js    # Logique metier des auteurs
+    authController.js      # Logique d'authentification
+  middleware/
+    auth.js                # Middleware d'authentification JWT
+    errorHandler.js        # Middleware de gestion d'erreurs
+    validate.js            # Middleware de validation
+  models/
+    Livre.js               # Schema et modele Mongoose pour Livre
+    Auteur.js              # Schema et modele Mongoose pour Auteur
+    Utilisateur.js         # Schema et modele Mongoose pour Utilisateur
+  routes/
+    livreRoutes.js         # Routes pour /api/livres
+    auteurRoutes.js        # Routes pour /api/auteurs
+    authRoutes.js          # Routes pour /api/auth
+  utils/
+    AppError.js            # Classe d'erreur personnalisee
+    helpers.js             # Fonctions utilitaires
+  uploads/                 # Dossier pour les fichiers uploades
+  .env                     # Variables d'environnement
+  .gitignore
+  package.json
+  server.js                # Point d'entree
+```
+
+### 3.2 Separation des responsabilites
+
+**Principe :** Chaque fichier a une responsabilite unique.
+
+- **Routes** : definissent les endpoints et associent chaque endpoint a un controleur
+- **Controleurs** : contiennent la logique metier, recoivent la requete et envoient la reponse
+- **Modeles** : definissent la structure des donnees et interagissent avec MongoDB
+- **Middleware** : traitent les requetes avant qu'elles n'atteignent les controleurs
+
+### 3.3 Configuration de la base de donnees
+
+Fichier `config/db.js` :
+
+```javascript
+const mongoose = require('mongoose');
+
+const connectDB = async () => {
+  try {
+    const connexion = await mongoose.connect(process.env.MONGODB_URI);
+    console.log(`MongoDB connecte : ${connexion.connection.host}`);
+  } catch (erreur) {
+    console.error(`Erreur : ${erreur.message}`);
+    process.exit(1);
+  }
+};
+
+module.exports = connectDB;
+```
+
+Fichier `server.js` mis a jour :
+
+```javascript
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+require('dotenv').config();
+
+const connectDB = require('./config/db');
+const livreRoutes = require('./routes/livreRoutes');
+const auteurRoutes = require('./routes/auteurRoutes');
+const authRoutes = require('./routes/authRoutes');
+const errorHandler = require('./middleware/errorHandler');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Connexion a la base de donnees
+connectDB();
+
+// Middleware globaux
+app.use(helmet());
+app.use(cors());
+app.use(morgan('dev'));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Fichiers statiques (uploads)
+app.use('/uploads', express.static('uploads'));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/livres', livreRoutes);
+app.use('/api/auteurs', auteurRoutes);
+
+// Route 404
+app.all('*', (req, res) => {
+  res.status(404).json({
+    succes: false,
+    message: `Route ${req.originalUrl} introuvable`
+  });
+});
+
+// Middleware de gestion d'erreurs (toujours en dernier)
+app.use(errorHandler);
+
+app.listen(PORT, () => {
+  console.log(`Serveur demarre sur le port ${PORT}`);
+});
+```
+
+---
+
+## 4. Mongoose : schemas, modeles, validations
+
+### 4.1 Concepts fondamentaux
+
+**Schema** : definit la structure d'un document (champs, types, validations, valeurs par defaut).
+**Modele** : constructeur compile a partir d'un schema. Fournit les methodes CRUD pour interagir avec la collection MongoDB.
+
+### 4.2 Types de donnees Mongoose
+
+| Type Mongoose | Description | Exemple |
+|---|---|---|
+| String | Chaine de caracteres | `"Bonjour"` |
+| Number | Nombre entier ou decimal | `42`, `3.14` |
+| Boolean | Vrai ou faux | `true`, `false` |
+| Date | Date JavaScript | `new Date()` |
+| ObjectId | Identifiant MongoDB (reference) | `Schema.Types.ObjectId` |
+| Array | Tableau de valeurs | `[String]`, `[{ type: String }]` |
+| Buffer | Donnees binaires | Fichiers |
+| Mixed | Type quelconque | `Schema.Types.Mixed` |
+| Map | Paires cle-valeur | `new Map()` |
+
+### 4.3 Schema Livre complet
+
+Fichier `models/Livre.js` :
+
+```javascript
+const mongoose = require('mongoose');
+
+const livreSchema = new mongoose.Schema(
+  {
+    titre: {
+      type: String,
+      required: [true, 'Le titre est obligatoire'],
+      trim: true,
+      minlength: [1, 'Le titre doit contenir au moins 1 caractere'],
+      maxlength: [200, 'Le titre ne peut pas depasser 200 caracteres'],
+      index: true
+    },
+    isbn: {
+      type: String,
+      required: [true, 'L\'ISBN est obligatoire'],
+      unique: true,
+      match: [/^(97[89])?\d{9}(\d|X)$/, 'ISBN invalide']
+    },
+    resume: {
+      type: String,
+      maxlength: [2000, 'Le resume ne peut pas depasser 2000 caracteres'],
+      default: ''
+    },
+    auteur: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Auteur',
+      required: [true, 'L\'auteur est obligatoire']
+    },
+    editeur: {
+      type: String,
+      trim: true
+    },
+    datePublication: {
+      type: Date,
+      validate: {
+        validator: function(valeur) {
+          return valeur <= new Date();
+        },
+        message: 'La date de publication ne peut pas etre dans le futur'
+      }
+    },
+    genres: {
+      type: [String],
+      enum: {
+        values: ['roman', 'science-fiction', 'fantasy', 'policier', 'biographie',
+                 'histoire', 'science', 'philosophie', 'poesie', 'theatre', 'autre'],
+        message: 'Le genre {VALUE} n\'est pas valide'
+      },
+      validate: {
+        validator: function(tableau) {
+          return tableau.length > 0;
+        },
+        message: 'Au moins un genre est requis'
+      }
+    },
+    nombrePages: {
+      type: Number,
+      min: [1, 'Le nombre de pages doit etre superieur a 0'],
+      max: [10000, 'Le nombre de pages ne peut pas depasser 10000']
+    },
+    langue: {
+      type: String,
+      enum: ['fr', 'en', 'es', 'de', 'it', 'pt', 'autre'],
+      default: 'fr'
+    },
+    prix: {
+      type: Number,
+      min: [0, 'Le prix ne peut pas etre negatif']
+    },
+    enStock: {
+      type: Boolean,
+      default: true
+    },
+    couverture: {
+      type: String,
+      default: ''
+    },
+    noteMoyenne: {
+      type: Number,
+      min: 0,
+      max: 5,
+      default: 0
+    }
+  },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
+);
+
+// Index compose pour la recherche
+livreSchema.index({ titre: 'text', resume: 'text' });
+livreSchema.index({ auteur: 1, datePublication: -1 });
+
+// Propriete virtuelle
+livreSchema.virtual('estRecent').get(function() {
+  const unAnAvant = new Date();
+  unAnAvant.setFullYear(unAnAvant.getFullYear() - 1);
+  return this.datePublication >= unAnAvant;
+});
+
+// Methode d'instance
+livreSchema.methods.formaterPrix = function() {
+  return this.prix ? `${this.prix.toFixed(2)} EUR` : 'Prix non renseigne';
+};
+
+// Methode statique
+livreSchema.statics.rechercherParGenre = function(genre) {
+  return this.find({ genres: genre }).populate('auteur', 'nom prenom');
+};
+
+// Middleware pre-save (hook)
+livreSchema.pre('save', function(next) {
+  if (this.isModified('titre')) {
+    this.titre = this.titre.charAt(0).toUpperCase() + this.titre.slice(1);
+  }
+  next();
+});
+
+// Middleware post-save
+livreSchema.post('save', function(doc) {
+  console.log(`Livre "${doc.titre}" sauvegarde avec succes`);
+});
+
+module.exports = mongoose.model('Livre', livreSchema);
+```
+
+### 4.4 Schema Auteur
+
+Fichier `models/Auteur.js` :
+
+```javascript
+const mongoose = require('mongoose');
+
+const auteurSchema = new mongoose.Schema(
+  {
+    nom: {
+      type: String,
+      required: [true, 'Le nom est obligatoire'],
+      trim: true,
+      maxlength: 100
+    },
+    prenom: {
+      type: String,
+      required: [true, 'Le prenom est obligatoire'],
+      trim: true,
+      maxlength: 100
+    },
+    biographie: {
+      type: String,
+      maxlength: 3000,
+      default: ''
+    },
+    dateNaissance: {
+      type: Date
+    },
+    nationalite: {
+      type: String,
+      trim: true
+    },
+    email: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, 'Email invalide']
+    },
+    photo: {
+      type: String,
+      default: ''
+    }
+  },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
+);
+
+// Virtuel : nom complet
+auteurSchema.virtual('nomComplet').get(function() {
+  return `${this.prenom} ${this.nom}`;
+});
+
+// Virtuel : livres de l'auteur (relation inverse)
+auteurSchema.virtual('livres', {
+  ref: 'Livre',
+  localField: '_id',
+  foreignField: 'auteur'
+});
+
+module.exports = mongoose.model('Auteur', auteurSchema);
+```
+
+### 4.5 Schema Utilisateur
+
+Fichier `models/Utilisateur.js` :
+
+```javascript
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const utilisateurSchema = new mongoose.Schema(
+  {
+    nom: {
+      type: String,
+      required: [true, 'Le nom est obligatoire'],
+      trim: true
+    },
+    email: {
+      type: String,
+      required: [true, 'L\'email est obligatoire'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, 'Email invalide']
+    },
+    motDePasse: {
+      type: String,
+      required: [true, 'Le mot de passe est obligatoire'],
+      minlength: [8, 'Le mot de passe doit contenir au moins 8 caracteres'],
+      select: false
+    },
+    role: {
+      type: String,
+      enum: ['utilisateur', 'editeur', 'administrateur'],
+      default: 'utilisateur'
+    },
+    actif: {
+      type: Boolean,
+      default: true
+    },
+    refreshToken: {
+      type: String,
+      select: false
+    }
+  },
+  {
+    timestamps: true
+  }
+);
+
+// Hacher le mot de passe avant la sauvegarde
+utilisateurSchema.pre('save', async function(next) {
+  if (!this.isModified('motDePasse')) return next();
+  const sel = await bcrypt.genSalt(12);
+  this.motDePasse = await bcrypt.hash(this.motDePasse, sel);
+  next();
+});
+
+// Methode pour comparer les mots de passe
+utilisateurSchema.methods.comparerMotDePasse = async function(motDePasse) {
+  return await bcrypt.compare(motDePasse, this.motDePasse);
+};
+
+module.exports = mongoose.model('Utilisateur', utilisateurSchema);
+```
+
+### 4.6 Recapitulatif des options de validation Mongoose
+
+| Option | Types applicables | Description |
+|---|---|---|
+| required | Tous | Champ obligatoire |
+| default | Tous | Valeur par defaut |
+| enum | String, Number | Liste de valeurs autorisees |
+| min / max | Number, Date | Valeur minimale / maximale |
+| minlength / maxlength | String | Longueur minimale / maximale |
+| match | String | Expression reguliere a respecter |
+| validate | Tous | Fonction de validation personnalisee |
+| unique | Tous | Unicite (gere par MongoDB, pas Mongoose) |
+| trim | String | Supprime les espaces en debut et fin |
+| lowercase / uppercase | String | Convertit en minuscules / majuscules |
+| index | Tous | Cree un index MongoDB |
+| sparse | Tous | Index sparse (ignore les documents sans ce champ) |
+| select | Tous | Inclure ou exclure le champ par defaut dans les requetes |
+
+---
+
+## 5. CRUD complet
+
+### 5.1 Routes
+
+Fichier `routes/livreRoutes.js` :
+
+```javascript
+const express = require('express');
+const router = express.Router();
+const livreController = require('../controllers/livreController');
+const { proteger, autoriser } = require('../middleware/auth');
+const { validerLivre, validerMiseAJour } = require('../middleware/validate');
+
+// Routes publiques
+router.get('/', livreController.obtenirTous);
+router.get('/:id', livreController.obtenirParId);
+
+// Routes protegees (authentification requise)
+router.use(proteger);
+
+router.post('/', validerLivre, livreController.creer);
+router.put('/:id', validerMiseAJour, livreController.mettreAJour);
+router.delete('/:id', autoriser('administrateur', 'editeur'), livreController.supprimer);
+
+module.exports = router;
+```
+
+### 5.2 Controleur complet
+
+Fichier `controllers/livreController.js` :
+
+```javascript
+const Livre = require('../models/Livre');
+const AppError = require('../utils/AppError');
+const { validationResult } = require('express-validator');
+
+// GET /api/livres -- Obtenir tous les livres
+exports.obtenirTous = async (req, res, next) => {
+  try {
+    // Construction de la requete avec filtrage
+    const filtre = {};
+
+    if (req.query.genre) {
+      filtre.genres = req.query.genre;
+    }
+    if (req.query.langue) {
+      filtre.langue = req.query.langue;
+    }
+    if (req.query.enStock) {
+      filtre.enStock = req.query.enStock === 'true';
+    }
+    if (req.query.recherche) {
+      filtre.$text = { $search: req.query.recherche };
+    }
+
+    // Pagination
+    const page = parseInt(req.query.page, 10) || 1;
+    const limite = parseInt(req.query.limite, 10) || 10;
+    const saut = (page - 1) * limite;
+
+    // Tri
+    let tri = '-createdAt';
+    if (req.query.tri) {
+      tri = req.query.tri.split(',').join(' ');
+    }
+
+    // Selection des champs
+    let champs = '';
+    if (req.query.champs) {
+      champs = req.query.champs.split(',').join(' ');
+    }
+
+    // Execution de la requete
+    const livres = await Livre.find(filtre)
+      .populate('auteur', 'nom prenom')
+      .select(champs)
+      .sort(tri)
+      .skip(saut)
+      .limit(limite);
+
+    // Comptage total pour la pagination
+    const total = await Livre.countDocuments(filtre);
+
+    res.status(200).json({
+      succes: true,
+      compte: livres.length,
+      total,
+      page,
+      totalPages: Math.ceil(total / limite),
+      donnees: livres
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+};
+
+// GET /api/livres/:id -- Obtenir un livre par son ID
+exports.obtenirParId = async (req, res, next) => {
+  try {
+    const livre = await Livre.findById(req.params.id)
+      .populate('auteur');
+
+    if (!livre) {
+      return next(new AppError('Livre introuvable', 404));
+    }
+
+    res.status(200).json({
+      succes: true,
+      donnees: livre
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+};
+
+// POST /api/livres -- Creer un nouveau livre
+exports.creer = async (req, res, next) => {
+  try {
+    // Verification des erreurs de validation
+    const erreurs = validationResult(req);
+    if (!erreurs.isEmpty()) {
+      return res.status(400).json({
+        succes: false,
+        erreurs: erreurs.array()
+      });
+    }
+
+    const livre = await Livre.create(req.body);
+
+    // Populate l'auteur pour la reponse
+    await livre.populate('auteur', 'nom prenom');
+
+    res.status(201).json({
+      succes: true,
+      donnees: livre
+    });
+  } catch (erreur) {
+    // Gestion de l'erreur de doublon (index unique)
+    if (erreur.code === 11000) {
+      return next(new AppError('Un livre avec cet ISBN existe deja', 409));
+    }
+    next(erreur);
+  }
+};
+
+// PUT /api/livres/:id -- Mettre a jour un livre
+exports.mettreAJour = async (req, res, next) => {
+  try {
+    const erreurs = validationResult(req);
+    if (!erreurs.isEmpty()) {
+      return res.status(400).json({
+        succes: false,
+        erreurs: erreurs.array()
+      });
+    }
+
+    const livre = await Livre.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,             // Retourner le document modifie
+        runValidators: true    // Executer les validations du schema
+      }
+    ).populate('auteur', 'nom prenom');
+
+    if (!livre) {
+      return next(new AppError('Livre introuvable', 404));
+    }
+
+    res.status(200).json({
+      succes: true,
+      donnees: livre
+    });
+  } catch (erreur) {
+    if (erreur.code === 11000) {
+      return next(new AppError('Un livre avec cet ISBN existe deja', 409));
+    }
+    next(erreur);
+  }
+};
+
+// DELETE /api/livres/:id -- Supprimer un livre
+exports.supprimer = async (req, res, next) => {
+  try {
+    const livre = await Livre.findByIdAndDelete(req.params.id);
+
+    if (!livre) {
+      return next(new AppError('Livre introuvable', 404));
+    }
+
+    res.status(204).json({
+      succes: true,
+      donnees: null
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+};
+```
+
+### 5.3 Options importantes de Mongoose pour les requetes
+
+| Methode | Description |
+|---|---|
+| `find(filtre)` | Trouver tous les documents correspondant au filtre |
+| `findById(id)` | Trouver un document par son _id |
+| `findOne(filtre)` | Trouver le premier document correspondant |
+| `create(donnees)` | Creer un ou plusieurs documents |
+| `findByIdAndUpdate(id, donnees, options)` | Trouver par ID et mettre a jour |
+| `findByIdAndDelete(id)` | Trouver par ID et supprimer |
+| `countDocuments(filtre)` | Compter les documents correspondants |
+| `populate(champ, selection)` | Remplacer un ObjectId par le document reference |
+| `select(champs)` | Selectionner les champs a retourner |
+| `sort(critere)` | Trier les resultats |
+| `skip(n)` | Sauter n documents |
+| `limit(n)` | Limiter a n documents |
+| `lean()` | Retourner des objets JS simples (plus performant) |
+
+---
+
+## 6. Middleware Express
+
+### 6.1 Concept
+
+Un middleware est une fonction qui a acces a l'objet requete (`req`), l'objet reponse (`res`) et la fonction `next`. Les middleware sont executes dans l'ordre de leur declaration.
+
+```
+Requete -> Middleware 1 -> Middleware 2 -> ... -> Controleur -> Reponse
+```
+
+Signature d'un middleware :
+
+```javascript
+function monMiddleware(req, res, next) {
+  // Logique du middleware
+  next(); // Passe au middleware suivant
+}
+```
+
+### 6.2 Types de middleware
+
+**Middleware d'application** (applique a toutes les routes) :
+
+```javascript
+app.use(express.json());
+app.use(cors());
+app.use(helmet());
+app.use(morgan('dev'));
+```
+
+**Middleware de routeur** (applique a un groupe de routes) :
+
+```javascript
+router.use(proteger); // Toutes les routes suivantes sont protegees
+```
+
+**Middleware de route** (applique a une route specifique) :
+
+```javascript
+router.post('/', validerLivre, livreController.creer);
+```
+
+**Middleware de gestion d'erreurs** (quatre parametres) :
+
+```javascript
+function gestionErreur(err, req, res, next) {
+  // Traitement de l'erreur
+}
+```
+
+### 6.3 Middleware CORS
+
+CORS (Cross-Origin Resource Sharing) autorise les requetes provenant d'origines differentes :
+
+```javascript
+const cors = require('cors');
+
+// Autoriser toutes les origines (developpement)
+app.use(cors());
+
+// Configuration specifique (production)
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://mon-site.fr'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+```
+
+### 6.4 Middleware Morgan (logger)
+
+```javascript
+const morgan = require('morgan');
+
+// Format predefini
+app.use(morgan('dev'));      // :method :url :status :response-time ms
+app.use(morgan('combined')); // Format Apache (production)
+
+// Format personnalise
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
+```
+
+### 6.5 Middleware personnalise : logger de requetes
+
+```javascript
+// middleware/logger.js
+const logger = (req, res, next) => {
+  const debut = Date.now();
+
+  // Intercepter la fin de la reponse
+  res.on('finish', () => {
+    const duree = Date.now() - debut;
+    console.log(
+      `${req.method} ${req.originalUrl} ${res.statusCode} - ${duree}ms`
+    );
+  });
+
+  next();
+};
+
+module.exports = logger;
+```
+
+### 6.6 Middleware de verification d'ID MongoDB
+
+```javascript
+// middleware/verifierId.js
+const mongoose = require('mongoose');
+const AppError = require('../utils/AppError');
+
+const verifierId = (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new AppError('ID invalide', 400));
+  }
+  next();
+};
+
+module.exports = verifierId;
+```
+
+### 6.7 Ordre des middleware
+
+L'ordre de declaration est determinant. Voici l'ordre recommande :
+
+```javascript
+// 1. Securite
+app.use(helmet());
+
+// 2. CORS
+app.use(cors());
+
+// 3. Logger
+app.use(morgan('dev'));
+
+// 4. Limiteur de debit
+app.use(limiter);
+
+// 5. Parseurs de corps
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// 6. Fichiers statiques
+app.use('/uploads', express.static('uploads'));
+
+// 7. Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/livres', livreRoutes);
+
+// 8. Route 404
+app.all('*', (req, res) => {
+  res.status(404).json({ message: 'Route introuvable' });
+});
+
+// 9. Gestion d'erreurs (toujours en dernier)
+app.use(errorHandler);
+```
+
+---
+
+## 7. Authentification JWT
+
+### 7.1 Principe de JWT
+
+JSON Web Token est un standard ouvert (RFC 7519) pour transmettre de maniere securisee des informations entre deux parties sous forme de token signe.
+
+**Structure d'un JWT :**
+
+```
+xxxxx.yyyyy.zzzzz
+  |      |      |
+Header Payload Signature
+```
+
+- **Header** : algorithme de signature (HS256) et type (JWT)
+- **Payload** : donnees (claims) -- id utilisateur, role, expiration
+- **Signature** : garantit l'integrite du token
+
+**Flux d'authentification :**
+
+```
+1. Client envoie email + mot de passe     -> POST /api/auth/connexion
+2. Serveur verifie les identifiants
+3. Serveur genere un JWT et le retourne    <- { token: "eyJhbG..." }
+4. Client stocke le token
+5. Client envoie le token dans chaque requete -> Authorization: Bearer eyJhbG...
+6. Serveur verifie le token et autorise l'acces
+```
+
+### 7.2 Controleur d'authentification
+
+Fichier `controllers/authController.js` :
+
+```javascript
+const jwt = require('jsonwebtoken');
+const Utilisateur = require('../models/Utilisateur');
+const AppError = require('../utils/AppError');
+
+// Generer un access token
+const genererToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN
+  });
+};
+
+// Generer un refresh token
+const genererRefreshToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN
+  });
+};
+
+// POST /api/auth/inscription
+exports.inscription = async (req, res, next) => {
+  try {
+    const { nom, email, motDePasse } = req.body;
+
+    // Verifier si l'email existe deja
+    const utilisateurExistant = await Utilisateur.findOne({ email });
+    if (utilisateurExistant) {
+      return next(new AppError('Cet email est deja utilise', 409));
+    }
+
+    // Creer l'utilisateur
+    const utilisateur = await Utilisateur.create({
+      nom,
+      email,
+      motDePasse
+    });
+
+    // Generer les tokens
+    const token = genererToken(utilisateur._id);
+    const refreshToken = genererRefreshToken(utilisateur._id);
+
+    // Sauvegarder le refresh token
+    utilisateur.refreshToken = refreshToken;
+    await utilisateur.save({ validateBeforeSave: false });
+
+    // Ne pas renvoyer le mot de passe
+    utilisateur.motDePasse = undefined;
+    utilisateur.refreshToken = undefined;
+
+    res.status(201).json({
+      succes: true,
+      token,
+      refreshToken,
+      donnees: utilisateur
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+};
+
+// POST /api/auth/connexion
+exports.connexion = async (req, res, next) => {
+  try {
+    const { email, motDePasse } = req.body;
+
+    // Verifier que les champs sont remplis
+    if (!email || !motDePasse) {
+      return next(new AppError('Email et mot de passe requis', 400));
+    }
+
+    // Trouver l'utilisateur et inclure le mot de passe
+    const utilisateur = await Utilisateur.findOne({ email })
+      .select('+motDePasse');
+
+    if (!utilisateur) {
+      return next(new AppError('Email ou mot de passe incorrect', 401));
+    }
+
+    // Verifier le mot de passe
+    const motDePasseCorrect = await utilisateur.comparerMotDePasse(motDePasse);
+    if (!motDePasseCorrect) {
+      return next(new AppError('Email ou mot de passe incorrect', 401));
+    }
+
+    // Verifier que le compte est actif
+    if (!utilisateur.actif) {
+      return next(new AppError('Ce compte a ete desactive', 403));
+    }
+
+    // Generer les tokens
+    const token = genererToken(utilisateur._id);
+    const refreshToken = genererRefreshToken(utilisateur._id);
+
+    // Sauvegarder le refresh token
+    utilisateur.refreshToken = refreshToken;
+    await utilisateur.save({ validateBeforeSave: false });
+
+    utilisateur.motDePasse = undefined;
+    utilisateur.refreshToken = undefined;
+
+    res.status(200).json({
+      succes: true,
+      token,
+      refreshToken,
+      donnees: utilisateur
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+};
+
+// POST /api/auth/rafraichir -- Rafraichir le token
+exports.rafraichirToken = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return next(new AppError('Refresh token requis', 400));
+    }
+
+    // Verifier le refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+
+    // Trouver l'utilisateur et verifier le refresh token stocke
+    const utilisateur = await Utilisateur.findById(decoded.id)
+      .select('+refreshToken');
+
+    if (!utilisateur || utilisateur.refreshToken !== refreshToken) {
+      return next(new AppError('Refresh token invalide', 401));
+    }
+
+    // Generer de nouveaux tokens
+    const nouveauToken = genererToken(utilisateur._id);
+    const nouveauRefreshToken = genererRefreshToken(utilisateur._id);
+
+    utilisateur.refreshToken = nouveauRefreshToken;
+    await utilisateur.save({ validateBeforeSave: false });
+
+    res.status(200).json({
+      succes: true,
+      token: nouveauToken,
+      refreshToken: nouveauRefreshToken
+    });
+  } catch (erreur) {
+    if (erreur.name === 'JsonWebTokenError') {
+      return next(new AppError('Token invalide', 401));
+    }
+    if (erreur.name === 'TokenExpiredError') {
+      return next(new AppError('Token expire', 401));
+    }
+    next(erreur);
+  }
+};
+
+// GET /api/auth/profil
+exports.profil = async (req, res, next) => {
+  try {
+    const utilisateur = await Utilisateur.findById(req.utilisateur.id);
+    res.status(200).json({
+      succes: true,
+      donnees: utilisateur
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+};
+```
+
+### 7.3 Middleware d'authentification
+
+Fichier `middleware/auth.js` :
+
+```javascript
+const jwt = require('jsonwebtoken');
+const Utilisateur = require('../models/Utilisateur');
+const AppError = require('../utils/AppError');
+
+// Middleware de protection des routes
+exports.proteger = async (req, res, next) => {
+  try {
+    let token;
+
+    // Extraire le token du header Authorization
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+      return next(new AppError('Acces non autorise. Token manquant.', 401));
+    }
+
+    // Verifier le token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Verifier que l'utilisateur existe toujours
+    const utilisateur = await Utilisateur.findById(decoded.id);
+    if (!utilisateur) {
+      return next(new AppError('L\'utilisateur de ce token n\'existe plus', 401));
+    }
+
+    if (!utilisateur.actif) {
+      return next(new AppError('Ce compte a ete desactive', 403));
+    }
+
+    // Attacher l'utilisateur a la requete
+    req.utilisateur = utilisateur;
+    next();
+  } catch (erreur) {
+    if (erreur.name === 'JsonWebTokenError') {
+      return next(new AppError('Token invalide', 401));
+    }
+    if (erreur.name === 'TokenExpiredError') {
+      return next(new AppError('Token expire. Veuillez vous reconnecter.', 401));
+    }
+    next(erreur);
+  }
+};
+
+// Middleware d'autorisation par role
+exports.autoriser = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.utilisateur.role)) {
+      return next(
+        new AppError('Vous n\'avez pas la permission d\'effectuer cette action', 403)
+      );
+    }
+    next();
+  };
+};
+```
+
+### 7.4 Routes d'authentification
+
+Fichier `routes/authRoutes.js` :
+
+```javascript
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/authController');
+const { proteger } = require('../middleware/auth');
+
+router.post('/inscription', authController.inscription);
+router.post('/connexion', authController.connexion);
+router.post('/rafraichir', authController.rafraichirToken);
+router.get('/profil', proteger, authController.profil);
+
+module.exports = router;
+```
+
+### 7.5 Resume du flux JWT
+
+| Etape | Action | Endpoint |
+|---|---|---|
+| 1 | L'utilisateur s'inscrit | POST /api/auth/inscription |
+| 2 | L'utilisateur se connecte | POST /api/auth/connexion |
+| 3 | Le serveur retourne un token + refresh token | |
+| 4 | Le client envoie le token dans le header | Authorization: Bearer TOKEN |
+| 5 | Le middleware `proteger` verifie le token | |
+| 6 | Le middleware `autoriser` verifie le role | |
+| 7 | A expiration, le client rafraichit le token | POST /api/auth/rafraichir |
+
+---
+
+## 8. Validation des donnees
+
+### 8.1 Express-validator
+
+Express-validator fournit des fonctions de validation et d'assainissement des donnees de requete.
+
+Fichier `middleware/validate.js` :
+
+```javascript
+const { body, param, query } = require('express-validator');
+
+// Validation pour la creation d'un livre
+exports.validerLivre = [
+  body('titre')
+    .trim()
+    .notEmpty().withMessage('Le titre est obligatoire')
+    .isLength({ min: 1, max: 200 }).withMessage('Le titre doit faire entre 1 et 200 caracteres')
+    .escape(),
+
+  body('isbn')
+    .trim()
+    .notEmpty().withMessage('L\'ISBN est obligatoire')
+    .matches(/^(97[89])?\d{9}(\d|X)$/).withMessage('Format ISBN invalide'),
+
+  body('auteur')
+    .notEmpty().withMessage('L\'auteur est obligatoire')
+    .isMongoId().withMessage('ID auteur invalide'),
+
+  body('resume')
+    .optional()
+    .trim()
+    .isLength({ max: 2000 }).withMessage('Le resume ne peut pas depasser 2000 caracteres'),
+
+  body('genres')
+    .isArray({ min: 1 }).withMessage('Au moins un genre est requis'),
+
+  body('genres.*')
+    .isIn(['roman', 'science-fiction', 'fantasy', 'policier', 'biographie',
+           'histoire', 'science', 'philosophie', 'poesie', 'theatre', 'autre'])
+    .withMessage('Genre invalide'),
+
+  body('nombrePages')
+    .optional()
+    .isInt({ min: 1, max: 10000 }).withMessage('Nombre de pages entre 1 et 10000'),
+
+  body('prix')
+    .optional()
+    .isFloat({ min: 0 }).withMessage('Le prix ne peut pas etre negatif'),
+
+  body('langue')
+    .optional()
+    .isIn(['fr', 'en', 'es', 'de', 'it', 'pt', 'autre'])
+    .withMessage('Langue invalide'),
+
+  body('datePublication')
+    .optional()
+    .isISO8601().withMessage('Date invalide (format ISO 8601 attendu)')
+    .toDate()
+];
+
+// Validation pour la mise a jour (tous les champs optionnels)
+exports.validerMiseAJour = [
+  body('titre')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 200 }).withMessage('Le titre doit faire entre 1 et 200 caracteres')
+    .escape(),
+
+  body('isbn')
+    .optional()
+    .trim()
+    .matches(/^(97[89])?\d{9}(\d|X)$/).withMessage('Format ISBN invalide'),
+
+  body('auteur')
+    .optional()
+    .isMongoId().withMessage('ID auteur invalide'),
+
+  body('prix')
+    .optional()
+    .isFloat({ min: 0 }).withMessage('Le prix ne peut pas etre negatif')
+];
+
+// Validation pour l'inscription
+exports.validerInscription = [
+  body('nom')
+    .trim()
+    .notEmpty().withMessage('Le nom est obligatoire')
+    .isLength({ min: 2, max: 100 }).withMessage('Le nom doit faire entre 2 et 100 caracteres')
+    .escape(),
+
+  body('email')
+    .trim()
+    .notEmpty().withMessage('L\'email est obligatoire')
+    .isEmail().withMessage('Email invalide')
+    .normalizeEmail(),
+
+  body('motDePasse')
+    .notEmpty().withMessage('Le mot de passe est obligatoire')
+    .isLength({ min: 8 }).withMessage('Le mot de passe doit contenir au moins 8 caracteres')
+    .matches(/[a-z]/).withMessage('Le mot de passe doit contenir au moins une minuscule')
+    .matches(/[A-Z]/).withMessage('Le mot de passe doit contenir au moins une majuscule')
+    .matches(/\d/).withMessage('Le mot de passe doit contenir au moins un chiffre')
+];
+
+// Validation pour la connexion
+exports.validerConnexion = [
+  body('email')
+    .trim()
+    .notEmpty().withMessage('L\'email est obligatoire')
+    .isEmail().withMessage('Email invalide')
+    .normalizeEmail(),
+
+  body('motDePasse')
+    .notEmpty().withMessage('Le mot de passe est obligatoire')
+];
+```
+
+### 8.2 Fonctions express-validator principales
+
+| Fonction | Description | Exemple |
+|---|---|---|
+| `body(champ)` | Valider un champ du corps de la requete | `body('email')` |
+| `param(champ)` | Valider un parametre de route | `param('id')` |
+| `query(champ)` | Valider un parametre de query string | `query('page')` |
+| `.notEmpty()` | Le champ ne doit pas etre vide | |
+| `.isEmail()` | Doit etre un email valide | |
+| `.isInt()` | Doit etre un entier | `.isInt({ min: 1 })` |
+| `.isFloat()` | Doit etre un nombre decimal | `.isFloat({ min: 0 })` |
+| `.isLength()` | Longueur min/max | `.isLength({ min: 2, max: 100 })` |
+| `.isMongoId()` | Doit etre un ObjectId MongoDB valide | |
+| `.isISO8601()` | Doit etre une date ISO 8601 | |
+| `.isIn()` | Doit etre dans la liste | `.isIn(['fr', 'en'])` |
+| `.isArray()` | Doit etre un tableau | `.isArray({ min: 1 })` |
+| `.matches()` | Doit correspondre a une regex | `.matches(/^[a-z]+$/)` |
+| `.optional()` | Le champ est optionnel | |
+| `.trim()` | Supprimer les espaces | |
+| `.escape()` | Echapper les caracteres HTML | |
+| `.normalizeEmail()` | Normaliser l'email | |
+| `.toDate()` | Convertir en objet Date | |
+| `.toInt()` | Convertir en entier | |
+| `.withMessage()` | Message d'erreur personnalise | |
+
+### 8.3 Assainissement (sanitization)
+
+L'assainissement transforme les donnees pour les rendre sures :
+
+```javascript
+const { body } = require('express-validator');
+
+// Exemples d'assainissement
+body('email').normalizeEmail();           // marie.DUPONT@Gmail.com -> marie.dupont@gmail.com
+body('nom').trim().escape();              // " <script>alert(1)</script> " -> "&lt;script&gt;..."
+body('age').toInt();                      // "25" -> 25
+body('actif').toBoolean();                // "true" -> true
+body('tags').customSanitizer(value => {   // Sanitizer personnalise
+  if (typeof value === 'string') {
+    return value.split(',').map(t => t.trim());
+  }
+  return value;
+});
+```
+
+---
+
+## 9. Gestion d'erreurs
+
+### 9.1 Classe d'erreur personnalisee
+
+Fichier `utils/AppError.js` :
+
+```javascript
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.statut = `${statusCode}`.startsWith('4') ? 'echec' : 'erreur';
+    this.estOperationnelle = true;
+
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+module.exports = AppError;
+```
+
+**Distinction importante :**
+- **Erreur operationnelle** : erreur prevue et geree (404, validation echouee, token expire). On envoie un message clair au client.
+- **Erreur de programmation** : bug dans le code (variable non definie, mauvais appel de fonction). On envoie un message generique.
+
+### 9.2 Middleware de gestion d'erreurs global
+
+Fichier `middleware/errorHandler.js` :
+
+```javascript
+const AppError = require('../utils/AppError');
+
+const errorHandler = (err, req, res, next) => {
+  // Valeurs par defaut
+  err.statusCode = err.statusCode || 500;
+  err.statut = err.statut || 'erreur';
+
+  // En developpement : reponse detaillee
+  if (process.env.NODE_ENV === 'development') {
+    return res.status(err.statusCode).json({
+      succes: false,
+      statut: err.statut,
+      message: err.message,
+      erreur: err,
+      pile: err.stack
+    });
+  }
+
+  // En production : reponse nettoyee
+  let erreur = { ...err, message: err.message };
+
+  // Erreur de cast MongoDB (ID invalide)
+  if (err.name === 'CastError') {
+    erreur = new AppError(`Ressource introuvable avec l'id : ${err.value}`, 400);
+  }
+
+  // Erreur de doublon MongoDB
+  if (err.code === 11000) {
+    const champ = Object.keys(err.keyValue)[0];
+    erreur = new AppError(
+      `La valeur "${err.keyValue[champ]}" existe deja pour le champ "${champ}"`,
+      409
+    );
+  }
+
+  // Erreur de validation Mongoose
+  if (err.name === 'ValidationError') {
+    const messages = Object.values(err.errors).map(e => e.message);
+    erreur = new AppError(`Donnees invalides : ${messages.join('. ')}`, 400);
+  }
+
+  // Erreur JWT
+  if (err.name === 'JsonWebTokenError') {
+    erreur = new AppError('Token invalide', 401);
+  }
+
+  // Token expire
+  if (err.name === 'TokenExpiredError') {
+    erreur = new AppError('Token expire', 401);
+  }
+
+  // Erreur operationnelle : envoyer le message au client
+  if (erreur.estOperationnelle) {
+    return res.status(erreur.statusCode).json({
+      succes: false,
+      message: erreur.message
+    });
+  }
+
+  // Erreur de programmation : ne pas exposer les details
+  console.error('ERREUR :', err);
+  return res.status(500).json({
+    succes: false,
+    message: 'Une erreur interne est survenue'
+  });
+};
+
+module.exports = errorHandler;
+```
+
+### 9.3 Wrapper async pour eviter les try/catch repetitifs
+
+```javascript
+// utils/catchAsync.js
+const catchAsync = (fn) => {
+  return (req, res, next) => {
+    fn(req, res, next).catch(next);
+  };
+};
+
+module.exports = catchAsync;
+```
+
+Utilisation dans un controleur :
+
+```javascript
+const catchAsync = require('../utils/catchAsync');
+
+exports.obtenirTous = catchAsync(async (req, res, next) => {
+  const livres = await Livre.find().populate('auteur', 'nom prenom');
+
+  res.status(200).json({
+    succes: true,
+    compte: livres.length,
+    donnees: livres
+  });
+});
+
+exports.obtenirParId = catchAsync(async (req, res, next) => {
+  const livre = await Livre.findById(req.params.id).populate('auteur');
+
+  if (!livre) {
+    return next(new AppError('Livre introuvable', 404));
+  }
+
+  res.status(200).json({
+    succes: true,
+    donnees: livre
+  });
+});
+```
+
+Avec `catchAsync`, toute erreur dans la fonction async est automatiquement transmise a `next()`, qui la dirige vers le middleware de gestion d'erreurs.
+
+---
+
+## 10. Relations MongoDB
+
+### 10.1 Deux approches
+
+MongoDB offre deux strategies pour modeliser les relations entre documents :
+
+**1. Referencement (normalisation)** : stocker l'ObjectId d'un document dans un autre.
+
+```javascript
+// Document Livre
+{
+  "_id": ObjectId("abc123"),
+  "titre": "Les Miserables",
+  "auteur": ObjectId("def456")   // Reference vers la collection Auteur
+}
+
+// Document Auteur
+{
+  "_id": ObjectId("def456"),
+  "nom": "Hugo",
+  "prenom": "Victor"
+}
+```
+
+**2. Imbrication (denormalisation)** : inclure les donnees directement dans le document.
+
+```javascript
+// Document Livre avec auteur imbrique
+{
+  "_id": ObjectId("abc123"),
+  "titre": "Les Miserables",
+  "auteur": {
+    "nom": "Hugo",
+    "prenom": "Victor",
+    "nationalite": "francaise"
+  }
+}
+```
+
+### 10.2 Quand utiliser chaque approche
+
+| Critere | Referencement | Imbrication |
+|---|---|---|
+| Donnees lues ensemble | Rarement | Frequemment |
+| Donnees modifiees independamment | Oui | Non |
+| Taille du sous-document | Grande ou illimitee | Petite et bornee |
+| Relation | 1-N (beaucoup) ou N-N | 1-1 ou 1-N (peu) |
+| Exemple | Livre -> Auteur | Commande -> Adresse de livraison |
+
+### 10.3 Referencement avec populate
+
+**Definition du schema avec reference :**
+
+```javascript
+const livreSchema = new mongoose.Schema({
+  titre: String,
+  auteur: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Auteur',
+    required: true
+  }
+});
+```
+
+**Utilisation de populate :**
+
+```javascript
+// Populate simple
+const livre = await Livre.findById(id).populate('auteur');
+
+// Populate avec selection de champs
+const livre = await Livre.findById(id).populate('auteur', 'nom prenom');
+
+// Populate multiple
+const livre = await Livre.findById(id)
+  .populate('auteur', 'nom prenom')
+  .populate('editeur', 'nom');
+
+// Populate avec conditions
+const livre = await Livre.findById(id).populate({
+  path: 'auteur',
+  select: 'nom prenom nationalite',
+  match: { actif: true }
+});
+```
+
+### 10.4 Virtuels de population (relation inverse)
+
+Definir dans le schema Auteur une relation virtuelle vers les livres :
+
+```javascript
+auteurSchema.virtual('livres', {
+  ref: 'Livre',          // Modele reference
+  localField: '_id',     // Champ local
+  foreignField: 'auteur' // Champ dans le modele reference
+});
+
+// Utilisation
+const auteur = await Auteur.findById(id).populate('livres');
+// auteur.livres contient tous les livres de cet auteur
+```
+
+### 10.5 Documents imbriques
+
+```javascript
+const commandeSchema = new mongoose.Schema({
+  client: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Utilisateur',
+    required: true
+  },
+  articles: [
+    {
+      livre: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Livre',
+        required: true
+      },
+      quantite: {
+        type: Number,
+        required: true,
+        min: 1
+      },
+      prixUnitaire: {
+        type: Number,
+        required: true
+      }
+    }
+  ],
+  adresseLivraison: {
+    rue: { type: String, required: true },
+    ville: { type: String, required: true },
+    codePostal: { type: String, required: true },
+    pays: { type: String, default: 'France' }
+  },
+  total: {
+    type: Number,
+    required: true
+  },
+  statut: {
+    type: String,
+    enum: ['en_attente', 'payee', 'expediee', 'livree', 'annulee'],
+    default: 'en_attente'
+  }
+}, { timestamps: true });
+```
+
+### 10.6 Relation N-N (many-to-many)
+
+Pour une relation N-N (par exemple, un livre peut avoir plusieurs tags et un tag peut etre associe a plusieurs livres), on utilise un tableau de references :
+
+```javascript
+const livreSchema = new mongoose.Schema({
+  titre: String,
+  tags: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tag'
+  }]
+});
+
+const tagSchema = new mongoose.Schema({
+  nom: { type: String, unique: true }
+});
+
+// Ajouter un tag a un livre
+await Livre.findByIdAndUpdate(livreId, {
+  $addToSet: { tags: tagId }  // $addToSet evite les doublons
+});
+
+// Retirer un tag
+await Livre.findByIdAndUpdate(livreId, {
+  $pull: { tags: tagId }
+});
+```
+
+---
+
+## 11. Pagination, filtrage, tri
+
+### 11.1 Implementation complete
+
+Fichier `utils/queryBuilder.js` :
+
+```javascript
+class QueryBuilder {
+  constructor(requeteMongoose, parametresUrl) {
+    this.requete = requeteMongoose;
+    this.parametres = parametresUrl;
+  }
+
+  // Filtrage avance
+  filtrer() {
+    const filtreObj = { ...this.parametres };
+    const champsExclus = ['page', 'tri', 'limite', 'champs', 'recherche'];
+    champsExclus.forEach(champ => delete filtreObj[champ]);
+
+    // Convertir les operateurs (gte, gt, lte, lt, ne) en operateurs MongoDB
+    let filtreStr = JSON.stringify(filtreObj);
+    filtreStr = filtreStr.replace(
+      /\b(gte|gt|lte|lt|ne|in)\b/g,
+      correspondance => `$${correspondance}`
+    );
+
+    this.requete = this.requete.find(JSON.parse(filtreStr));
+    return this;
+  }
+
+  // Recherche textuelle
+  rechercher() {
+    if (this.parametres.recherche) {
+      this.requete = this.requete.find({
+        $text: { $search: this.parametres.recherche }
+      });
+    }
+    return this;
+  }
+
+  // Tri
+  trier() {
+    if (this.parametres.tri) {
+      const critereTri = this.parametres.tri.split(',').join(' ');
+      this.requete = this.requete.sort(critereTri);
+    } else {
+      this.requete = this.requete.sort('-createdAt');
+    }
+    return this;
+  }
+
+  // Selection des champs
+  selectionner() {
+    if (this.parametres.champs) {
+      const champs = this.parametres.champs.split(',').join(' ');
+      this.requete = this.requete.select(champs);
+    } else {
+      this.requete = this.requete.select('-__v');
+    }
+    return this;
+  }
+
+  // Pagination
+  paginer() {
+    const page = parseInt(this.parametres.page, 10) || 1;
+    const limite = parseInt(this.parametres.limite, 10) || 10;
+    const saut = (page - 1) * limite;
+
+    this.requete = this.requete.skip(saut).limit(limite);
+    this.page = page;
+    this.limite = limite;
+    return this;
+  }
+}
+
+module.exports = QueryBuilder;
+```
+
+### 11.2 Utilisation dans un controleur
+
+```javascript
+const QueryBuilder = require('../utils/queryBuilder');
+
+exports.obtenirTous = catchAsync(async (req, res, next) => {
+  const builder = new QueryBuilder(Livre.find(), req.query)
+    .filtrer()
+    .rechercher()
+    .trier()
+    .selectionner()
+    .paginer();
+
+  const livres = await builder.requete.populate('auteur', 'nom prenom');
+  const total = await Livre.countDocuments(builder.requete.getFilter());
+
+  res.status(200).json({
+    succes: true,
+    compte: livres.length,
+    total,
+    page: builder.page,
+    totalPages: Math.ceil(total / builder.limite),
+    donnees: livres
+  });
+});
+```
+
+### 11.3 Exemples de requetes
+
+```
+GET /api/livres?page=2&limite=5                           -> Page 2, 5 resultats
+GET /api/livres?tri=prix,-createdAt                       -> Tri par prix croissant, puis date decroissante
+GET /api/livres?champs=titre,prix,auteur                  -> Uniquement ces champs
+GET /api/livres?prix[gte]=10&prix[lte]=30                 -> Prix entre 10 et 30
+GET /api/livres?genre=roman&langue=fr                     -> Romans en francais
+GET /api/livres?recherche=victor+hugo                     -> Recherche textuelle
+GET /api/livres?enStock=true&tri=-noteMoyenne&limite=10   -> Top 10 en stock
+```
+
+---
+
+## 12. Upload de fichiers avec Multer
+
+### 12.1 Configuration de Multer
+
+Multer est un middleware pour gerer les donnees `multipart/form-data`, utilisees pour l'upload de fichiers.
+
+```javascript
+// middleware/upload.js
+const multer = require('multer');
+const path = require('path');
+const AppError = require('../utils/AppError');
+
+// Configuration du stockage
+const stockage = multer.diskStorage({
+  destination: function(req, fichier, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function(req, fichier, cb) {
+    // Generer un nom unique : timestamp-aleatoire.extension
+    const nomUnique = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    const extension = path.extname(fichier.originalname);
+    cb(null, `${nomUnique}${extension}`);
+  }
+});
+
+// Filtre de fichiers
+const filtreFichier = (req, fichier, cb) => {
+  // N'accepter que les images
+  const typesAutorises = /jpeg|jpg|png|gif|webp/;
+  const extensionValide = typesAutorises.test(
+    path.extname(fichier.originalname).toLowerCase()
+  );
+  const mimeValide = typesAutorises.test(fichier.mimetype);
+
+  if (extensionValide && mimeValide) {
+    cb(null, true);
+  } else {
+    cb(new AppError('Seules les images sont autorisees (jpeg, jpg, png, gif, webp)', 400), false);
+  }
+};
+
+// Instance Multer configuree
+const upload = multer({
+  storage: stockage,
+  fileFilter: filtreFichier,
+  limits: {
+    fileSize: 5 * 1024 * 1024  // 5 Mo maximum
+  }
+});
+
+module.exports = upload;
+```
+
+### 12.2 Utilisation dans les routes
+
+```javascript
+const upload = require('../middleware/upload');
+
+// Upload d'un seul fichier (champ "couverture")
+router.post('/:id/couverture', proteger, upload.single('couverture'), livreController.uploaderCouverture);
+
+// Upload de plusieurs fichiers (champ "images", max 5)
+router.post('/:id/images', proteger, upload.array('images', 5), livreController.uploaderImages);
+```
+
+### 12.3 Controleur d'upload
+
+```javascript
+exports.uploaderCouverture = catchAsync(async (req, res, next) => {
+  if (!req.file) {
+    return next(new AppError('Aucun fichier fourni', 400));
+  }
+
+  const livre = await Livre.findByIdAndUpdate(
+    req.params.id,
+    { couverture: `/uploads/${req.file.filename}` },
+    { new: true }
+  );
+
+  if (!livre) {
+    return next(new AppError('Livre introuvable', 404));
+  }
+
+  res.status(200).json({
+    succes: true,
+    donnees: livre
+  });
+});
+```
+
+### 12.4 Proprietes de req.file
+
+| Propriete | Description |
+|---|---|
+| `fieldname` | Nom du champ dans le formulaire |
+| `originalname` | Nom original du fichier |
+| `encoding` | Encodage du fichier |
+| `mimetype` | Type MIME (ex. : image/jpeg) |
+| `destination` | Dossier de destination |
+| `filename` | Nom du fichier sauvegarde |
+| `path` | Chemin complet du fichier |
+| `size` | Taille en octets |
+
+---
+
+## 13. Variables d'environnement
+
+### 13.1 Principe
+
+Les variables d'environnement permettent de separer la configuration du code source. Le paquet `dotenv` charge automatiquement les variables definies dans un fichier `.env` a la racine du projet.
+
+### 13.2 Fichier .env complet
+
+```
+# Serveur
+NODE_ENV=development
+PORT=3000
+
+# Base de donnees
+MONGODB_URI=mongodb://localhost:27017/api_livres
+
+# JWT
+JWT_SECRET=ma_cle_secrete_de_production_tres_longue_et_complexe
+JWT_EXPIRES_IN=24h
+JWT_REFRESH_EXPIRES_IN=7d
+
+# Upload
+MAX_FILE_SIZE=5242880
+UPLOAD_DIR=uploads
+
+# Rate limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=100
+```
+
+### 13.3 Chargement
+
+```javascript
+// En tout debut de server.js
+require('dotenv').config();
+
+// Utilisation
+const port = process.env.PORT || 3000;
+const uri = process.env.MONGODB_URI;
+```
+
+### 13.4 Bonnes pratiques
+
+- Ne jamais versionner le fichier `.env` (l'ajouter dans `.gitignore`)
+- Creer un fichier `.env.example` avec les cles sans les valeurs, a versionner
+- Utiliser des valeurs par defaut dans le code pour les variables non critiques
+- Utiliser des variables d'environnement differentes par environnement (developpement, production)
+
+Fichier `.env.example` :
+
+```
+NODE_ENV=
+PORT=
+MONGODB_URI=
+JWT_SECRET=
+JWT_EXPIRES_IN=
+JWT_REFRESH_EXPIRES_IN=
+```
+
+---
+
+## 14. Tests avec Postman
+
+### 14.1 Presentation
+
+Postman (ou Thunder Client, extension VS Code) est un outil graphique pour tester les API REST. Il permet d'envoyer des requetes HTTP et d'inspecter les reponses.
+
+### 14.2 Configuration d'une collection
+
+Creer une collection "API Livres" avec les dossiers :
+- Auth (inscription, connexion, rafraichir, profil)
+- Livres (CRUD)
+- Auteurs (CRUD)
+
+### 14.3 Variables d'environnement Postman
+
+Creer un environnement "Local" avec :
+
+| Variable | Valeur |
+|---|---|
+| `base_url` | `http://localhost:3000/api` |
+| `token` | (vide, sera rempli automatiquement) |
+| `refresh_token` | (vide) |
+
+### 14.4 Exemples de requetes
+
+**Inscription :**
+
+```
+POST {{base_url}}/auth/inscription
+Content-Type: application/json
+
+{
+  "nom": "Jean Dupont",
+  "email": "jean.dupont@exemple.fr",
+  "motDePasse": "MonMotDePasse123"
+}
+```
+
+**Script post-reponse (onglet Tests dans Postman) :**
+
+```javascript
+if (pm.response.code === 201) {
+  const reponse = pm.response.json();
+  pm.environment.set("token", reponse.token);
+  pm.environment.set("refresh_token", reponse.refreshToken);
+}
+```
+
+**Connexion :**
+
+```
+POST {{base_url}}/auth/connexion
+Content-Type: application/json
+
+{
+  "email": "jean.dupont@exemple.fr",
+  "motDePasse": "MonMotDePasse123"
+}
+```
+
+**Creer un auteur (authentifie) :**
+
+```
+POST {{base_url}}/auteurs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nom": "Hugo",
+  "prenom": "Victor",
+  "nationalite": "francaise",
+  "dateNaissance": "1802-02-26"
+}
+```
+
+**Creer un livre (authentifie) :**
+
+```
+POST {{base_url}}/livres
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "titre": "Les Miserables",
+  "isbn": "9782070409228",
+  "auteur": "ID_AUTEUR_ICI",
+  "genres": ["roman"],
+  "nombrePages": 1900,
+  "prix": 12.50,
+  "langue": "fr",
+  "datePublication": "1862-04-03"
+}
+```
+
+**Obtenir tous les livres avec filtres :**
+
+```
+GET {{base_url}}/livres?page=1&limite=5&tri=-prix&genre=roman
+```
+
+**Uploader une couverture :**
+
+```
+POST {{base_url}}/livres/ID_LIVRE/couverture
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data
+
+[Onglet Body > form-data > Key: "couverture" (type: File) > Value: selectionner un fichier]
+```
+
+### 14.5 Tests automatises Postman
+
+Dans l'onglet "Tests" de chaque requete :
+
+```javascript
+// Verifier le code de statut
+pm.test("Statut 200", function() {
+  pm.response.to.have.status(200);
+});
+
+// Verifier la structure de la reponse
+pm.test("Reponse contient succes et donnees", function() {
+  const reponse = pm.response.json();
+  pm.expect(reponse).to.have.property('succes', true);
+  pm.expect(reponse).to.have.property('donnees');
+});
+
+// Verifier un champ specifique
+pm.test("Le titre est correct", function() {
+  const reponse = pm.response.json();
+  pm.expect(reponse.donnees.titre).to.eql("Les Miserables");
+});
+
+// Verifier le temps de reponse
+pm.test("Temps de reponse < 500ms", function() {
+  pm.expect(pm.response.responseTime).to.be.below(500);
+});
+```
+
+---
+
+## 15. Securite
+
+### 15.1 Helmet
+
+Helmet configure automatiquement des en-tetes HTTP de securite :
+
+```javascript
+const helmet = require('helmet');
+app.use(helmet());
+```
+
+En-tetes configures par Helmet :
+
+| En-tete | Protection |
+|---|---|
+| X-Content-Type-Options | Empeche le sniffing MIME |
+| X-Frame-Options | Protection contre le clickjacking |
+| X-XSS-Protection | Protection XSS basique |
+| Strict-Transport-Security | Force HTTPS |
+| Content-Security-Policy | Controle les sources de contenu |
+
+### 15.2 Rate Limiting
+
+Limiter le nombre de requetes par IP pour prevenir les attaques par force brute et les abus :
+
+```javascript
+const rateLimit = require('express-rate-limit');
+
+// Limiteur general
+const limiteurGeneral = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 100,                    // 100 requetes max par fenetre
+  message: {
+    succes: false,
+    message: 'Trop de requetes. Reessayez dans 15 minutes.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Limiteur strict pour l'authentification
+const limiteurAuth = rateLimit({
+  windowMs: 60 * 60 * 1000,  // 1 heure
+  max: 10,                     // 10 tentatives max
+  message: {
+    succes: false,
+    message: 'Trop de tentatives. Reessayez dans 1 heure.'
+  }
+});
+
+// Application
+app.use('/api/', limiteurGeneral);
+app.use('/api/auth/connexion', limiteurAuth);
+app.use('/api/auth/inscription', limiteurAuth);
+```
+
+### 15.3 Protection contre l'injection NoSQL
+
+Une injection NoSQL peut contourner l'authentification :
+
+```json
+{
+  "email": { "$gt": "" },
+  "motDePasse": { "$gt": "" }
+}
+```
+
+**Protection avec mongo-sanitize :**
+
+```bash
+npm install express-mongo-sanitize
+```
+
+```javascript
+const mongoSanitize = require('express-mongo-sanitize');
+
+// Supprime les operateurs $ et les points des cles
+app.use(mongoSanitize());
+
+// Alternative avec remplacement
+app.use(mongoSanitize({
+  replaceWith: '_'
+}));
+```
+
+### 15.4 Protection XSS
+
+```bash
+npm install xss-clean
+```
+
+```javascript
+const xss = require('xss-clean');
+app.use(xss());
+```
+
+### 15.5 Protection contre la pollution de parametres HTTP
+
+```bash
+npm install hpp
+```
+
+```javascript
+const hpp = require('hpp');
+app.use(hpp({
+  whitelist: ['prix', 'genres', 'langue', 'noteMoyenne']
+}));
+```
+
+### 15.6 Checklist de securite pour la production
+
+| Mesure | Implementation |
+|---|---|
+| HTTPS | Certificat SSL/TLS obligatoire |
+| Helmet | En-tetes HTTP securises |
+| Rate limiting | Limiter les requetes par IP |
+| CORS restrictif | Lister les origines autorisees |
+| Validation | Valider toutes les entrees |
+| Sanitization | Nettoyer les entrees (NoSQL, XSS) |
+| Mots de passe haches | bcrypt avec sel >= 12 |
+| JWT avec expiration | Tokens a duree limitee |
+| Variables d'environnement | Ne jamais exposer les secrets |
+| Limiter la taille du body | `express.json({ limit: '10mb' })` |
+| Journalisation | Logger les requetes et erreurs |
+| Mise a jour des dependances | `npm audit` regulier |
+
+---
+
+## 16. Deploiement
+
+### 16.1 Preparation
+
+**Fichier `server.js` pret pour la production :**
+
+```javascript
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+require('dotenv').config();
+
+const connectDB = require('./config/db');
+const livreRoutes = require('./routes/livreRoutes');
+const auteurRoutes = require('./routes/auteurRoutes');
+const authRoutes = require('./routes/authRoutes');
+const errorHandler = require('./middleware/errorHandler');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Connexion DB
+connectDB();
+
+// Securite
+app.use(helmet());
+app.use(mongoSanitize());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+});
+app.use('/api/', limiter);
+
+// Logger (format compact en production)
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+} else {
+  app.use(morgan('combined'));
+}
+
+// Parseurs
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Statiques
+app.use('/uploads', express.static('uploads'));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/livres', livreRoutes);
+app.use('/api/auteurs', auteurRoutes);
+
+// 404
+app.all('*', (req, res) => {
+  res.status(404).json({
+    succes: false,
+    message: `Route ${req.originalUrl} introuvable`
+  });
+});
+
+// Gestion d'erreurs
+app.use(errorHandler);
+
+app.listen(PORT, () => {
+  console.log(`Serveur demarre en mode ${process.env.NODE_ENV} sur le port ${PORT}`);
+});
+```
+
+### 16.2 Deploiement sur Render
+
+1. Creer un compte sur render.com
+2. Connecter le depot GitHub
+3. Creer un nouveau Web Service
+4. Configurer :
+   - Build Command : `npm install`
+   - Start Command : `node server.js`
+   - Ajouter les variables d'environnement (NODE_ENV=production, MONGODB_URI, JWT_SECRET)
+
+### 16.3 Deploiement sur Railway
+
+1. Creer un compte sur railway.app
+2. Creer un nouveau projet depuis GitHub
+3. Railway detecte automatiquement Node.js
+4. Ajouter les variables d'environnement dans l'onglet Variables
+
+### 16.4 Script package.json pour la production
+
+```json
+{
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+```
+
+---
+
+## 17. Exercices d'examen corriges
+
+---
+
+### Exercice 1 -- Creer un schema Mongoose
+
+**Enonce :**
+Creer un schema Mongoose pour un modele `Etudiant` avec les champs suivants :
+- `nom` : chaine, obligatoire, entre 2 et 100 caracteres
+- `prenom` : chaine, obligatoire
+- `email` : chaine, obligatoire, unique, format email valide
+- `dateNaissance` : date, obligatoire
+- `classe` : chaine, enum parmi `['BTS SIO SLAM', 'BTS SIO SISR', 'L3 Info', 'M1 Info']`
+- `notes` : tableau de nombres, chaque note entre 0 et 20
+- `actif` : booleen, defaut `true`
+- Activer les timestamps
+
+**Solution :**
+
+```javascript
+const mongoose = require('mongoose');
+
+const etudiantSchema = new mongoose.Schema(
+  {
+    nom: {
+      type: String,
+      required: [true, 'Le nom est obligatoire'],
+      trim: true,
+      minlength: [2, 'Le nom doit contenir au moins 2 caracteres'],
+      maxlength: [100, 'Le nom ne peut pas depasser 100 caracteres']
+    },
+    prenom: {
+      type: String,
+      required: [true, 'Le prenom est obligatoire'],
+      trim: true
+    },
+    email: {
+      type: String,
+      required: [true, 'L\'email est obligatoire'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, 'Format email invalide']
+    },
+    dateNaissance: {
+      type: Date,
+      required: [true, 'La date de naissance est obligatoire']
+    },
+    classe: {
+      type: String,
+      enum: {
+        values: ['BTS SIO SLAM', 'BTS SIO SISR', 'L3 Info', 'M1 Info'],
+        message: 'La classe {VALUE} n\'est pas valide'
+      }
+    },
+    notes: {
+      type: [Number],
+      validate: {
+        validator: function(tableau) {
+          return tableau.every(note => note >= 0 && note <= 20);
+        },
+        message: 'Chaque note doit etre comprise entre 0 et 20'
+      }
+    },
+    actif: {
+      type: Boolean,
+      default: true
+    }
+  },
+  {
+    timestamps: true
+  }
+);
+
+// Virtuel : moyenne des notes
+etudiantSchema.virtual('moyenne').get(function() {
+  if (this.notes.length === 0) return 0;
+  const somme = this.notes.reduce((acc, note) => acc + note, 0);
+  return Math.round((somme / this.notes.length) * 100) / 100;
+});
+
+module.exports = mongoose.model('Etudiant', etudiantSchema);
+```
+
+---
+
+### Exercice 2 -- Routes CRUD basiques
+
+**Enonce :**
+Ecrire le fichier de routes complet pour le modele `Etudiant` avec les operations CRUD. Les routes GET sont publiques. Les routes POST, PUT et DELETE necessitent une authentification.
+
+**Solution :**
+
+```javascript
+// routes/etudiantRoutes.js
+const express = require('express');
+const router = express.Router();
+const etudiantController = require('../controllers/etudiantController');
+const { proteger } = require('../middleware/auth');
+
+// Routes publiques
+router.get('/', etudiantController.obtenirTous);
+router.get('/:id', etudiantController.obtenirParId);
+
+// Routes protegees
+router.use(proteger);
+router.post('/', etudiantController.creer);
+router.put('/:id', etudiantController.mettreAJour);
+router.delete('/:id', etudiantController.supprimer);
+
+module.exports = router;
+```
+
+---
+
+### Exercice 3 -- Controleur avec gestion d'erreurs
+
+**Enonce :**
+Ecrire le controleur `creer` pour le modele `Etudiant`. Gerer les cas suivants : champs manquants, email en doublon, erreur de validation Mongoose. Utiliser le pattern `catchAsync`.
+
+**Solution :**
+
+```javascript
+// controllers/etudiantController.js
+const Etudiant = require('../models/Etudiant');
+const AppError = require('../utils/AppError');
+const catchAsync = require('../utils/catchAsync');
+
+exports.creer = catchAsync(async (req, res, next) => {
+  const { nom, prenom, email, dateNaissance, classe, notes } = req.body;
+
+  // Verifier les champs obligatoires
+  if (!nom || !prenom || !email || !dateNaissance) {
+    return next(new AppError('Les champs nom, prenom, email et dateNaissance sont obligatoires', 400));
+  }
+
+  try {
+    const etudiant = await Etudiant.create({
+      nom,
+      prenom,
+      email,
+      dateNaissance,
+      classe,
+      notes
+    });
+
+    res.status(201).json({
+      succes: true,
+      donnees: etudiant
+    });
+  } catch (erreur) {
+    // Erreur de doublon
+    if (erreur.code === 11000) {
+      return next(new AppError('Un etudiant avec cet email existe deja', 409));
+    }
+    // Erreur de validation
+    if (erreur.name === 'ValidationError') {
+      const messages = Object.values(erreur.errors).map(e => e.message);
+      return next(new AppError(`Validation echouee : ${messages.join('. ')}`, 400));
+    }
+    throw erreur;
+  }
+});
+
+exports.obtenirTous = catchAsync(async (req, res, next) => {
+  const page = parseInt(req.query.page, 10) || 1;
+  const limite = parseInt(req.query.limite, 10) || 10;
+  const saut = (page - 1) * limite;
+
+  const filtre = {};
+  if (req.query.classe) filtre.classe = req.query.classe;
+  if (req.query.actif) filtre.actif = req.query.actif === 'true';
+
+  const etudiants = await Etudiant.find(filtre)
+    .sort(req.query.tri || 'nom')
+    .skip(saut)
+    .limit(limite);
+
+  const total = await Etudiant.countDocuments(filtre);
+
+  res.status(200).json({
+    succes: true,
+    compte: etudiants.length,
+    total,
+    page,
+    totalPages: Math.ceil(total / limite),
+    donnees: etudiants
+  });
+});
+
+exports.obtenirParId = catchAsync(async (req, res, next) => {
+  const etudiant = await Etudiant.findById(req.params.id);
+
+  if (!etudiant) {
+    return next(new AppError('Etudiant introuvable', 404));
+  }
+
+  res.status(200).json({
+    succes: true,
+    donnees: etudiant
+  });
+});
+
+exports.mettreAJour = catchAsync(async (req, res, next) => {
+  const etudiant = await Etudiant.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true, runValidators: true }
+  );
+
+  if (!etudiant) {
+    return next(new AppError('Etudiant introuvable', 404));
+  }
+
+  res.status(200).json({
+    succes: true,
+    donnees: etudiant
+  });
+});
+
+exports.supprimer = catchAsync(async (req, res, next) => {
+  const etudiant = await Etudiant.findByIdAndDelete(req.params.id);
+
+  if (!etudiant) {
+    return next(new AppError('Etudiant introuvable', 404));
+  }
+
+  res.status(204).json({
+    succes: true,
+    donnees: null
+  });
+});
+```
+
+---
+
+### Exercice 4 -- Middleware d'authentification JWT
+
+**Enonce :**
+Ecrire un middleware `proteger` qui verifie le token JWT dans le header `Authorization`. Si le token est valide, attacher l'utilisateur a `req.utilisateur`. Sinon, retourner une erreur 401.
+
+**Solution :**
+
+```javascript
+const jwt = require('jsonwebtoken');
+const Utilisateur = require('../models/Utilisateur');
+const AppError = require('../utils/AppError');
+
+const proteger = async (req, res, next) => {
+  try {
+    // 1. Extraire le token
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+      return next(new AppError('Vous devez etre connecte pour acceder a cette ressource', 401));
+    }
+
+    // 2. Verifier le token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // 3. Verifier que l'utilisateur existe
+    const utilisateur = await Utilisateur.findById(decoded.id);
+    if (!utilisateur) {
+      return next(new AppError('L\'utilisateur associe a ce token n\'existe plus', 401));
+    }
+
+    // 4. Verifier que le compte est actif
+    if (!utilisateur.actif) {
+      return next(new AppError('Ce compte a ete desactive', 403));
+    }
+
+    // 5. Attacher l'utilisateur a la requete
+    req.utilisateur = utilisateur;
+    next();
+  } catch (erreur) {
+    if (erreur.name === 'JsonWebTokenError') {
+      return next(new AppError('Token invalide', 401));
+    }
+    if (erreur.name === 'TokenExpiredError') {
+      return next(new AppError('Votre session a expire. Veuillez vous reconnecter.', 401));
+    }
+    next(erreur);
+  }
+};
+
+module.exports = proteger;
+```
+
+---
+
+### Exercice 5 -- Validation avec express-validator
+
+**Enonce :**
+Ecrire les regles de validation pour la creation d'un produit e-commerce avec les champs : `nom` (obligatoire, 3-100 caracteres), `prix` (obligatoire, nombre positif), `description` (optionnel, max 1000 caracteres), `categorie` (obligatoire, parmi une liste), `stock` (obligatoire, entier >= 0).
+
+**Solution :**
+
+```javascript
+const { body, validationResult } = require('express-validator');
+
+const validerProduit = [
+  body('nom')
+    .trim()
+    .notEmpty().withMessage('Le nom est obligatoire')
+    .isLength({ min: 3, max: 100 }).withMessage('Le nom doit faire entre 3 et 100 caracteres')
+    .escape(),
+
+  body('prix')
+    .notEmpty().withMessage('Le prix est obligatoire')
+    .isFloat({ gt: 0 }).withMessage('Le prix doit etre un nombre strictement positif'),
+
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ max: 1000 }).withMessage('La description ne peut pas depasser 1000 caracteres'),
+
+  body('categorie')
+    .notEmpty().withMessage('La categorie est obligatoire')
+    .isIn(['electronique', 'vetement', 'alimentation', 'livre', 'sport', 'maison'])
+    .withMessage('Categorie invalide'),
+
+  body('stock')
+    .notEmpty().withMessage('Le stock est obligatoire')
+    .isInt({ min: 0 }).withMessage('Le stock doit etre un entier positif ou nul'),
+
+  // Middleware de traitement des erreurs de validation
+  (req, res, next) => {
+    const erreurs = validationResult(req);
+    if (!erreurs.isEmpty()) {
+      return res.status(400).json({
+        succes: false,
+        erreurs: erreurs.array().map(e => ({
+          champ: e.path,
+          message: e.msg
+        }))
+      });
+    }
+    next();
+  }
+];
+
+module.exports = { validerProduit };
+```
+
+---
+
+### Exercice 6 -- Middleware de gestion d'erreurs
+
+**Enonce :**
+Ecrire un middleware de gestion d'erreurs global qui traite les erreurs suivantes : CastError (ID invalide), code 11000 (doublon), ValidationError (validation Mongoose), JsonWebTokenError, TokenExpiredError, et les erreurs generiques.
+
+**Solution :**
+
+```javascript
+const errorHandler = (err, req, res, next) => {
+  let statusCode = err.statusCode || 500;
+  let message = err.message || 'Erreur interne du serveur';
+
+  // CastError : ID MongoDB invalide
+  if (err.name === 'CastError') {
+    statusCode = 400;
+    message = `Format invalide pour le champ ${err.path} : ${err.value}`;
+  }
+
+  // Doublon MongoDB (index unique viole)
+  if (err.code === 11000) {
+    statusCode = 409;
+    const champ = Object.keys(err.keyValue)[0];
+    message = `La valeur "${err.keyValue[champ]}" existe deja pour le champ "${champ}"`;
+  }
+
+  // Erreur de validation Mongoose
+  if (err.name === 'ValidationError') {
+    statusCode = 400;
+    const details = Object.values(err.errors).map(e => e.message);
+    message = `Donnees invalides : ${details.join('. ')}`;
+  }
+
+  // Token JWT invalide
+  if (err.name === 'JsonWebTokenError') {
+    statusCode = 401;
+    message = 'Token d\'authentification invalide';
+  }
+
+  // Token JWT expire
+  if (err.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Token d\'authentification expire';
+  }
+
+  // Reponse
+  const reponse = {
+    succes: false,
+    message
+  };
+
+  // En developpement, ajouter la pile d'appel
+  if (process.env.NODE_ENV === 'development') {
+    reponse.pile = err.stack;
+    reponse.erreur = err;
+  }
+
+  res.status(statusCode).json(reponse);
+};
+
+module.exports = errorHandler;
+```
+
+---
+
+### Exercice 7 -- Populate et relations
+
+**Enonce :**
+On dispose des modeles `Cours` et `Professeur`. Un cours reference un professeur. Ecrire :
+1. Le schema `Cours` avec reference vers `Professeur`
+2. La route GET qui retourne tous les cours avec les informations du professeur (nom et email uniquement)
+3. Une route GET qui retourne un professeur avec la liste de ses cours (virtuel populate)
+
+**Solution :**
+
+```javascript
+// models/Professeur.js
+const mongoose = require('mongoose');
+
+const professeurSchema = new mongoose.Schema({
+  nom: { type: String, required: true, trim: true },
+  prenom: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true },
+  specialite: { type: String }
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Virtuel : cours du professeur
+professeurSchema.virtual('cours', {
+  ref: 'Cours',
+  localField: '_id',
+  foreignField: 'professeur'
+});
+
+module.exports = mongoose.model('Professeur', professeurSchema);
+
+// models/Cours.js
+const mongoose = require('mongoose');
+
+const coursSchema = new mongoose.Schema({
+  intitule: { type: String, required: true, trim: true },
+  code: { type: String, required: true, unique: true },
+  professeur: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Professeur',
+    required: true
+  },
+  credits: { type: Number, min: 1, max: 30 },
+  semestre: { type: Number, enum: [1, 2] }
+}, { timestamps: true });
+
+module.exports = mongoose.model('Cours', coursSchema);
+
+// controllers/coursController.js
+const Cours = require('../models/Cours');
+const Professeur = require('../models/Professeur');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/AppError');
+
+// Tous les cours avec le professeur
+exports.obtenirTousCours = catchAsync(async (req, res, next) => {
+  const cours = await Cours.find()
+    .populate('professeur', 'nom email');
+
+  res.status(200).json({
+    succes: true,
+    compte: cours.length,
+    donnees: cours
+  });
+});
+
+// Un professeur avec ses cours
+exports.obtenirProfesseurAvecCours = catchAsync(async (req, res, next) => {
+  const professeur = await Professeur.findById(req.params.id)
+    .populate('cours', 'intitule code credits semestre');
+
+  if (!professeur) {
+    return next(new AppError('Professeur introuvable', 404));
+  }
+
+  res.status(200).json({
+    succes: true,
+    donnees: professeur
+  });
+});
+```
+
+---
+
+### Exercice 8 -- Pagination et filtrage avance
+
+**Enonce :**
+Ecrire un controleur pour lister des produits avec :
+- Filtrage par categorie et fourchette de prix (prix min et max)
+- Tri par prix, nom ou date de creation
+- Pagination (page et limite)
+- Recherche textuelle sur le nom
+
+**Solution :**
+
+```javascript
+const Produit = require('../models/Produit');
+const catchAsync = require('../utils/catchAsync');
+
+exports.obtenirProduits = catchAsync(async (req, res, next) => {
+  // Construction du filtre
+  const filtre = {};
+
+  // Filtrage par categorie
+  if (req.query.categorie) {
+    filtre.categorie = req.query.categorie;
+  }
+
+  // Filtrage par fourchette de prix
+  if (req.query.prixMin || req.query.prixMax) {
+    filtre.prix = {};
+    if (req.query.prixMin) filtre.prix.$gte = parseFloat(req.query.prixMin);
+    if (req.query.prixMax) filtre.prix.$lte = parseFloat(req.query.prixMax);
+  }
+
+  // Filtrage par stock disponible
+  if (req.query.enStock === 'true') {
+    filtre.stock = { $gt: 0 };
+  }
+
+  // Recherche textuelle
+  if (req.query.recherche) {
+    filtre.nom = { $regex: req.query.recherche, $options: 'i' };
+  }
+
+  // Pagination
+  const page = parseInt(req.query.page, 10) || 1;
+  const limite = Math.min(parseInt(req.query.limite, 10) || 10, 100); // Max 100
+  const saut = (page - 1) * limite;
+
+  // Tri
+  const champsTriValides = ['prix', '-prix', 'nom', '-nom', 'createdAt', '-createdAt'];
+  let tri = '-createdAt'; // Defaut
+  if (req.query.tri && champsTriValides.includes(req.query.tri)) {
+    tri = req.query.tri;
+  }
+
+  // Execution
+  const [produits, total] = await Promise.all([
+    Produit.find(filtre)
+      .sort(tri)
+      .skip(saut)
+      .limit(limite)
+      .lean(),
+    Produit.countDocuments(filtre)
+  ]);
+
+  res.status(200).json({
+    succes: true,
+    compte: produits.length,
+    total,
+    page,
+    totalPages: Math.ceil(total / limite),
+    donnees: produits
+  });
+});
+```
+
+Exemples d'appels :
+
+```
+GET /api/produits?categorie=electronique&prixMin=50&prixMax=500&tri=-prix&page=1&limite=20
+GET /api/produits?recherche=clavier&enStock=true
+```
+
+---
+
+### Exercice 9 -- Systeme d'authentification complet
+
+**Enonce :**
+Implementer un systeme d'inscription et de connexion complet avec :
+- Hachage du mot de passe
+- Generation de JWT
+- Validation des entrees
+- Gestion des erreurs
+
+Ecrire les routes, le controleur et les validations.
+
+**Solution :**
+
+```javascript
+// routes/authRoutes.js
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/authController');
+const { validerInscription, validerConnexion } = require('../middleware/validate');
+
+router.post('/inscription', validerInscription, authController.inscription);
+router.post('/connexion', validerConnexion, authController.connexion);
+
+module.exports = router;
+
+// middleware/validate.js (extrait)
+const { body, validationResult } = require('express-validator');
+
+const traiterValidation = (req, res, next) => {
+  const erreurs = validationResult(req);
+  if (!erreurs.isEmpty()) {
+    return res.status(400).json({
+      succes: false,
+      erreurs: erreurs.array().map(e => ({
+        champ: e.path,
+        message: e.msg
+      }))
+    });
+  }
+  next();
+};
+
+const validerInscription = [
+  body('nom').trim().notEmpty().withMessage('Nom obligatoire')
+    .isLength({ min: 2, max: 100 }).withMessage('Nom : 2 a 100 caracteres'),
+  body('email').trim().notEmpty().withMessage('Email obligatoire')
+    .isEmail().withMessage('Email invalide').normalizeEmail(),
+  body('motDePasse').notEmpty().withMessage('Mot de passe obligatoire')
+    .isLength({ min: 8 }).withMessage('Mot de passe : 8 caracteres minimum')
+    .matches(/[A-Z]/).withMessage('Au moins une majuscule requise')
+    .matches(/[a-z]/).withMessage('Au moins une minuscule requise')
+    .matches(/\d/).withMessage('Au moins un chiffre requis'),
+  traiterValidation
+];
+
+const validerConnexion = [
+  body('email').trim().notEmpty().withMessage('Email obligatoire')
+    .isEmail().withMessage('Email invalide').normalizeEmail(),
+  body('motDePasse').notEmpty().withMessage('Mot de passe obligatoire'),
+  traiterValidation
+];
+
+module.exports = { validerInscription, validerConnexion };
+
+// controllers/authController.js
+const jwt = require('jsonwebtoken');
+const Utilisateur = require('../models/Utilisateur');
+const AppError = require('../utils/AppError');
+const catchAsync = require('../utils/catchAsync');
+
+const genererToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '24h'
+  });
+};
+
+exports.inscription = catchAsync(async (req, res, next) => {
+  const { nom, email, motDePasse } = req.body;
+
+  // Verifier si l'email est deja pris
+  const existant = await Utilisateur.findOne({ email });
+  if (existant) {
+    return next(new AppError('Cet email est deja utilise', 409));
+  }
+
+  // Creer l'utilisateur (le hash est fait dans le pre-save)
+  const utilisateur = await Utilisateur.create({ nom, email, motDePasse });
+
+  // Generer le token
+  const token = genererToken(utilisateur._id);
+
+  // Masquer le mot de passe dans la reponse
+  utilisateur.motDePasse = undefined;
+
+  res.status(201).json({
+    succes: true,
+    token,
+    donnees: utilisateur
+  });
+});
+
+exports.connexion = catchAsync(async (req, res, next) => {
+  const { email, motDePasse } = req.body;
+
+  // Recuperer l'utilisateur avec le mot de passe
+  const utilisateur = await Utilisateur.findOne({ email }).select('+motDePasse');
+
+  if (!utilisateur || !(await utilisateur.comparerMotDePasse(motDePasse))) {
+    return next(new AppError('Email ou mot de passe incorrect', 401));
+  }
+
+  if (!utilisateur.actif) {
+    return next(new AppError('Ce compte est desactive', 403));
+  }
+
+  const token = genererToken(utilisateur._id);
+  utilisateur.motDePasse = undefined;
+
+  res.status(200).json({
+    succes: true,
+    token,
+    donnees: utilisateur
+  });
+});
+```
+
+---
+
+### Exercice 10 -- Upload de fichier et middleware personnalise
+
+**Enonce :**
+Creer une route permettant d'uploader l'avatar d'un utilisateur. Le fichier doit etre une image (JPEG ou PNG), ne pas depasser 2 Mo, et etre renomme avec l'ID de l'utilisateur. Proteger la route par authentification.
+
+**Solution :**
+
+```javascript
+// middleware/uploadAvatar.js
+const multer = require('multer');
+const path = require('path');
+const AppError = require('../utils/AppError');
+
+const stockage = multer.diskStorage({
+  destination: function(req, fichier, cb) {
+    cb(null, 'uploads/avatars/');
+  },
+  filename: function(req, fichier, cb) {
+    const extension = path.extname(fichier.originalname).toLowerCase();
+    // Utiliser l'ID de l'utilisateur connecte comme nom de fichier
+    cb(null, `avatar-${req.utilisateur._id}${extension}`);
+  }
+});
+
+const filtreFichier = (req, fichier, cb) => {
+  const typesAutorises = ['image/jpeg', 'image/png'];
+  if (typesAutorises.includes(fichier.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new AppError('Seules les images JPEG et PNG sont autorisees', 400), false);
+  }
+};
+
+const uploadAvatar = multer({
+  storage: stockage,
+  fileFilter: filtreFichier,
+  limits: {
+    fileSize: 2 * 1024 * 1024 // 2 Mo
+  }
+});
+
+module.exports = uploadAvatar;
+
+// routes/utilisateurRoutes.js
+const express = require('express');
+const router = express.Router();
+const { proteger } = require('../middleware/auth');
+const uploadAvatar = require('../middleware/uploadAvatar');
+const utilisateurController = require('../controllers/utilisateurController');
+
+router.put(
+  '/avatar',
+  proteger,
+  uploadAvatar.single('avatar'),
+  utilisateurController.uploaderAvatar
+);
+
+module.exports = router;
+
+// controllers/utilisateurController.js
+const Utilisateur = require('../models/Utilisateur');
+const AppError = require('../utils/AppError');
+const catchAsync = require('../utils/catchAsync');
+
+exports.uploaderAvatar = catchAsync(async (req, res, next) => {
+  if (!req.file) {
+    return next(new AppError('Aucun fichier fourni', 400));
+  }
+
+  // Mettre a jour le champ avatar de l'utilisateur
+  const utilisateur = await Utilisateur.findByIdAndUpdate(
+    req.utilisateur._id,
+    { avatar: `/uploads/avatars/${req.file.filename}` },
+    { new: true }
+  );
+
+  res.status(200).json({
+    succes: true,
+    message: 'Avatar mis a jour avec succes',
+    donnees: {
+      avatar: utilisateur.avatar
+    }
+  });
+});
+```
+
+---
+
+### Exercice 11 -- API complete : gestion de taches (mini-projet)
+
+**Enonce :**
+Concevoir une API complete de gestion de taches (todo list) avec :
+- Modele `Tache` : titre, description, statut (a_faire, en_cours, terminee), priorite (basse, moyenne, haute), dateEcheance, utilisateur (reference)
+- CRUD complet
+- Seul le proprietaire d'une tache peut la modifier ou la supprimer
+- Filtrage par statut et priorite
+- Tri par date d'echeance
+
+**Solution :**
+
+```javascript
+// models/Tache.js
+const mongoose = require('mongoose');
+
+const tacheSchema = new mongoose.Schema(
+  {
+    titre: {
+      type: String,
+      required: [true, 'Le titre est obligatoire'],
+      trim: true,
+      maxlength: 200
+    },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: ''
+    },
+    statut: {
+      type: String,
+      enum: ['a_faire', 'en_cours', 'terminee'],
+      default: 'a_faire'
+    },
+    priorite: {
+      type: String,
+      enum: ['basse', 'moyenne', 'haute'],
+      default: 'moyenne'
+    },
+    dateEcheance: {
+      type: Date
+    },
+    utilisateur: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Utilisateur',
+      required: true
+    }
+  },
+  { timestamps: true }
+);
+
+// Index pour les requetes frequentes
+tacheSchema.index({ utilisateur: 1, statut: 1 });
+tacheSchema.index({ utilisateur: 1, dateEcheance: 1 });
+
+module.exports = mongoose.model('Tache', tacheSchema);
+
+// routes/tacheRoutes.js
+const express = require('express');
+const router = express.Router();
+const tacheController = require('../controllers/tacheController');
+const { proteger } = require('../middleware/auth');
+
+// Toutes les routes sont protegees
+router.use(proteger);
+
+router.route('/')
+  .get(tacheController.mesTaches)
+  .post(tacheController.creer);
+
+router.route('/:id')
+  .get(tacheController.obtenirParId)
+  .put(tacheController.mettreAJour)
+  .delete(tacheController.supprimer);
+
+module.exports = router;
+
+// controllers/tacheController.js
+const Tache = require('../models/Tache');
+const AppError = require('../utils/AppError');
+const catchAsync = require('../utils/catchAsync');
+
+// Obtenir mes taches (avec filtrage et tri)
+exports.mesTaches = catchAsync(async (req, res, next) => {
+  const filtre = { utilisateur: req.utilisateur._id };
+
+  if (req.query.statut) filtre.statut = req.query.statut;
+  if (req.query.priorite) filtre.priorite = req.query.priorite;
+
+  // Taches en retard
+  if (req.query.enRetard === 'true') {
+    filtre.dateEcheance = { $lt: new Date() };
+    filtre.statut = { $ne: 'terminee' };
+  }
+
+  const page = parseInt(req.query.page, 10) || 1;
+  const limite = parseInt(req.query.limite, 10) || 20;
+  const saut = (page - 1) * limite;
+
+  const tri = req.query.tri || 'dateEcheance';
+
+  const [taches, total] = await Promise.all([
+    Tache.find(filtre).sort(tri).skip(saut).limit(limite),
+    Tache.countDocuments(filtre)
+  ]);
+
+  res.status(200).json({
+    succes: true,
+    compte: taches.length,
+    total,
+    page,
+    totalPages: Math.ceil(total / limite),
+    donnees: taches
+  });
+});
+
+// Creer une tache
+exports.creer = catchAsync(async (req, res, next) => {
+  // Associer automatiquement a l'utilisateur connecte
+  req.body.utilisateur = req.utilisateur._id;
+
+  const tache = await Tache.create(req.body);
+
+  res.status(201).json({
+    succes: true,
+    donnees: tache
+  });
+});
+
+// Obtenir une tache par ID
+exports.obtenirParId = catchAsync(async (req, res, next) => {
+  const tache = await Tache.findById(req.params.id);
+
+  if (!tache) {
+    return next(new AppError('Tache introuvable', 404));
+  }
+
+  // Verifier que l'utilisateur est le proprietaire
+  if (tache.utilisateur.toString() !== req.utilisateur._id.toString()) {
+    return next(new AppError('Vous n\'etes pas autorise a acceder a cette tache', 403));
+  }
+
+  res.status(200).json({
+    succes: true,
+    donnees: tache
+  });
+});
+
+// Mettre a jour une tache
+exports.mettreAJour = catchAsync(async (req, res, next) => {
+  let tache = await Tache.findById(req.params.id);
+
+  if (!tache) {
+    return next(new AppError('Tache introuvable', 404));
+  }
+
+  if (tache.utilisateur.toString() !== req.utilisateur._id.toString()) {
+    return next(new AppError('Vous n\'etes pas autorise a modifier cette tache', 403));
+  }
+
+  // Empecher la modification du proprietaire
+  delete req.body.utilisateur;
+
+  tache = await Tache.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true
+  });
+
+  res.status(200).json({
+    succes: true,
+    donnees: tache
+  });
+});
+
+// Supprimer une tache
+exports.supprimer = catchAsync(async (req, res, next) => {
+  const tache = await Tache.findById(req.params.id);
+
+  if (!tache) {
+    return next(new AppError('Tache introuvable', 404));
+  }
+
+  if (tache.utilisateur.toString() !== req.utilisateur._id.toString()) {
+    return next(new AppError('Vous n\'etes pas autorise a supprimer cette tache', 403));
+  }
+
+  await Tache.findByIdAndDelete(req.params.id);
+
+  res.status(204).json({
+    succes: true,
+    donnees: null
+  });
+});
+```
+
+---
+
+### Exercice 12 -- Questions theoriques d'examen
+
+**Question 1 :** Quelle est la difference entre PUT et PATCH ?
+
+**Reponse :** PUT remplace entierement la ressource. Tous les champs doivent etre fournis dans le corps de la requete ; les champs absents seront supprimes ou reinitialises. PATCH modifie partiellement la ressource. Seuls les champs fournis sont mis a jour ; les autres restent inchanges. PUT est idempotent. PATCH ne l'est pas necessairement.
+
+**Question 2 :** Pourquoi ne pas stocker les mots de passe en clair dans la base de donnees ?
+
+**Reponse :** Si la base de donnees est compromise, tous les mots de passe sont exposes. Le hachage avec bcrypt est irreversible : meme avec le hash, on ne peut pas retrouver le mot de passe original. Bcrypt ajoute un sel aleatoire a chaque hash, ce qui empeche les attaques par tables arc-en-ciel. Le facteur de cout (salt rounds) ralentit volontairement le hachage pour rendre les attaques par force brute impraticables.
+
+**Question 3 :** Quelle est la difference entre `select: false` dans un schema Mongoose et `.select('-champ')` dans une requete ?
+
+**Reponse :** `select: false` dans le schema exclut le champ par defaut de toutes les requetes. Pour l'inclure ponctuellement, on utilise `.select('+champ')`. A l'inverse, `.select('-champ')` dans une requete exclut le champ uniquement pour cette requete specifique. `select: false` est utilise pour les donnees sensibles comme les mots de passe.
+
+**Question 4 :** Expliquer le role du middleware `next()` dans Express.
+
+**Reponse :** La fonction `next()` passe le controle au middleware suivant dans la pile. Sans appel a `next()`, la requete reste bloquee et le client ne recoit jamais de reponse (timeout). Si `next()` est appele avec un argument (`next(erreur)`), Express saute tous les middleware normaux et passe directement au middleware de gestion d'erreurs (celui a quatre parametres : `err, req, res, next`).
+
+**Question 5 :** Quelle est la difference entre un document imbrique et une reference dans MongoDB ? Donner un exemple concret pour chaque approche.
+
+**Reponse :** Un document imbrique stocke les donnees directement dans le document parent. Exemple : une commande contient l'adresse de livraison en tant que sous-document, car l'adresse est specifique a cette commande et ne change pas. Une reference stocke uniquement l'ObjectId d'un document d'une autre collection. Exemple : un livre reference son auteur par ObjectId, car l'auteur est une entite independante pouvant etre modifiee et associee a plusieurs livres. L'imbrication est preferee quand les donnees sont lues ensemble et rarement modifiees. Le referencement est prefere quand les donnees sont partagees entre plusieurs documents ou modifiees independamment.

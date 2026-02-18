@@ -16,20 +16,56 @@ function isPublished(slug: string): boolean {
 const guidesDirectory = path.join(process.cwd(), 'guides');
 
 const CATEGORY_MAP: Record<string, string> = {
+  // SLAM — Fondamentaux
   'algorithmique': 'Fondamentaux',
   'html-css': 'Fondamentaux',
+  'git-github': 'Fondamentaux',
+  'projet-e5': 'Fondamentaux',
+  'projet-e5-sisr': 'Fondamentaux',
+  // SLAM — Programmation
   'poo': 'Programmation',
   'javascript-vanilla': 'Programmation',
   'javascript-nodejs': 'Programmation',
   'javascript-react': 'Programmation',
   'csharp-winforms': 'Programmation',
+  'api-nodejs-mongodb': 'Programmation',
+  'php-mysql': 'Programmation',
+  // Bases de donnees
   'sql': 'Bases de donnees',
   'merise': 'Bases de donnees',
   'procedures-triggers': 'Bases de donnees',
+  // Architecture
   'architecture-mvc': 'Architecture',
   'uml': 'Architecture',
+  // Qualite et Securite
   'tests': 'Qualite et Securite',
   'securite': 'Qualite et Securite',
+  'droit-rgpd': 'Qualite et Securite',
+  // Mathematiques
+  'maths-arithmetique': 'Mathematiques',
+  'maths-logique': 'Mathematiques',
+  'maths-matrices': 'Mathematiques',
+  'maths-suites': 'Mathematiques',
+  'maths-probabilites': 'Mathematiques',
+  'maths-graphes': 'Mathematiques',
+  // SISR — Reseaux
+  'reseaux-fondamentaux': 'Reseaux',
+  'routage-commutation': 'Reseaux',
+  'services-reseau': 'Reseaux',
+  // SISR — Systemes
+  'windows-server': 'Systemes',
+  'linux-administration': 'Systemes',
+  'linux-services': 'Systemes',
+  // SISR — Virtualisation
+  'virtualisation': 'Virtualisation',
+  'docker': 'Virtualisation',
+  // SISR — Securite
+  'cybersecurite-infra': 'Securite',
+  'sauvegarde-pra': 'Securite',
+  // SISR — Exploitation
+  'supervision': 'Exploitation',
+  'scripting-powershell-bash': 'Exploitation',
+  'glpi-parc': 'Exploitation',
 };
 
 function inferCategory(slug: string, frontmatter: Partial<GuideFrontmatter>): string {

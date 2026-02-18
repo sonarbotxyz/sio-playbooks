@@ -24,10 +24,10 @@ const fontMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'BTS SIO SLAM -- Le guide ultime',
-    template: '%s | BTS SIO SLAM',
+    default: 'BTS SIO — Ton arme secrete pour l\'examen',
+    template: '%s | BTS SIO Playbooks',
   },
-  description: '14 playbooks couvrant l\'integralite du programme BTS SIO option SLAM. De l\'algorithmique au C# WinForms.',
+  description: 'SLAM, SISR, Maths, Droit — tout le programme BTS SIO en playbooks ultra-detailles avec exercices corriges. Gratuit.',
   openGraph: {
     type: 'website',
     siteName: 'BTS SIO SLAM',

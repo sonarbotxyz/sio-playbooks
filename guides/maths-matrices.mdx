@@ -1,0 +1,2247 @@
+---
+title: "Mathématiques — Calcul matriciel"
+description: "Opérations sur les matrices, inverse, déterminant, systèmes linéaires, applications aux graphes"
+category: "Mathématiques"
+tags: ["matrices", "calcul matriciel", "déterminant", "systèmes linéaires", "maths"]
+difficulty: "Intermédiaire"
+---
+
+# Calcul matriciel
+
+---
+
+## 1. Definitions fondamentales
+
+### 1.1 Qu'est-ce qu'une matrice ?
+
+Une matrice est un tableau rectangulaire de nombres, organise en lignes et en colonnes.
+
+On note une matrice A de dimensions m x n (m lignes, n colonnes) :
+
+```
+        colonne 1  colonne 2  ...  colonne n
+ligne 1 [  a₁₁       a₁₂     ...    a₁ₙ  ]
+ligne 2 [  a₂₁       a₂₂     ...    a₂ₙ  ]
+  ...   [  ...       ...      ...    ...   ]
+ligne m [  aₘ₁       aₘ₂     ...    aₘₙ  ]
+```
+
+Le coefficient situe a la ligne i et a la colonne j se note aᵢⱼ.
+
+Exemple : la matrice A de dimensions 2 x 3 :
+
+```
+A = [ 1  4  7 ]
+    [ 2  5  8 ]
+```
+
+A a 2 lignes et 3 colonnes. Le coefficient a₁₂ = 4 (ligne 1, colonne 2). Le coefficient a₂₃ = 8 (ligne 2, colonne 3).
+
+### 1.2 Types de matrices
+
+**Matrice ligne** : matrice a une seule ligne (1 x n).
+
+```
+L = [ 3  -1  7 ]       (dimensions 1 x 3)
+```
+
+**Matrice colonne** : matrice a une seule colonne (m x 1).
+
+```
+C = [ 2 ]
+    [ 5 ]              (dimensions 3 x 1)
+    [ -1]
+```
+
+**Matrice carree** : matrice ou le nombre de lignes est egal au nombre de colonnes (n x n). On dit qu'elle est d'ordre n.
+
+```
+A = [ 1  3 ]
+    [ 4  2 ]           (matrice carree d'ordre 2)
+```
+
+**Matrice nulle** : tous les coefficients sont egaux a 0.
+
+```
+O = [ 0  0 ]
+    [ 0  0 ]
+```
+
+**Matrice identite** (notee Iₙ) : matrice carree d'ordre n avec des 1 sur la diagonale principale et des 0 partout ailleurs.
+
+```
+I₂ = [ 1  0 ]          I₃ = [ 1  0  0 ]
+     [ 0  1 ]               [ 0  1  0 ]
+                             [ 0  0  1 ]
+```
+
+Propriete fondamentale : pour toute matrice carree A d'ordre n, on a A x Iₙ = Iₙ x A = A.
+
+**Matrice diagonale** : matrice carree dont tous les coefficients hors de la diagonale principale sont nuls.
+
+```
+D = [ 3  0  0 ]
+    [ 0  -2 0 ]
+    [ 0  0  5 ]
+```
+
+**Matrice triangulaire superieure** : tous les coefficients sous la diagonale sont nuls.
+
+```
+U = [ 2  1  4 ]
+    [ 0  3  -1]
+    [ 0  0  5 ]
+```
+
+**Matrice triangulaire inferieure** : tous les coefficients au-dessus de la diagonale sont nuls.
+
+```
+L = [ 2  0  0 ]
+    [ 1  3  0 ]
+    [ 4  -1 5 ]
+```
+
+**Matrice symetrique** : matrice carree telle que aᵢⱼ = aⱼᵢ pour tout i, j (autrement dit A = Aᵀ).
+
+```
+S = [ 1  3  5 ]
+    [ 3  2  7 ]        s₁₂ = 3 = s₂₁, s₁₃ = 5 = s₃₁, s₂₃ = 7 = s₃₂
+    [ 5  7  4 ]
+```
+
+---
+
+## 2. Operations sur les matrices
+
+### 2.1 Addition de matrices
+
+Condition : les deux matrices doivent avoir les memes dimensions (m x n).
+
+Regle : on additionne les coefficients situes a la meme position.
+
+Si A et B sont de dimensions m x n, alors C = A + B est definie par cᵢⱼ = aᵢⱼ + bᵢⱼ.
+
+**Exemple pas a pas :**
+
+```
+A = [ 1   3 ]      B = [ 5   -2 ]
+    [ -2  4 ]          [ 0    7 ]
+```
+
+Calcul de C = A + B :
+
+```
+c₁₁ = a₁₁ + b₁₁ = 1 + 5 = 6
+c₁₂ = a₁₂ + b₁₂ = 3 + (-2) = 1
+c₂₁ = a₂₁ + b₂₁ = (-2) + 0 = -2
+c₂₂ = a₂₂ + b₂₂ = 4 + 7 = 11
+```
+
+Resultat :
+
+```
+C = A + B = [ 6   1  ]
+            [ -2  11 ]
+```
+
+### 2.2 Soustraction de matrices
+
+Meme condition : dimensions identiques. On soustrait coefficient par coefficient.
+
+**Exemple pas a pas :**
+
+```
+A = [ 4  1 ]      B = [ 2  3 ]
+    [ 0  5 ]          [ -1 2 ]
+```
+
+Calcul de D = A - B :
+
+```
+d₁₁ = a₁₁ - b₁₁ = 4 - 2 = 2
+d₁₂ = a₁₂ - b₁₂ = 1 - 3 = -2
+d₂₁ = a₂₁ - b₂₁ = 0 - (-1) = 1
+d₂₂ = a₂₂ - b₂₂ = 5 - 2 = 3
+```
+
+Resultat :
+
+```
+D = A - B = [ 2  -2 ]
+            [ 1   3 ]
+```
+
+### 2.3 Multiplication par un scalaire
+
+On multiplie chaque coefficient de la matrice par le scalaire k.
+
+Si C = k x A, alors cᵢⱼ = k x aᵢⱼ.
+
+**Exemple pas a pas :**
+
+```
+k = 3       A = [ 2  -1 ]
+                [ 4   0 ]
+                [ -3  5 ]
+```
+
+Calcul de C = 3 x A :
+
+```
+c₁₁ = 3 x 2 = 6
+c₁₂ = 3 x (-1) = -3
+c₂₁ = 3 x 4 = 12
+c₂₂ = 3 x 0 = 0
+c₃₁ = 3 x (-3) = -9
+c₃₂ = 3 x 5 = 15
+```
+
+Resultat :
+
+```
+C = 3A = [ 6   -3 ]
+         [ 12   0 ]
+         [ -9  15 ]
+```
+
+---
+
+## 3. Multiplication de matrices
+
+### 3.1 Condition de compatibilite
+
+Le produit A x B est defini si et seulement si le nombre de colonnes de A est egal au nombre de lignes de B.
+
+Si A est de dimensions m x p et B est de dimensions p x n, alors C = A x B est de dimensions m x n.
+
+```
+A : m x p    B : p x n    =>    C = AB : m x n
+         ↑       ↑
+     doivent etre egaux
+```
+
+Exemple : A est 2 x 3 et B est 3 x 2. Le produit AB existe et donne une matrice 2 x 2.
+Mais BA n'est pas forcement defini avec les memes dimensions (ici BA serait 3 x 3, donc il existe aussi, mais AB et BA sont differents).
+
+**Attention : en general, AB est different de BA. La multiplication matricielle n'est pas commutative.**
+
+### 3.2 Regle de calcul : ligne par colonne
+
+Le coefficient cᵢⱼ du produit C = AB est obtenu en multipliant terme a terme les elements de la ligne i de A par les elements de la colonne j de B, puis en additionnant.
+
+```
+cᵢⱼ = aᵢ₁ x b₁ⱼ + aᵢ₂ x b₂ⱼ + ... + aᵢₚ x bₚⱼ
+```
+
+### 3.3 Exemple detaille : multiplication 2 x 2
+
+```
+A = [ 1  3 ]      B = [ 2  0 ]
+    [ 2  4 ]          [ 1  5 ]
+```
+
+A est 2 x 2, B est 2 x 2. Le produit AB est 2 x 2.
+
+Calcul de c₁₁ (ligne 1 de A, colonne 1 de B) :
+
+```
+c₁₁ = a₁₁ x b₁₁ + a₁₂ x b₂₁
+     = 1 x 2 + 3 x 1
+     = 2 + 3
+     = 5
+```
+
+Calcul de c₁₂ (ligne 1 de A, colonne 2 de B) :
+
+```
+c₁₂ = a₁₁ x b₁₂ + a₁₂ x b₂₂
+     = 1 x 0 + 3 x 5
+     = 0 + 15
+     = 15
+```
+
+Calcul de c₂₁ (ligne 2 de A, colonne 1 de B) :
+
+```
+c₂₁ = a₂₁ x b₁₁ + a₂₂ x b₂₁
+     = 2 x 2 + 4 x 1
+     = 4 + 4
+     = 8
+```
+
+Calcul de c₂₂ (ligne 2 de A, colonne 2 de B) :
+
+```
+c₂₂ = a₂₁ x b₁₂ + a₂₂ x b₂₂
+     = 2 x 0 + 4 x 5
+     = 0 + 20
+     = 20
+```
+
+Resultat :
+
+```
+AB = [ 5   15 ]
+     [ 8   20 ]
+```
+
+### 3.4 Exemple detaille : multiplication 2 x 3 par 3 x 2
+
+```
+A = [ 1  0  2 ]      B = [ 3  1 ]
+    [ -1 3  1 ]          [ 0  2 ]
+                         [ 4  -1]
+```
+
+A est 2 x 3, B est 3 x 2. Le produit AB est 2 x 2.
+
+Calcul de c₁₁ (ligne 1 de A, colonne 1 de B) :
+
+```
+c₁₁ = 1 x 3 + 0 x 0 + 2 x 4
+     = 3 + 0 + 8
+     = 11
+```
+
+Calcul de c₁₂ (ligne 1 de A, colonne 2 de B) :
+
+```
+c₁₂ = 1 x 1 + 0 x 2 + 2 x (-1)
+     = 1 + 0 + (-2)
+     = -1
+```
+
+Calcul de c₂₁ (ligne 2 de A, colonne 1 de B) :
+
+```
+c₂₁ = (-1) x 3 + 3 x 0 + 1 x 4
+     = -3 + 0 + 4
+     = 1
+```
+
+Calcul de c₂₂ (ligne 2 de A, colonne 2 de B) :
+
+```
+c₂₂ = (-1) x 1 + 3 x 2 + 1 x (-1)
+     = -1 + 6 + (-1)
+     = 4
+```
+
+Resultat :
+
+```
+AB = [ 11  -1 ]
+     [ 1    4 ]
+```
+
+### 3.5 Exemple detaille : multiplication 3 x 3
+
+```
+A = [ 1  2  0 ]      B = [ 2  1  0 ]
+    [ 0  1  3 ]          [ 0  3  1 ]
+    [ 1  0  2 ]          [ 1  0  2 ]
+```
+
+Calcul de chaque coefficient de C = AB (matrice 3 x 3) :
+
+```
+c₁₁ = 1x2 + 2x0 + 0x1 = 2 + 0 + 0 = 2
+c₁₂ = 1x1 + 2x3 + 0x0 = 1 + 6 + 0 = 7
+c₁₃ = 1x0 + 2x1 + 0x2 = 0 + 2 + 0 = 2
+
+c₂₁ = 0x2 + 1x0 + 3x1 = 0 + 0 + 3 = 3
+c₂₂ = 0x1 + 1x3 + 3x0 = 0 + 3 + 0 = 3
+c₂₃ = 0x0 + 1x1 + 3x2 = 0 + 1 + 6 = 7
+
+c₃₁ = 1x2 + 0x0 + 2x1 = 2 + 0 + 2 = 4
+c₃₂ = 1x1 + 0x3 + 2x0 = 1 + 0 + 0 = 1
+c₃₃ = 1x0 + 0x1 + 2x2 = 0 + 0 + 4 = 4
+```
+
+Resultat :
+
+```
+AB = [ 2  7  2 ]
+     [ 3  3  7 ]
+     [ 4  1  4 ]
+```
+
+---
+
+## 4. Transposee d'une matrice
+
+### 4.1 Definition
+
+La transposee de A, notee Aᵀ (ou parfois ᵗA), est la matrice obtenue en echangeant lignes et colonnes. Si A est m x n, alors Aᵀ est n x m.
+
+Le coefficient en position (i, j) de Aᵀ est le coefficient en position (j, i) de A.
+
+**Exemple :**
+
+```
+A = [ 1  4  7 ]            Aᵀ = [ 1  2 ]
+    [ 2  5  8 ]                 [ 4  5 ]
+                                [ 7  8 ]
+A est 2 x 3              Aᵀ est 3 x 2
+```
+
+### 4.2 Proprietes
+
+- (Aᵀ)ᵀ = A
+- (A + B)ᵀ = Aᵀ + Bᵀ
+- (kA)ᵀ = k(Aᵀ)
+- (AB)ᵀ = BᵀAᵀ (attention a l'inversion de l'ordre)
+
+---
+
+## 5. Determinant
+
+### 5.1 Determinant d'une matrice 2 x 2
+
+Pour une matrice :
+
+```
+A = [ a  b ]
+    [ c  d ]
+```
+
+Le determinant est :
+
+```
+det(A) = ad - bc
+```
+
+**Exemple pas a pas :**
+
+```
+A = [ 3  2 ]
+    [ 1  5 ]
+
+det(A) = 3 x 5 - 2 x 1
+       = 15 - 2
+       = 13
+```
+
+**Autre exemple :**
+
+```
+B = [ 4  6 ]
+    [ 2  3 ]
+
+det(B) = 4 x 3 - 6 x 2
+       = 12 - 12
+       = 0
+```
+
+Quand le determinant vaut 0, la matrice est dite singuliere (non inversible).
+
+### 5.2 Determinant d'une matrice 3 x 3 : regle de Sarrus
+
+Pour une matrice :
+
+```
+A = [ a₁  b₁  c₁ ]
+    [ a₂  b₂  c₂ ]
+    [ a₃  b₃  c₃ ]
+```
+
+On recopie les deux premieres colonnes a droite :
+
+```
+a₁  b₁  c₁ | a₁  b₁
+a₂  b₂  c₂ | a₂  b₂
+a₃  b₃  c₃ | a₃  b₃
+```
+
+Les 3 diagonales descendantes (produits positifs) :
+
+```
+D₁ = a₁ x b₂ x c₃
+D₂ = b₁ x c₂ x a₃
+D₃ = c₁ x a₂ x b₃
+```
+
+Les 3 diagonales montantes (produits negatifs) :
+
+```
+D₄ = c₁ x b₂ x a₃
+D₅ = a₁ x c₂ x b₃
+D₆ = b₁ x a₂ x c₃
+```
+
+Formule :
+
+```
+det(A) = D₁ + D₂ + D₃ - D₄ - D₅ - D₆
+```
+
+**Exemple pas a pas :**
+
+```
+A = [ 1  2  3 ]
+    [ 4  5  6 ]
+    [ 7  8  0 ]
+```
+
+Diagonales descendantes :
+```
+D₁ = 1 x 5 x 0 = 0
+D₂ = 2 x 6 x 7 = 84
+D₃ = 3 x 4 x 8 = 96
+```
+
+Diagonales montantes :
+```
+D₄ = 3 x 5 x 7 = 105
+D₅ = 1 x 6 x 8 = 48
+D₆ = 2 x 4 x 0 = 0
+```
+
+Calcul :
+```
+det(A) = 0 + 84 + 96 - 105 - 48 - 0
+       = 180 - 153
+       = 27
+```
+
+### 5.3 Determinant 3 x 3 : developpement par cofacteurs
+
+On peut developper selon n'importe quelle ligne ou colonne. Developpons selon la premiere ligne :
+
+```
+det(A) = a₁₁ x C₁₁ + a₁₂ x C₁₂ + a₁₃ x C₁₃
+```
+
+ou Cᵢⱼ = (-1)^(i+j) x Mᵢⱼ, et Mᵢⱼ est le mineur (determinant de la sous-matrice obtenue en supprimant la ligne i et la colonne j).
+
+**Exemple avec la meme matrice :**
+
+```
+A = [ 1  2  3 ]
+    [ 4  5  6 ]
+    [ 7  8  0 ]
+```
+
+Developpement selon la ligne 1 :
+
+Cofacteur C₁₁ : on supprime ligne 1 et colonne 1 :
+```
+M₁₁ = det[ 5  6 ] = 5 x 0 - 6 x 8 = 0 - 48 = -48
+         [ 8  0 ]
+C₁₁ = (-1)^(1+1) x (-48) = 1 x (-48) = -48
+```
+
+Cofacteur C₁₂ : on supprime ligne 1 et colonne 2 :
+```
+M₁₂ = det[ 4  6 ] = 4 x 0 - 6 x 7 = 0 - 42 = -42
+         [ 7  0 ]
+C₁₂ = (-1)^(1+2) x (-42) = (-1) x (-42) = 42
+```
+
+Cofacteur C₁₃ : on supprime ligne 1 et colonne 3 :
+```
+M₁₃ = det[ 4  5 ] = 4 x 8 - 5 x 7 = 32 - 35 = -3
+         [ 7  8 ]
+C₁₃ = (-1)^(1+3) x (-3) = 1 x (-3) = -3
+```
+
+Calcul final :
+```
+det(A) = 1 x (-48) + 2 x 42 + 3 x (-3)
+       = -48 + 84 + (-9)
+       = -48 + 84 - 9
+       = 27
+```
+
+On retrouve bien 27, comme avec la regle de Sarrus.
+
+### 5.4 Proprietes du determinant
+
+- det(Iₙ) = 1
+- Si une ligne (ou colonne) est nulle, det(A) = 0
+- Si deux lignes (ou colonnes) sont identiques, det(A) = 0
+- Si on echange deux lignes, le determinant change de signe
+- Si on multiplie une ligne par k, le determinant est multiplie par k
+- det(AB) = det(A) x det(B)
+- det(Aᵀ) = det(A)
+- det(kA) = kⁿ x det(A) pour une matrice n x n
+
+---
+
+## 6. Matrice inverse
+
+### 6.1 Definition et condition d'existence
+
+La matrice inverse de A, notee A⁻¹, est l'unique matrice telle que :
+
+```
+A x A⁻¹ = A⁻¹ x A = Iₙ
+```
+
+**Condition : A est inversible si et seulement si det(A) est different de 0.**
+
+Si det(A) = 0, la matrice A n'admet pas d'inverse.
+
+### 6.2 Inverse d'une matrice 2 x 2 : formule directe
+
+Pour :
+
+```
+A = [ a  b ]
+    [ c  d ]
+```
+
+Si det(A) = ad - bc est different de 0 :
+
+```
+A⁻¹ = (1 / det(A)) x [  d  -b ]
+                       [ -c   a ]
+```
+
+Methode : on echange a et d, on change les signes de b et c, et on divise tout par le determinant.
+
+**Exemple pas a pas :**
+
+```
+A = [ 2  1 ]
+    [ 5  3 ]
+```
+
+Etape 1 : calculer le determinant.
+```
+det(A) = 2 x 3 - 1 x 5 = 6 - 5 = 1
+```
+
+Le determinant vaut 1, donc A est inversible.
+
+Etape 2 : appliquer la formule.
+```
+A⁻¹ = (1/1) x [  3  -1 ]
+               [ -5   2 ]
+
+A⁻¹ = [  3  -1 ]
+      [ -5   2 ]
+```
+
+Etape 3 : verification A x A⁻¹ = I₂.
+```
+c₁₁ = 2 x 3 + 1 x (-5) = 6 - 5 = 1
+c₁₂ = 2 x (-1) + 1 x 2 = -2 + 2 = 0
+c₂₁ = 5 x 3 + 3 x (-5) = 15 - 15 = 0
+c₂₂ = 5 x (-1) + 3 x 2 = -5 + 6 = 1
+```
+
+```
+A x A⁻¹ = [ 1  0 ] = I₂    (verifie)
+          [ 0  1 ]
+```
+
+### 6.3 Inverse d'une matrice 3 x 3 : methode de la comatrice
+
+Pour une matrice A 3 x 3, l'inverse se calcule par :
+
+```
+A⁻¹ = (1 / det(A)) x Com(A)ᵀ
+```
+
+ou Com(A) est la matrice des cofacteurs, et Com(A)ᵀ est sa transposee.
+
+**Exemple pas a pas :**
+
+```
+A = [ 1  2  0 ]
+    [ 0  1  3 ]
+    [ 1  0  2 ]
+```
+
+**Etape 1 : calculer det(A) par Sarrus.**
+
+```
+Diagonales descendantes :
+D₁ = 1 x 1 x 2 = 2
+D₂ = 2 x 3 x 1 = 6
+D₃ = 0 x 0 x 0 = 0
+
+Diagonales montantes :
+D₄ = 0 x 1 x 1 = 0
+D₅ = 1 x 3 x 0 = 0
+D₆ = 2 x 0 x 2 = 0
+
+det(A) = 2 + 6 + 0 - 0 - 0 - 0 = 8
+```
+
+det(A) = 8, donc A est inversible.
+
+**Etape 2 : calculer chaque cofacteur Cᵢⱼ.**
+
+Rappel : Cᵢⱼ = (-1)^(i+j) x (determinant de la sous-matrice obtenue en supprimant la ligne i et la colonne j).
+
+```
+C₁₁ = (+1) x det[ 1  3 ] = 1 x 2 - 3 x 0 = 2 - 0 = 2
+                 [ 0  2 ]
+
+C₁₂ = (-1) x det[ 0  3 ] = (-1) x (0 x 2 - 3 x 1) = (-1) x (-3) = 3
+                 [ 1  2 ]
+
+C₁₃ = (+1) x det[ 0  1 ] = 0 x 0 - 1 x 1 = 0 - 1 = -1
+                 [ 1  0 ]
+
+C₂₁ = (-1) x det[ 2  0 ] = (-1) x (2 x 2 - 0 x 0) = (-1) x 4 = -4
+                 [ 0  2 ]
+
+C₂₂ = (+1) x det[ 1  0 ] = 1 x 2 - 0 x 1 = 2 - 0 = 2
+                 [ 1  2 ]
+
+C₂₃ = (-1) x det[ 1  2 ] = (-1) x (1 x 0 - 2 x 1) = (-1) x (-2) = 2
+                 [ 1  0 ]
+
+C₃₁ = (+1) x det[ 2  0 ] = 2 x 3 - 0 x 1 = 6 - 0 = 6
+                 [ 1  3 ]
+
+C₃₂ = (-1) x det[ 1  0 ] = (-1) x (1 x 3 - 0 x 0) = (-1) x 3 = -3
+                 [ 0  3 ]
+
+C₃₃ = (+1) x det[ 1  2 ] = 1 x 1 - 2 x 0 = 1 - 0 = 1
+                 [ 0  1 ]
+```
+
+**Etape 3 : ecrire la matrice des cofacteurs.**
+
+```
+Com(A) = [  2   3  -1 ]
+         [ -4   2   2 ]
+         [  6  -3   1 ]
+```
+
+**Etape 4 : transposer la matrice des cofacteurs.**
+
+```
+Com(A)ᵀ = [  2  -4   6 ]
+          [  3   2  -3 ]
+          [ -1   2   1 ]
+```
+
+**Etape 5 : diviser par det(A) = 8.**
+
+```
+A⁻¹ = (1/8) x [  2  -4   6 ]
+               [  3   2  -3 ]
+               [ -1   2   1 ]
+
+A⁻¹ = [  2/8   -4/8   6/8 ]     [ 1/4   -1/2   3/4 ]
+      [  3/8    2/8  -3/8 ]  =  [ 3/8    1/4  -3/8 ]
+      [ -1/8    2/8   1/8 ]     [-1/8    1/4   1/8 ]
+```
+
+**Etape 6 : verification A x A⁻¹ = I₃.**
+
+Calculons le coefficient (1,1) de A x A⁻¹ :
+```
+1 x (1/4) + 2 x (3/8) + 0 x (-1/8)
+= 1/4 + 6/8 + 0
+= 1/4 + 3/4
+= 1
+```
+
+Calculons le coefficient (1,2) :
+```
+1 x (-1/2) + 2 x (1/4) + 0 x (1/4)
+= -1/2 + 2/4 + 0
+= -1/2 + 1/2
+= 0
+```
+
+Les autres coefficients se verifient de la meme maniere. Le produit donne bien I₃.
+
+---
+
+## 7. Systemes d'equations lineaires
+
+### 7.1 Ecriture matricielle AX = B
+
+Tout systeme d'equations lineaires peut s'ecrire sous forme matricielle.
+
+Exemple avec un systeme de 2 equations a 2 inconnues :
+
+```
+{ 2x + y  = 5
+{ 5x + 3y = 13
+```
+
+Ecriture matricielle :
+
+```
+A = [ 2  1 ]    X = [ x ]    B = [ 5  ]
+    [ 5  3 ]        [ y ]        [ 13 ]
+
+AX = B
+```
+
+Exemple avec un systeme de 3 equations a 3 inconnues :
+
+```
+{ x + 2y      = 1
+{      y + 3z = 9
+{ x      + 2z = 5
+```
+
+Ecriture matricielle :
+
+```
+A = [ 1  2  0 ]    X = [ x ]    B = [ 1 ]
+    [ 0  1  3 ]        [ y ]        [ 9 ]
+    [ 1  0  2 ]        [ z ]        [ 5 ]
+```
+
+### 7.2 Resolution par inversion : X = A⁻¹B
+
+Si det(A) est different de 0, le systeme admet une unique solution :
+
+```
+X = A⁻¹ x B
+```
+
+**Exemple pas a pas (systeme 2 x 2) :**
+
+Systeme :
+```
+{ 2x + y  = 5
+{ 5x + 3y = 13
+```
+
+Etape 1 : determinant.
+```
+det(A) = 2 x 3 - 1 x 5 = 6 - 5 = 1
+```
+
+Etape 2 : inverse de A.
+```
+A⁻¹ = [  3  -1 ]
+      [ -5   2 ]
+```
+
+Etape 3 : calcul de X = A⁻¹ x B.
+```
+x = 3 x 5 + (-1) x 13 = 15 - 13 = 2
+y = (-5) x 5 + 2 x 13 = -25 + 26 = 1
+```
+
+Solution : x = 2 et y = 1.
+
+Verification dans le systeme original :
+```
+2(2) + 1 = 4 + 1 = 5      (verifie)
+5(2) + 3(1) = 10 + 3 = 13  (verifie)
+```
+
+**Exemple pas a pas (systeme 3 x 3) :**
+
+Systeme :
+```
+{ x + 2y      = 1
+{      y + 3z = 9
+{ x      + 2z = 5
+```
+
+On a calcule precedemment :
+
+```
+A⁻¹ = [ 1/4   -1/2   3/4 ]
+      [ 3/8    1/4  -3/8 ]
+      [-1/8    1/4   1/8 ]
+```
+
+Calcul de X = A⁻¹ x B :
+
+```
+x = (1/4) x 1 + (-1/2) x 9 + (3/4) x 5
+  = 1/4 - 9/2 + 15/4
+  = 1/4 - 18/4 + 15/4
+  = (1 - 18 + 15) / 4
+  = -2/4
+  = -1/2
+```
+
+```
+y = (3/8) x 1 + (1/4) x 9 + (-3/8) x 5
+  = 3/8 + 9/4 - 15/8
+  = 3/8 + 18/8 - 15/8
+  = (3 + 18 - 15) / 8
+  = 6/8
+  = 3/4
+```
+
+```
+z = (-1/8) x 1 + (1/4) x 9 + (1/8) x 5
+  = -1/8 + 9/4 + 5/8
+  = -1/8 + 18/8 + 5/8
+  = (-1 + 18 + 5) / 8
+  = 22/8
+  = 11/4
+```
+
+Solution : x = -1/2, y = 3/4, z = 11/4.
+
+Verification dans la premiere equation : x + 2y = -1/2 + 2 x (3/4) = -1/2 + 3/2 = 2/2 = 1. Correct.
+
+### 7.3 Methode de Cramer
+
+Pour un systeme AX = B de n equations a n inconnues, si det(A) est different de 0, la solution est :
+
+```
+xᵢ = det(Aᵢ) / det(A)
+```
+
+ou Aᵢ est la matrice A dans laquelle on a remplace la colonne i par le vecteur B.
+
+**Exemple pas a pas (systeme 2 x 2) :**
+
+```
+{ 3x + 2y = 7
+{  x - y  = 1
+```
+
+Etape 1 : det(A).
+```
+A = [ 3   2 ]
+    [ 1  -1 ]
+
+det(A) = 3 x (-1) - 2 x 1 = -3 - 2 = -5
+```
+
+Etape 2 : det(A₁) — on remplace la colonne 1 de A par B.
+```
+A₁ = [ 7   2 ]
+     [ 1  -1 ]
+
+det(A₁) = 7 x (-1) - 2 x 1 = -7 - 2 = -9
+```
+
+Etape 3 : det(A₂) — on remplace la colonne 2 de A par B.
+```
+A₂ = [ 3  7 ]
+     [ 1  1 ]
+
+det(A₂) = 3 x 1 - 7 x 1 = 3 - 7 = -4
+```
+
+Etape 4 : solutions.
+```
+x = det(A₁) / det(A) = -9 / (-5) = 9/5
+y = det(A₂) / det(A) = -4 / (-5) = 4/5
+```
+
+Verification : 3 x (9/5) + 2 x (4/5) = 27/5 + 8/5 = 35/5 = 7. Correct.
+
+**Exemple pas a pas (systeme 3 x 3 avec Cramer) :**
+
+```
+{ 2x + y - z  = 3
+{  x - y + 2z = 1
+{ 3x + 2y + z = 10
+```
+
+Matrice A et vecteur B :
+```
+A = [ 2   1  -1 ]      B = [ 3  ]
+    [ 1  -1   2 ]          [ 1  ]
+    [ 3   2   1 ]          [ 10 ]
+```
+
+Etape 1 : det(A) par Sarrus.
+```
+D₁ = 2 x (-1) x 1 = -2
+D₂ = 1 x 2 x 3 = 6
+D₃ = (-1) x 1 x 2 = -2
+
+D₄ = (-1) x (-1) x 3 = 3
+D₅ = 2 x 2 x 2 = 8
+D₆ = 1 x 1 x 1 = 1
+
+det(A) = (-2) + 6 + (-2) - 3 - 8 - 1 = 2 - 12 = -10
+```
+
+Etape 2 : det(A₁) — colonne 1 remplacee par B.
+```
+A₁ = [ 3   1  -1 ]
+     [ 1  -1   2 ]
+     [ 10  2   1 ]
+
+D₁ = 3 x (-1) x 1 = -3
+D₂ = 1 x 2 x 10 = 20
+D₃ = (-1) x 1 x 2 = -2
+
+D₄ = (-1) x (-1) x 10 = 10
+D₅ = 3 x 2 x 2 = 12
+D₆ = 1 x 1 x 1 = 1
+
+det(A₁) = (-3) + 20 + (-2) - 10 - 12 - 1 = 15 - 23 = -8
+```
+
+Correction, recalculons proprement :
+```
+det(A₁) = -3 + 20 + (-2) - 10 - 12 - 1
+         = -3 + 20 - 2 - 10 - 12 - 1
+         = 20 - 28
+         = -8
+```
+
+Etape 3 : det(A₂) — colonne 2 remplacee par B.
+```
+A₂ = [ 2   3  -1 ]
+     [ 1   1   2 ]
+     [ 3  10   1 ]
+
+D₁ = 2 x 1 x 1 = 2
+D₂ = 3 x 2 x 3 = 18
+D₃ = (-1) x 1 x 10 = -10
+
+D₄ = (-1) x 1 x 3 = -3
+D₅ = 2 x 2 x 10 = 40
+D₆ = 3 x 1 x 1 = 3
+
+det(A₂) = 2 + 18 + (-10) - (-3) - 40 - 3
+         = 2 + 18 - 10 + 3 - 40 - 3
+         = 23 - 53
+         = -30
+```
+
+Etape 4 : det(A₃) — colonne 3 remplacee par B.
+```
+A₃ = [ 2   1   3 ]
+     [ 1  -1   1 ]
+     [ 3   2  10 ]
+
+D₁ = 2 x (-1) x 10 = -20
+D₂ = 1 x 1 x 3 = 3
+D₃ = 3 x 1 x 2 = 6
+
+D₄ = 3 x (-1) x 3 = -9
+D₅ = 2 x 1 x 2 = 4
+D₆ = 1 x 1 x 10 = 10
+
+det(A₃) = (-20) + 3 + 6 - (-9) - 4 - 10
+         = -20 + 3 + 6 + 9 - 4 - 10
+         = -16
+```
+
+Etape 5 : solutions.
+```
+x = det(A₁) / det(A) = -8 / (-10) = 4/5
+y = det(A₂) / det(A) = -30 / (-10) = 3
+z = det(A₃) / det(A) = -16 / (-10) = 8/5
+```
+
+Verification dans l'equation 1 :
+```
+2 x (4/5) + 3 - (8/5) = 8/5 + 3 - 8/5 = 3. Correct.
+```
+
+Verification dans l'equation 3 :
+```
+3 x (4/5) + 2 x 3 + (8/5) = 12/5 + 6 + 8/5 = 20/5 + 6 = 4 + 6 = 10. Correct.
+```
+
+### 7.4 Pivot de Gauss (elimination de Gauss-Jordan)
+
+Methode systematique qui transforme le systeme en un systeme triangulaire, puis on remonte pour trouver les inconnues.
+
+On travaille sur la matrice augmentee [A | B].
+
+**Exemple pas a pas :**
+
+Systeme :
+```
+{  x + 2y + z  = 9
+{ 2x - y  + 3z = 8
+{ 3x + y  + 2z = 15
+```
+
+Etape 1 : ecrire la matrice augmentee.
+
+```
+[ 1   2   1 |  9 ]   L₁
+[ 2  -1   3 |  8 ]   L₂
+[ 3   1   2 | 15 ]   L₃
+```
+
+Etape 2 : eliminer x de L₂ et L₃.
+
+Operation : L₂ ← L₂ - 2 x L₁
+```
+Nouveau L₂ :
+colonne 1 : 2 - 2 x 1 = 2 - 2 = 0
+colonne 2 : -1 - 2 x 2 = -1 - 4 = -5
+colonne 3 : 3 - 2 x 1 = 3 - 2 = 1
+second membre : 8 - 2 x 9 = 8 - 18 = -10
+```
+
+Operation : L₃ ← L₃ - 3 x L₁
+```
+Nouveau L₃ :
+colonne 1 : 3 - 3 x 1 = 3 - 3 = 0
+colonne 2 : 1 - 3 x 2 = 1 - 6 = -5
+colonne 3 : 2 - 3 x 1 = 2 - 3 = -1
+second membre : 15 - 3 x 9 = 15 - 27 = -12
+```
+
+Matrice apres etape 2 :
+```
+[ 1   2   1 |   9 ]   L₁
+[ 0  -5   1 | -10 ]   L₂
+[ 0  -5  -1 | -12 ]   L₃
+```
+
+Etape 3 : eliminer y de L₃.
+
+Operation : L₃ ← L₃ - L₂
+```
+Nouveau L₃ :
+colonne 1 : 0 - 0 = 0
+colonne 2 : -5 - (-5) = -5 + 5 = 0
+colonne 3 : -1 - 1 = -2
+second membre : -12 - (-10) = -12 + 10 = -2
+```
+
+Matrice apres etape 3 :
+```
+[ 1   2   1 |   9 ]   L₁
+[ 0  -5   1 | -10 ]   L₂
+[ 0   0  -2 |  -2 ]   L₃
+```
+
+Etape 4 : remonter (substitution arriere).
+
+De L₃ : -2z = -2, donc z = (-2) / (-2) = 1.
+
+De L₂ : -5y + z = -10, donc -5y + 1 = -10, donc -5y = -10 - 1 = -11, donc y = -11 / (-5) = 11/5.
+
+De L₁ : x + 2y + z = 9, donc x + 2 x (11/5) + 1 = 9, donc x + 22/5 + 1 = 9, donc x = 9 - 1 - 22/5 = 8 - 22/5 = 40/5 - 22/5 = 18/5.
+
+Solution : x = 18/5, y = 11/5, z = 1.
+
+Verification dans l'equation 1 :
+```
+18/5 + 2 x (11/5) + 1 = 18/5 + 22/5 + 5/5 = 45/5 = 9. Correct.
+```
+
+Verification dans l'equation 2 :
+```
+2 x (18/5) - (11/5) + 3 x 1 = 36/5 - 11/5 + 15/5 = 40/5 = 8. Correct.
+```
+
+Verification dans l'equation 3 :
+```
+3 x (18/5) + (11/5) + 2 x 1 = 54/5 + 11/5 + 10/5 = 75/5 = 15. Correct.
+```
+
+---
+
+## 8. Puissances de matrices
+
+### 8.1 Definition
+
+Pour une matrice carree A :
+
+```
+A⁰ = I   (matrice identite)
+A¹ = A
+A² = A x A
+A³ = A x A x A = A² x A
+Aⁿ = A x A x ... x A   (n fois)
+```
+
+### 8.2 Exemple : calcul de A²
+
+```
+A = [ 1  2 ]
+    [ 0  3 ]
+```
+
+A² = A x A :
+
+```
+c₁₁ = 1 x 1 + 2 x 0 = 1 + 0 = 1
+c₁₂ = 1 x 2 + 2 x 3 = 2 + 6 = 8
+c₂₁ = 0 x 1 + 3 x 0 = 0 + 0 = 0
+c₂₂ = 0 x 2 + 3 x 3 = 0 + 9 = 9
+```
+
+```
+A² = [ 1  8 ]
+     [ 0  9 ]
+```
+
+### 8.3 Exemple : calcul de A³
+
+A³ = A² x A :
+
+```
+c₁₁ = 1 x 1 + 8 x 0 = 1 + 0 = 1
+c₁₂ = 1 x 2 + 8 x 3 = 2 + 24 = 26
+c₂₁ = 0 x 1 + 9 x 0 = 0 + 0 = 0
+c₂₂ = 0 x 2 + 9 x 3 = 0 + 27 = 27
+```
+
+```
+A³ = [ 1  26 ]
+     [ 0  27 ]
+```
+
+### 8.4 Cas particulier : matrice diagonale
+
+Si D est diagonale, alors Dⁿ est obtenue en elevant chaque element diagonal a la puissance n.
+
+```
+D = [ 2  0 ]      D³ = [ 2³  0  ] = [ 8   0 ]
+    [ 0  5 ]           [ 0   5³ ]   [ 0  125 ]
+```
+
+---
+
+## 9. Matrices et graphes
+
+### 9.1 Matrice d'adjacence
+
+Pour un graphe oriente a n sommets, la matrice d'adjacence M est une matrice n x n ou mᵢⱼ = 1 s'il existe un arc du sommet i vers le sommet j, et mᵢⱼ = 0 sinon.
+
+**Exemple :**
+
+Graphe a 3 sommets {A, B, C} avec les arcs : A vers B, A vers C, B vers C, C vers A.
+
+```
+     A  B  C
+M = [ 0  1  1 ]   A
+    [ 0  0  1 ]   B
+    [ 1  0  0 ]   C
+```
+
+Lecture : m₁₂ = 1 signifie qu'il y a un arc de A vers B. m₂₁ = 0 signifie qu'il n'y a pas d'arc de B vers A.
+
+Pour un graphe non oriente, la matrice est symetrique (mᵢⱼ = mⱼᵢ).
+
+### 9.2 Nombre de chemins de longueur k
+
+Propriete fondamentale : le coefficient (i, j) de la matrice Mᵏ donne le nombre de chemins de longueur k allant du sommet i au sommet j.
+
+**Exemple : nombre de chemins de longueur 2.**
+
+Avec la matrice M precedente, calculons M² = M x M :
+
+```
+c₁₁ = 0x0 + 1x0 + 1x1 = 0 + 0 + 1 = 1
+c₁₂ = 0x1 + 1x0 + 1x0 = 0 + 0 + 0 = 0
+c₁₃ = 0x1 + 1x1 + 1x0 = 0 + 1 + 0 = 1
+c₂₁ = 0x0 + 0x0 + 1x1 = 0 + 0 + 1 = 1
+c₂₂ = 0x1 + 0x0 + 1x0 = 0 + 0 + 0 = 0
+c₂₃ = 0x1 + 0x1 + 1x0 = 0 + 0 + 0 = 0
+c₃₁ = 1x0 + 0x0 + 0x1 = 0 + 0 + 0 = 0
+c₃₂ = 1x1 + 0x0 + 0x0 = 1 + 0 + 0 = 1
+c₃₃ = 1x1 + 0x1 + 0x0 = 1 + 0 + 0 = 1
+```
+
+```
+M² = [ 1  0  1 ]
+     [ 1  0  0 ]
+     [ 0  1  1 ]
+```
+
+Interpretation :
+- m²₁₁ = 1 : il existe 1 chemin de longueur 2 de A vers A (A -> C -> A).
+- m²₁₃ = 1 : il existe 1 chemin de longueur 2 de A vers C (A -> B -> C).
+- m²₃₂ = 1 : il existe 1 chemin de longueur 2 de C vers B (C -> A -> B).
+
+**Chemins de longueur 3 :** calculons M³ = M² x M :
+
+```
+c₁₁ = 1x0 + 0x0 + 1x1 = 0 + 0 + 1 = 1
+c₁₂ = 1x1 + 0x0 + 1x0 = 1 + 0 + 0 = 1
+c₁₃ = 1x1 + 0x1 + 1x0 = 1 + 0 + 0 = 1
+c₂₁ = 1x0 + 0x0 + 0x1 = 0 + 0 + 0 = 0
+c₂₂ = 1x1 + 0x0 + 0x0 = 1 + 0 + 0 = 1
+c₂₃ = 1x1 + 0x1 + 0x0 = 1 + 0 + 0 = 1
+c₃₁ = 0x0 + 1x0 + 1x1 = 0 + 0 + 1 = 1
+c₃₂ = 0x1 + 1x0 + 1x0 = 0 + 0 + 0 = 0
+c₃₃ = 0x1 + 1x1 + 1x0 = 0 + 1 + 0 = 1
+```
+
+```
+M³ = [ 1  1  1 ]
+     [ 0  1  1 ]
+     [ 1  0  1 ]
+```
+
+Interpretation : m³₁₂ = 1 signifie qu'il existe 1 chemin de longueur 3 de A vers B (par exemple A -> C -> A -> B).
+
+### 9.3 Matrice de transition (chaines de Markov)
+
+Dans une chaine de Markov, on associe a chaque graphe pondere une matrice de transition T ou tᵢⱼ est la probabilite de passer du sommet i au sommet j.
+
+Propriete : la somme de chaque ligne vaut 1.
+
+**Exemple :**
+
+```
+T = [ 0.3  0.7 ]
+    [ 0.4  0.6 ]
+```
+
+Lecture : depuis l'etat 1, probabilite 0.3 de rester en 1 et 0.7 d'aller en 2.
+
+Verification : 0.3 + 0.7 = 1 et 0.4 + 0.6 = 1.
+
+Si la distribution initiale est P₀ = [1  0] (on est dans l'etat 1), la distribution apres 1 etape est :
+
+```
+P₁ = P₀ x T = [1  0] x [ 0.3  0.7 ] = [ 1 x 0.3 + 0 x 0.4,  1 x 0.7 + 0 x 0.6 ] = [ 0.3  0.7 ]
+                        [ 0.4  0.6 ]
+```
+
+Apres 2 etapes : P₂ = P₁ x T.
+
+```
+P₂ = [0.3  0.7] x [ 0.3  0.7 ]
+                   [ 0.4  0.6 ]
+
+composante 1 : 0.3 x 0.3 + 0.7 x 0.4 = 0.09 + 0.28 = 0.37
+composante 2 : 0.3 x 0.7 + 0.7 x 0.6 = 0.21 + 0.42 = 0.63
+```
+
+```
+P₂ = [ 0.37  0.63 ]
+```
+
+---
+
+## 10. Applications informatiques
+
+### 10.1 Transformations geometriques
+
+Les matrices permettent de representer des transformations du plan.
+
+**Translation** (en coordonnees homogenes) :
+
+Pour translater un point (x, y) de (tx, ty) :
+
+```
+[ 1  0  tx ] [ x ]   [ x + tx ]
+[ 0  1  ty ] [ y ] = [ y + ty ]
+[ 0  0   1 ] [ 1 ]   [   1    ]
+```
+
+**Rotation** d'angle theta autour de l'origine :
+
+```
+[ cos(theta)  -sin(theta) ] [ x ]   [ x.cos(theta) - y.sin(theta) ]
+[ sin(theta)   cos(theta) ] [ y ] = [ x.sin(theta) + y.cos(theta) ]
+```
+
+Exemple : rotation de 90 degres (cos 90 = 0, sin 90 = 1).
+
+```
+R = [ 0  -1 ]
+    [ 1   0 ]
+```
+
+Appliquee au point (3, 2) :
+
+```
+[ 0  -1 ] [ 3 ]   [ 0 x 3 + (-1) x 2 ]   [ -2 ]
+[ 1   0 ] [ 2 ] = [ 1 x 3 +   0  x 2 ] = [  3 ]
+```
+
+Le point (3, 2) est transforme en (-2, 3).
+
+**Homothetie** (mise a l'echelle) de facteur k :
+
+```
+[ k  0 ] [ x ]   [ kx ]
+[ 0  k ] [ y ] = [ ky ]
+```
+
+### 10.2 PageRank simplifie
+
+Le PageRank de Google modelise le web comme un graphe. Chaque page est un sommet, chaque lien est un arc. La matrice de transition T represente les probabilites de naviguer d'une page a une autre.
+
+Principe : si une page a n liens sortants, chaque lien transmet une probabilite 1/n.
+
+Exemple avec 3 pages :
+- Page 1 pointe vers Page 2 et Page 3.
+- Page 2 pointe vers Page 3.
+- Page 3 pointe vers Page 1.
+
+Matrice de transition :
+```
+        P1    P2    P3
+T = [  0    1/2   1/2 ]   P1 (2 liens sortants, chacun vaut 1/2)
+    [  0     0     1  ]   P2 (1 lien sortant)
+    [  1     0     0  ]   P3 (1 lien sortant)
+```
+
+En partant de la distribution uniforme P₀ = [1/3  1/3  1/3], on itere P_{n+1} = P_n x T.
+
+```
+P₁ = [1/3  1/3  1/3] x T
+
+composante 1 : (1/3) x 0 + (1/3) x 0 + (1/3) x 1 = 0 + 0 + 1/3 = 1/3
+composante 2 : (1/3) x (1/2) + (1/3) x 0 + (1/3) x 0 = 1/6 + 0 + 0 = 1/6
+composante 3 : (1/3) x (1/2) + (1/3) x 1 + (1/3) x 0 = 1/6 + 1/3 + 0 = 1/6 + 2/6 = 3/6 = 1/2
+
+P₁ = [1/3  1/6  1/2]
+```
+
+La Page 3 a le score le plus eleve (1/2), ce qui est logique car elle recoit des liens de la Page 1 et de la Page 2.
+
+### 10.3 Chaines de Markov : distribution stationnaire
+
+La distribution stationnaire pi est le vecteur tel que pi x T = pi et la somme des composantes vaut 1.
+
+Cela revient a resoudre un systeme d'equations lineaires.
+
+Exemple avec la matrice :
+```
+T = [ 0.2  0.8 ]
+    [ 0.5  0.5 ]
+```
+
+On cherche pi = [pi₁  pi₂] tel que pi x T = pi et pi₁ + pi₂ = 1.
+
+```
+pi₁ = 0.2 x pi₁ + 0.5 x pi₂
+pi₂ = 0.8 x pi₁ + 0.5 x pi₂
+```
+
+Premiere equation :
+```
+pi₁ = 0.2 pi₁ + 0.5 pi₂
+pi₁ - 0.2 pi₁ = 0.5 pi₂
+0.8 pi₁ = 0.5 pi₂
+pi₂ = (0.8/0.5) pi₁ = 1.6 pi₁
+```
+
+Avec pi₁ + pi₂ = 1 :
+```
+pi₁ + 1.6 pi₁ = 1
+2.6 pi₁ = 1
+pi₁ = 1/2.6 = 5/13
+pi₂ = 1.6 x (5/13) = 8/13
+```
+
+Distribution stationnaire : pi = [5/13, 8/13], soit environ [0.385, 0.615].
+
+---
+
+## 11. Exercices d'examen corriges
+
+### Exercice 1 : Addition et scalaire
+
+Soit A = [2  -1 ; 3  4] et B = [1  5 ; -2  0]. Calculer 2A + 3B.
+
+**Correction :**
+
+Etape 1 : calculer 2A.
+```
+2A = [ 2 x 2    2 x (-1) ] = [ 4   -2 ]
+     [ 2 x 3    2 x 4    ]   [ 6    8 ]
+```
+
+Etape 2 : calculer 3B.
+```
+3B = [ 3 x 1    3 x 5    ] = [ 3   15 ]
+     [ 3 x (-2) 3 x 0    ]   [ -6   0 ]
+```
+
+Etape 3 : additionner.
+```
+2A + 3B = [ 4 + 3      -2 + 15 ] = [ 7   13 ]
+          [ 6 + (-6)    8 + 0  ]   [ 0    8 ]
+```
+
+---
+
+### Exercice 2 : Multiplication 2 x 2
+
+Soit A = [3  1 ; 2  4] et B = [1  -2 ; 0  5]. Calculer AB et BA. Verifier que AB est different de BA.
+
+**Correction :**
+
+Calcul de AB :
+```
+c₁₁ = 3 x 1 + 1 x 0 = 3 + 0 = 3
+c₁₂ = 3 x (-2) + 1 x 5 = -6 + 5 = -1
+c₂₁ = 2 x 1 + 4 x 0 = 2 + 0 = 2
+c₂₂ = 2 x (-2) + 4 x 5 = -4 + 20 = 16
+```
+```
+AB = [ 3   -1 ]
+     [ 2   16 ]
+```
+
+Calcul de BA :
+```
+c₁₁ = 1 x 3 + (-2) x 2 = 3 - 4 = -1
+c₁₂ = 1 x 1 + (-2) x 4 = 1 - 8 = -7
+c₂₁ = 0 x 3 + 5 x 2 = 0 + 10 = 10
+c₂₂ = 0 x 1 + 5 x 4 = 0 + 20 = 20
+```
+```
+BA = [ -1  -7 ]
+     [ 10  20 ]
+```
+
+AB est different de BA. La multiplication matricielle n'est pas commutative.
+
+---
+
+### Exercice 3 : Determinant 2 x 2
+
+Calculer le determinant de M = [4  -3 ; 6  2].
+
+**Correction :**
+```
+det(M) = 4 x 2 - (-3) x 6
+       = 8 - (-18)
+       = 8 + 18
+       = 26
+```
+
+---
+
+### Exercice 4 : Determinant 3 x 3 par Sarrus
+
+Calculer le determinant de :
+```
+A = [ 2  1  3 ]
+    [ 0  -1 4 ]
+    [ 1  2  1 ]
+```
+
+**Correction :**
+
+Diagonales descendantes :
+```
+D₁ = 2 x (-1) x 1 = -2
+D₂ = 1 x 4 x 1 = 4
+D₃ = 3 x 0 x 2 = 0
+```
+
+Diagonales montantes :
+```
+D₄ = 3 x (-1) x 1 = -3
+D₅ = 2 x 4 x 2 = 16
+D₆ = 1 x 0 x 1 = 0
+```
+
+```
+det(A) = (-2) + 4 + 0 - (-3) - 16 - 0
+       = -2 + 4 + 0 + 3 - 16 - 0
+       = 5 - 16
+       = -11
+```
+
+---
+
+### Exercice 5 : Inverse d'une matrice 2 x 2
+
+Calculer l'inverse de A = [5  2 ; 3  1]. Verifier.
+
+**Correction :**
+
+Determinant :
+```
+det(A) = 5 x 1 - 2 x 3 = 5 - 6 = -1
+```
+
+Inverse :
+```
+A⁻¹ = (1/(-1)) x [  1  -2 ]
+                   [ -3   5 ]
+
+A⁻¹ = [ -1   2 ]
+      [  3  -5 ]
+```
+
+Verification A x A⁻¹ :
+```
+c₁₁ = 5 x (-1) + 2 x 3 = -5 + 6 = 1
+c₁₂ = 5 x 2 + 2 x (-5) = 10 - 10 = 0
+c₂₁ = 3 x (-1) + 1 x 3 = -3 + 3 = 0
+c₂₂ = 3 x 2 + 1 x (-5) = 6 - 5 = 1
+```
+```
+A x A⁻¹ = [ 1  0 ] = I₂. Verifie.
+          [ 0  1 ]
+```
+
+---
+
+### Exercice 6 : Systeme 2 x 2 par inversion
+
+Resoudre le systeme :
+```
+{ 5x + 2y = 12
+{ 3x + y  = 7
+```
+
+**Correction :**
+
+Matrice A = [5  2 ; 3  1], B = [12 ; 7].
+
+D'apres l'exercice 5, A⁻¹ = [-1  2 ; 3  -5].
+
+X = A⁻¹ x B :
+```
+x = (-1) x 12 + 2 x 7 = -12 + 14 = 2
+y = 3 x 12 + (-5) x 7 = 36 - 35 = 1
+```
+
+Solution : x = 2, y = 1.
+
+Verification : 5(2) + 2(1) = 10 + 2 = 12. Correct. 3(2) + 1 = 7. Correct.
+
+---
+
+### Exercice 7 : Systeme 2 x 2 par Cramer
+
+Resoudre le systeme :
+```
+{ 4x - 3y = 1
+{ 2x + 5y = 19
+```
+
+**Correction :**
+
+```
+det(A) = 4 x 5 - (-3) x 2 = 20 + 6 = 26
+```
+
+```
+det(A₁) = det[ 1   -3 ] = 1 x 5 - (-3) x 19 = 5 + 57 = 62
+             [ 19   5 ]
+```
+
+```
+det(A₂) = det[ 4   1  ] = 4 x 19 - 1 x 2 = 76 - 2 = 74
+             [ 2  19  ]
+```
+
+```
+x = 62 / 26 = 31/13
+y = 74 / 26 = 37/13
+```
+
+Verification : 4 x (31/13) - 3 x (37/13) = 124/13 - 111/13 = 13/13 = 1. Correct.
+
+---
+
+### Exercice 8 : Pivot de Gauss 3 x 3
+
+Resoudre le systeme par le pivot de Gauss :
+```
+{  x + y + z  = 6
+{ 2x + 3y + z = 14
+{  x + 2y - z = 2
+```
+
+**Correction :**
+
+Matrice augmentee :
+```
+[ 1  1   1 |  6 ]   L₁
+[ 2  3   1 | 14 ]   L₂
+[ 1  2  -1 |  2 ]   L₃
+```
+
+L₂ ← L₂ - 2L₁ :
+```
+2 - 2x1 = 0,  3 - 2x1 = 1,  1 - 2x1 = -1,  14 - 2x6 = 2
+```
+
+L₃ ← L₃ - L₁ :
+```
+1 - 1 = 0,  2 - 1 = 1,  -1 - 1 = -2,  2 - 6 = -4
+```
+
+```
+[ 1  1   1 |  6 ]   L₁
+[ 0  1  -1 |  2 ]   L₂
+[ 0  1  -2 | -4 ]   L₃
+```
+
+L₃ ← L₃ - L₂ :
+```
+0 - 0 = 0,  1 - 1 = 0,  -2 - (-1) = -1,  -4 - 2 = -6
+```
+
+```
+[ 1  1   1 |  6 ]   L₁
+[ 0  1  -1 |  2 ]   L₂
+[ 0  0  -1 | -6 ]   L₃
+```
+
+Remontee :
+
+De L₃ : -z = -6, donc z = 6.
+
+De L₂ : y - z = 2, donc y - 6 = 2, donc y = 8.
+
+De L₁ : x + y + z = 6, donc x + 8 + 6 = 6, donc x = 6 - 14 = -8.
+
+Solution : x = -8, y = 8, z = 6.
+
+Verification equation 2 : 2(-8) + 3(8) + 6 = -16 + 24 + 6 = 14. Correct.
+Verification equation 3 : (-8) + 2(8) - 6 = -8 + 16 - 6 = 2. Correct.
+
+---
+
+### Exercice 9 : Puissance de matrice et graphe
+
+Soit le graphe oriente de matrice d'adjacence :
+```
+M = [ 0  1  0 ]
+    [ 0  0  1 ]
+    [ 1  1  0 ]
+```
+
+a) Combien de chemins de longueur 2 vont du sommet 3 au sommet 1 ?
+b) Calculer M² et repondre.
+
+**Correction :**
+
+Calcul de M² = M x M :
+
+```
+c₁₁ = 0x0 + 1x0 + 0x1 = 0
+c₁₂ = 0x1 + 1x0 + 0x1 = 0
+c₁₃ = 0x0 + 1x1 + 0x0 = 1
+c₂₁ = 0x0 + 0x0 + 1x1 = 1
+c₂₂ = 0x1 + 0x0 + 1x1 = 1
+c₂₃ = 0x0 + 0x1 + 1x0 = 0
+c₃₁ = 1x0 + 1x0 + 0x1 = 0
+c₃₂ = 1x1 + 1x0 + 0x1 = 1
+c₃₃ = 1x0 + 1x1 + 0x0 = 1
+```
+
+```
+M² = [ 0  0  1 ]
+     [ 1  1  0 ]
+     [ 0  1  1 ]
+```
+
+Reponse a) : le coefficient m²₃₁ = 0. Il n'existe aucun chemin de longueur 2 du sommet 3 au sommet 1.
+
+Reponse b) : m²₃₃ = 1 signifie qu'il existe 1 chemin de longueur 2 du sommet 3 a lui-meme (3 -> 1 -> ... non, verifions : 3 -> 2 -> 3 ? arc 3->2 existe (m₃₂=1), arc 2->3 existe (m₂₃=1). Oui, le chemin 3 -> 2 -> 3 est de longueur 2).
+
+---
+
+### Exercice 10 : Chaine de Markov
+
+Une machine peut etre dans deux etats : Fonctionnement (F) ou Panne (P). La matrice de transition est :
+```
+     F    P
+T = [ 0.9  0.1 ]   F
+    [ 0.6  0.4 ]   P
+```
+
+Initialement, la machine est en fonctionnement : P₀ = [1  0].
+
+a) Quelle est la distribution apres 1 etape ?
+b) Quelle est la distribution apres 2 etapes ?
+c) Determiner la distribution stationnaire.
+
+**Correction :**
+
+a) P₁ = P₀ x T :
+```
+composante F : 1 x 0.9 + 0 x 0.6 = 0.9
+composante P : 1 x 0.1 + 0 x 0.4 = 0.1
+
+P₁ = [0.9  0.1]
+```
+
+b) P₂ = P₁ x T :
+```
+composante F : 0.9 x 0.9 + 0.1 x 0.6 = 0.81 + 0.06 = 0.87
+composante P : 0.9 x 0.1 + 0.1 x 0.4 = 0.09 + 0.04 = 0.13
+
+P₂ = [0.87  0.13]
+```
+
+c) Distribution stationnaire pi = [pi_F, pi_P] telle que pi x T = pi.
+
+```
+pi_F = 0.9 pi_F + 0.6 pi_P
+pi_F - 0.9 pi_F = 0.6 pi_P
+0.1 pi_F = 0.6 pi_P
+pi_F = 6 pi_P
+```
+
+Avec pi_F + pi_P = 1 :
+```
+6 pi_P + pi_P = 1
+7 pi_P = 1
+pi_P = 1/7
+pi_F = 6/7
+```
+
+Distribution stationnaire : pi = [6/7, 1/7], soit environ [0.857, 0.143].
+
+Interpretation : a long terme, la machine est en fonctionnement environ 85.7% du temps.
+
+---
+
+### Exercice 11 : Determinant et inversibilite
+
+Pour quelles valeurs de k la matrice suivante est-elle inversible ?
+```
+A = [ k    2 ]
+    [ k+1  k ]
+```
+
+**Correction :**
+
+A est inversible si et seulement si det(A) est different de 0.
+
+```
+det(A) = k x k - 2 x (k+1)
+       = k² - 2k - 2
+```
+
+Resolvons k² - 2k - 2 = 0.
+
+Discriminant :
+```
+Delta = (-2)² - 4 x 1 x (-2) = 4 + 8 = 12
+```
+
+```
+k = (2 + racine(12)) / 2  ou  k = (2 - racine(12)) / 2
+  = (2 + 2 racine(3)) / 2      = (2 - 2 racine(3)) / 2
+  = 1 + racine(3)               = 1 - racine(3)
+```
+
+Conclusion : A est inversible pour tout k different de 1 + racine(3) et 1 - racine(3).
+
+---
+
+### Exercice 12 : Inverse 3 x 3 et systeme
+
+Resoudre le systeme en utilisant la matrice inverse :
+```
+{ 2x + y      = 5
+{  x    + 2z  = 5
+{      y + z  = 3
+```
+
+**Correction :**
+
+Matrice A et vecteur B :
+```
+A = [ 2  1  0 ]      B = [ 5 ]
+    [ 1  0  2 ]          [ 5 ]
+    [ 0  1  1 ]          [ 3 ]
+```
+
+Etape 1 : det(A) par Sarrus.
+```
+D₁ = 2 x 0 x 1 = 0
+D₂ = 1 x 2 x 0 = 0
+D₃ = 0 x 1 x 1 = 0
+
+D₄ = 0 x 0 x 0 = 0
+D₅ = 2 x 2 x 1 = 4
+D₆ = 1 x 1 x 1 = 1
+
+det(A) = 0 + 0 + 0 - 0 - 4 - 1 = -5
+```
+
+Etape 2 : cofacteurs.
+
+```
+C₁₁ = (+1) x det[ 0  2 ] = 0 x 1 - 2 x 1 = -2
+                 [ 1  1 ]
+
+C₁₂ = (-1) x det[ 1  2 ] = (-1) x (1 x 1 - 2 x 0) = (-1) x 1 = -1
+                 [ 0  1 ]
+
+C₁₃ = (+1) x det[ 1  0 ] = 1 x 1 - 0 x 0 = 1
+                 [ 0  1 ]
+
+C₂₁ = (-1) x det[ 1  0 ] = (-1) x (1 x 1 - 0 x 1) = (-1) x 1 = -1
+                 [ 1  1 ]
+
+C₂₂ = (+1) x det[ 2  0 ] = 2 x 1 - 0 x 0 = 2
+                 [ 0  1 ]
+
+C₂₃ = (-1) x det[ 2  1 ] = (-1) x (2 x 1 - 1 x 0) = (-1) x 2 = -2
+                 [ 0  1 ]
+
+C₃₁ = (+1) x det[ 1  0 ] = 1 x 2 - 0 x 0 = 2
+                 [ 0  2 ]
+
+C₃₂ = (-1) x det[ 2  0 ] = (-1) x (2 x 2 - 0 x 1) = (-1) x 4 = -4
+                 [ 1  2 ]
+
+C₃₃ = (+1) x det[ 2  1 ] = 2 x 0 - 1 x 1 = -1
+                 [ 1  0 ]
+```
+
+Matrice des cofacteurs et transposee :
+```
+Com(A) = [ -2  -1   1 ]
+         [ -1   2  -2 ]
+         [  2  -4  -1 ]
+
+Com(A)ᵀ = [ -2  -1   2 ]
+          [ -1   2  -4 ]
+          [  1  -2  -1 ]
+```
+
+Inverse :
+```
+A⁻¹ = (1/(-5)) x [ -2  -1   2 ]     [  2/5   1/5  -2/5 ]
+                   [ -1   2  -4 ]  =  [  1/5  -2/5   4/5 ]
+                   [  1  -2  -1 ]     [ -1/5   2/5   1/5 ]
+```
+
+Etape 3 : X = A⁻¹ x B.
+
+```
+x = (2/5) x 5 + (1/5) x 5 + (-2/5) x 3
+  = 10/5 + 5/5 - 6/5
+  = (10 + 5 - 6) / 5
+  = 9/5
+
+y = (1/5) x 5 + (-2/5) x 5 + (4/5) x 3
+  = 5/5 - 10/5 + 12/5
+  = (5 - 10 + 12) / 5
+  = 7/5
+
+z = (-1/5) x 5 + (2/5) x 5 + (1/5) x 3
+  = -5/5 + 10/5 + 3/5
+  = (-5 + 10 + 3) / 5
+  = 8/5
+```
+
+Solution : x = 9/5, y = 7/5, z = 8/5.
+
+Verification equation 1 : 2(9/5) + 7/5 = 18/5 + 7/5 = 25/5 = 5. Correct.
+Verification equation 2 : 9/5 + 2(8/5) = 9/5 + 16/5 = 25/5 = 5. Correct.
+Verification equation 3 : 7/5 + 8/5 = 15/5 = 3. Correct.
+
+---
+
+### Exercice 13 : Multiplication et transposee
+
+Soit A = [1  2 ; 3  4] et B = [0  1 ; -1  2]. Verifier que (AB)ᵀ = BᵀAᵀ.
+
+**Correction :**
+
+Calcul de AB :
+```
+c₁₁ = 1 x 0 + 2 x (-1) = 0 - 2 = -2
+c₁₂ = 1 x 1 + 2 x 2 = 1 + 4 = 5
+c₂₁ = 3 x 0 + 4 x (-1) = 0 - 4 = -4
+c₂₂ = 3 x 1 + 4 x 2 = 3 + 8 = 11
+```
+```
+AB = [ -2   5 ]
+     [ -4  11 ]
+```
+
+Transposee :
+```
+(AB)ᵀ = [ -2  -4 ]
+        [  5  11 ]
+```
+
+Maintenant calculons BᵀAᵀ :
+```
+Bᵀ = [ 0  -1 ]      Aᵀ = [ 1  3 ]
+     [ 1   2 ]           [ 2  4 ]
+```
+
+BᵀAᵀ :
+```
+c₁₁ = 0 x 1 + (-1) x 2 = 0 - 2 = -2
+c₁₂ = 0 x 3 + (-1) x 4 = 0 - 4 = -4
+c₂₁ = 1 x 1 + 2 x 2 = 1 + 4 = 5
+c₂₂ = 1 x 3 + 2 x 4 = 3 + 8 = 11
+```
+```
+BᵀAᵀ = [ -2  -4 ]
+       [  5  11 ]
+```
+
+On verifie bien que (AB)ᵀ = BᵀAᵀ.
+
+---
+
+### Exercice 14 : Matrice d'adjacence et chemins
+
+Soit un graphe oriente a 4 sommets {1, 2, 3, 4} de matrice d'adjacence :
+```
+M = [ 0  1  0  1 ]
+    [ 0  0  1  0 ]
+    [ 1  0  0  0 ]
+    [ 0  0  1  0 ]
+```
+
+a) Dessiner le graphe.
+b) Calculer M² et en deduire le nombre de chemins de longueur 2 du sommet 1 au sommet 3.
+
+**Correction :**
+
+a) Arcs du graphe :
+- 1 -> 2 (m₁₂ = 1)
+- 1 -> 4 (m₁₄ = 1)
+- 2 -> 3 (m₂₃ = 1)
+- 3 -> 1 (m₃₁ = 1)
+- 4 -> 3 (m₄₃ = 1)
+
+b) Calcul de M² = M x M :
+
+```
+m²₁₁ = 0x0 + 1x0 + 0x1 + 1x0 = 0
+m²₁₂ = 0x1 + 1x0 + 0x0 + 1x0 = 0
+m²₁₃ = 0x0 + 1x1 + 0x0 + 1x1 = 0 + 1 + 0 + 1 = 2
+m²₁₄ = 0x1 + 1x0 + 0x0 + 1x0 = 0
+
+m²₂₁ = 0x0 + 0x0 + 1x1 + 0x0 = 1
+m²₂₂ = 0x1 + 0x0 + 1x0 + 0x0 = 0
+m²₂₃ = 0x0 + 0x1 + 1x0 + 0x1 = 0
+m²₂₄ = 0x1 + 0x0 + 1x0 + 0x0 = 0
+
+m²₃₁ = 1x0 + 0x0 + 0x1 + 0x0 = 0
+m²₃₂ = 1x1 + 0x0 + 0x0 + 0x0 = 1
+m²₃₃ = 1x0 + 0x1 + 0x0 + 0x1 = 0
+m²₃₄ = 1x1 + 0x0 + 0x0 + 0x0 = 1
+
+m²₄₁ = 0x0 + 0x0 + 1x1 + 0x0 = 1
+m²₄₂ = 0x1 + 0x0 + 1x0 + 0x0 = 0
+m²₄₃ = 0x0 + 0x1 + 1x0 + 0x1 = 0
+m²₄₄ = 0x1 + 0x0 + 1x0 + 0x0 = 0
+```
+
+```
+M² = [ 0  0  2  0 ]
+     [ 1  0  0  0 ]
+     [ 0  1  0  1 ]
+     [ 1  0  0  0 ]
+```
+
+Reponse : m²₁₃ = 2. Il existe 2 chemins de longueur 2 du sommet 1 au sommet 3 :
+- Chemin 1 : 1 -> 2 -> 3
+- Chemin 2 : 1 -> 4 -> 3
+
+---
+
+### Exercice 15 : Systeme 3 x 3 complet par Gauss
+
+Resoudre par le pivot de Gauss :
+```
+{ 2x + y  - z  = 1
+{  x - y  + 2z = 5
+{ 3x + 2y + z  = 8
+```
+
+**Correction :**
+
+Matrice augmentee :
+```
+[ 2   1  -1 |  1 ]   L₁
+[ 1  -1   2 |  5 ]   L₂
+[ 3   2   1 |  8 ]   L₃
+```
+
+Pour simplifier, echangeons L₁ et L₂ (pour avoir un pivot de 1) :
+```
+[ 1  -1   2 |  5 ]   L₁
+[ 2   1  -1 |  1 ]   L₂
+[ 3   2   1 |  8 ]   L₃
+```
+
+L₂ ← L₂ - 2L₁ :
+```
+2 - 2x1 = 0
+1 - 2x(-1) = 1 + 2 = 3
+-1 - 2x2 = -1 - 4 = -5
+1 - 2x5 = 1 - 10 = -9
+```
+
+L₃ ← L₃ - 3L₁ :
+```
+3 - 3x1 = 0
+2 - 3x(-1) = 2 + 3 = 5
+1 - 3x2 = 1 - 6 = -5
+8 - 3x5 = 8 - 15 = -7
+```
+
+```
+[ 1  -1   2 |  5 ]   L₁
+[ 0   3  -5 | -9 ]   L₂
+[ 0   5  -5 | -7 ]   L₃
+```
+
+L₃ ← L₃ - (5/3)L₂ :
+```
+0 - (5/3) x 0 = 0
+5 - (5/3) x 3 = 5 - 5 = 0
+-5 - (5/3) x (-5) = -5 + 25/3 = -15/3 + 25/3 = 10/3
+-7 - (5/3) x (-9) = -7 + 45/3 = -7 + 15 = 8
+```
+
+```
+[ 1  -1     2   |  5 ]   L₁
+[ 0   3    -5   | -9 ]   L₂
+[ 0   0   10/3  |  8 ]   L₃
+```
+
+Remontee :
+
+De L₃ : (10/3)z = 8, donc z = 8 x (3/10) = 24/10 = 12/5.
+
+De L₂ : 3y - 5z = -9, donc 3y - 5 x (12/5) = -9, donc 3y - 12 = -9, donc 3y = 3, donc y = 1.
+
+De L₁ : x - y + 2z = 5, donc x - 1 + 2 x (12/5) = 5, donc x - 1 + 24/5 = 5, donc x = 5 + 1 - 24/5 = 6 - 24/5 = 30/5 - 24/5 = 6/5.
+
+Solution : x = 6/5, y = 1, z = 12/5.
+
+Verification equation 1 : 2(6/5) + 1 - (12/5) = 12/5 + 5/5 - 12/5 = 5/5 = 1. Correct.
+Verification equation 2 : (6/5) - 1 + 2(12/5) = 6/5 - 5/5 + 24/5 = 25/5 = 5. Correct.
+Verification equation 3 : 3(6/5) + 2(1) + (12/5) = 18/5 + 10/5 + 12/5 = 40/5 = 8. Correct.
+
+---
+
+### Exercice 16 : Transformation geometrique
+
+On applique la rotation de 90 degres au triangle de sommets A(1, 0), B(2, 1), C(0, 3). Determiner les coordonnees des sommets transformes.
+
+**Correction :**
+
+Matrice de rotation de 90 degres :
+```
+R = [ 0  -1 ]
+    [ 1   0 ]
+```
+
+Sommet A(1, 0) :
+```
+[ 0  -1 ] [ 1 ]   [ 0 x 1 + (-1) x 0 ]   [ 0 ]
+[ 1   0 ] [ 0 ] = [ 1 x 1 +   0  x 0 ] = [ 1 ]
+```
+A' = (0, 1).
+
+Sommet B(2, 1) :
+```
+[ 0  -1 ] [ 2 ]   [ 0 x 2 + (-1) x 1 ]   [ -1 ]
+[ 1   0 ] [ 1 ] = [ 1 x 2 +   0  x 1 ] = [  2 ]
+```
+B' = (-1, 2).
+
+Sommet C(0, 3) :
+```
+[ 0  -1 ] [ 0 ]   [ 0 x 0 + (-1) x 3 ]   [ -3 ]
+[ 1   0 ] [ 3 ] = [ 1 x 0 +   0  x 3 ] = [  0 ]
+```
+C' = (-3, 0).
+
+---
+
+### Exercice 17 : Matrice de transition et PageRank
+
+Quatre pages web A, B, C, D sont liees ainsi :
+- A pointe vers B et C
+- B pointe vers D
+- C pointe vers A et D
+- D pointe vers A
+
+a) Ecrire la matrice de transition.
+b) A partir de P₀ = [1/4, 1/4, 1/4, 1/4], calculer P₁.
+
+**Correction :**
+
+a) Matrice de transition :
+```
+       A     B     C     D
+T = [  0   1/2   1/2    0  ]   A (2 liens sortants)
+    [  0    0     0     1  ]   B (1 lien sortant)
+    [ 1/2   0     0    1/2 ]   C (2 liens sortants)
+    [  1    0     0     0  ]   D (1 lien sortant)
+```
+
+b) P₁ = P₀ x T :
+
+Composante A :
+```
+(1/4) x 0 + (1/4) x 0 + (1/4) x (1/2) + (1/4) x 1
+= 0 + 0 + 1/8 + 1/4
+= 1/8 + 2/8
+= 3/8
+```
+
+Composante B :
+```
+(1/4) x (1/2) + (1/4) x 0 + (1/4) x 0 + (1/4) x 0
+= 1/8 + 0 + 0 + 0
+= 1/8
+```
+
+Composante C :
+```
+(1/4) x (1/2) + (1/4) x 0 + (1/4) x 0 + (1/4) x 0
+= 1/8
+```
+
+Composante D :
+```
+(1/4) x 0 + (1/4) x 1 + (1/4) x (1/2) + (1/4) x 0
+= 0 + 1/4 + 1/8 + 0
+= 2/8 + 1/8
+= 3/8
+```
+
+P₁ = [3/8, 1/8, 1/8, 3/8].
+
+La page A et la page D ont les scores les plus eleves, ce qui est coherent car elles recoivent le plus de liens entrants.
+
+---
+
+## 12. Resume des formules essentielles
+
+| Notion | Formule |
+|---|---|
+| Determinant 2x2 | det = ad - bc |
+| Determinant 3x3 (Sarrus) | D₁+D₂+D₃-D₄-D₅-D₆ |
+| Inverse 2x2 | (1/det) x [d, -b ; -c, a] |
+| Inverse 3x3 | (1/det) x Com(A)ᵀ |
+| Cramer | xᵢ = det(Aᵢ) / det(A) |
+| Chemins de longueur k | Coefficient (i,j) de Mᵏ |
+| Distribution a l'etape n | Pₙ = P₀ x Tⁿ |
+| Distribution stationnaire | pi x T = pi, somme = 1 |
+| Condition inversibilite | det(A) different de 0 |
+| Compatibilite produit | Colonnes de A = Lignes de B |
+
+---
+
+## 13. Erreurs frequentes a eviter
+
+1. **Oublier de verifier la compatibilite** avant de multiplier deux matrices. Le nombre de colonnes de la premiere doit etre egal au nombre de lignes de la seconde.
+
+2. **Croire que AB = BA.** La multiplication matricielle n'est pas commutative. Toujours verifier l'ordre.
+
+3. **Confondre ligne et colonne** dans la regle de multiplication. C'est ligne de la premiere matrice par colonne de la seconde.
+
+4. **Erreur de signe dans le determinant 3x3.** Bien reperer les diagonales descendantes (positives) et montantes (negatives). Attention aux signes des cofacteurs : le signe alterne selon (-1)^(i+j).
+
+5. **Oublier la condition det(A) different de 0** avant d'inverser une matrice ou d'appliquer la methode de Cramer.
+
+6. **Ne pas verifier le resultat.** Toujours verifier que A x A⁻¹ = I ou que la solution satisfait le systeme original.
+
+7. **Erreur dans la transposee de la comatrice.** Bien transposer (echanger lignes et colonnes) avant de diviser par le determinant.
+
+8. **Oublier de recopier les colonnes dans Sarrus.** La regle de Sarrus ne s'applique qu'aux matrices 3x3 et necessite de recopier les deux premieres colonnes a droite.
+
+9. **Confondre matrice d'adjacence et matrice de transition.** La matrice d'adjacence contient des 0 et des 1. La matrice de transition contient des probabilites dont la somme par ligne vaut 1.
+
+10. **Erreur dans le pivot de Gauss.** Bien appliquer l'operation a toute la ligne, y compris le second membre. Ne pas oublier de propager les fractions.

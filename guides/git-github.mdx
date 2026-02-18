@@ -1,0 +1,2206 @@
+---
+title: "Git et GitHub"
+description: "Versionner son code comme un professionnel : commits, branches, merge, conflits, pull requests, collaboration"
+category: "Fondamentaux"
+tags: ["git", "github", "versioning", "branches", "collaboration"]
+difficulty: "Débutant"
+---
+
+# Git et GitHub
+
+## Table des matieres
+
+1. Introduction au versioning
+2. Installation et configuration
+3. Les commandes de base
+4. Le modele Git : les trois zones
+5. Le fichier .gitignore
+6. Les branches
+7. Resolution de conflits
+8. GitHub : travail distant
+9. Pull Requests
+10. Collaboration et workflows
+11. Manipulation de l'historique
+12. Tags et versioning semantique
+13. Le stash
+14. GitHub Pages
+15. GitHub Issues et Projects
+16. Bonnes pratiques
+17. Exercices d'examen corriges
+
+---
+
+## 1. Introduction au versioning
+
+### 1.1 Pourquoi versionner son code ?
+
+Le versioning (ou gestion de versions) repond a plusieurs problemes concrets du developpement logiciel :
+
+- **Tracer chaque modification** : savoir qui a modifie quoi, quand, et pourquoi.
+- **Revenir en arriere** : annuler une modification qui introduit un bug.
+- **Travailler a plusieurs** : permettre a une equipe de modifier le meme projet sans ecraser le travail des autres.
+- **Experimenter sans risque** : creer des branches pour tester des fonctionnalites sans impacter le code stable.
+- **Documenter l'evolution** : l'historique des commits constitue un journal du projet.
+
+Sans versioning, les developpeurs en sont reduits a copier des dossiers (`projet_v1`, `projet_v2_final`, `projet_v2_final_VRAIMENT_final`), ce qui est fragile, illisible et source d'erreurs.
+
+### 1.2 Bref historique
+
+| Periode | Outil | Type |
+|---------|-------|------|
+| 1972 | SCCS | Local |
+| 1986 | CVS | Centralise |
+| 2000 | SVN (Subversion) | Centralise |
+| 2005 | Git | Distribue |
+| 2005 | Mercurial | Distribue |
+
+Git a ete cree par Linus Torvalds (createur de Linux) en 2005, apres un differend de licence avec BitKeeper, l'outil utilise jusqu'alors pour le noyau Linux.
+
+### 1.3 Centralise vs distribue
+
+**Systeme centralise (SVN, CVS) :**
+
+- Un seul serveur contient l'historique complet.
+- Chaque developpeur ne possede qu'une copie de travail (working copy).
+- Toute operation (commit, log, diff) necessite une connexion au serveur.
+- Si le serveur tombe, personne ne peut travailler.
+
+```
+Developpeur A ---\
+Developpeur B -----> Serveur central (historique complet)
+Developpeur C ---/
+```
+
+**Systeme distribue (Git, Mercurial) :**
+
+- Chaque developpeur possede une copie integrale du depot (historique compris).
+- Les operations courantes (commit, log, diff, branch) sont locales et instantanees.
+- Le serveur distant (GitHub, GitLab) est un point de synchronisation, pas une dependance.
+- Si le serveur tombe, chaque copie locale peut servir de sauvegarde.
+
+```
+Developpeur A (depot complet) <---> Serveur distant (GitHub)
+Developpeur B (depot complet) <--->       |
+Developpeur C (depot complet) <--->       |
+```
+
+### 1.4 Git vs SVN : comparaison
+
+| Critere | Git | SVN |
+|---------|-----|-----|
+| Architecture | Distribuee | Centralisee |
+| Vitesse | Tres rapide (operations locales) | Lent (reseau requis) |
+| Branches | Legeres, rapides, encouragees | Lourdes (copie de repertoire) |
+| Hors ligne | Pleinement fonctionnel | Limite |
+| Courbe d'apprentissage | Plus raide | Plus simple |
+| Adoption | Standard de l'industrie | En declin |
+
+---
+
+## 2. Installation et configuration
+
+### 2.1 Installation de Git
+
+**Windows :**
+
+Telecharger l'installeur depuis https://git-scm.com/download/win. L'installation inclut Git Bash, un terminal emulant un environnement Unix.
+
+**macOS :**
+
+```bash
+# Via Xcode Command Line Tools (souvent deja installe)
+xcode-select --install
+
+# Ou via Homebrew
+brew install git
+```
+
+**Linux (Debian/Ubuntu) :**
+
+```bash
+sudo apt update
+sudo apt install git
+```
+
+**Verification :**
+
+```bash
+git --version
+# git version 2.43.0
+```
+
+### 2.2 Configuration initiale
+
+Git utilise trois niveaux de configuration :
+
+| Niveau | Fichier | Portee |
+|--------|---------|--------|
+| `--system` | `/etc/gitconfig` | Tous les utilisateurs |
+| `--global` | `~/.gitconfig` | Utilisateur courant |
+| `--local` | `.git/config` | Depot courant |
+
+La priorite va du plus specifique au plus general : local > global > system.
+
+**Configuration obligatoire (identite) :**
+
+```bash
+git config --global user.name "Jean Dupont"
+git config --global user.email "jean.dupont@email.com"
+```
+
+**Configuration recommandee :**
+
+```bash
+# Editeur par defaut
+git config --global core.editor "code --wait"
+
+# Branche par defaut lors de git init
+git config --global init.defaultBranch main
+
+# Gestion des fins de ligne
+# Windows :
+git config --global core.autocrlf true
+# macOS/Linux :
+git config --global core.autocrlf input
+
+# Couleurs dans le terminal
+git config --global color.ui auto
+```
+
+**Verification de la configuration :**
+
+```bash
+git config --list
+git config user.name
+```
+
+### 2.3 Generation de cles SSH
+
+L'authentification SSH evite de saisir son mot de passe a chaque push/pull.
+
+**Etape 1 : generer une paire de cles**
+
+```bash
+ssh-keygen -t ed25519 -C "jean.dupont@email.com"
+```
+
+Repondre aux questions (emplacement par defaut : `~/.ssh/id_ed25519`, passphrase optionnelle mais recommandee).
+
+Deux fichiers sont crees :
+- `~/.ssh/id_ed25519` : cle privee (ne JAMAIS la partager)
+- `~/.ssh/id_ed25519.pub` : cle publique (a deposer sur GitHub)
+
+**Etape 2 : ajouter la cle a l'agent SSH**
+
+```bash
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+```
+
+**Etape 3 : ajouter la cle publique sur GitHub**
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+# Copier la sortie
+```
+
+Sur GitHub : Settings > SSH and GPG keys > New SSH key > coller la cle.
+
+**Etape 4 : tester la connexion**
+
+```bash
+ssh -T git@github.com
+# Hi jean-dupont! You've successfully authenticated...
+```
+
+### 2.4 Creation d'un compte GitHub
+
+1. Se rendre sur https://github.com
+2. Creer un compte avec une adresse email valide.
+3. Verifier l'email.
+4. Configurer l'authentification a deux facteurs (2FA) : fortement recommande.
+
+---
+
+## 3. Les commandes de base
+
+### 3.1 Initialiser un depot
+
+```bash
+# Creer un nouveau depot dans le repertoire courant
+mkdir mon-projet
+cd mon-projet
+git init
+```
+
+Cette commande cree un repertoire cache `.git/` contenant toute la mecanique interne de Git (historique, configuration, objets, references).
+
+### 3.2 Cloner un depot existant
+
+```bash
+# Via HTTPS
+git clone https://github.com/utilisateur/depot.git
+
+# Via SSH (recommande)
+git clone git@github.com:utilisateur/depot.git
+
+# Cloner dans un repertoire specifique
+git clone git@github.com:utilisateur/depot.git mon-dossier
+```
+
+### 3.3 Verifier l'etat du depot
+
+```bash
+git status
+```
+
+Sortie typique :
+
+```
+On branch main
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+
+        modified:   index.html
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+        style.css
+
+no changes added to commit (use "git add" to track)
+```
+
+Les fichiers peuvent etre dans quatre etats :
+
+| Etat | Description |
+|------|-------------|
+| Untracked | Nouveau fichier, non suivi par Git |
+| Modified | Fichier suivi, modifie depuis le dernier commit |
+| Staged | Fichier ajoute a l'index, pret pour le commit |
+| Committed | Fichier enregistre dans l'historique |
+
+### 3.4 Ajouter des fichiers a l'index (staging)
+
+```bash
+# Ajouter un fichier specifique
+git add index.html
+
+# Ajouter plusieurs fichiers
+git add index.html style.css
+
+# Ajouter tous les fichiers modifies et nouveaux
+git add .
+
+# Ajouter tous les fichiers modifies (pas les nouveaux)
+git add -u
+
+# Ajouter interactivement (choisir les portions de code)
+git add -p
+```
+
+### 3.5 Creer un commit
+
+```bash
+# Commit avec message en ligne
+git commit -m "Ajouter la page d'accueil"
+
+# Commit avec editeur (pour messages longs)
+git commit
+
+# Ajouter et committer en une seule commande (fichiers deja suivis uniquement)
+git commit -am "Corriger le titre de la page"
+```
+
+Un commit est un instantane (snapshot) de l'etat du projet a un moment donne. Il contient :
+
+- Un identifiant unique (hash SHA-1 de 40 caracteres, ex : `a1b2c3d4...`)
+- L'auteur et la date
+- Le message de commit
+- Un pointeur vers le(s) commit(s) parent(s)
+- L'arbre des fichiers a cet instant
+
+### 3.6 Consulter l'historique
+
+```bash
+# Historique complet
+git log
+
+# Historique condense (une ligne par commit)
+git log --oneline
+
+# Historique avec graphe des branches
+git log --oneline --graph --all
+
+# Limiter le nombre de commits affiches
+git log -5
+
+# Filtrer par auteur
+git log --author="Jean"
+
+# Filtrer par date
+git log --since="2024-01-01" --until="2024-06-30"
+
+# Filtrer par contenu du message
+git log --grep="fix"
+```
+
+Exemple de sortie de `git log --oneline --graph --all` :
+
+```
+* e4f5a6b (HEAD -> main) Merger la branche feature
+|\
+| * c3d4e5f (feature) Ajouter le formulaire
+| * a1b2c3d Creer la page contact
+|/
+* 9f8e7d6 Mise a jour du README
+* 1a2b3c4 Commit initial
+```
+
+### 3.7 Voir les differences
+
+```bash
+# Differences entre working directory et staging area
+git diff
+
+# Differences entre staging area et dernier commit
+git diff --staged
+
+# Differences entre deux commits
+git diff a1b2c3d e4f5a6b
+
+# Differences pour un fichier specifique
+git diff index.html
+
+# Resume des fichiers modifies
+git diff --stat
+```
+
+---
+
+## 4. Le modele Git : les trois zones
+
+Git organise le travail autour de trois zones distinctes. Comprendre ce modele est fondamental.
+
+### 4.1 Schema des trois zones
+
+```
++-------------------+     git add     +-------------------+    git commit    +-------------------+
+|                   | --------------> |                   | --------------> |                   |
+|  Working          |                 |  Staging Area     |                 |  Repository       |
+|  Directory        |                 |  (Index)          |                 |  (.git/)          |
+|                   | <-------------- |                   |                 |                   |
++-------------------+                 +-------------------+                 +-------------------+
+   Fichiers sur                         Zone de                              Historique
+   le disque                            preparation                          des commits
+
+                    <----------------------------------------------------------
+                                         git checkout / git restore
+```
+
+### 4.2 Working Directory (repertoire de travail)
+
+C'est le repertoire visible sur le disque. C'est la que le developpeur modifie les fichiers. Git compare en permanence cet espace avec le dernier commit pour detecter les modifications.
+
+### 4.3 Staging Area (zone de preparation / Index)
+
+Zone intermediaire entre le repertoire de travail et le depot. Elle permet de selectionner precisement les fichiers (ou portions de fichiers) a inclure dans le prochain commit.
+
+Interet : on peut modifier dix fichiers mais n'en committer que trois, regroupes logiquement.
+
+### 4.4 Repository (depot / .git/)
+
+Le repertoire cache `.git/` contient l'integralite de l'historique : tous les commits, toutes les branches, tous les tags. C'est la base de donnees de Git.
+
+### 4.5 Flux de travail complet
+
+```
+1. Modifier un fichier      -> Working Directory (modified)
+2. git add fichier           -> Staging Area (staged)
+3. git commit -m "message"   -> Repository (committed)
+4. git push                  -> Remote Repository (GitHub)
+```
+
+---
+
+## 5. Le fichier .gitignore
+
+### 5.1 Principe
+
+Le fichier `.gitignore` indique a Git les fichiers et repertoires a exclure du suivi. Il se place a la racine du depot (ou dans un sous-repertoire pour une portee locale).
+
+### 5.2 Syntaxe
+
+```gitignore
+# Commentaire
+fichier.txt           # Ignorer un fichier precis
+*.log                 # Ignorer tous les fichiers .log
+build/                # Ignorer le repertoire build et son contenu
+!important.log        # Exception : ne PAS ignorer ce fichier
+doc/*.pdf             # Ignorer les PDF dans doc/ (pas les sous-dossiers)
+doc/**/*.pdf          # Ignorer les PDF dans doc/ et tous ses sous-dossiers
+temp?.txt             # ? remplace un seul caractere (temp1.txt, tempA.txt)
+```
+
+### 5.3 Regles importantes
+
+- Les patterns s'appliquent relativement au fichier `.gitignore`.
+- Un slash final (`build/`) indique explicitement un repertoire.
+- Le prefixe `!` cree une exception (negation).
+- Un fichier deja suivi (committe) n'est pas affecte par `.gitignore`. Il faut d'abord le retirer du suivi :
+
+```bash
+git rm --cached fichier.txt
+```
+
+### 5.4 Modeles courants par langage
+
+**Java :**
+
+```gitignore
+*.class
+*.jar
+*.war
+target/
+.idea/
+*.iml
+```
+
+**Python :**
+
+```gitignore
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+*.egg-info/
+dist/
+```
+
+**JavaScript / Node.js :**
+
+```gitignore
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+```
+
+**PHP :**
+
+```gitignore
+vendor/
+.env
+composer.lock
+*.cache
+```
+
+**General (a inclure dans tout projet) :**
+
+```gitignore
+# Systeme
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environnement
+.env
+.env.local
+```
+
+### 5.5 .gitignore global
+
+Pour les fichiers specifiques a votre machine (`.DS_Store`, configurations IDE) :
+
+```bash
+git config --global core.excludesfile ~/.gitignore_global
+```
+
+Puis creer `~/.gitignore_global` avec les patterns souhaites.
+
+---
+
+## 6. Les branches
+
+### 6.1 Concept
+
+Une branche est un pointeur mobile vers un commit. Creer une branche revient a creer un nouveau pointeur ; c'est quasi instantane et ne copie aucun fichier.
+
+`HEAD` est un pointeur special qui indique la branche courante (et donc le commit courant).
+
+### 6.2 Schema
+
+```
+         main
+          |
+          v
+C1 <--- C2 <--- C3
+                  ^
+                  |
+                feature
+                  ^
+                  |
+                 HEAD
+```
+
+Apres un commit sur `feature` :
+
+```
+         main
+          |
+          v
+C1 <--- C2 <--- C3 <--- C4
+                          ^
+                          |
+                        feature
+                          ^
+                          |
+                         HEAD
+```
+
+### 6.3 Operations sur les branches
+
+```bash
+# Lister les branches locales
+git branch
+
+# Lister toutes les branches (locales + distantes)
+git branch -a
+
+# Creer une branche
+git branch feature
+
+# Creer et basculer sur une branche
+git checkout -b feature
+# Ou (syntaxe moderne) :
+git switch -c feature
+
+# Basculer sur une branche existante
+git checkout main
+# Ou :
+git switch main
+
+# Renommer une branche
+git branch -m ancien-nom nouveau-nom
+
+# Supprimer une branche (deja mergee)
+git branch -d feature
+
+# Supprimer une branche (forcer, meme non mergee)
+git branch -D feature
+
+# Supprimer une branche distante
+git push origin --delete feature
+```
+
+### 6.4 Merge (fusion)
+
+Le merge integre les modifications d'une branche dans une autre.
+
+**Cas 1 : Fast-forward (avance rapide)**
+
+Si la branche cible n'a pas diverge, Git deplace simplement le pointeur.
+
+```
+Avant :
+main:     C1 --- C2
+                   \
+feature:            C3 --- C4
+
+Apres git merge feature (depuis main) :
+main:     C1 --- C2 --- C3 --- C4
+```
+
+```bash
+git switch main
+git merge feature
+# Fast-forward
+```
+
+**Cas 2 : Merge commit (fusion a trois voies)**
+
+Si les deux branches ont diverge, Git cree un commit de fusion.
+
+```
+Avant :
+main:     C1 --- C2 --- C5
+                   \
+feature:            C3 --- C4
+
+Apres git merge feature (depuis main) :
+main:     C1 --- C2 --- C5 --- M
+                   \           /
+feature:            C3 --- C4
+```
+
+```bash
+git switch main
+git merge feature
+# Merge made by the 'ort' strategy.
+```
+
+**Option --no-ff :** forcer un merge commit meme si un fast-forward est possible.
+
+```bash
+git merge --no-ff feature
+```
+
+### 6.5 Rebase
+
+Le rebase reapplique les commits d'une branche au sommet d'une autre, creant un historique lineaire.
+
+```
+Avant :
+main:     C1 --- C2 --- C5
+                   \
+feature:            C3 --- C4
+
+Apres git rebase main (depuis feature) :
+main:     C1 --- C2 --- C5
+                          \
+feature:                   C3' --- C4'
+```
+
+```bash
+git switch feature
+git rebase main
+```
+
+Les commits C3 et C4 sont recrees (C3', C4') avec de nouveaux hashs.
+
+**Regle fondamentale :** ne JAMAIS rebaser des commits deja pousses et partages avec d'autres developpeurs. Le rebase reecrit l'historique, ce qui cause des conflits pour les collaborateurs.
+
+**Rebase interactif :**
+
+```bash
+git rebase -i HEAD~3
+```
+
+Permet de reorganiser, fusionner (squash), renommer ou supprimer des commits.
+
+### 6.6 Merge vs Rebase
+
+| Critere | Merge | Rebase |
+|---------|-------|--------|
+| Historique | Non lineaire, fidele a la realite | Lineaire, propre |
+| Commits | Cree un commit de fusion | Reecrit les commits |
+| Securite | Sur (ne reecrit pas l'historique) | Dangereux si commits partages |
+| Usage | Branches partagees, pull requests | Branches locales, nettoyage |
+
+---
+
+## 7. Resolution de conflits
+
+### 7.1 Qu'est-ce qu'un conflit ?
+
+Un conflit survient lorsque Git ne peut pas fusionner automatiquement deux modifications. Cela arrive quand deux branches modifient la meme portion du meme fichier.
+
+### 7.2 Quand les conflits apparaissent
+
+- Lors d'un `git merge`
+- Lors d'un `git rebase`
+- Lors d'un `git pull` (qui effectue un merge ou rebase)
+- Lors d'un `git cherry-pick`
+- Lors d'un `git stash pop`
+
+### 7.3 Identifier un conflit
+
+```bash
+git merge feature
+# Auto-merging index.html
+# CONFLICT (content): Merge conflict in index.html
+# Automatic merge failed; fix conflicts and then commit the result.
+```
+
+```bash
+git status
+# Both modified: index.html
+```
+
+### 7.4 Anatomie d'un conflit
+
+Git marque le fichier concerne avec des balises :
+
+```html
+<h1>Mon Site</h1>
+<<<<<<< HEAD
+<p>Bienvenue sur notre site web.</p>
+=======
+<p>Bienvenue sur notre plateforme.</p>
+>>>>>>> feature
+```
+
+| Balise | Signification |
+|--------|---------------|
+| `<<<<<<< HEAD` | Debut de la version de la branche courante |
+| `=======` | Separateur entre les deux versions |
+| `>>>>>>> feature` | Fin de la version de la branche entrante |
+
+### 7.5 Resoudre un conflit
+
+**Etape 1 :** ouvrir le fichier et choisir la version a conserver (ou combiner les deux).
+
+```html
+<h1>Mon Site</h1>
+<p>Bienvenue sur notre plateforme web.</p>
+```
+
+Supprimer toutes les balises de conflit (`<<<<<<<`, `=======`, `>>>>>>>`).
+
+**Etape 2 :** marquer le conflit comme resolu.
+
+```bash
+git add index.html
+```
+
+**Etape 3 :** finaliser la fusion.
+
+```bash
+git commit
+# Git genere automatiquement un message de merge
+```
+
+### 7.6 Annuler une fusion en cours
+
+```bash
+# Annuler un merge en cours de conflit
+git merge --abort
+
+# Annuler un rebase en cours de conflit
+git rebase --abort
+```
+
+### 7.7 Outils de resolution
+
+```bash
+# Ouvrir un outil graphique de resolution
+git mergetool
+```
+
+Outils courants : VS Code (integre), IntelliJ (integre), Meld, KDiff3, Beyond Compare.
+
+VS Code affiche les conflits avec des boutons cliquables : "Accept Current Change", "Accept Incoming Change", "Accept Both Changes".
+
+---
+
+## 8. GitHub : travail distant
+
+### 8.1 Concepts
+
+Un **remote** est une reference vers un depot distant. Par convention, le remote principal s'appelle `origin`.
+
+```bash
+# Lister les remotes
+git remote -v
+
+# Ajouter un remote
+git remote add origin git@github.com:utilisateur/depot.git
+
+# Supprimer un remote
+git remote remove origin
+
+# Renommer un remote
+git remote rename origin upstream
+```
+
+### 8.2 Push (envoyer)
+
+```bash
+# Pousser la branche courante
+git push origin main
+
+# Pousser et definir le remote par defaut pour cette branche
+git push -u origin main
+# Les prochains push se feront avec un simple :
+git push
+
+# Pousser toutes les branches
+git push --all origin
+
+# Pousser les tags
+git push --tags
+```
+
+### 8.3 Pull (recuperer et fusionner)
+
+```bash
+# Recuperer et fusionner les modifications distantes
+git pull origin main
+
+# Equivalent a :
+git fetch origin
+git merge origin/main
+
+# Pull avec rebase (historique lineaire)
+git pull --rebase origin main
+```
+
+### 8.4 Fetch (recuperer sans fusionner)
+
+```bash
+# Recuperer les modifications sans les appliquer
+git fetch origin
+
+# Inspecter les modifications recuperees
+git log origin/main --oneline
+
+# Puis fusionner manuellement
+git merge origin/main
+```
+
+`fetch` est plus sur que `pull` : il permet d'inspecter les changements avant de les integrer.
+
+### 8.5 Fork et clone
+
+| Concept | Description |
+|---------|-------------|
+| **Clone** | Copie locale d'un depot distant |
+| **Fork** | Copie distante d'un depot sur votre compte GitHub |
+
+Le fork est utilise pour contribuer a un projet dont on n'est pas collaborateur :
+
+1. Forker le depot sur GitHub (bouton "Fork").
+2. Cloner son fork localement.
+3. Ajouter le depot original comme remote `upstream`.
+4. Travailler sur une branche, committer, pousser sur son fork.
+5. Creer une Pull Request du fork vers le depot original.
+
+```bash
+git clone git@github.com:mon-compte/projet-fork.git
+cd projet-fork
+git remote add upstream git@github.com:auteur-original/projet.git
+
+# Synchroniser son fork avec l'original
+git fetch upstream
+git merge upstream/main
+git push origin main
+```
+
+### 8.6 Tracking branches
+
+```bash
+# Voir les associations branche locale <-> branche distante
+git branch -vv
+
+# Creer une branche locale qui suit une branche distante
+git checkout --track origin/feature
+# Ou :
+git switch -c feature origin/feature
+```
+
+---
+
+## 9. Pull Requests
+
+### 9.1 Definition
+
+Une Pull Request (PR) est une demande de fusion d'une branche vers une autre, hebergee sur GitHub. Elle constitue le mecanisme central de la revue de code en equipe.
+
+### 9.2 Workflow complet
+
+**Etape 1 : creer une branche et travailler**
+
+```bash
+git switch -c feature/formulaire-contact
+# ... modifications ...
+git add .
+git commit -m "Ajouter le formulaire de contact"
+git push -u origin feature/formulaire-contact
+```
+
+**Etape 2 : creer la Pull Request sur GitHub**
+
+- Se rendre sur le depot GitHub.
+- GitHub propose automatiquement de creer une PR pour la branche recemment poussee.
+- Remplir le titre et la description.
+- Assigner des reviewers.
+- Associer des labels et un milestone si pertinent.
+
+**Etape 3 : revue de code**
+
+Les reviewers peuvent :
+- Commenter des lignes specifiques du code.
+- Approuver la PR ("Approve").
+- Demander des modifications ("Request changes").
+
+**Etape 4 : corriger et mettre a jour**
+
+```bash
+# Faire les corrections demandees
+git add .
+git commit -m "Corriger la validation du formulaire"
+git push
+# La PR se met a jour automatiquement
+```
+
+**Etape 5 : merger la PR**
+
+Trois strategies de merge disponibles sur GitHub :
+
+| Strategie | Description | Resultat |
+|-----------|-------------|----------|
+| Create a merge commit | Merge classique avec commit de fusion | Historique complet visible |
+| Squash and merge | Tous les commits sont fusionnes en un seul | Historique propre sur main |
+| Rebase and merge | Les commits sont reappliques lineairement | Pas de commit de fusion |
+
+**Etape 6 : nettoyer**
+
+```bash
+git switch main
+git pull
+git branch -d feature/formulaire-contact
+```
+
+### 9.3 Bonnes pratiques des PR
+
+- Garder les PR petites et focalisees (une fonctionnalite = une PR).
+- Ecrire une description claire expliquant le "pourquoi", pas juste le "quoi".
+- Inclure des captures d'ecran pour les modifications visuelles.
+- Lier les issues concernees (`Closes #42`).
+- Repondre a tous les commentaires de review.
+
+---
+
+## 10. Collaboration et workflows
+
+### 10.1 Git Flow
+
+Git Flow est un modele de branchement structure, adapte aux projets avec des cycles de release planifies.
+
+**Branches permanentes :**
+
+| Branche | Role |
+|---------|------|
+| `main` | Code en production, stable |
+| `develop` | Branche d'integration, prochaine version |
+
+**Branches temporaires :**
+
+| Branche | Origine | Destination | Role |
+|---------|---------|-------------|------|
+| `feature/*` | `develop` | `develop` | Nouvelle fonctionnalite |
+| `release/*` | `develop` | `main` + `develop` | Preparation d'une release |
+| `hotfix/*` | `main` | `main` + `develop` | Correctif urgent en production |
+
+**Schema :**
+
+```
+main:       C1 -------- M1 -------- M2 (tags: v1.0, v1.1)
+               \       / \         /
+hotfix:         \     /   \- H1 -/
+                 \   /
+develop:    C1 -- D1 -- D2 -- D3 -- D4 -- D5
+                   \         /       \   /
+feature:            F1 -- F2          R1
+                                 (release)
+```
+
+### 10.2 Feature Branch Workflow
+
+Modele plus simple, adapte aux equipes utilisant les Pull Requests :
+
+1. `main` est toujours deployable.
+2. Chaque fonctionnalite est developpee dans une branche dediee.
+3. La branche est poussee et une PR est creee.
+4. Apres revue et validation, la branche est mergee dans `main`.
+
+```bash
+git switch -c feature/authentification
+# ... developpement ...
+git push -u origin feature/authentification
+# Creer une PR sur GitHub
+# Merger apres approbation
+```
+
+### 10.3 Trunk-Based Development
+
+- Les developpeurs commitent directement sur `main` (ou via des branches de tres courte duree).
+- Necessite une integration continue (CI) robuste.
+- Adapte aux equipes experimentees avec un fort niveau d'automatisation.
+
+### 10.4 Conventions de commit
+
+**Conventional Commits :**
+
+Format : `<type>(<scope>): <description>`
+
+| Type | Usage |
+|------|-------|
+| `feat` | Nouvelle fonctionnalite |
+| `fix` | Correction de bug |
+| `docs` | Documentation |
+| `style` | Formatage (pas de changement de logique) |
+| `refactor` | Refactorisation (pas de fonctionnalite ni de correction) |
+| `test` | Ajout ou modification de tests |
+| `chore` | Maintenance, configuration |
+| `perf` | Amelioration de performance |
+| `ci` | Integration continue |
+
+**Exemples :**
+
+```
+feat(auth): ajouter la connexion par Google
+fix(panier): corriger le calcul du total avec remise
+docs(readme): mettre a jour les instructions d'installation
+refactor(api): extraire la logique de validation
+test(user): ajouter les tests unitaires du service utilisateur
+```
+
+**Regles pour un bon message de commit :**
+
+1. Utiliser l'imperatif present ("Ajouter" et non "Ajoute" ou "Ajout de").
+2. Premiere ligne : 50 caracteres maximum.
+3. Ligne vide apres le titre si un corps suit.
+4. Corps : expliquer le "pourquoi", pas le "quoi" (le diff montre le quoi).
+5. Etre specifique : "Corriger le crash au lancement sur iOS 17" plutot que "Fix bug".
+
+---
+
+## 11. Manipulation de l'historique
+
+### 11.1 git log (avance)
+
+```bash
+# Format personnalise
+git log --pretty=format:"%h %an %ar %s"
+
+# Avec les fichiers modifies
+git log --stat
+
+# Avec le diff complet
+git log -p
+
+# Rechercher un changement dans le code
+git log -S "nomDeFonction"
+
+# Historique d'un fichier specifique
+git log -- chemin/vers/fichier.js
+
+# Afficher les branches et les merges
+git log --oneline --graph --all --decorate
+```
+
+### 11.2 git show
+
+```bash
+# Afficher le detail d'un commit
+git show a1b2c3d
+
+# Afficher un fichier a un commit donne
+git show a1b2c3d:index.html
+```
+
+### 11.3 git blame
+
+```bash
+# Voir qui a modifie chaque ligne d'un fichier
+git blame index.html
+
+# Limiter a une plage de lignes
+git blame -L 10,20 index.html
+```
+
+Sortie :
+
+```
+a1b2c3d4 (Jean Dupont  2024-03-15 14:30:00 +0100 10) <h1>Accueil</h1>
+e5f6g7h8 (Marie Martin 2024-03-16 09:15:00 +0100 11) <p>Bienvenue</p>
+```
+
+### 11.4 git reflog
+
+Le reflog enregistre tous les deplacements de HEAD, meme ceux invisibles dans `git log`. C'est le filet de securite ultime.
+
+```bash
+git reflog
+
+# Sortie :
+# a1b2c3d HEAD@{0}: commit: Ajouter le footer
+# e5f6g7h HEAD@{1}: checkout: moving from feature to main
+# 9i0j1k2 HEAD@{2}: commit: WIP formulaire
+```
+
+```bash
+# Revenir a un etat precedent grace au reflog
+git reset --hard HEAD@{2}
+```
+
+Le reflog est local et conserve pendant 90 jours par defaut.
+
+### 11.5 git reset
+
+`reset` deplace le pointeur de branche vers un autre commit. Trois modes :
+
+| Mode | Working Directory | Staging Area | Repository |
+|------|-------------------|--------------|------------|
+| `--soft` | Inchange | Inchange | Deplace |
+| `--mixed` (defaut) | Inchange | Reinitialise | Deplace |
+| `--hard` | Reinitialise | Reinitialise | Deplace |
+
+```bash
+# Annuler le dernier commit, garder les modifications stagees
+git reset --soft HEAD~1
+
+# Annuler le dernier commit, destager les modifications
+git reset HEAD~1
+
+# Annuler le dernier commit et perdre toutes les modifications
+git reset --hard HEAD~1
+
+# Destager un fichier (sans perdre les modifications)
+git reset HEAD fichier.txt
+# Ou (syntaxe moderne) :
+git restore --staged fichier.txt
+```
+
+**Attention :** `git reset --hard` est destructif. Les modifications non commitees sont perdues definitivement.
+
+### 11.6 git revert
+
+Contrairement a `reset`, `revert` cree un nouveau commit qui annule les modifications d'un commit precedent. L'historique est preserve.
+
+```bash
+# Annuler un commit specifique
+git revert a1b2c3d
+
+# Annuler sans creer immediatement le commit
+git revert --no-commit a1b2c3d
+```
+
+`revert` est la methode sure pour annuler des commits deja pousses et partages.
+
+### 11.7 git cherry-pick
+
+Applique un commit specifique d'une branche sur la branche courante.
+
+```bash
+# Appliquer un commit precis
+git cherry-pick a1b2c3d
+
+# Appliquer plusieurs commits
+git cherry-pick a1b2c3d e5f6g7h
+
+# Appliquer sans committer (pour modifier avant)
+git cherry-pick --no-commit a1b2c3d
+```
+
+Cas d'usage : un correctif a ete fait sur `develop` et doit etre applique d'urgence sur `main`.
+
+### 11.8 Reset vs Revert
+
+| Critere | reset | revert |
+|---------|-------|--------|
+| Reecrit l'historique | Oui | Non |
+| Sur pour les commits partages | Non | Oui |
+| Cree un nouveau commit | Non | Oui |
+| Usage | Branche locale | Branche partagee |
+
+---
+
+## 12. Tags et versioning semantique
+
+### 12.1 Les tags
+
+Un tag est un pointeur fixe vers un commit, generalement utilise pour marquer les versions.
+
+**Tag leger (lightweight) :**
+
+```bash
+git tag v1.0.0
+```
+
+**Tag annote (recommande) :**
+
+```bash
+git tag -a v1.0.0 -m "Version 1.0.0 - Release initiale"
+```
+
+Un tag annote contient un message, l'auteur et la date.
+
+**Operations courantes :**
+
+```bash
+# Lister les tags
+git tag
+
+# Lister avec filtre
+git tag -l "v1.*"
+
+# Voir les details d'un tag
+git show v1.0.0
+
+# Tagger un ancien commit
+git tag -a v0.9.0 a1b2c3d -m "Version beta"
+
+# Pousser un tag
+git push origin v1.0.0
+
+# Pousser tous les tags
+git push --tags
+
+# Supprimer un tag local
+git tag -d v1.0.0
+
+# Supprimer un tag distant
+git push origin --delete v1.0.0
+```
+
+### 12.2 Versioning semantique (SemVer)
+
+Format : `MAJOR.MINOR.PATCH`
+
+| Composant | Quand l'incrementer |
+|-----------|---------------------|
+| MAJOR | Changement incompatible avec les versions precedentes (breaking change) |
+| MINOR | Ajout de fonctionnalite retrocompatible |
+| PATCH | Correction de bug retrocompatible |
+
+**Exemples :**
+
+- `1.0.0` : premiere version stable.
+- `1.1.0` : ajout d'une fonctionnalite.
+- `1.1.1` : correction d'un bug.
+- `2.0.0` : refonte de l'API (rupture de compatibilite).
+
+**Pre-release :** `1.0.0-alpha`, `1.0.0-beta.1`, `1.0.0-rc.1`
+
+---
+
+## 13. Le stash
+
+### 13.1 Principe
+
+Le stash permet de sauvegarder temporairement des modifications non commitees pour travailler sur autre chose.
+
+### 13.2 Commandes
+
+```bash
+# Sauvegarder les modifications en cours
+git stash
+
+# Sauvegarder avec un message descriptif
+git stash push -m "WIP formulaire de contact"
+
+# Inclure les fichiers non suivis
+git stash -u
+
+# Lister les stashs
+git stash list
+# stash@{0}: On feature: WIP formulaire de contact
+# stash@{1}: WIP on main: a1b2c3d Commit initial
+
+# Restaurer le dernier stash (et le supprimer de la pile)
+git stash pop
+
+# Restaurer un stash specifique
+git stash pop stash@{1}
+
+# Restaurer sans supprimer de la pile
+git stash apply
+
+# Voir le contenu d'un stash
+git stash show -p stash@{0}
+
+# Supprimer un stash
+git stash drop stash@{0}
+
+# Supprimer tous les stashs
+git stash clear
+```
+
+### 13.3 Cas d'usage typique
+
+```bash
+# En train de travailler sur une feature...
+git stash -m "WIP feature en cours"
+
+# Basculer pour un correctif urgent
+git switch main
+git switch -c hotfix/bug-critique
+# ... corriger le bug ...
+git commit -am "Corriger le bug critique"
+git switch main
+git merge hotfix/bug-critique
+
+# Revenir a la feature
+git switch feature
+git stash pop
+# Continuer le travail
+```
+
+---
+
+## 14. GitHub Pages
+
+### 14.1 Principe
+
+GitHub Pages permet d'heberger gratuitement un site web statique directement depuis un depot GitHub.
+
+### 14.2 Configuration
+
+**Methode 1 : depuis la branche main**
+
+1. Creer un depot avec des fichiers HTML/CSS/JS.
+2. Aller dans Settings > Pages.
+3. Source : Deploy from a branch.
+4. Branche : `main`, dossier : `/ (root)` ou `/docs`.
+5. Le site est accessible a `https://utilisateur.github.io/nom-du-depot/`.
+
+**Methode 2 : depot utilisateur**
+
+Creer un depot nomme `utilisateur.github.io`. Le contenu de la branche `main` sera publie a `https://utilisateur.github.io/`.
+
+### 14.3 Structure minimale
+
+```
+index.html
+style.css
+script.js
+```
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Jean Dupont - Developpeur</h1>
+    <p>Bienvenue sur mon portfolio.</p>
+</body>
+</html>
+```
+
+### 14.4 Deploiement
+
+```bash
+git add .
+git commit -m "Deployer le site portfolio"
+git push origin main
+# Le site est mis a jour automatiquement (delai de quelques minutes)
+```
+
+---
+
+## 15. GitHub Issues et Projects
+
+### 15.1 Issues
+
+Les issues sont le systeme de suivi de tickets integre a GitHub. Elles servent a :
+
+- Signaler des bugs.
+- Proposer des fonctionnalites.
+- Poser des questions.
+- Suivre les taches a realiser.
+
+**Elements d'une issue :**
+
+| Element | Description |
+|---------|-------------|
+| Titre | Resume court du probleme ou de la demande |
+| Description | Details, etapes de reproduction, captures |
+| Labels | Categories (bug, enhancement, documentation, etc.) |
+| Assignees | Personnes responsables |
+| Milestone | Regroupement par objectif ou version |
+
+**Lier une issue a un commit ou une PR :**
+
+Dans le message de commit ou la description de PR :
+
+```
+fix: corriger le calcul du total
+
+Closes #42
+```
+
+Mots-cles reconnus : `Closes`, `Fixes`, `Resolves` (et leurs variantes). L'issue sera automatiquement fermee lors du merge.
+
+### 15.2 Projects
+
+GitHub Projects est un outil de gestion de projet de type tableau Kanban.
+
+**Colonnes typiques :**
+
+- **To Do** : taches a faire
+- **In Progress** : taches en cours
+- **In Review** : en attente de revue
+- **Done** : termine
+
+Les issues et PR peuvent etre ajoutees comme cartes dans le tableau. Le deplacement peut etre automatise (ex : une PR mergee deplace automatiquement la carte en "Done").
+
+### 15.3 Templates d'issues
+
+Creer `.github/ISSUE_TEMPLATE/bug_report.md` :
+
+```markdown
+---
+name: Bug Report
+about: Signaler un bug
+labels: bug
+---
+
+## Description
+Description claire du bug.
+
+## Etapes de reproduction
+1. Aller sur '...'
+2. Cliquer sur '...'
+3. Observer l'erreur
+
+## Comportement attendu
+Ce qui devrait se passer.
+
+## Comportement observe
+Ce qui se passe reellement.
+
+## Captures d'ecran
+Si pertinent.
+
+## Environnement
+- OS : [ex: Windows 11]
+- Navigateur : [ex: Chrome 120]
+- Version : [ex: 1.2.3]
+```
+
+---
+
+## 16. Bonnes pratiques
+
+### 16.1 Messages de commit
+
+**A faire :**
+- Utiliser l'imperatif : "Ajouter", "Corriger", "Supprimer".
+- Etre specifique : "Corriger le crash lors de la deconnexion sur iOS".
+- Suivre une convention (Conventional Commits).
+- Un commit = un changement logique.
+
+**A eviter :**
+- "fix", "update", "changements", "WIP" comme message final.
+- Committer des fichiers sans rapport entre eux.
+- Des commits de 500 lignes modifiant 20 fichiers.
+
+### 16.2 Frequence des commits
+
+Committer souvent, en petites unites logiques. Un commit doit pouvoir etre compris, reverte ou cherry-picke independamment.
+
+Regle empirique : si vous ne pouvez pas resumer le commit en une phrase claire, il est probablement trop gros.
+
+### 16.3 Branches de protection
+
+Sur GitHub, proteger la branche `main` :
+
+- Settings > Branches > Branch protection rules.
+- Cocher "Require a pull request before merging".
+- Cocher "Require approvals" (nombre minimum de reviewers).
+- Cocher "Require status checks to pass" (CI/CD).
+- Cocher "Do not allow force pushes".
+
+### 16.4 Fichiers essentiels d'un depot
+
+| Fichier | Role |
+|---------|------|
+| `README.md` | Presentation du projet, instructions |
+| `.gitignore` | Fichiers a exclure |
+| `LICENSE` | Licence du projet |
+| `CONTRIBUTING.md` | Guide de contribution |
+| `CHANGELOG.md` | Journal des modifications par version |
+
+### 16.5 Securite
+
+- Ne JAMAIS committer de secrets (mots de passe, cles API, tokens).
+- Utiliser des variables d'environnement ou un fichier `.env` (ajoute au `.gitignore`).
+- Si un secret a ete committe par erreur, le considerer comme compromis et le renouveler immediatement. Le supprimer de l'historique avec `git filter-branch` ou BFG Repo-Cleaner.
+
+---
+
+## 17. Exercices d'examen corriges
+
+### Exercice 1 : Initialisation et premiers commits
+
+**Enonce :**
+
+Vous demarrez un nouveau projet web. Realisez les operations suivantes :
+1. Creer un repertoire `site-portfolio`, initialiser un depot Git.
+2. Creer un fichier `index.html` avec une structure HTML minimale.
+3. Creer un fichier `.gitignore` adaptee a un projet web.
+4. Effectuer un premier commit.
+5. Ajouter un fichier `style.css`, puis un second commit.
+6. Afficher l'historique.
+
+**Solution :**
+
+```bash
+mkdir site-portfolio
+cd site-portfolio
+git init
+
+cat > index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Portfolio</title>
+</head>
+<body>
+    <h1>Mon Portfolio</h1>
+</body>
+</html>
+EOF
+
+cat > .gitignore << 'EOF'
+node_modules/
+.DS_Store
+.env
+*.log
+EOF
+
+git add .
+git commit -m "feat: initialiser le projet avec index.html et .gitignore"
+
+cat > style.css << 'EOF'
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+EOF
+
+git add style.css
+git commit -m "feat: ajouter la feuille de style"
+
+git log --oneline
+# Resultat attendu :
+# b2c3d4e feat: ajouter la feuille de style
+# a1b2c3d feat: initialiser le projet avec index.html et .gitignore
+```
+
+---
+
+### Exercice 2 : Branches et merge fast-forward
+
+**Enonce :**
+
+1. A partir du depot de l'exercice 1, creer une branche `feature/navigation`.
+2. Ajouter une barre de navigation dans `index.html`.
+3. Committer.
+4. Revenir sur `main` et merger `feature/navigation`.
+5. Supprimer la branche.
+
+**Solution :**
+
+```bash
+git switch -c feature/navigation
+
+# Modifier index.html pour ajouter la navigation
+cat > index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html">Accueil</a>
+        <a href="projets.html">Projets</a>
+        <a href="contact.html">Contact</a>
+    </nav>
+    <h1>Mon Portfolio</h1>
+</body>
+</html>
+EOF
+
+git add index.html
+git commit -m "feat(nav): ajouter la barre de navigation"
+
+git switch main
+git merge feature/navigation
+# Fast-forward : main n'a pas diverge
+
+git branch -d feature/navigation
+
+git log --oneline
+```
+
+---
+
+### Exercice 3 : Merge avec commit de fusion
+
+**Enonce :**
+
+1. Creer deux branches depuis `main` : `feature/footer` et `feature/header`.
+2. Sur `feature/header`, modifier le `<h1>` de `index.html`.
+3. Sur `feature/footer`, ajouter un `<footer>` dans `index.html`.
+4. Merger `feature/header` dans `main`, puis `feature/footer` dans `main`.
+5. Observer le commit de merge.
+
+**Solution :**
+
+```bash
+git switch -c feature/header
+# Modifier le h1
+sed -i '' 's/<h1>Mon Portfolio<\/h1>/<h1>Jean Dupont - Developpeur Web<\/h1>/' index.html
+git commit -am "feat(header): personnaliser le titre"
+
+git switch main
+git switch -c feature/footer
+# Ajouter un footer avant </body>
+sed -i '' 's/<\/body>/<footer><p>Copyright 2024<\/p><\/footer>\n<\/body>/' index.html
+git commit -am "feat(footer): ajouter le pied de page"
+
+git switch main
+git merge feature/header
+# Fast-forward
+
+git merge feature/footer
+# Merge commit cree (les deux branches ont modifie index.html a des endroits differents)
+
+git log --oneline --graph
+# *   m3r9e1d Merge branch 'feature/footer'
+# |\
+# | * f00t3r1 feat(footer): ajouter le pied de page
+# * | h3ad3r1 feat(header): personnaliser le titre
+# |/
+# * ...
+
+git branch -d feature/header feature/footer
+```
+
+---
+
+### Exercice 4 : Resolution de conflit
+
+**Enonce :**
+
+Deux developpeurs modifient la meme ligne du fichier `index.html` sur deux branches differentes.
+
+1. Creer une branche `dev-alice` depuis `main`. Modifier le titre en "Portfolio d'Alice".
+2. Revenir sur `main`, creer `dev-bob`. Modifier le titre en "Portfolio de Bob".
+3. Merger `dev-alice` dans `main` (pas de conflit).
+4. Merger `dev-bob` dans `main` (conflit).
+5. Resoudre le conflit en choisissant "Portfolio de l'equipe".
+
+**Solution :**
+
+```bash
+git switch -c dev-alice
+sed -i '' 's/Jean Dupont - Developpeur Web/Portfolio d'\''Alice/' index.html
+git commit -am "feat: titre Alice"
+
+git switch main
+git switch -c dev-bob
+sed -i '' 's/Jean Dupont - Developpeur Web/Portfolio de Bob/' index.html
+git commit -am "feat: titre Bob"
+
+git switch main
+git merge dev-alice
+# Fast-forward, pas de conflit
+
+git merge dev-bob
+# CONFLICT (content): Merge conflict in index.html
+
+# Ouvrir index.html, on voit :
+# <<<<<<< HEAD
+# <h1>Portfolio d'Alice</h1>
+# =======
+# <h1>Portfolio de Bob</h1>
+# >>>>>>> dev-bob
+
+# Remplacer par :
+# <h1>Portfolio de l'equipe</h1>
+# (supprimer les marqueurs de conflit)
+
+git add index.html
+git commit -m "fix: resoudre le conflit de titre"
+
+git branch -d dev-alice dev-bob
+```
+
+---
+
+### Exercice 5 : Utilisation de GitHub (push, pull, clone)
+
+**Enonce :**
+
+1. Creer un depot `portfolio` sur GitHub (vide, sans README).
+2. Lier le depot local au depot distant.
+3. Pousser le code.
+4. Sur GitHub, modifier le README directement (simuler un autre developpeur).
+5. Recuperer la modification localement.
+
+**Solution :**
+
+```bash
+# Sur GitHub : creer le depot "portfolio" (vide)
+
+# Localement :
+git remote add origin git@github.com:votre-compte/portfolio.git
+git push -u origin main
+
+# Sur GitHub : creer README.md via l'interface avec du contenu
+
+# Localement :
+git pull origin main
+# Le fichier README.md est maintenant present localement
+
+git log --oneline
+# Le commit du README distant apparait dans l'historique
+```
+
+---
+
+### Exercice 6 : Workflow Pull Request complet
+
+**Enonce :**
+
+Simuler un workflow de contribution par Pull Request :
+
+1. Creer une branche `feature/page-contact`.
+2. Ajouter un fichier `contact.html`.
+3. Pousser la branche.
+4. Creer une Pull Request sur GitHub.
+5. Decrire les etapes de review et de merge.
+
+**Solution :**
+
+```bash
+git switch -c feature/page-contact
+
+cat > contact.html << 'EOF'
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Contact - Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html">Accueil</a>
+        <a href="projets.html">Projets</a>
+        <a href="contact.html">Contact</a>
+    </nav>
+    <h1>Me contacter</h1>
+    <form action="#" method="POST">
+        <label for="nom">Nom :</label>
+        <input type="text" id="nom" name="nom" required>
+        <label for="email">Email :</label>
+        <input type="email" id="email" name="email" required>
+        <label for="message">Message :</label>
+        <textarea id="message" name="message" required></textarea>
+        <button type="submit">Envoyer</button>
+    </form>
+</body>
+</html>
+EOF
+
+git add contact.html
+git commit -m "feat(contact): ajouter la page de contact avec formulaire"
+git push -u origin feature/page-contact
+```
+
+Sur GitHub :
+1. Cliquer "Compare & pull request".
+2. Titre : "Ajouter la page de contact".
+3. Description : "Ajout d'une page contact avec un formulaire (nom, email, message). Closes #3".
+4. Assigner un reviewer.
+5. Le reviewer commente, approuve.
+6. Cliquer "Squash and merge".
+7. Supprimer la branche distante.
+
+Localement :
+
+```bash
+git switch main
+git pull
+git branch -d feature/page-contact
+```
+
+---
+
+### Exercice 7 : Annulation avec reset et revert
+
+**Enonce :**
+
+1. Faire trois commits successifs (A, B, C).
+2. Utiliser `git reset --soft` pour annuler le dernier commit tout en conservant les modifications.
+3. Refaire le commit.
+4. Utiliser `git revert` pour annuler le commit B sans recrire l'historique.
+
+**Solution :**
+
+```bash
+# Commit A
+echo "Contenu A" > fichier-a.txt
+git add fichier-a.txt
+git commit -m "A: ajouter fichier-a"
+
+# Commit B
+echo "Contenu B" > fichier-b.txt
+git add fichier-b.txt
+git commit -m "B: ajouter fichier-b"
+
+# Commit C
+echo "Contenu C" > fichier-c.txt
+git add fichier-c.txt
+git commit -m "C: ajouter fichier-c"
+
+git log --oneline
+# c3c3c3c C: ajouter fichier-c
+# b2b2b2b B: ajouter fichier-b
+# a1a1a1a A: ajouter fichier-a
+
+# Reset soft : annuler C, garder les modifications stagees
+git reset --soft HEAD~1
+git status
+# Changes to be committed: new file: fichier-c.txt
+
+# Refaire le commit avec un meilleur message
+git commit -m "C: ajouter fichier-c (corrige)"
+
+# Revert : annuler B en creant un nouveau commit
+git revert b2b2b2b
+# Un nouveau commit est cree qui supprime fichier-b.txt
+
+git log --oneline
+# r3v3r7t Revert "B: ajouter fichier-b"
+# c3c3c3c C: ajouter fichier-c (corrige)
+# b2b2b2b B: ajouter fichier-b
+# a1a1a1a A: ajouter fichier-a
+
+ls
+# fichier-a.txt  fichier-c.txt
+# (fichier-b.txt a ete supprime par le revert)
+```
+
+---
+
+### Exercice 8 : Stash et changement de contexte
+
+**Enonce :**
+
+Vous travaillez sur une fonctionnalite quand un bug urgent est signale en production.
+
+1. Etre sur la branche `feature/dashboard`, avoir des modifications non commitees.
+2. Stasher les modifications.
+3. Basculer sur `main`, creer `hotfix/bug-login`, corriger et merger.
+4. Revenir sur `feature/dashboard` et restaurer le stash.
+
+**Solution :**
+
+```bash
+# Situation initiale : sur feature/dashboard avec du travail en cours
+git switch -c feature/dashboard
+echo "<div>Dashboard en construction</div>" > dashboard.html
+git add dashboard.html
+# Pas encore pret a committer
+
+# Bug urgent signale !
+git stash push -m "WIP dashboard"
+
+git switch main
+git switch -c hotfix/bug-login
+echo "// Fix: corriger la validation du token" >> auth.js
+git add auth.js
+git commit -m "fix(auth): corriger la validation du token de connexion"
+
+git switch main
+git merge hotfix/bug-login
+git branch -d hotfix/bug-login
+
+# Push du correctif
+git push origin main
+
+# Retour au travail
+git switch feature/dashboard
+git stash list
+# stash@{0}: On feature/dashboard: WIP dashboard
+
+git stash pop
+# dashboard.html est restaure dans l'etat precedent
+
+git status
+# Changes to be committed: new file: dashboard.html
+```
+
+---
+
+### Exercice 9 : Cherry-pick et tags
+
+**Enonce :**
+
+1. Sur la branche `develop`, faire deux commits : un correctif et une fonctionnalite.
+2. Appliquer uniquement le correctif sur `main` via cherry-pick.
+3. Creer un tag `v1.0.1` sur `main` apres le cherry-pick.
+4. Pousser le tag.
+
+**Solution :**
+
+```bash
+git switch -c develop
+
+echo "// Correctif important" >> utils.js
+git add utils.js
+git commit -m "fix(utils): corriger le calcul de TVA"
+# Noter le hash : par exemple f1x1234
+
+echo "// Nouvelle fonctionnalite" >> feature.js
+git add feature.js
+git commit -m "feat: ajouter l'export CSV"
+
+git switch main
+
+# Appliquer uniquement le correctif
+git cherry-pick f1x1234
+# Le commit est reapplique sur main
+
+# Tagger
+git tag -a v1.0.1 -m "Version 1.0.1 - Correctif calcul TVA"
+
+# Pousser
+git push origin main
+git push origin v1.0.1
+
+# Verifier
+git log --oneline
+git tag -l
+```
+
+---
+
+### Exercice 10 : Workflow Git Flow complet
+
+**Enonce :**
+
+Simuler un cycle complet Git Flow :
+
+1. Initialiser un projet avec les branches `main` et `develop`.
+2. Creer une feature branch, developper et merger dans `develop`.
+3. Creer une release branch depuis `develop`, finaliser et merger dans `main` et `develop`.
+4. Tagger la release.
+5. Simuler un hotfix sur `main`.
+
+**Solution :**
+
+```bash
+# Initialisation
+mkdir projet-gitflow
+cd projet-gitflow
+git init
+echo "# Projet Git Flow" > README.md
+git add README.md
+git commit -m "feat: commit initial"
+
+git switch -c develop
+
+# --- Feature ---
+git switch -c feature/authentification
+cat > auth.js << 'EOF'
+function login(email, password) {
+    // Logique d'authentification
+    return fetch('/api/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+    });
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    window.location.href = '/';
+}
+EOF
+git add auth.js
+git commit -m "feat(auth): implementer login et logout"
+
+echo "function register(email, password) { /* ... */ }" >> auth.js
+git commit -am "feat(auth): ajouter l'inscription"
+
+git switch develop
+git merge --no-ff feature/authentification -m "Merger feature/authentification dans develop"
+git branch -d feature/authentification
+
+# --- Release ---
+git switch -c release/1.0.0
+echo "v1.0.0" > VERSION
+git add VERSION
+git commit -m "chore: preparer la release 1.0.0"
+
+# Correction de derniere minute dans la release
+echo "/* minifie */" >> auth.js
+git commit -am "fix: minifier le code pour la production"
+
+# Merger dans main
+git switch main
+git merge --no-ff release/1.0.0 -m "Release 1.0.0"
+git tag -a v1.0.0 -m "Version 1.0.0"
+
+# Merger dans develop (pour recuperer les corrections de la release)
+git switch develop
+git merge --no-ff release/1.0.0 -m "Merger release 1.0.0 dans develop"
+git branch -d release/1.0.0
+
+# --- Hotfix ---
+git switch main
+git switch -c hotfix/1.0.1
+echo "// Patch securite XSS" >> auth.js
+git commit -am "fix(security): corriger la faille XSS dans le login"
+
+git switch main
+git merge --no-ff hotfix/1.0.1 -m "Hotfix 1.0.1"
+git tag -a v1.0.1 -m "Version 1.0.1 - Correctif securite"
+
+git switch develop
+git merge --no-ff hotfix/1.0.1 -m "Merger hotfix 1.0.1 dans develop"
+git branch -d hotfix/1.0.1
+
+# Verifier l'historique
+git switch main
+git log --oneline --graph --all
+
+# Pousser tout
+git push origin main develop --tags
+```
+
+---
+
+### Exercice 11 : Rebase interactif
+
+**Enonce :**
+
+Vous avez fait quatre commits brouillons sur une branche. Avant de creer une PR, nettoyez l'historique :
+
+1. Fusionner (squash) les deux premiers commits en un seul.
+2. Reformuler le message du troisieme commit.
+3. Supprimer le quatrieme commit (inutile).
+
+**Solution :**
+
+```bash
+git switch -c feature/nettoyage
+
+echo "etape 1" > fichier.txt && git add . && git commit -m "wip"
+echo "etape 2" >> fichier.txt && git commit -am "wip suite"
+echo "etape 3" >> fichier.txt && git commit -am "ajout important"
+echo "debug" >> fichier.txt && git commit -am "debug a supprimer"
+
+git log --oneline
+# d4d4d4d debug a supprimer
+# c3c3c3c ajout important
+# b2b2b2b wip suite
+# a1a1a1a wip
+
+git rebase -i HEAD~4
+```
+
+L'editeur affiche :
+
+```
+pick a1a1a1a wip
+pick b2b2b2b wip suite
+pick c3c3c3c ajout important
+pick d4d4d4d debug a supprimer
+```
+
+Modifier en :
+
+```
+pick a1a1a1a wip
+squash b2b2b2b wip suite
+reword c3c3c3c ajout important
+drop d4d4d4d debug a supprimer
+```
+
+- `squash` : fusionne avec le commit precedent (Git demandera un nouveau message).
+- `reword` : permet de modifier le message (saisir "feat: implementer la fonctionnalite principale").
+- `drop` : supprime le commit.
+
+Resultat :
+
+```bash
+git log --oneline
+# n3w3333 feat: implementer la fonctionnalite principale
+# n3w1111 feat: initialiser la fonctionnalite
+```
+
+---
+
+### Exercice 12 : Recuperation avec reflog
+
+**Enonce :**
+
+Vous avez accidentellement execute `git reset --hard` et perdu des commits. Les retrouver et les restaurer.
+
+**Solution :**
+
+```bash
+# Situation : trois commits existent
+git log --oneline
+# c3c3c3c Troisieme commit
+# b2b2b2b Deuxieme commit
+# a1a1a1a Premier commit
+
+# Erreur : reset dur sur le premier commit
+git reset --hard a1a1a1a
+git log --oneline
+# a1a1a1a Premier commit
+# Les commits b et c semblent perdus !
+
+# Sauvetage via reflog
+git reflog
+# a1a1a1a HEAD@{0}: reset: moving to a1a1a1a
+# c3c3c3c HEAD@{1}: commit: Troisieme commit
+# b2b2b2b HEAD@{2}: commit: Deuxieme commit
+# a1a1a1a HEAD@{3}: commit: Premier commit
+
+# Restaurer
+git reset --hard HEAD@{1}
+# Ou : git reset --hard c3c3c3c
+
+git log --oneline
+# c3c3c3c Troisieme commit
+# b2b2b2b Deuxieme commit
+# a1a1a1a Premier commit
+# Tout est recupere !
+```
+
+**Lecon :** tant que le reflog existe (90 jours par defaut), presque rien n'est veritablement perdu dans Git.
+
+---
+
+## Resume des commandes essentielles
+
+| Commande | Description |
+|----------|-------------|
+| `git init` | Initialiser un depot |
+| `git clone <url>` | Cloner un depot distant |
+| `git status` | Etat des fichiers |
+| `git add <fichier>` | Ajouter a l'index |
+| `git commit -m "<msg>"` | Creer un commit |
+| `git log --oneline --graph` | Historique visuel |
+| `git diff` | Voir les modifications |
+| `git branch <nom>` | Creer une branche |
+| `git switch <nom>` | Changer de branche |
+| `git merge <branche>` | Fusionner une branche |
+| `git rebase <branche>` | Rebaser sur une branche |
+| `git remote add origin <url>` | Ajouter un remote |
+| `git push -u origin <branche>` | Pousser une branche |
+| `git pull` | Recuperer et fusionner |
+| `git fetch` | Recuperer sans fusionner |
+| `git stash` | Sauvegarder temporairement |
+| `git tag -a <tag> -m "<msg>"` | Creer un tag annote |
+| `git reset --soft/mixed/hard` | Revenir en arriere |
+| `git revert <commit>` | Annuler un commit (safe) |
+| `git cherry-pick <commit>` | Appliquer un commit precis |
+| `git reflog` | Historique de HEAD |
+| `git blame <fichier>` | Auteur par ligne |

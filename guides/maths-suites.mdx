@@ -1,0 +1,1184 @@
+---
+title: "Mathématiques — Suites numériques"
+description: "Suites arithmétiques et géométriques, convergence, sommes, applications aux coûts et amortissements"
+category: "Mathématiques"
+tags: ["suites", "arithmétique", "géométrique", "convergence", "maths"]
+difficulty: "Intermédiaire"
+---
+
+# Suites numériques
+
+---
+
+## 1. Definitions generales
+
+### 1.1 Qu'est-ce qu'une suite ?
+
+Une **suite numerique** est une fonction de N (ensemble des entiers naturels) vers R (ensemble des reels). Elle associe a chaque entier naturel n un nombre reel note U(n) ou Un.
+
+On note la suite (Un) et chaque valeur U0, U1, U2, ... est un **terme** de la suite. L'entier n est appele **indice** ou **rang** du terme.
+
+### 1.2 Suite definie de maniere explicite
+
+Une suite est **explicite** lorsque l'on peut calculer directement n'importe quel terme a partir de son indice n, sans connaitre les termes precedents.
+
+**Exemple :** Un = 3n + 2
+
+- U0 = 3 x 0 + 2 = 0 + 2 = 2
+- U1 = 3 x 1 + 2 = 3 + 2 = 5
+- U5 = 3 x 5 + 2 = 15 + 2 = 17
+- U100 = 3 x 100 + 2 = 300 + 2 = 302
+
+On peut calculer U100 directement, sans calculer U0 a U99.
+
+### 1.3 Suite definie par recurrence
+
+Une suite est **recurrente** (ou definie par recurrence) lorsque chaque terme est calcule a partir du ou des termes precedents. Il faut connaitre le(s) premier(s) terme(s) (condition initiale).
+
+**Exemple :** U0 = 1 et Un+1 = 2Un + 3
+
+- U0 = 1
+- U1 = 2 x U0 + 3 = 2 x 1 + 3 = 2 + 3 = 5
+- U2 = 2 x U1 + 3 = 2 x 5 + 3 = 10 + 3 = 13
+- U3 = 2 x U2 + 3 = 2 x 13 + 3 = 26 + 3 = 29
+
+Pour calculer U100, il faut calculer tous les termes de U0 a U99.
+
+### 1.4 Recapitulatif
+
+| Type | On connait | Pour calculer Un |
+|---|---|---|
+| Explicite | Une formule directe Un = f(n) | On remplace n dans la formule |
+| Recurrente | U0 (ou U1) et une relation Un+1 = f(Un) | On calcule tous les termes precedents |
+
+---
+
+## 2. Suites arithmetiques
+
+### 2.1 Definition
+
+Une suite (Un) est **arithmetique** si chaque terme s'obtient en **ajoutant** une constante r au terme precedent :
+
+> Un+1 = Un + r
+
+Le nombre r est appele la **raison** de la suite.
+
+- Si r > 0, la suite est **croissante** (les termes augmentent).
+- Si r < 0, la suite est **decroissante** (les termes diminuent).
+- Si r = 0, la suite est **constante**.
+
+### 2.2 Terme general
+
+A partir de la definition, on peut developper :
+
+- U1 = U0 + r
+- U2 = U1 + r = (U0 + r) + r = U0 + 2r
+- U3 = U2 + r = (U0 + 2r) + r = U0 + 3r
+- U4 = U3 + r = (U0 + 3r) + r = U0 + 4r
+
+On observe le motif : a chaque rang n, on a ajoute r exactement n fois a U0.
+
+> **Formule du terme general :** Un = U0 + n x r
+
+Si la suite commence au rang 1 (premier terme U1), la formule devient :
+
+> Un = U1 + (n - 1) x r
+
+### 2.3 Calcul de la raison r
+
+Si l'on connait deux termes consecutifs :
+
+> r = Un+1 - Un
+
+Si l'on connait deux termes quelconques Up et Uq (avec p different de q) :
+
+> r = (Uq - Up) / (q - p)
+
+**Exemple :** U3 = 11 et U7 = 27. Calculer r.
+
+r = (U7 - U3) / (7 - 3) = (27 - 11) / 4 = 16 / 4 = 4
+
+La raison vaut r = 4.
+
+### 2.4 Calcul de U0
+
+Connaissant un terme Up et la raison r :
+
+> U0 = Up - p x r
+
+**Exemple :** U5 = 23 et r = 4. Calculer U0.
+
+U0 = U5 - 5 x r = 23 - 5 x 4 = 23 - 20 = 3
+
+### 2.5 Verifier qu'une suite est arithmetique
+
+On calcule Un+1 - Un pour tout n. Si le resultat est une constante (independante de n), la suite est arithmetique et cette constante est la raison.
+
+**Exemple :** Un = 5n + 3. Est-ce arithmetique ?
+
+Un+1 = 5(n + 1) + 3 = 5n + 5 + 3 = 5n + 8
+
+Un+1 - Un = (5n + 8) - (5n + 3) = 5n + 8 - 5n - 3 = 5
+
+Le resultat est 5, constante. La suite est arithmetique de raison r = 5.
+
+---
+
+## 3. Somme des termes d'une suite arithmetique
+
+### 3.1 Formule
+
+La somme des n premiers termes (de U1 a Un) est :
+
+> S = n x (U1 + Un) / 2
+
+Variante : la somme des (n + 1) termes de U0 a Un est :
+
+> S = (n + 1) x (U0 + Un) / 2
+
+Formule generale : la somme de (nombre de termes) termes est :
+
+> S = nombre de termes x (premier terme + dernier terme) / 2
+
+### 3.2 Demonstration intuitive (methode de Gauss)
+
+Calculons S = 1 + 2 + 3 + ... + 100.
+
+Ecrivons la somme dans les deux sens :
+
+```
+S =   1 +   2 +   3 + ... +  98 +  99 + 100
+S = 100 +  99 +  98 + ... +   3 +   2 +   1
+```
+
+En additionnant terme a terme :
+
+```
+2S = 101 + 101 + 101 + ... + 101 + 101 + 101
+```
+
+Il y a 100 termes, donc :
+
+2S = 100 x 101 = 10 100
+
+S = 10 100 / 2 = 5 050
+
+Cela correspond a S = 100 x (1 + 100) / 2 = 100 x 101 / 2 = 5 050.
+
+### 3.3 Nombre de termes
+
+Le nombre de termes entre le rang p et le rang q (inclus) est :
+
+> Nombre de termes = q - p + 1
+
+**Exemple :** De U3 a U10, il y a 10 - 3 + 1 = 8 termes.
+
+### 3.4 Exemple pas a pas
+
+Suite arithmetique : U0 = 2, r = 3. Calculer S = U0 + U1 + U2 + ... + U10.
+
+Etape 1 : Calculer U10.
+U10 = U0 + 10 x r = 2 + 10 x 3 = 2 + 30 = 32
+
+Etape 2 : Compter le nombre de termes.
+De U0 a U10 : 10 - 0 + 1 = 11 termes.
+
+Etape 3 : Appliquer la formule.
+S = 11 x (U0 + U10) / 2 = 11 x (2 + 32) / 2 = 11 x 34 / 2 = 374 / 2 = 187
+
+### 3.5 Somme des n premiers entiers
+
+Cas particulier tres frequent : 1 + 2 + 3 + ... + n = n x (n + 1) / 2.
+
+**Exemple :** 1 + 2 + 3 + ... + 50 = 50 x 51 / 2 = 2 550 / 2 = 1 275.
+
+---
+
+## 4. Suites geometriques
+
+### 4.1 Definition
+
+Une suite (Un) est **geometrique** si chaque terme s'obtient en **multipliant** le terme precedent par une constante q :
+
+> Un+1 = Un x q
+
+Le nombre q est appele la **raison** de la suite.
+
+- Si q > 1, la suite est croissante (termes positifs) ou decroissante (termes negatifs).
+- Si 0 < q < 1, les termes se rapprochent de 0.
+- Si q = 1, la suite est constante.
+- Si q < 0, les termes alternent en signe.
+
+### 4.2 Terme general
+
+Developpons :
+
+- U1 = U0 x q
+- U2 = U1 x q = (U0 x q) x q = U0 x q^2
+- U3 = U2 x q = (U0 x q^2) x q = U0 x q^3
+- U4 = U3 x q = (U0 x q^3) x q = U0 x q^4
+
+> **Formule du terme general :** Un = U0 x q^n
+
+Si la suite commence au rang 1 :
+
+> Un = U1 x q^(n-1)
+
+### 4.3 Calcul de la raison q
+
+Si l'on connait deux termes consecutifs (Un different de 0) :
+
+> q = Un+1 / Un
+
+Si l'on connait deux termes quelconques Up et Uq (Up different de 0) :
+
+> q^(q-p) = Uq / Up, donc q = (Uq / Up)^(1/(q-p))
+
+**Exemple :** U2 = 12 et U5 = 96. Calculer q.
+
+q^(5-2) = U5 / U2 = 96 / 12 = 8
+
+q^3 = 8
+
+q = 8^(1/3) = 2
+
+### 4.4 Calcul de U0
+
+Connaissant un terme Up et la raison q :
+
+> U0 = Up / q^p
+
+**Exemple :** U3 = 40 et q = 2. Calculer U0.
+
+U0 = U3 / q^3 = 40 / 2^3 = 40 / 8 = 5
+
+### 4.5 Verifier qu'une suite est geometrique
+
+On calcule Un+1 / Un pour tout n (avec Un different de 0). Si le resultat est une constante, la suite est geometrique et cette constante est la raison.
+
+**Exemple :** Un = 3 x 2^n. Est-ce geometrique ?
+
+Un+1 = 3 x 2^(n+1) = 3 x 2^n x 2
+
+Un+1 / Un = (3 x 2^n x 2) / (3 x 2^n) = 2
+
+Le resultat est 2, constante. La suite est geometrique de raison q = 2.
+
+---
+
+## 5. Somme des termes d'une suite geometrique
+
+### 5.1 Formule
+
+La somme des (n + 1) premiers termes (de U0 a Un), avec q different de 1 :
+
+> S = U0 x (1 - q^(n+1)) / (1 - q)
+
+Variante : la somme des n premiers termes (de U1 a Un) avec premier terme U1 :
+
+> S = U1 x (1 - q^n) / (1 - q)
+
+Formule a retenir dans sa forme generale :
+
+> S = premier terme x (1 - q^(nombre de termes)) / (1 - q)
+
+Si q = 1, tous les termes sont egaux et S = nombre de termes x U0.
+
+### 5.2 Demonstration
+
+Posons S = U0 + U0 x q + U0 x q^2 + ... + U0 x q^n.
+
+Multiplions par q :
+
+q x S = U0 x q + U0 x q^2 + U0 x q^3 + ... + U0 x q^(n+1)
+
+Soustrayons :
+
+S - q x S = U0 - U0 x q^(n+1)
+
+S x (1 - q) = U0 x (1 - q^(n+1))
+
+S = U0 x (1 - q^(n+1)) / (1 - q)
+
+### 5.3 Exemple pas a pas
+
+Suite geometrique : U0 = 3, q = 2. Calculer S = U0 + U1 + ... + U6.
+
+Etape 1 : Compter le nombre de termes.
+De U0 a U6 : 6 - 0 + 1 = 7 termes.
+
+Etape 2 : Appliquer la formule.
+S = U0 x (1 - q^7) / (1 - q)
+S = 3 x (1 - 2^7) / (1 - 2)
+S = 3 x (1 - 128) / (1 - 2)
+S = 3 x (-127) / (-1)
+S = 3 x 127
+S = 381
+
+Verification :
+- U0 = 3
+- U1 = 3 x 2 = 6
+- U2 = 3 x 4 = 12
+- U3 = 3 x 8 = 24
+- U4 = 3 x 16 = 48
+- U5 = 3 x 32 = 96
+- U6 = 3 x 64 = 192
+
+Somme = 3 + 6 + 12 + 24 + 48 + 96 + 192 = 381. Confirme.
+
+### 5.4 Autre exemple
+
+U0 = 1000, q = 0.5. Calculer S = U0 + U1 + U2 + U3 + U4.
+
+Nombre de termes : 5 (de U0 a U4).
+
+S = 1000 x (1 - 0.5^5) / (1 - 0.5)
+S = 1000 x (1 - 0.03125) / 0.5
+S = 1000 x 0.96875 / 0.5
+S = 968.75 / 0.5
+S = 1 937.5
+
+---
+
+## 6. Sens de variation
+
+### 6.1 Definitions
+
+- Une suite est **croissante** si pour tout n : Un+1 >= Un (ou de facon stricte : Un+1 > Un).
+- Une suite est **decroissante** si pour tout n : Un+1 <= Un (ou de facon stricte : Un+1 < Un).
+- Une suite est **constante** si pour tout n : Un+1 = Un.
+
+### 6.2 Methode 1 : etudier Un+1 - Un
+
+On calcule la difference Un+1 - Un :
+
+- Si Un+1 - Un > 0 pour tout n, la suite est strictement croissante.
+- Si Un+1 - Un < 0 pour tout n, la suite est strictement decroissante.
+- Si Un+1 - Un = 0 pour tout n, la suite est constante.
+
+**Exemple :** Un = n^2 - 3n.
+
+Un+1 = (n + 1)^2 - 3(n + 1)
+Un+1 = n^2 + 2n + 1 - 3n - 3
+Un+1 = n^2 - n - 2
+
+Un+1 - Un = (n^2 - n - 2) - (n^2 - 3n)
+Un+1 - Un = n^2 - n - 2 - n^2 + 3n
+Un+1 - Un = 2n - 2
+
+Signe de 2n - 2 :
+- 2n - 2 > 0 quand n > 1
+- 2n - 2 = 0 quand n = 1
+- 2n - 2 < 0 quand n < 1, c'est-a-dire n = 0
+
+La suite est decroissante pour n = 0 (U1 < U0), puis croissante a partir de n = 2.
+
+### 6.3 Methode 2 : etudier Un+1 / Un (termes strictement positifs)
+
+Si tous les termes sont strictement positifs, on calcule Un+1 / Un :
+
+- Si Un+1 / Un > 1 pour tout n, la suite est strictement croissante.
+- Si Un+1 / Un < 1 pour tout n, la suite est strictement decroissante.
+- Si Un+1 / Un = 1 pour tout n, la suite est constante.
+
+Cette methode est particulierement adaptee aux suites geometriques.
+
+**Exemple :** Suite geometrique de raison q = 0.8 et U0 = 100 > 0.
+
+Un+1 / Un = q = 0.8 < 1, donc la suite est strictement decroissante.
+
+### 6.4 Methode 3 : etudier la fonction associee
+
+Si Un = f(n), on peut etudier la fonction f sur [0 ; +inf[. Si f est croissante (respectivement decroissante), alors la suite l'est aussi.
+
+---
+
+## 7. Convergence et limites
+
+### 7.1 Suite arithmetique
+
+Pour une suite arithmetique Un = U0 + n x r :
+
+- Si r > 0 : lim(n->+inf) Un = +inf (la suite diverge vers +inf).
+- Si r < 0 : lim(n->+inf) Un = -inf (la suite diverge vers -inf).
+- Si r = 0 : Un = U0 pour tout n (la suite converge vers U0).
+
+Une suite arithmetique (r different de 0) ne converge jamais.
+
+### 7.2 Suite geometrique
+
+Pour une suite geometrique Un = U0 x q^n (avec U0 different de 0) :
+
+| Condition sur q | Comportement de q^n | Limite de Un |
+|---|---|---|
+| -1 < q < 1 (soit \|q\| < 1) | q^n tend vers 0 | Un tend vers 0 |
+| q = 1 | q^n = 1 | Un = U0 (constante) |
+| q > 1 | q^n tend vers +inf | Un tend vers +inf (si U0 > 0) ou -inf (si U0 < 0) |
+| q = -1 | q^n alterne entre 1 et -1 | Pas de limite (diverge) |
+| q < -1 | q^n oscille avec amplitude croissante | Pas de limite (diverge) |
+
+**Cas fondamental pour le BTS SIO :** si |q| < 1, alors la suite geometrique converge vers 0.
+
+### 7.3 Suite bornee
+
+- Une suite est **majoree** s'il existe un reel M tel que Un <= M pour tout n.
+- Une suite est **minoree** s'il existe un reel m tel que Un >= m pour tout n.
+- Une suite est **bornee** si elle est a la fois majoree et minoree.
+
+**Propriete :** Toute suite croissante et majoree converge. Toute suite decroissante et minoree converge.
+
+### 7.4 Somme infinie d'une suite geometrique
+
+Si |q| < 1, la somme de tous les termes (somme infinie) converge :
+
+> S = U0 / (1 - q)
+
+**Exemple :** U0 = 100, q = 0.5.
+
+S = 100 / (1 - 0.5) = 100 / 0.5 = 200
+
+---
+
+## 8. Suites definies par recurrence : calcul et representation
+
+### 8.1 Calcul des premiers termes
+
+Pour une suite definie par U0 et Un+1 = f(Un), on calcule terme par terme.
+
+**Exemple :** U0 = 2, Un+1 = 0.5 x Un + 3.
+
+- U0 = 2
+- U1 = 0.5 x 2 + 3 = 1 + 3 = 4
+- U2 = 0.5 x 4 + 3 = 2 + 3 = 5
+- U3 = 0.5 x 5 + 3 = 2.5 + 3 = 5.5
+- U4 = 0.5 x 5.5 + 3 = 2.75 + 3 = 5.75
+- U5 = 0.5 x 5.75 + 3 = 2.875 + 3 = 5.875
+
+Les termes semblent se rapprocher de 6. En effet, si la suite converge vers une limite L, alors L = 0.5 x L + 3, soit 0.5L = 3, soit L = 6.
+
+### 8.2 Representation graphique en escalier
+
+Pour representer graphiquement la suite Un+1 = f(Un) :
+
+1. Tracer la courbe y = f(x).
+2. Tracer la droite y = x (premiere bissectrice).
+3. Placer U0 sur l'axe des abscisses.
+4. Monter verticalement jusqu'a la courbe y = f(x) : on lit U1 en ordonnee.
+5. Aller horizontalement jusqu'a la droite y = x : on reporte U1 sur l'axe des abscisses.
+6. Repeter : monter verticalement vers la courbe, puis horizontalement vers la droite.
+
+Le dessin forme un motif en **escalier** si la suite est monotone (croissante ou decroissante). Il forme un motif en **colimacon** (spirale) si les termes oscillent autour de la limite.
+
+### 8.3 Point fixe
+
+Le point ou la courbe y = f(x) croise la droite y = x est appele **point fixe**. Si la suite converge, elle converge vers un point fixe. On le trouve en resolvant f(x) = x.
+
+---
+
+## 9. Suites et tableur
+
+### 9.1 Suite arithmetique au tableur
+
+Pour la suite Un = 2 + 3n (U0 = 2, r = 3) :
+
+| Cellule | Contenu | Resultat |
+|---|---|---|
+| A1 | n | (en-tete) |
+| B1 | Un | (en-tete) |
+| A2 | 0 | 0 |
+| A3 | =A2+1 | 1 |
+| B2 | 2 | 2 (valeur de U0) |
+| B3 | =B2+3 | 5 (valeur de U1) |
+
+On tire les formules A3 et B3 vers le bas pour obtenir autant de termes que souhaite.
+
+Methode explicite alternative pour B2 : =2+A2*3 (formule directe Un = 2 + 3n).
+
+### 9.2 Suite geometrique au tableur
+
+Pour la suite Un = 5 x 1.1^n (U0 = 5, q = 1.1) :
+
+| Cellule | Contenu | Resultat |
+|---|---|---|
+| A2 | 0 | 0 |
+| A3 | =A2+1 | 1 |
+| B2 | 5 | 5 (valeur de U0) |
+| B3 | =B2*1.1 | 5.5 (valeur de U1) |
+
+Methode explicite : B2 = =5*1.1^A2.
+
+### 9.3 Somme cumulee au tableur
+
+Ajouter une colonne C pour la somme cumulee :
+
+| Cellule | Contenu |
+|---|---|
+| C2 | =B2 |
+| C3 | =C2+B3 |
+
+Tirer C3 vers le bas. La cellule C(n+2) contient la somme U0 + U1 + ... + Un.
+
+---
+
+## 10. Applications concretes en informatique et gestion
+
+### 10.1 Amortissement lineaire
+
+L'amortissement lineaire repartit le cout d'un bien de maniere egale chaque annee.
+
+**Principe :** Un bien de valeur V est amorti sur N annees. L'annuite constante est a = V / N. La valeur nette comptable (VNC) apres n annees forme une suite arithmetique de raison r = -a.
+
+VNC(n) = V - n x a = V - n x (V / N)
+
+**Exemple :** Un serveur coute 10 000 euros, amorti sur 5 ans.
+
+Annuite = 10 000 / 5 = 2 000 euros par an.
+
+- VNC(0) = 10 000
+- VNC(1) = 10 000 - 2 000 = 8 000
+- VNC(2) = 8 000 - 2 000 = 6 000
+- VNC(3) = 6 000 - 2 000 = 4 000
+- VNC(4) = 4 000 - 2 000 = 2 000
+- VNC(5) = 2 000 - 2 000 = 0
+
+Suite arithmetique : U0 = 10 000, r = -2 000.
+
+### 10.2 Amortissement degressif
+
+L'amortissement degressif applique un taux fixe sur la valeur residuelle. La VNC forme une suite geometrique.
+
+**Principe :** Taux d'amortissement t (en pourcentage). Chaque annee, on amortit t% de la VNC restante.
+
+VNC(n) = V x (1 - t)^n
+
+C'est une suite geometrique de premier terme V et de raison q = (1 - t).
+
+**Exemple :** Serveur a 10 000 euros, taux degressif de 40%.
+
+q = 1 - 0.40 = 0.60
+
+- VNC(0) = 10 000
+- VNC(1) = 10 000 x 0.60 = 6 000
+- VNC(2) = 6 000 x 0.60 = 3 600
+- VNC(3) = 3 600 x 0.60 = 2 160
+- VNC(4) = 2 160 x 0.60 = 1 296
+- VNC(5) = 1 296 x 0.60 = 777.60
+
+### 10.3 Cout de maintenance informatique croissant
+
+Le cout de maintenance d'un parc informatique augmente souvent chaque annee d'un montant fixe (suite arithmetique) ou d'un pourcentage fixe (suite geometrique).
+
+**Exemple arithmetique :** Le cout de maintenance la premiere annee est de 5 000 euros et augmente de 800 euros par an.
+
+Un = 5 000 + n x 800, avec n le nombre d'annees ecoulees apres la premiere.
+
+U0 = 5 000, U1 = 5 800, U2 = 6 600, ...
+
+Cout total sur 6 ans (U0 a U5) :
+
+U5 = 5 000 + 5 x 800 = 5 000 + 4 000 = 9 000
+
+S = 6 x (5 000 + 9 000) / 2 = 6 x 14 000 / 2 = 6 x 7 000 = 42 000 euros.
+
+**Exemple geometrique :** Le cout augmente de 10% par an, partant de 5 000 euros.
+
+Un = 5 000 x 1.10^n.
+
+U5 = 5 000 x 1.10^5 = 5 000 x 1.61051 = 8 052.55 euros.
+
+Cout total sur 6 ans (U0 a U5) :
+
+S = 5 000 x (1 - 1.10^6) / (1 - 1.10)
+S = 5 000 x (1 - 1.771561) / (-0.10)
+S = 5 000 x (-0.771561) / (-0.10)
+S = 5 000 x 7.71561
+S = 38 578.05 euros.
+
+### 10.4 Evolution du parc informatique
+
+**Exemple :** Une entreprise possede 200 postes. Chaque annee, elle ajoute 50 postes.
+
+Suite arithmetique : P(n) = 200 + 50n.
+
+P(0) = 200, P(1) = 250, P(5) = 200 + 50 x 5 = 200 + 250 = 450 postes.
+
+**Variante geometrique :** L'entreprise augmente son parc de 15% par an.
+
+P(n) = 200 x 1.15^n.
+
+P(5) = 200 x 1.15^5 = 200 x 2.011357 = 402.27, soit environ 402 postes.
+
+### 10.5 Placement financier (interets composes)
+
+Un capital C0 place a un taux annuel t (en decimal) donne, apres n annees :
+
+> Cn = C0 x (1 + t)^n
+
+C'est une suite geometrique de raison q = 1 + t.
+
+**Exemple :** 10 000 euros places a 3% par an.
+
+q = 1 + 0.03 = 1.03
+
+- C0 = 10 000
+- C1 = 10 000 x 1.03 = 10 300
+- C2 = 10 300 x 1.03 = 10 609
+- C3 = 10 609 x 1.03 = 10 927.27
+- C5 = 10 000 x 1.03^5 = 10 000 x 1.159274 = 11 592.74
+- C10 = 10 000 x 1.03^10 = 10 000 x 1.343916 = 13 439.16
+
+### 10.6 Loi de Moore
+
+La loi de Moore enonce que le nombre de transistors sur une puce double environ tous les 2 ans.
+
+Si T0 est le nombre de transistors au temps initial, apres n periodes de 2 ans :
+
+T(n) = T0 x 2^n
+
+C'est une suite geometrique de raison q = 2.
+
+**Exemple :** En 2000, une puce contient 42 millions de transistors.
+
+- T(0) = 42 000 000 (annee 2000)
+- T(1) = 42 000 000 x 2 = 84 000 000 (annee 2002)
+- T(5) = 42 000 000 x 2^5 = 42 000 000 x 32 = 1 344 000 000 (annee 2010)
+- T(10) = 42 000 000 x 2^10 = 42 000 000 x 1 024 = 43 008 000 000 (annee 2020)
+
+### 10.7 Complexite algorithmique
+
+Les suites permettent de comprendre la croissance de la complexite algorithmique.
+
+- **O(n)** : complexite lineaire. Le temps d'execution forme une suite arithmetique si l'on incremente la taille de 1 a chaque pas. Exemple : parcourir un tableau de n elements.
+
+- **O(n^2)** : complexite quadratique. Un = n^2 croit beaucoup plus vite. Exemple : tri par selection, double boucle imbriquee.
+
+- **O(2^n)** : complexite exponentielle. Un = 2^n est une suite geometrique de raison 2. Elle explose rapidement. Exemple : exploration de tous les sous-ensembles.
+
+- **O(log n)** : complexite logarithmique. La dichotomie divise l'espace de recherche par 2 a chaque etape, ce qui est l'inverse d'une suite geometrique.
+
+Comparaison pour n = 10 :
+- n = 10
+- n^2 = 100
+- 2^n = 1 024
+- log2(n) = 3.32 (arrondi)
+
+---
+
+## 11. Exercices corriges
+
+### Exercice 1 : Identifier et calculer (suite arithmetique)
+
+**Enonce :** Une suite (Un) est arithmetique de premier terme U0 = 7 et de raison r = 4. Calculer U1, U5, U20.
+
+**Correction :**
+
+Formule : Un = U0 + n x r = 7 + n x 4.
+
+U1 = 7 + 1 x 4 = 7 + 4 = 11
+
+U5 = 7 + 5 x 4 = 7 + 20 = 27
+
+U20 = 7 + 20 x 4 = 7 + 80 = 87
+
+---
+
+### Exercice 2 : Trouver la raison et U0
+
+**Enonce :** Une suite arithmetique verifie U3 = 19 et U8 = 39. Determiner r et U0.
+
+**Correction :**
+
+r = (U8 - U3) / (8 - 3) = (39 - 19) / 5 = 20 / 5 = 4
+
+U0 = U3 - 3 x r = 19 - 3 x 4 = 19 - 12 = 7
+
+Verification : U8 = U0 + 8 x r = 7 + 8 x 4 = 7 + 32 = 39. Correct.
+
+---
+
+### Exercice 3 : Somme arithmetique
+
+**Enonce :** Calculer la somme S = U0 + U1 + ... + U12 pour la suite arithmetique U0 = 5, r = 3.
+
+**Correction :**
+
+Etape 1 : Nombre de termes.
+De U0 a U12 : 12 - 0 + 1 = 13 termes.
+
+Etape 2 : Calculer U12.
+U12 = U0 + 12 x r = 5 + 12 x 3 = 5 + 36 = 41
+
+Etape 3 : Appliquer la formule.
+S = 13 x (U0 + U12) / 2
+S = 13 x (5 + 41) / 2
+S = 13 x 46 / 2
+S = 598 / 2
+S = 299
+
+---
+
+### Exercice 4 : Suite geometrique - termes
+
+**Enonce :** Suite geometrique : U0 = 3, q = 2. Calculer U4, U8.
+
+**Correction :**
+
+Formule : Un = U0 x q^n = 3 x 2^n.
+
+U4 = 3 x 2^4 = 3 x 16 = 48
+
+U8 = 3 x 2^8 = 3 x 256 = 768
+
+---
+
+### Exercice 5 : Trouver la raison geometrique
+
+**Enonce :** Suite geometrique : U1 = 6, U4 = 162. Determiner q et U0.
+
+**Correction :**
+
+On sait que U4 = U1 x q^(4-1) = U1 x q^3.
+
+q^3 = U4 / U1 = 162 / 6 = 27
+
+q = 27^(1/3) = 3
+
+U0 = U1 / q = 6 / 3 = 2
+
+Verification : U4 = U0 x q^4 = 2 x 3^4 = 2 x 81 = 162. Correct.
+
+---
+
+### Exercice 6 : Somme geometrique
+
+**Enonce :** Calculer S = U0 + U1 + ... + U7 pour U0 = 4, q = 3.
+
+**Correction :**
+
+Nombre de termes : 7 - 0 + 1 = 8.
+
+S = U0 x (1 - q^8) / (1 - q)
+S = 4 x (1 - 3^8) / (1 - 3)
+S = 4 x (1 - 6 561) / (-2)
+S = 4 x (-6 560) / (-2)
+S = 4 x 3 280
+S = 13 120
+
+---
+
+### Exercice 7 : Placement financier
+
+**Enonce :** On place 15 000 euros a un taux annuel de 4%. Calculer le capital apres 1, 5 et 10 ans.
+
+**Correction :**
+
+Suite geometrique : Cn = 15 000 x 1.04^n.
+
+C1 = 15 000 x 1.04^1 = 15 000 x 1.04 = 15 600
+
+C5 = 15 000 x 1.04^5
+
+Calculons 1.04^5 :
+- 1.04^2 = 1.0816
+- 1.04^3 = 1.0816 x 1.04 = 1.124864
+- 1.04^4 = 1.124864 x 1.04 = 1.16985856
+- 1.04^5 = 1.16985856 x 1.04 = 1.2166529... arrondi a 1.216653
+
+C5 = 15 000 x 1.216653 = 18 249.79 euros (arrondi au centime).
+
+C10 = 15 000 x 1.04^10
+
+1.04^10 = (1.04^5)^2 = 1.216653^2 = 1.480244 (arrondi)
+
+C10 = 15 000 x 1.480244 = 22 203.66 euros (arrondi au centime).
+
+---
+
+### Exercice 8 : Amortissement lineaire
+
+**Enonce :** Un materiel informatique coute 8 000 euros. Il est amorti lineairement sur 4 ans. Donner la VNC chaque annee et le montant total des amortissements.
+
+**Correction :**
+
+Annuite = 8 000 / 4 = 2 000 euros.
+
+Suite arithmetique : VNC(n) = 8 000 - 2 000 x n, r = -2 000.
+
+- VNC(0) = 8 000 - 2 000 x 0 = 8 000 - 0 = 8 000
+- VNC(1) = 8 000 - 2 000 x 1 = 8 000 - 2 000 = 6 000
+- VNC(2) = 8 000 - 2 000 x 2 = 8 000 - 4 000 = 4 000
+- VNC(3) = 8 000 - 2 000 x 3 = 8 000 - 6 000 = 2 000
+- VNC(4) = 8 000 - 2 000 x 4 = 8 000 - 8 000 = 0
+
+Total des amortissements = 4 x 2 000 = 8 000 euros (le bien est integralement amorti).
+
+---
+
+### Exercice 9 : Cout de maintenance croissant
+
+**Enonce :** Le cout de maintenance d'un serveur est de 1 200 euros la premiere annee et augmente de 150 euros chaque annee. Calculer le cout la 6e annee et le cout total sur 6 ans.
+
+**Correction :**
+
+Suite arithmetique : U1 = 1 200, r = 150. (L'indice 1 correspond a la premiere annee.)
+
+Cout la 6e annee :
+U6 = U1 + (6 - 1) x r = 1 200 + 5 x 150 = 1 200 + 750 = 1 950 euros.
+
+Cout total sur 6 ans (U1 + U2 + ... + U6) :
+Nombre de termes : 6.
+S = 6 x (U1 + U6) / 2 = 6 x (1 200 + 1 950) / 2 = 6 x 3 150 / 2 = 18 900 / 2 = 9 450 euros.
+
+---
+
+### Exercice 10 : Convergence d'une suite geometrique
+
+**Enonce :** On considere la suite Un = 500 x 0.8^n. La suite converge-t-elle ? Si oui, vers quelle limite ? Calculer U5 et U10.
+
+**Correction :**
+
+La suite est geometrique de raison q = 0.8. Comme |q| = 0.8 < 1, la suite converge vers 0.
+
+U5 = 500 x 0.8^5
+- 0.8^2 = 0.64
+- 0.8^3 = 0.64 x 0.8 = 0.512
+- 0.8^4 = 0.512 x 0.8 = 0.4096
+- 0.8^5 = 0.4096 x 0.8 = 0.32768
+U5 = 500 x 0.32768 = 163.84
+
+U10 = 500 x 0.8^10 = 500 x (0.8^5)^2 = 500 x 0.32768^2 = 500 x 0.107374 = 53.69 (arrondi).
+
+La suite tend bien vers 0.
+
+---
+
+### Exercice 11 : Suite recurrente
+
+**Enonce :** On definit U0 = 10 et Un+1 = 0.6 x Un + 8. Calculer U1 a U5. Determiner la limite eventuelle.
+
+**Correction :**
+
+Calcul des termes :
+- U0 = 10
+- U1 = 0.6 x 10 + 8 = 6 + 8 = 14
+- U2 = 0.6 x 14 + 8 = 8.4 + 8 = 16.4
+- U3 = 0.6 x 16.4 + 8 = 9.84 + 8 = 17.84
+- U4 = 0.6 x 17.84 + 8 = 10.704 + 8 = 18.704
+- U5 = 0.6 x 18.704 + 8 = 11.2224 + 8 = 19.2224
+
+Recherche de la limite :
+Si la suite converge vers L, alors L = 0.6L + 8.
+L - 0.6L = 8
+0.4L = 8
+L = 8 / 0.4 = 20
+
+La suite converge vers 20.
+
+---
+
+### Exercice 12 : Loi de Moore
+
+**Enonce :** En 2010, un processeur contient 1 milliard de transistors. Selon la loi de Moore (doublement tous les 2 ans), combien en contiendra-t-il en 2020 et en 2030 ?
+
+**Correction :**
+
+Suite geometrique : T(n) = 1 000 000 000 x 2^n, ou n est le nombre de periodes de 2 ans apres 2010.
+
+En 2020 : n = (2020 - 2010) / 2 = 10 / 2 = 5.
+T(5) = 1 000 000 000 x 2^5 = 1 000 000 000 x 32 = 32 000 000 000 (32 milliards).
+
+En 2030 : n = (2030 - 2010) / 2 = 20 / 2 = 10.
+T(10) = 1 000 000 000 x 2^10 = 1 000 000 000 x 1 024 = 1 024 000 000 000 (1 024 milliards).
+
+---
+
+### Exercice 13 : Somme et interets composes
+
+**Enonce :** On verse 2 000 euros chaque annee sur un compte remunere a 5% par an. Quel est le capital accumule apres 10 versements (versements en debut d'annee) ?
+
+**Correction :**
+
+Le 1er versement (debut annee 1) capitalise pendant 10 ans : 2 000 x 1.05^10.
+Le 2e versement (debut annee 2) capitalise pendant 9 ans : 2 000 x 1.05^9.
+...
+Le 10e versement (debut annee 10) capitalise pendant 1 an : 2 000 x 1.05^1.
+
+Capital total :
+S = 2 000 x 1.05 + 2 000 x 1.05^2 + ... + 2 000 x 1.05^10
+S = 2 000 x 1.05 x (1 + 1.05 + 1.05^2 + ... + 1.05^9)
+
+La somme entre parentheses est une somme geometrique de 10 termes, premier terme 1, raison 1.05 :
+
+Somme = (1 - 1.05^10) / (1 - 1.05)
+
+Calculons 1.05^10 :
+- 1.05^2 = 1.1025
+- 1.05^4 = 1.1025^2 = 1.21550625
+- 1.05^5 = 1.21550625 x 1.05 = 1.27628156
+- 1.05^10 = 1.27628156^2 = 1.62889463 (arrondi a 1.628895)
+
+Somme = (1 - 1.628895) / (1 - 1.05) = (-0.628895) / (-0.05) = 12.5779
+
+S = 2 000 x 1.05 x 12.5779 = 2 100 x 12.5779 = 26 413.59 euros (arrondi).
+
+---
+
+### Exercice 14 : Sens de variation
+
+**Enonce :** On donne Un = n^2 - 10n + 30. Etudier le sens de variation de cette suite.
+
+**Correction :**
+
+Calculons Un+1 - Un :
+
+Un+1 = (n + 1)^2 - 10(n + 1) + 30
+Un+1 = n^2 + 2n + 1 - 10n - 10 + 30
+Un+1 = n^2 - 8n + 21
+
+Un+1 - Un = (n^2 - 8n + 21) - (n^2 - 10n + 30)
+Un+1 - Un = n^2 - 8n + 21 - n^2 + 10n - 30
+Un+1 - Un = 2n - 9
+
+Etude du signe de 2n - 9 :
+- 2n - 9 = 0 quand n = 4.5
+- 2n - 9 < 0 quand n < 4.5, c'est-a-dire pour n = 0, 1, 2, 3, 4
+- 2n - 9 > 0 quand n > 4.5, c'est-a-dire pour n >= 5
+
+La suite est strictement decroissante de n = 0 a n = 4, puis strictement croissante a partir de n = 5.
+
+Le minimum est atteint en n = 5 :
+U5 = 25 - 50 + 30 = 5.
+
+Verification : U4 = 16 - 40 + 30 = 6 > U5 = 5. U6 = 36 - 60 + 30 = 6 > U5 = 5. Correct.
+
+---
+
+### Exercice 15 : Amortissement degressif
+
+**Enonce :** Un equipement reseau coute 12 000 euros. Il est amorti de maniere degressive au taux de 30% par an. Calculer la VNC apres chaque annee pendant 5 ans. Quelle est la VNC apres 5 ans ?
+
+**Correction :**
+
+Suite geometrique : VNC(n) = 12 000 x (1 - 0.30)^n = 12 000 x 0.70^n.
+
+- VNC(0) = 12 000 x 0.70^0 = 12 000 x 1 = 12 000
+- VNC(1) = 12 000 x 0.70^1 = 12 000 x 0.70 = 8 400
+- VNC(2) = 12 000 x 0.70^2 = 12 000 x 0.49 = 5 880
+- VNC(3) = 12 000 x 0.70^3 = 12 000 x 0.343 = 4 116
+- VNC(4) = 12 000 x 0.70^4 = 12 000 x 0.2401 = 2 881.20
+- VNC(5) = 12 000 x 0.70^5 = 12 000 x 0.16807 = 2 016.84
+
+Apres 5 ans, la VNC est de 2 016.84 euros.
+
+L'amortissement total cumule est de 12 000 - 2 016.84 = 9 983.16 euros.
+
+---
+
+### Exercice 16 : Suite et tableur
+
+**Enonce :** On considere la suite definie par U0 = 100 et Un+1 = Un x 0.9 + 5. Ecrire les formules tableur pour calculer les 10 premiers termes et identifier la limite graphiquement.
+
+**Correction :**
+
+Configuration du tableur :
+
+| Cellule | Contenu | Resultat |
+|---|---|---|
+| A1 | n | (en-tete) |
+| B1 | Un | (en-tete) |
+| A2 | 0 | 0 |
+| A3 | =A2+1 | 1 |
+| B2 | 100 | 100 |
+| B3 | =B2*0.9+5 | 95 |
+
+Tirer A3 et B3 vers le bas jusqu'a la ligne 12 (pour obtenir U0 a U10).
+
+Calcul des termes :
+- U0 = 100
+- U1 = 100 x 0.9 + 5 = 90 + 5 = 95
+- U2 = 95 x 0.9 + 5 = 85.5 + 5 = 90.5
+- U3 = 90.5 x 0.9 + 5 = 81.45 + 5 = 86.45
+- U4 = 86.45 x 0.9 + 5 = 77.805 + 5 = 82.805
+- U5 = 82.805 x 0.9 + 5 = 74.5245 + 5 = 79.5245
+- U6 = 79.5245 x 0.9 + 5 = 71.57205 + 5 = 76.57205
+- U7 = 76.57205 x 0.9 + 5 = 68.914845 + 5 = 73.914845
+- U8 = 73.914845 x 0.9 + 5 = 66.52336 + 5 = 71.52336
+- U9 = 71.52336 x 0.9 + 5 = 64.37102 + 5 = 69.37102
+- U10 = 69.37102 x 0.9 + 5 = 62.43392 + 5 = 67.43392
+
+Recherche de la limite : L = 0.9L + 5, donc 0.1L = 5, donc L = 50.
+
+La suite converge vers 50 (suite decroissante, les termes se rapprochent de 50 par valeurs superieures).
+
+---
+
+### Exercice 17 : Exercice de synthese (examen type)
+
+**Enonce :** Une entreprise de services informatiques demarre avec 80 clients. Chaque annee, elle perd 10% de ses clients mais en gagne 30 nouveaux. On note Cn le nombre de clients l'annee n.
+
+a) Exprimer Cn+1 en fonction de Cn.
+b) Calculer C1, C2, C3.
+c) Determiner la limite eventuelle de cette suite.
+d) Calculer le nombre d'annees necessaires pour depasser 250 clients (a l'aide du tableur ou par calcul iteratif).
+
+**Correction :**
+
+a) Chaque annee, on conserve 90% des clients et on ajoute 30 :
+
+Cn+1 = 0.9 x Cn + 30
+
+b) Calcul des termes :
+
+C0 = 80
+
+C1 = 0.9 x 80 + 30 = 72 + 30 = 102
+
+C2 = 0.9 x 102 + 30 = 91.8 + 30 = 121.8
+
+C3 = 0.9 x 121.8 + 30 = 109.62 + 30 = 139.62
+
+c) Recherche de la limite :
+
+Si Cn converge vers L : L = 0.9L + 30
+L - 0.9L = 30
+0.1L = 30
+L = 300
+
+La suite converge vers 300 clients.
+
+d) Calcul iteratif :
+
+- C0 = 80
+- C1 = 102
+- C2 = 121.8
+- C3 = 139.62
+- C4 = 0.9 x 139.62 + 30 = 125.658 + 30 = 155.658
+- C5 = 0.9 x 155.658 + 30 = 140.0922 + 30 = 170.0922
+- C6 = 0.9 x 170.0922 + 30 = 153.083 + 30 = 183.083
+- C7 = 0.9 x 183.083 + 30 = 164.7747 + 30 = 194.7747
+- C8 = 0.9 x 194.7747 + 30 = 175.2972 + 30 = 205.2972
+- C9 = 0.9 x 205.2972 + 30 = 184.7675 + 30 = 214.7675
+- C10 = 0.9 x 214.7675 + 30 = 193.2908 + 30 = 223.2908
+- C11 = 0.9 x 223.2908 + 30 = 200.9617 + 30 = 230.9617
+- C12 = 0.9 x 230.9617 + 30 = 207.8655 + 30 = 237.8655
+- C13 = 0.9 x 237.8655 + 30 = 214.079 + 30 = 244.079
+- C14 = 0.9 x 244.079 + 30 = 219.6711 + 30 = 249.6711
+- C15 = 0.9 x 249.6711 + 30 = 224.704 + 30 = 254.704
+
+L'entreprise depasse 250 clients a l'annee n = 15.
+
+---
+
+### Exercice 18 : Somme et budget informatique
+
+**Enonce :** Le budget informatique d'une PME est de 20 000 euros la premiere annee. Il augmente de 8% par an. Calculer le budget cumule sur 5 ans.
+
+**Correction :**
+
+Suite geometrique : Bn = 20 000 x 1.08^(n-1), avec B1 = 20 000, q = 1.08.
+
+Somme des 5 premiers termes (B1 a B5) :
+
+S = B1 x (1 - q^5) / (1 - q)
+S = 20 000 x (1 - 1.08^5) / (1 - 1.08)
+
+Calculons 1.08^5 :
+- 1.08^2 = 1.1664
+- 1.08^3 = 1.1664 x 1.08 = 1.259712
+- 1.08^4 = 1.259712 x 1.08 = 1.36048896
+- 1.08^5 = 1.36048896 x 1.08 = 1.46932808 (arrondi a 1.469328)
+
+S = 20 000 x (1 - 1.469328) / (1 - 1.08)
+S = 20 000 x (-0.469328) / (-0.08)
+S = 20 000 x 5.8666
+S = 117 332 euros (arrondi).
+
+Le budget informatique cumule sur 5 ans est d'environ 117 332 euros.
+
+---
+
+### Exercice 19 : Suite arithmetique - determiner le rang
+
+**Enonce :** Suite arithmetique : U0 = 3, r = 7. A partir de quel rang Un depasse-t-il 200 ?
+
+**Correction :**
+
+On cherche n tel que Un > 200.
+
+Un = U0 + n x r = 3 + 7n
+
+3 + 7n > 200
+7n > 200 - 3
+7n > 197
+n > 197 / 7
+n > 28.14...
+
+Comme n est un entier, n >= 29.
+
+Verification :
+U28 = 3 + 28 x 7 = 3 + 196 = 199 (ne depasse pas 200)
+U29 = 3 + 29 x 7 = 3 + 203 = 206 (depasse 200)
+
+La suite depasse 200 a partir du rang n = 29.
+
+---
+
+## 12. Formulaire recapitulatif
+
+### Suites arithmetiques
+
+| Element | Formule |
+|---|---|
+| Definition | Un+1 = Un + r |
+| Terme general | Un = U0 + n x r |
+| Raison | r = Un+1 - Un |
+| Raison (deux termes) | r = (Uq - Up) / (q - p) |
+| Somme de (p+1) termes | S = (p + 1) x (U0 + Up) / 2 |
+| Nombre de termes du rang a au rang b | b - a + 1 |
+
+### Suites geometriques
+
+| Element | Formule |
+|---|---|
+| Definition | Un+1 = Un x q |
+| Terme general | Un = U0 x q^n |
+| Raison | q = Un+1 / Un |
+| Somme de (p+1) termes | S = U0 x (1 - q^(p+1)) / (1 - q), q different de 1 |
+| Somme infinie (si \|q\| < 1) | S = U0 / (1 - q) |
+
+### Convergence
+
+| Type de suite | Condition | Limite |
+|---|---|---|
+| Arithmetique | r > 0 | +inf |
+| Arithmetique | r < 0 | -inf |
+| Arithmetique | r = 0 | U0 |
+| Geometrique | \|q\| < 1 | 0 |
+| Geometrique | q = 1 | U0 |
+| Geometrique | q > 1 | +inf (si U0 > 0) |
+| Geometrique | q <= -1 | pas de limite |
+
+### Variation
+
+| Methode | Croissante si | Decroissante si |
+|---|---|---|
+| Difference | Un+1 - Un > 0 | Un+1 - Un < 0 |
+| Quotient (termes > 0) | Un+1 / Un > 1 | Un+1 / Un < 1 |
+
+---
+
+## 13. Pieges frequents a l'examen
+
+1. **Confondre nombre de termes et dernier indice.** De U0 a Un, il y a n + 1 termes (pas n). De U1 a Un, il y a n termes.
+
+2. **Oublier que q^0 = 1.** Le premier terme d'une suite geometrique est U0 = U0 x q^0 = U0.
+
+3. **Appliquer la formule de somme geometrique avec q = 1.** La formule S = U0 x (1 - q^n) / (1 - q) n'est valable que si q est different de 1. Si q = 1, alors S = n x U0.
+
+4. **Se tromper dans l'exposant de la somme geometrique.** Pour la somme de U0 a Un (soit n + 1 termes), l'exposant est n + 1 : S = U0 x (1 - q^(n+1)) / (1 - q).
+
+5. **Confondre suite arithmetique et geometrique.** Arithmetique : on additionne la raison. Geometrique : on multiplie par la raison. Le test est simple : calculer Un+1 - Un (constant ?) ou Un+1 / Un (constant ?).
+
+6. **Ne pas verifier la coherence du resultat.** Toujours recalculer quelques termes pour confirmer le resultat d'une somme ou d'une limite.
+
+7. **Oublier le signe de r ou q.** Une raison negative dans une suite geometrique fait alterner les signes des termes. Une raison negative dans une suite arithmetique rend la suite decroissante.

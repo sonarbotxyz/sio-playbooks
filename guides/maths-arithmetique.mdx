@@ -1,0 +1,1878 @@
+---
+title: "Mathématiques — Arithmétique"
+description: "Bases de numération, conversions binaire/hexadécimal/octal, division euclidienne, PGCD, nombres premiers"
+category: "Mathématiques"
+tags: ["arithmétique", "binaire", "hexadécimal", "pgcd", "numération", "maths"]
+difficulty: "Débutant"
+---
+
+# Arithmétique pour le BTS SIO
+
+Ce document couvre l'intégralité du programme d'arithmétique du BTS SIO SLAM. Chaque calcul est détaillé étape par étape, sans aucun raccourci.
+
+---
+
+## 1. Systèmes de numération
+
+### 1.1 Le système décimal (base 10)
+
+Le système décimal utilise 10 chiffres : 0, 1, 2, 3, 4, 5, 6, 7, 8, 9.
+
+Chaque position représente une puissance de 10.
+
+**Exemple : décomposition de 3725**
+
+```
+3725 = 3 x 10^3 + 7 x 10^2 + 2 x 10^1 + 5 x 10^0
+     = 3 x 1000 + 7 x 100  + 2 x 10   + 5 x 1
+     = 3000     + 700       + 20        + 5
+     = 3725
+```
+
+### 1.2 Le système binaire (base 2)
+
+Le système binaire utilise 2 chiffres : 0 et 1. Chaque chiffre binaire s'appelle un **bit** (binary digit).
+
+Chaque position représente une puissance de 2.
+
+**Table des puissances de 2 (à connaître par coeur) :**
+
+| Puissance | 2^0 | 2^1 | 2^2 | 2^3 | 2^4 | 2^5 | 2^6 | 2^7 | 2^8 | 2^9 | 2^10 |
+|-----------|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|------|
+| Valeur    | 1   | 2   | 4   | 8   | 16  | 32  | 64  | 128 | 256 | 512 | 1024 |
+
+**Exemple : décomposition de 1011 0110 en base 2**
+
+```
+Position :    7    6    5    4    3    2    1    0
+Bits :        1    0    1    1    0    1    1    0
+Puissance :  2^7  2^6  2^5  2^4  2^3  2^2  2^1  2^0
+Valeur :     128   64   32   16    8    4    2    1
+```
+
+### 1.3 Le système octal (base 8)
+
+Le système octal utilise 8 chiffres : 0, 1, 2, 3, 4, 5, 6, 7.
+
+Chaque position représente une puissance de 8.
+
+**Table des puissances de 8 :**
+
+| Puissance | 8^0 | 8^1 | 8^2 | 8^3 | 8^4 |
+|-----------|-----|-----|-----|------|------|
+| Valeur    | 1   | 8   | 64  | 512  | 4096 |
+
+### 1.4 Le système hexadécimal (base 16)
+
+Le système hexadécimal utilise 16 symboles : 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F.
+
+**Correspondance des lettres :**
+
+| Hexadécimal | A  | B  | C  | D  | E  | F  |
+|-------------|----|----|----|----|----|----|
+| Décimal     | 10 | 11 | 12 | 13 | 14 | 15 |
+
+**Table des puissances de 16 :**
+
+| Puissance | 16^0 | 16^1 | 16^2 | 16^3 |
+|-----------|------|------|------|------|
+| Valeur    | 1    | 16   | 256  | 4096 |
+
+---
+
+## 2. Conversions entre bases
+
+### 2.1 Décimal vers binaire (divisions successives par 2)
+
+**Méthode :** On divise le nombre par 2 de manière répétée. On note le reste à chaque division. Le résultat binaire se lit de bas en haut (du dernier quotient au premier reste).
+
+**Exemple : convertir 156 en binaire**
+
+```
+156 / 2 = 78  reste 0
+ 78 / 2 = 39  reste 0
+ 39 / 2 = 19  reste 1
+ 19 / 2 =  9  reste 1
+  9 / 2 =  4  reste 1
+  4 / 2 =  2  reste 0
+  2 / 2 =  1  reste 0
+  1 / 2 =  0  reste 1
+```
+
+Lecture de bas en haut : **156 = 1001 1100 en binaire**
+
+**Vérification :**
+```
+1x128 + 0x64 + 0x32 + 1x16 + 1x8 + 1x4 + 0x2 + 0x1
+= 128 + 0 + 0 + 16 + 8 + 4 + 0 + 0
+= 156  (correct)
+```
+
+**Exemple : convertir 237 en binaire**
+
+```
+237 / 2 = 118  reste 1
+118 / 2 =  59  reste 0
+ 59 / 2 =  29  reste 1
+ 29 / 2 =  14  reste 1
+ 14 / 2 =   7  reste 0
+  7 / 2 =   3  reste 1
+  3 / 2 =   1  reste 1
+  1 / 2 =   0  reste 1
+```
+
+Lecture de bas en haut : **237 = 1110 1101 en binaire**
+
+**Vérification :**
+```
+1x128 + 1x64 + 1x32 + 0x16 + 1x8 + 1x4 + 0x2 + 1x1
+= 128 + 64 + 32 + 0 + 8 + 4 + 0 + 1
+= 237  (correct)
+```
+
+### 2.2 Binaire vers décimal (somme des puissances de 2)
+
+**Méthode :** On multiplie chaque bit par la puissance de 2 correspondant à sa position (en partant de 0 à droite), puis on additionne le tout.
+
+**Exemple : convertir 1101 0011 en décimal**
+
+```
+Position :  7    6    5    4    3    2    1    0
+Bits :      1    1    0    1    0    0    1    1
+
+Calcul :
+1 x 2^7 = 1 x 128 = 128
+1 x 2^6 = 1 x 64  = 64
+0 x 2^5 = 0 x 32  = 0
+1 x 2^4 = 1 x 16  = 16
+0 x 2^3 = 0 x 8   = 0
+0 x 2^2 = 0 x 4   = 0
+1 x 2^1 = 1 x 2   = 2
+1 x 2^0 = 1 x 1   = 1
+
+Total = 128 + 64 + 0 + 16 + 0 + 0 + 2 + 1 = 211
+```
+
+**1101 0011 en binaire = 211 en décimal**
+
+**Exemple : convertir 1010 1010 en décimal**
+
+```
+Position :  7    6    5    4    3    2    1    0
+Bits :      1    0    1    0    1    0    1    0
+
+Calcul :
+1 x 128 = 128
+0 x 64  = 0
+1 x 32  = 32
+0 x 16  = 0
+1 x 8   = 8
+0 x 4   = 0
+1 x 2   = 2
+0 x 1   = 0
+
+Total = 128 + 0 + 32 + 0 + 8 + 0 + 2 + 0 = 170
+```
+
+**1010 1010 en binaire = 170 en décimal**
+
+### 2.3 Décimal vers hexadécimal (divisions successives par 16)
+
+**Méthode :** On divise le nombre par 16 de manière répétée. On note le reste (en le convertissant en lettre si besoin). Le résultat se lit de bas en haut.
+
+**Exemple : convertir 750 en hexadécimal**
+
+```
+750 / 16 = 46  reste 14   (14 = E)
+ 46 / 16 =  2  reste 14   (14 = E)
+  2 / 16 =  0  reste  2   (2  = 2)
+```
+
+Lecture de bas en haut : **750 = 2EE en hexadécimal**
+
+**Vérification :**
+```
+2 x 16^2 + E x 16^1 + E x 16^0
+= 2 x 256 + 14 x 16 + 14 x 1
+= 512 + 224 + 14
+= 750  (correct)
+```
+
+**Exemple : convertir 43981 en hexadécimal**
+
+```
+43981 / 16 = 2748  reste 13  (13 = D)
+ 2748 / 16 =  171  reste 12  (12 = C)
+  171 / 16 =   10  reste 11  (11 = B)
+   10 / 16 =    0  reste 10  (10 = A)
+```
+
+Lecture de bas en haut : **43981 = ABCD en hexadécimal**
+
+**Vérification :**
+```
+A x 16^3 + B x 16^2 + C x 16^1 + D x 16^0
+= 10 x 4096 + 11 x 256 + 12 x 16 + 13 x 1
+= 40960 + 2816 + 192 + 13
+= 43981  (correct)
+```
+
+### 2.4 Hexadécimal vers décimal (somme des puissances de 16)
+
+**Méthode :** On multiplie chaque chiffre hexadécimal par la puissance de 16 correspondant à sa position.
+
+**Exemple : convertir 1F4 en décimal**
+
+```
+Position :  2     1     0
+Chiffres :  1     F     4
+
+1 x 16^2 = 1 x 256  = 256
+F x 16^1 = 15 x 16  = 240
+4 x 16^0 = 4 x 1    = 4
+
+Total = 256 + 240 + 4 = 500
+```
+
+**1F4 en hexadécimal = 500 en décimal**
+
+**Exemple : convertir FF en décimal**
+
+```
+F x 16^1 = 15 x 16 = 240
+F x 16^0 = 15 x 1  = 15
+
+Total = 240 + 15 = 255
+```
+
+**FF en hexadécimal = 255 en décimal**
+
+### 2.5 Binaire vers hexadécimal (groupement par 4 bits)
+
+**Méthode :** On regroupe les bits par paquets de 4 en partant de la droite (on complète avec des zéros à gauche si nécessaire). Chaque groupe de 4 bits correspond à un chiffre hexadécimal.
+
+**Table de correspondance 4 bits / hexadécimal :**
+
+| Binaire | 0000 | 0001 | 0010 | 0011 | 0100 | 0101 | 0110 | 0111 |
+|---------|------|------|------|------|------|------|------|------|
+| Hexa    | 0    | 1    | 2    | 3    | 4    | 5    | 6    | 7    |
+
+| Binaire | 1000 | 1001 | 1010 | 1011 | 1100 | 1101 | 1110 | 1111 |
+|---------|------|------|------|------|------|------|------|------|
+| Hexa    | 8    | 9    | A    | B    | C    | D    | E    | F    |
+
+**Exemple : convertir 11010111011 en hexadécimal**
+
+```
+Etape 1 : grouper par 4 en partant de la droite
+  110 1011 1011
+  
+Etape 2 : compléter à gauche avec des zéros
+  0110 1011 1011
+
+Etape 3 : convertir chaque groupe
+  0110 = 6
+  1011 = B
+  1011 = B
+
+Résultat : 11010111011 en binaire = 6BB en hexadécimal
+```
+
+**Exemple : convertir 10011110 en hexadécimal**
+
+```
+Groupement : 1001 1110
+  1001 = 9
+  1110 = E
+
+Résultat : 10011110 en binaire = 9E en hexadécimal
+```
+
+### 2.6 Hexadécimal vers binaire (expansion de chaque chiffre en 4 bits)
+
+**Méthode :** On remplace chaque chiffre hexadécimal par son équivalent en 4 bits.
+
+**Exemple : convertir A3F en binaire**
+
+```
+A = 1010
+3 = 0011
+F = 1111
+
+Résultat : A3F en hexadécimal = 1010 0011 1111 en binaire
+```
+
+**Exemple : convertir 2B7 en binaire**
+
+```
+2 = 0010
+B = 1011
+7 = 0111
+
+Résultat : 2B7 en hexadécimal = 0010 1011 0111 en binaire
+```
+
+### 2.7 Décimal vers octal (divisions successives par 8)
+
+**Méthode :** On divise le nombre par 8 de manière répétée. On note le reste. Le résultat se lit de bas en haut.
+
+**Exemple : convertir 350 en octal**
+
+```
+350 / 8 = 43  reste 6
+ 43 / 8 =  5  reste 3
+  5 / 8 =  0  reste 5
+```
+
+Lecture de bas en haut : **350 = 536 en octal**
+
+**Vérification :**
+```
+5 x 8^2 + 3 x 8^1 + 6 x 8^0
+= 5 x 64 + 3 x 8 + 6 x 1
+= 320 + 24 + 6
+= 350  (correct)
+```
+
+### 2.8 Octal vers décimal (somme des puissances de 8)
+
+**Exemple : convertir 745 en octal vers décimal**
+
+```
+7 x 8^2 = 7 x 64 = 448
+4 x 8^1 = 4 x 8  = 32
+5 x 8^0 = 5 x 1  = 5
+
+Total = 448 + 32 + 5 = 485
+```
+
+**745 en octal = 485 en décimal**
+
+### 2.9 Octal vers binaire (expansion de chaque chiffre en 3 bits)
+
+**Méthode :** On remplace chaque chiffre octal par son équivalent en 3 bits.
+
+**Table de correspondance 3 bits / octal :**
+
+| Octal   | 0   | 1   | 2   | 3   | 4   | 5   | 6   | 7   |
+|---------|-----|-----|-----|-----|-----|-----|-----|-----|
+| Binaire | 000 | 001 | 010 | 011 | 100 | 101 | 110 | 111 |
+
+**Exemple : convertir 537 en octal vers binaire**
+
+```
+5 = 101
+3 = 011
+7 = 111
+
+Résultat : 537 en octal = 101 011 111 en binaire
+```
+
+### 2.10 Binaire vers octal (groupement par 3 bits)
+
+**Méthode :** On regroupe les bits par paquets de 3 en partant de la droite.
+
+**Exemple : convertir 110101110 en octal**
+
+```
+Groupement : 110 101 110
+  110 = 6
+  101 = 5
+  110 = 6
+
+Résultat : 110101110 en binaire = 656 en octal
+```
+
+---
+
+## 3. Représentation des nombres négatifs
+
+### 3.1 Complément à 1
+
+**Méthode :** On inverse tous les bits (les 0 deviennent des 1 et inversement).
+
+Le bit le plus à gauche (bit de poids fort) indique le signe :
+- 0 = nombre positif
+- 1 = nombre négatif
+
+**Problème du complément à 1 :** il existe deux représentations du zéro (+0 et -0).
+
+**Exemple : représenter -45 en complément à 1 sur 8 bits**
+
+```
+Etape 1 : écrire 45 en binaire sur 8 bits
+  45 / 2 = 22 reste 1
+  22 / 2 = 11 reste 0
+  11 / 2 =  5 reste 1
+   5 / 2 =  2 reste 1
+   2 / 2 =  1 reste 0
+   1 / 2 =  0 reste 1
+   
+  45 = 00101101
+
+Etape 2 : inverser tous les bits
+  00101101 --> 11010010
+
+Résultat : -45 en complément à 1 sur 8 bits = 11010010
+```
+
+**Plage de valeurs sur n bits en complément à 1 :**
+- De -(2^(n-1) - 1) à +(2^(n-1) - 1)
+- Sur 8 bits : de -127 à +127
+
+### 3.2 Complément à 2
+
+**Méthode :** On calcule le complément à 1, puis on ajoute 1.
+
+C'est la méthode utilisée par les ordinateurs car elle n'a qu'une seule représentation du zéro et simplifie les calculs.
+
+**Exemple : représenter -45 en complément à 2 sur 8 bits**
+
+```
+Etape 1 : écrire 45 en binaire sur 8 bits
+  45 = 00101101
+
+Etape 2 : inverser tous les bits (complément à 1)
+  00101101 --> 11010010
+
+Etape 3 : ajouter 1
+    11010010
+  +        1
+  ----------
+    11010011
+
+Résultat : -45 en complément à 2 sur 8 bits = 11010011
+```
+
+**Vérification :** La somme d'un nombre et de son complément à 2 doit donner 0 (modulo 2^n).
+```
+    00101101   (45)
+  + 11010011   (-45)
+  ----------
+  1 00000000   (le 1 de débordement est ignoré sur 8 bits = 0)
+```
+
+**Exemple : représenter -100 en complément à 2 sur 8 bits**
+
+```
+Etape 1 : écrire 100 en binaire sur 8 bits
+  100 / 2 = 50 reste 0
+   50 / 2 = 25 reste 0
+   25 / 2 = 12 reste 1
+   12 / 2 =  6 reste 0
+    6 / 2 =  3 reste 0
+    3 / 2 =  1 reste 1
+    1 / 2 =  0 reste 1
+   
+  100 = 01100100
+
+Etape 2 : inverser tous les bits
+  01100100 --> 10011011
+
+Etape 3 : ajouter 1
+    10011011
+  +        1
+  ----------
+    10011100
+
+Résultat : -100 en complément à 2 sur 8 bits = 10011100
+```
+
+**Pour retrouver la valeur décimale d'un nombre négatif en complément à 2 :**
+
+**Exemple : que vaut 11100110 en complément à 2 ?**
+
+```
+Le bit de poids fort est 1, donc c'est un nombre négatif.
+
+Etape 1 : inverser tous les bits
+  11100110 --> 00011001
+
+Etape 2 : ajouter 1
+    00011001
+  +        1
+  ----------
+    00011010
+
+Etape 3 : convertir en décimal
+  00011010 = 16 + 8 + 2 = 26
+
+Résultat : 11100110 en complément à 2 = -26
+```
+
+**Plage de valeurs sur n bits en complément à 2 :**
+- De -2^(n-1) à +(2^(n-1) - 1)
+- Sur 8 bits : de -128 à +127
+- Sur 16 bits : de -32768 à +32767
+
+---
+
+## 4. Arithmétique binaire
+
+### 4.1 Addition binaire
+
+**Règles de base :**
+```
+0 + 0 = 0
+0 + 1 = 1
+1 + 0 = 1
+1 + 1 = 10  (on écrit 0 et on retient 1)
+1 + 1 + 1 = 11  (on écrit 1 et on retient 1)
+```
+
+**Exemple : 1011 0110 + 0101 1011**
+
+```
+Retenues :  1 1 1 1 1 1 1 0
+             1 0 1 1 0 1 1 0
+           + 0 1 0 1 1 0 1 1
+           -------------------
+
+Détail colonne par colonne (de droite à gauche) :
+
+Colonne 0 : 0 + 1 = 1                         --> 1
+Colonne 1 : 1 + 1 = 10        --> 0, retenue 1
+Colonne 2 : 1 + 0 + 1 = 10    --> 0, retenue 1
+Colonne 3 : 0 + 1 + 1 = 10    --> 0, retenue 1
+Colonne 4 : 1 + 1 + 1 = 11    --> 1, retenue 1
+Colonne 5 : 1 + 0 + 1 = 10    --> 0, retenue 1
+Colonne 6 : 0 + 1 + 1 = 10    --> 0, retenue 1
+Colonne 7 : 1 + 0 + 1 = 10    --> 0, retenue 1
+
+Résultat : 1 0001 0001
+```
+
+**Vérification :**
+```
+1011 0110 = 182
+0101 1011 = 91
+182 + 91 = 273
+
+1 0001 0001 = 256 + 16 + 1 = 273  (correct)
+```
+
+### 4.2 Soustraction binaire
+
+**Méthode 1 : soustraction directe**
+
+**Règles :**
+```
+0 - 0 = 0
+1 - 0 = 1
+1 - 1 = 0
+0 - 1 = 1 avec emprunt de 1 (on emprunte 10 binaire = 2 décimal)
+```
+
+**Méthode 2 : addition du complément à 2** (méthode privilégiée par les ordinateurs)
+
+Pour calculer A - B, on calcule A + (-B), où -B est le complément à 2 de B.
+
+**Exemple : 1101 0010 - 0100 1001**
+
+```
+Etape 1 : calculer le complément à 2 de 0100 1001
+  Inversion : 1011 0110
+  Ajout de 1 : 1011 0111
+
+Etape 2 : additionner
+    1 1 0 1 0 0 1 0
+  + 1 0 1 1 0 1 1 1
+  -------------------
+
+Détail :
+Colonne 0 : 0 + 1 = 1
+Colonne 1 : 1 + 1 = 10, retenue 1
+Colonne 2 : 0 + 1 + 1 = 10, retenue 1
+Colonne 3 : 0 + 0 + 1 = 1
+Colonne 4 : 0 + 1 = 1
+Colonne 5 : 1 + 0 = 1
+Colonne 6 : 1 + 1 = 10, retenue 1
+Colonne 7 : 1 + 1 + 1 = 11, retenue 1
+
+Résultat (en ignorant la retenue finale) : 1000 1001
+```
+
+**Vérification :**
+```
+1101 0010 = 210
+0100 1001 = 73
+210 - 73 = 137
+
+1000 1001 = 128 + 8 + 1 = 137  (correct)
+```
+
+### 4.3 Multiplication binaire
+
+**Méthode :** identique à la multiplication posée en décimal, mais avec les règles :
+```
+0 x 0 = 0
+0 x 1 = 0
+1 x 0 = 0
+1 x 1 = 1
+```
+
+**Exemple : 1101 x 1011**
+
+```
+        1 1 0 1    (= 13)
+      x 1 0 1 1    (= 11)
+      ---------
+        1 1 0 1    (1101 x 1)
+      1 1 0 1 0    (1101 x 1, décalé d'une position)
+    0 0 0 0 0 0 0  (1101 x 0, décalé de deux positions)
+  1 1 0 1 0 0 0 0  (1101 x 1, décalé de trois positions)
+  ---------------
+Addition des lignes :
+
+        0 1 1 0 1
+      0 1 1 0 1 0
+    0 0 0 0 0 0 0
+  1 1 0 1 0 0 0 0
+
+Etape 1 : 01101 + 011010
+      0 1 1 0 1
+    + 1 1 0 1 0
+    -----------
+    1 0 0 1 1 1
+
+Etape 2 : 100111 + 0000000 = 0100111
+
+Etape 3 : 0100111 + 11010000
+      0 0 1 0 0 1 1 1
+  + 1 1 0 1 0 0 0 0
+  -------------------
+    1 0 0 0 1 1 1 1
+
+Résultat : 1101 x 1011 = 1000 1111
+```
+
+**Vérification :**
+```
+13 x 11 = 143
+1000 1111 = 128 + 8 + 4 + 2 + 1 = 143  (correct)
+```
+
+---
+
+## 5. Division euclidienne
+
+### 5.1 Définition
+
+Pour deux entiers naturels a (dividende) et b (diviseur, b différent de 0), il existe un unique couple d'entiers (q, r) tels que :
+
+```
+a = b x q + r     avec     0 <= r < b
+```
+
+- q est le **quotient**
+- r est le **reste**
+
+### 5.2 Exemples détaillés
+
+**Exemple 1 : division euclidienne de 157 par 12**
+
+```
+157 = 12 x ? + ?
+
+On cherche le plus grand multiple de 12 inférieur ou égal à 157 :
+12 x 1  = 12
+12 x 2  = 24
+12 x 3  = 36
+12 x 4  = 48
+12 x 5  = 60
+12 x 6  = 72
+12 x 7  = 84
+12 x 8  = 96
+12 x 9  = 108
+12 x 10 = 120
+12 x 11 = 132
+12 x 12 = 144
+12 x 13 = 156  <-- le plus grand inférieur ou égal à 157
+12 x 14 = 168  <-- trop grand
+
+Donc q = 13
+Reste : r = 157 - 12 x 13 = 157 - 156 = 1
+
+Résultat : 157 = 12 x 13 + 1
+  quotient = 13
+  reste = 1
+```
+
+**Exemple 2 : division euclidienne de 2023 par 17**
+
+```
+2023 = 17 x ? + ?
+
+17 x 100 = 1700    --> 2023 - 1700 = 323
+17 x 10  = 170     --> on cherche combien de fois 17 entre dans 323
+17 x 19  = 323     --> essayons : 17 x 18 = 306, 17 x 19 = 323
+
+Donc 17 x 119 = 17 x (100 + 19) = 1700 + 323 = 2023
+
+Résultat : 2023 = 17 x 119 + 0
+  quotient = 119
+  reste = 0
+  (17 divise exactement 2023)
+```
+
+**Exemple 3 : division euclidienne de 543 par 25**
+
+```
+25 x 20 = 500
+543 - 500 = 43
+25 x 1 = 25
+43 - 25 = 18
+Donc 25 x 21 = 525
+543 - 525 = 18
+
+Résultat : 543 = 25 x 21 + 18
+  quotient = 21
+  reste = 18
+```
+
+---
+
+## 6. PGCD (Plus Grand Commun Diviseur)
+
+### 6.1 Définition
+
+Le PGCD de deux entiers a et b est le plus grand entier qui divise à la fois a et b.
+
+### 6.2 Algorithme d'Euclide
+
+**Principe :** PGCD(a, b) = PGCD(b, a mod b), jusqu'à ce que le reste soit 0. Le dernier diviseur non nul est le PGCD.
+
+**Exemple 1 : PGCD(252, 198)**
+
+```
+Etape 1 : 252 = 198 x 1 + 54
+  (252 / 198 = 1 quotient, reste = 252 - 198 = 54)
+
+Etape 2 : 198 = 54 x 3 + 36
+  (198 / 54 = 3 quotient, reste = 198 - 162 = 36)
+
+Etape 3 : 54 = 36 x 1 + 18
+  (54 / 36 = 1 quotient, reste = 54 - 36 = 18)
+
+Etape 4 : 36 = 18 x 2 + 0
+  (36 / 18 = 2 quotient, reste = 0)
+
+Le reste est 0, on s'arrête.
+Le dernier reste non nul est 18.
+
+PGCD(252, 198) = 18
+```
+
+**Vérification :**
+```
+252 / 18 = 14  (entier, OK)
+198 / 18 = 11  (entier, OK)
+```
+
+**Exemple 2 : PGCD(1260, 924)**
+
+```
+Etape 1 : 1260 = 924 x 1 + 336
+  (1260 - 924 = 336)
+
+Etape 2 : 924 = 336 x 2 + 252
+  (924 - 672 = 252)
+
+Etape 3 : 336 = 252 x 1 + 84
+  (336 - 252 = 84)
+
+Etape 4 : 252 = 84 x 3 + 0
+  (252 - 252 = 0)
+
+PGCD(1260, 924) = 84
+```
+
+**Exemple 3 : PGCD(4539, 1958)**
+
+```
+Etape 1 : 4539 = 1958 x 2 + 623
+  (4539 - 3916 = 623)
+
+Etape 2 : 1958 = 623 x 3 + 89
+  (1958 - 1869 = 89)
+
+Etape 3 : 623 = 89 x 7 + 0
+  (623 - 623 = 0)
+
+PGCD(4539, 1958) = 89
+```
+
+### 6.3 Application : simplification de fractions
+
+**Exemple : simplifier 252/198**
+
+```
+PGCD(252, 198) = 18  (calculé ci-dessus)
+
+252 / 18 = 14
+198 / 18 = 11
+
+252/198 = 14/11
+```
+
+### 6.4 Application : la cryptographie RSA
+
+Le PGCD intervient dans RSA pour vérifier que deux nombres sont premiers entre eux (PGCD = 1). Cela garantit l'existence de l'inverse modulaire nécessaire au déchiffrement. Le détail de RSA dépasse le cadre de cette fiche, mais le calcul du PGCD en est une brique fondamentale.
+
+---
+
+## 7. PPCM (Plus Petit Commun Multiple)
+
+### 7.1 Définition
+
+Le PPCM de deux entiers a et b est le plus petit entier strictement positif qui est multiple à la fois de a et de b.
+
+### 7.2 Formule avec le PGCD
+
+```
+PPCM(a, b) = (a x b) / PGCD(a, b)
+```
+
+**Exemple 1 : PPCM(252, 198)**
+
+```
+PGCD(252, 198) = 18  (calculé précédemment)
+
+PPCM(252, 198) = (252 x 198) / 18
+               = 49896 / 18
+               = 2772
+```
+
+**Vérification :**
+```
+2772 / 252 = 11  (entier, OK)
+2772 / 198 = 14  (entier, OK)
+```
+
+**Exemple 2 : PPCM(12, 18)**
+
+```
+PGCD(12, 18) :
+  18 = 12 x 1 + 6
+  12 = 6 x 2 + 0
+  PGCD = 6
+
+PPCM(12, 18) = (12 x 18) / 6
+             = 216 / 6
+             = 36
+```
+
+### 7.3 Applications
+
+- Synchronisation de tâches périodiques (deux événements de périodes a et b se retrouvent simultanément tous les PPCM(a,b) cycles)
+- Addition de fractions (dénominateur commun)
+
+---
+
+## 8. Nombres premiers
+
+### 8.1 Définition
+
+Un nombre premier est un entier naturel supérieur ou égal à 2 qui n'est divisible que par 1 et par lui-même.
+
+Les premiers nombres premiers : 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47...
+
+Remarque : 2 est le seul nombre premier pair. 1 n'est pas premier.
+
+### 8.2 Tester si un nombre est premier
+
+Pour tester si n est premier, il suffit de vérifier qu'il n'est divisible par aucun entier de 2 à la racine carrée de n (arrondie à l'entier inférieur).
+
+**Exemple : 97 est-il premier ?**
+
+```
+Racine carrée de 97 ≈ 9,85
+Il faut tester les diviseurs de 2 à 9.
+
+97 / 2 = 48,5     (pas entier)
+97 / 3 = 32,33... (pas entier)
+97 / 4 : inutile (si divisible par 4, déjà divisible par 2)
+97 / 5 = 19,4     (pas entier)
+97 / 6 : inutile
+97 / 7 = 13,86... (pas entier)
+97 / 8 : inutile
+97 / 9 = 10,78... (pas entier)
+
+Aucun diviseur trouvé. 97 est premier.
+```
+
+### 8.3 Crible d'Eratosthène
+
+**Méthode :** Pour trouver tous les nombres premiers jusqu'à N :
+1. Ecrire tous les entiers de 2 à N
+2. Le premier nombre non barré (2) est premier. Barrer tous ses multiples.
+3. Le prochain nombre non barré (3) est premier. Barrer tous ses multiples.
+4. Continuer jusqu'à avoir dépassé la racine carrée de N.
+5. Les nombres restants (non barrés) sont premiers.
+
+**Exemple : trouver les nombres premiers jusqu'à 30**
+
+```
+Liste initiale : 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
+
+Racine carrée de 30 ≈ 5,47 --> on traite 2, 3, 5.
+
+Etape 1 : 2 est premier. On barre les multiples de 2 (4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30).
+Restent : 2 3 5 7 9 11 13 15 17 19 21 23 25 27 29
+
+Etape 2 : 3 est premier. On barre les multiples de 3 (9, 15, 21, 27).
+Restent : 2 3 5 7 11 13 17 19 23 25 29
+
+Etape 3 : 5 est premier. On barre les multiples de 5 (25).
+Restent : 2 3 5 7 11 13 17 19 23 29
+
+Nombres premiers jusqu'à 30 : 2, 3, 5, 7, 11, 13, 17, 19, 23, 29
+```
+
+### 8.4 Décomposition en facteurs premiers
+
+**Méthode :** On divise successivement le nombre par les nombres premiers (2, 3, 5, 7, 11...) jusqu'à obtenir 1.
+
+**Exemple : décomposer 360 en facteurs premiers**
+
+```
+360 / 2 = 180
+180 / 2 = 90
+ 90 / 2 = 45
+ 45 / 3 = 15
+ 15 / 3 = 5
+  5 / 5 = 1
+
+360 = 2^3 x 3^2 x 5^1
+    = 2 x 2 x 2 x 3 x 3 x 5
+```
+
+**Exemple : décomposer 2520 en facteurs premiers**
+
+```
+2520 / 2 = 1260
+1260 / 2 = 630
+ 630 / 2 = 315
+ 315 / 3 = 105
+ 105 / 3 = 35
+  35 / 5 = 7
+   7 / 7 = 1
+
+2520 = 2^3 x 3^2 x 5 x 7
+```
+
+**Calcul du PGCD et du PPCM par décomposition :**
+
+```
+Exemple : PGCD et PPCM de 360 et 2520
+
+360  = 2^3 x 3^2 x 5^1 x 7^0
+2520 = 2^3 x 3^2 x 5^1 x 7^1
+
+PGCD = produit des facteurs communs avec l'exposant minimal
+     = 2^3 x 3^2 x 5^1 x 7^0
+     = 8 x 9 x 5 x 1
+     = 360
+
+PPCM = produit des facteurs avec l'exposant maximal
+     = 2^3 x 3^2 x 5^1 x 7^1
+     = 8 x 9 x 5 x 7
+     = 2520
+```
+
+---
+
+## 9. Arithmétique modulaire (congruences)
+
+### 9.1 Définition
+
+On dit que a est congru à b modulo n (noté a ≡ b [n]) si n divise (a - b), autrement dit si a et b ont le même reste dans la division par n.
+
+**Exemples :**
+```
+17 ≡ 2 [5]   car 17 - 2 = 15, et 15 / 5 = 3 (entier)
+              ou encore : 17 = 5 x 3 + 2 et 2 = 5 x 0 + 2 (même reste 2)
+
+23 ≡ 3 [10]  car 23 = 10 x 2 + 3  (reste 3)
+
+100 ≡ 0 [4]  car 100 = 4 x 25 + 0  (reste 0, donc 4 divise 100)
+```
+
+### 9.2 Propriétés des congruences
+
+```
+Si a ≡ b [n] et c ≡ d [n], alors :
+  - a + c ≡ b + d [n]     (addition)
+  - a - c ≡ b - d [n]     (soustraction)
+  - a x c ≡ b x d [n]     (multiplication)
+  - a^k ≡ b^k [n]         (puissance)
+```
+
+**Exemple : calculer le reste de 7^100 divisé par 5**
+
+```
+7 ≡ 2 [5]
+
+Donc 7^100 ≡ 2^100 [5]
+
+Cherchons un cycle pour les puissances de 2 modulo 5 :
+  2^1 = 2    ≡ 2 [5]
+  2^2 = 4    ≡ 4 [5]
+  2^3 = 8    ≡ 3 [5]
+  2^4 = 16   ≡ 1 [5]
+  2^5 = 32   ≡ 2 [5]   --> le cycle recommence !
+
+Le cycle est de longueur 4 : (2, 4, 3, 1, 2, 4, 3, 1, ...)
+
+100 / 4 = 25 reste 0
+Donc 2^100 ≡ 2^4 ≡ 1 [5]
+
+Le reste de 7^100 divisé par 5 est 1.
+```
+
+### 9.3 Application : clé de contrôle du numéro de Sécurité sociale
+
+Le numéro de Sécurité sociale comporte 13 chiffres, suivis d'une clé de contrôle de 2 chiffres.
+
+**Formule :**
+```
+clé = 97 - (numéro à 13 chiffres) mod 97
+```
+
+**Exemple : numéro = 1 85 05 78 006 084**
+
+```
+Le nombre à 13 chiffres : 1850578006084
+
+Etape 1 : calculer 1850578006084 mod 97
+  1850578006084 / 97 = 19076061918,39...
+  Partie entière : 19076061918
+  19076061918 x 97 = 1850378006046
+
+  Correction : calculons plus précisément.
+  1850578006084 = 97 x 19076061919 + r
+  97 x 19076061919 = 97 x 19000000000 + 97 x 76061919
+                   = 1843000000000 + 7378006143
+                   = 1850378006143
+
+  1850578006084 - 1850378006143 = ... 
+
+  Méthode pratique (par morceaux) :
+  18505 mod 97 :
+    18505 / 97 = 190 reste 75   (97 x 190 = 18430, 18505 - 18430 = 75)
+  
+  On concatène le reste avec la suite : 7580060
+  7580060 mod 97 :
+    7580060 / 97 = 78145 reste −  
+    97 x 78000 = 7566000
+    7580060 - 7566000 = 14060
+    97 x 144 = 13968
+    14060 - 13968 = 92
+    Donc 97 x 78144 = 7579968
+    7580060 - 7579968 = 92
+  
+  On concatène : 9284
+  9284 mod 97 :
+    97 x 95 = 9215
+    9284 - 9215 = 69
+
+  Clé = 97 - 69 = 28
+
+La clé est 28. Le numéro complet est 1 85 05 78 006 084 28.
+```
+
+### 9.4 Application : code ISBN-10
+
+Un code ISBN-10 est valide si la somme pondérée de ses 10 chiffres est divisible par 11.
+
+```
+S = 1xd1 + 2xd2 + 3xd3 + ... + 10xd10 ≡ 0 [11]
+```
+
+Le dernier chiffre peut valoir X (= 10).
+
+**Exemple : vérifier ISBN 2-07-040850-4**
+
+```
+Chiffres : 2  0  7  0  4  0  8  5  0  4
+
+S = 1x2 + 2x0 + 3x7 + 4x0 + 5x4 + 6x0 + 7x8 + 8x5 + 9x0 + 10x4
+  = 2   + 0   + 21  + 0   + 20  + 0   + 56  + 40  + 0   + 40
+  = 179
+
+179 / 11 = 16 reste 3   (11 x 16 = 176, 179 - 176 = 3)
+
+179 mod 11 = 3
+
+3 n'est pas 0, donc cet ISBN n'est pas valide.
+```
+
+### 9.5 Application : clé RIB
+
+Le RIB (Relevé d'Identité Bancaire) comporte un code banque (5 chiffres), un code guichet (5 chiffres), un numéro de compte (11 caractères) et une clé de 2 chiffres.
+
+**Formule :**
+```
+clé = 97 - ((89 x code_banque + 15 x code_guichet + 3 x numéro_compte) mod 97)
+```
+
+Les lettres du numéro de compte sont remplacées par des chiffres (A=1, B=2, ... I=9, J=1, K=2, ... R=9, S=2, T=3, ... Z=9).
+
+---
+
+## 10. Applications informatiques
+
+### 10.1 Adresses IP et masques de sous-réseau
+
+Une adresse IPv4 est composée de 4 octets, écrits en décimal séparés par des points. Chaque octet va de 0 à 255.
+
+**Exemple : convertir l'adresse IP 192.168.1.100 en binaire**
+
+```
+192 en binaire :
+  192 / 2 = 96 reste 0
+   96 / 2 = 48 reste 0
+   48 / 2 = 24 reste 0
+   24 / 2 = 12 reste 0
+   12 / 2 =  6 reste 0
+    6 / 2 =  3 reste 0
+    3 / 2 =  1 reste 1
+    1 / 2 =  0 reste 1
+  192 = 11000000
+
+168 en binaire :
+  168 / 2 = 84 reste 0
+   84 / 2 = 42 reste 0
+   42 / 2 = 21 reste 0
+   21 / 2 = 10 reste 1
+   10 / 2 =  5 reste 0
+    5 / 2 =  2 reste 1
+    2 / 2 =  1 reste 0
+    1 / 2 =  0 reste 1
+  168 = 10101000
+
+1 en binaire : 00000001
+
+100 en binaire :
+  100 / 2 = 50 reste 0
+   50 / 2 = 25 reste 0
+   25 / 2 = 12 reste 1
+   12 / 2 =  6 reste 0
+    6 / 2 =  3 reste 0
+    3 / 2 =  1 reste 1
+    1 / 2 =  0 reste 1
+  100 = 01100100
+
+192.168.1.100 = 11000000.10101000.00000001.01100100
+```
+
+**Calcul de l'adresse réseau (ET logique entre IP et masque) :**
+
+```
+IP :     192.168.1.100  = 11000000.10101000.00000001.01100100
+Masque : 255.255.255.0  = 11111111.11111111.11111111.00000000
+
+ET logique bit à bit :
+  11000000.10101000.00000001.01100100
+& 11111111.11111111.11111111.00000000
+= 11000000.10101000.00000001.00000000
+
+Adresse réseau : 192.168.1.0
+```
+
+**Calcul de l'adresse de diffusion (broadcast) :**
+
+On met tous les bits de la partie hôte à 1.
+
+```
+Adresse réseau :   11000000.10101000.00000001.00000000
+Bits hôte à 1 :   11000000.10101000.00000001.11111111
+
+Broadcast : 192.168.1.255
+```
+
+**Nombre d'hôtes possibles :**
+```
+Nombre de bits pour la partie hôte : 8
+Nombre d'adresses : 2^8 = 256
+Nombre d'hôtes utilisables : 256 - 2 = 254
+  (on retire l'adresse réseau et l'adresse de broadcast)
+```
+
+### 10.2 Masque en notation CIDR
+
+Le masque /24 signifie que les 24 premiers bits sont à 1.
+
+```
+/24 = 11111111.11111111.11111111.00000000 = 255.255.255.0
+/16 = 11111111.11111111.00000000.00000000 = 255.255.0.0
+/8  = 11111111.00000000.00000000.00000000 = 255.0.0.0
+/26 = 11111111.11111111.11111111.11000000 = 255.255.255.192
+```
+
+**Détail pour /26 :**
+```
+26 bits à 1, puis 6 bits à 0
+Dernier octet : 11000000
+
+11000000 en décimal :
+= 1x128 + 1x64 + 0 + 0 + 0 + 0 + 0 + 0
+= 192
+
+Nombre d'hôtes : 2^6 - 2 = 62
+```
+
+### 10.3 Codage des couleurs RGB en hexadécimal
+
+Les couleurs sont codées sur 3 octets : Rouge, Vert, Bleu. Chaque composante va de 0 à 255 (00 à FF en hexa).
+
+**Exemple : convertir la couleur RGB (255, 165, 0) en hexadécimal**
+
+```
+Rouge : 255
+  255 / 16 = 15 reste 15
+   15 / 16 =  0 reste 15
+  255 = FF
+
+Vert : 165
+  165 / 16 = 10 reste 5
+   10 / 16 =  0 reste 10
+  165 = A5
+
+Bleu : 0
+  0 = 00
+
+Couleur : #FFA500  (orange)
+```
+
+**Exemple : que représente la couleur #1E90FF ?**
+
+```
+1E : 1x16 + 14 = 30    (Rouge = 30)
+90 : 9x16 + 0  = 144   (Vert = 144)
+FF : 15x16 + 15 = 255  (Bleu = 255)
+
+RGB(30, 144, 255) = bleu dodger
+```
+
+### 10.4 Stockage mémoire
+
+**Unités fondamentales :**
+
+```
+1 bit = 0 ou 1
+1 octet = 8 bits
+1 Ko (kilooctet) = 1024 octets = 2^10 octets
+1 Mo (mégaoctet) = 1024 Ko = 2^20 octets = 1 048 576 octets
+1 Go (gigaoctet) = 1024 Mo = 2^30 octets = 1 073 741 824 octets
+1 To (téraoctet) = 1024 Go = 2^40 octets
+```
+
+Attention : les fabricants de disques durs utilisent souvent des puissances de 10 (1 Go = 10^9 = 1 000 000 000 octets), d'où la différence affichée par le système d'exploitation.
+
+**Exemple : un fichier fait 3 500 000 octets. Quelle est sa taille en Mo ?**
+
+```
+3 500 000 / 1024 = 3417,97 Ko
+3417,97 / 1024 = 3,34 Mo (environ)
+```
+
+**Nombre de valeurs codables sur n bits :**
+
+```
+Sur n bits, on peut coder 2^n valeurs différentes.
+
+Sur 1 bit  : 2^1  = 2 valeurs (0, 1)
+Sur 2 bits : 2^2  = 4 valeurs (00, 01, 10, 11)
+Sur 8 bits : 2^8  = 256 valeurs (0 à 255)
+Sur 16 bits : 2^16 = 65 536 valeurs
+Sur 32 bits : 2^32 = 4 294 967 296 valeurs (environ 4 milliards)
+```
+
+---
+
+## 11. Exercices corrigés
+
+### Exercice 1 : Conversion décimal vers binaire
+
+**Enoncé :** Convertir 201 en binaire.
+
+**Correction :**
+
+```
+201 / 2 = 100 reste 1
+100 / 2 =  50 reste 0
+ 50 / 2 =  25 reste 0
+ 25 / 2 =  12 reste 1
+ 12 / 2 =   6 reste 0
+  6 / 2 =   3 reste 0
+  3 / 2 =   1 reste 1
+  1 / 2 =   0 reste 1
+
+Lecture de bas en haut : 201 = 1100 1001
+
+Vérification :
+128 + 64 + 0 + 0 + 8 + 0 + 0 + 1 = 201  (correct)
+```
+
+---
+
+### Exercice 2 : Conversion binaire vers décimal
+
+**Enoncé :** Convertir 1111 0001 en décimal.
+
+**Correction :**
+
+```
+1 x 128 = 128
+1 x 64  = 64
+1 x 32  = 32
+1 x 16  = 16
+0 x 8   = 0
+0 x 4   = 0
+0 x 2   = 0
+1 x 1   = 1
+
+Total = 128 + 64 + 32 + 16 + 0 + 0 + 0 + 1 = 241
+```
+
+---
+
+### Exercice 3 : Conversion décimal vers hexadécimal
+
+**Enoncé :** Convertir 1000 en hexadécimal.
+
+**Correction :**
+
+```
+1000 / 16 = 62 reste 8   (8 = 8)
+  62 / 16 =  3 reste 14  (14 = E)
+   3 / 16 =  0 reste 3   (3 = 3)
+
+Lecture de bas en haut : 1000 = 3E8
+
+Vérification :
+3 x 256 + 14 x 16 + 8 x 1 = 768 + 224 + 8 = 1000  (correct)
+```
+
+---
+
+### Exercice 4 : Conversion hexadécimal vers binaire
+
+**Enoncé :** Convertir 4F2C en binaire.
+
+**Correction :**
+
+```
+4 = 0100
+F = 1111
+2 = 0010
+C = 1100
+
+4F2C = 0100 1111 0010 1100
+```
+
+---
+
+### Exercice 5 : Complément à 2
+
+**Enoncé :** Représenter -73 en complément à 2 sur 8 bits.
+
+**Correction :**
+
+```
+Etape 1 : 73 en binaire
+  73 / 2 = 36 reste 1
+  36 / 2 = 18 reste 0
+  18 / 2 =  9 reste 0
+   9 / 2 =  4 reste 1
+   4 / 2 =  2 reste 0
+   2 / 2 =  1 reste 0
+   1 / 2 =  0 reste 1
+  73 = 01001001
+
+Etape 2 : complément à 1 (inversion des bits)
+  01001001 --> 10110110
+
+Etape 3 : ajouter 1
+    10110110
+  +        1
+  ----------
+    10110111
+
+-73 en complément à 2 = 10110111
+
+Vérification :
+  01001001  (73)
++ 10110111  (-73)
+----------
+1 00000000  (= 0 sur 8 bits, correct)
+```
+
+---
+
+### Exercice 6 : Addition binaire
+
+**Enoncé :** Effectuer l'addition 1100 1010 + 0011 1001.
+
+**Correction :**
+
+```
+Retenues :  1 0 0 1 0 0 1 0
+
+    1 1 0 0 1 0 1 0
+  + 0 0 1 1 1 0 0 1
+  -------------------
+
+Colonne 0 : 0 + 1 = 1
+Colonne 1 : 1 + 0 = 1
+Colonne 2 : 0 + 0 = 0
+Colonne 3 : 1 + 1 = 10 --> 0, retenue 1
+Colonne 4 : 0 + 1 + 1 = 10 --> 0, retenue 1
+Colonne 5 : 0 + 0 + 1 = 1
+Colonne 6 : 1 + 1 = 10 --> 0, retenue 1
+Colonne 7 : 1 + 0 + 1 = 10 --> 0, retenue 1
+
+Résultat : 1 0000 0011
+
+Vérification :
+1100 1010 = 202
+0011 1001 = 57
+202 + 57 = 259
+
+1 0000 0011 = 256 + 2 + 1 = 259  (correct)
+```
+
+---
+
+### Exercice 7 : PGCD par algorithme d'Euclide
+
+**Enoncé :** Calculer PGCD(546, 390).
+
+**Correction :**
+
+```
+Etape 1 : 546 = 390 x 1 + 156
+  (546 - 390 = 156)
+
+Etape 2 : 390 = 156 x 2 + 78
+  (390 - 312 = 78)
+
+Etape 3 : 156 = 78 x 2 + 0
+  (156 - 156 = 0)
+
+PGCD(546, 390) = 78
+
+Vérification :
+546 / 78 = 7    (entier)
+390 / 78 = 5    (entier)
+```
+
+---
+
+### Exercice 8 : PPCM
+
+**Enoncé :** Calculer PPCM(546, 390).
+
+**Correction :**
+
+```
+PGCD(546, 390) = 78  (exercice précédent)
+
+PPCM(546, 390) = (546 x 390) / 78
+               = 212940 / 78
+               = 2730
+
+Vérification :
+2730 / 546 = 5   (entier)
+2730 / 390 = 7   (entier)
+```
+
+---
+
+### Exercice 9 : Décomposition en facteurs premiers
+
+**Enoncé :** Décomposer 1764 en facteurs premiers.
+
+**Correction :**
+
+```
+1764 / 2 = 882
+ 882 / 2 = 441
+ 441 / 3 = 147
+ 147 / 3 = 49
+  49 / 7 = 7
+   7 / 7 = 1
+
+1764 = 2^2 x 3^2 x 7^2
+     = 4 x 9 x 49
+     = 1764  (correct)
+
+Remarque : 1764 = (2 x 3 x 7)^2 = 42^2
+Donc 1764 est un carré parfait et sa racine carrée est 42.
+```
+
+---
+
+### Exercice 10 : Adresse IP et masque de sous-réseau
+
+**Enoncé :** Soit l'adresse IP 172.16.45.200 avec le masque /20. Déterminer l'adresse réseau, l'adresse de broadcast et le nombre d'hôtes.
+
+**Correction :**
+
+```
+Etape 1 : le masque /20
+  20 bits à 1, puis 12 bits à 0
+  11111111.11111111.11110000.00000000
+  = 255.255.240.0
+
+Etape 2 : convertir le 3e octet de l'IP en binaire
+  45 en binaire :
+    45 / 2 = 22 reste 1
+    22 / 2 = 11 reste 0
+    11 / 2 =  5 reste 1
+     5 / 2 =  2 reste 1
+     2 / 2 =  1 reste 0
+     1 / 2 =  0 reste 1
+  45 = 00101101
+
+Etape 3 : ET logique pour le 3e octet
+  IP :     00101101  (45)
+  Masque : 11110000  (240)
+  ET :     00100000  (32)
+
+  Les deux premiers octets restent identiques (masqués par 255).
+  Le 4e octet donne 0 (masqué par 0).
+
+Adresse réseau : 172.16.32.0
+
+Etape 4 : adresse de broadcast
+  On met les 12 bits de la partie hôte à 1.
+  3e octet : 0010 1111 = 47
+  4e octet : 1111 1111 = 255
+
+Broadcast : 172.16.47.255
+
+Etape 5 : nombre d'hôtes
+  Bits pour la partie hôte : 32 - 20 = 12
+  Nombre d'adresses : 2^12 = 4096
+  Nombre d'hôtes utilisables : 4096 - 2 = 4094
+```
+
+---
+
+### Exercice 11 : Couleur RGB en hexadécimal
+
+**Enoncé :** Convertir la couleur #C8A2FF en RGB décimal, puis décrire les composantes.
+
+**Correction :**
+
+```
+C8 :
+  C x 16 + 8 = 12 x 16 + 8 = 192 + 8 = 200
+  Rouge = 200
+
+A2 :
+  A x 16 + 2 = 10 x 16 + 2 = 160 + 2 = 162
+  Vert = 162
+
+FF :
+  F x 16 + F = 15 x 16 + 15 = 240 + 15 = 255
+  Bleu = 255
+
+RGB(200, 162, 255) = violet clair / lavande
+```
+
+---
+
+### Exercice 12 : Congruences et clé de contrôle
+
+**Enoncé :** Calculer la clé de contrôle du numéro de Sécurité sociale 2 93 08 75 108 042.
+
+**Correction :**
+
+```
+Formule : clé = 97 - (N mod 97) où N = 2930875108042
+
+Calcul de 2930875108042 mod 97 par étapes :
+
+Etape 1 : 29308 mod 97
+  97 x 302 = 29294
+  29308 - 29294 = 14
+  29308 mod 97 = 14
+
+Etape 2 : on concatène avec la suite : 1475108
+  1475108 mod 97
+  97 x 15206 = 1474982
+  1475108 - 1474982 = 126
+  126 mod 97 = 29
+
+Etape 3 : on concatène : 29042
+  29042 mod 97
+  97 x 299 = 29003
+  29042 - 29003 = 39
+
+N mod 97 = 39
+
+Clé = 97 - 39 = 58
+
+Le numéro complet est 2 93 08 75 108 042 58.
+```
+
+---
+
+### Exercice 13 : Arithmétique modulaire
+
+**Enoncé :** Quel est le reste de la division de 3^50 par 7 ?
+
+**Correction :**
+
+```
+Cherchons les puissances de 3 modulo 7 :
+  3^1 = 3     ≡ 3 [7]
+  3^2 = 9     ≡ 2 [7]   (9 - 7 = 2)
+  3^3 = 27    ≡ 6 [7]   (27 - 28 = -1, donc 27 = 7x3 + 6)
+  3^4 = 81    ≡ 4 [7]   (81 = 7x11 + 4)
+  3^5 = 243   ≡ 5 [7]   (243 = 7x34 + 5)
+  3^6 = 729   ≡ 1 [7]   (729 = 7x104 + 1)
+
+Le cycle est de longueur 6 : (3, 2, 6, 4, 5, 1, 3, 2, 6, ...)
+
+50 / 6 = 8 reste 2
+
+Donc 3^50 ≡ 3^2 ≡ 2 [7]
+
+Le reste de 3^50 divisé par 7 est 2.
+```
+
+---
+
+### Exercice 14 : Conversion complète entre bases
+
+**Enoncé :** Convertir 511 en binaire, octal et hexadécimal.
+
+**Correction :**
+
+```
+Décimal vers binaire :
+  511 / 2 = 255 reste 1
+  255 / 2 = 127 reste 1
+  127 / 2 =  63 reste 1
+   63 / 2 =  31 reste 1
+   31 / 2 =  15 reste 1
+   15 / 2 =   7 reste 1
+    7 / 2 =   3 reste 1
+    3 / 2 =   1 reste 1
+    1 / 2 =   0 reste 1
+
+  511 = 1 1111 1111 en binaire (9 bits, tous à 1)
+  
+  Vérification : 2^9 - 1 = 512 - 1 = 511  (correct)
+
+Décimal vers octal :
+  511 / 8 = 63 reste 7
+   63 / 8 =  7 reste 7
+    7 / 8 =  0 reste 7
+  
+  511 = 777 en octal
+  
+  Vérification : 7x64 + 7x8 + 7 = 448 + 56 + 7 = 511  (correct)
+
+Décimal vers hexadécimal :
+  511 / 16 = 31 reste 15  (F)
+   31 / 16 =  1 reste 15  (F)
+    1 / 16 =  0 reste 1
+  
+  511 = 1FF en hexadécimal
+  
+  Vérification : 1x256 + 15x16 + 15 = 256 + 240 + 15 = 511  (correct)
+```
+
+---
+
+### Exercice 15 : Soustraction en complément à 2
+
+**Enoncé :** Calculer 150 - 89 en binaire en utilisant le complément à 2 sur 8 bits.
+
+**Correction :**
+
+```
+Etape 1 : convertir 150 en binaire
+  150 / 2 = 75 reste 0
+   75 / 2 = 37 reste 1
+   37 / 2 = 18 reste 1
+   18 / 2 =  9 reste 0
+    9 / 2 =  4 reste 1
+    4 / 2 =  2 reste 0
+    2 / 2 =  1 reste 0
+    1 / 2 =  0 reste 1
+  150 = 10010110
+
+Etape 2 : convertir 89 en binaire
+  89 / 2 = 44 reste 1
+  44 / 2 = 22 reste 0
+  22 / 2 = 11 reste 0
+  11 / 2 =  5 reste 1
+   5 / 2 =  2 reste 1
+   2 / 2 =  1 reste 0
+   1 / 2 =  0 reste 1
+  89 = 01011001
+
+Etape 3 : complément à 2 de 89
+  Inversion : 10100110
+  Ajout de 1 :
+    10100110
+  +        1
+  ----------
+    10100111
+
+Etape 4 : addition de 150 et (-89)
+    10010110   (150)
+  + 10100111   (-89 en complément à 2)
+  ----------
+
+  Colonne 0 : 0 + 1 = 1
+  Colonne 1 : 1 + 1 = 10, retenue 1
+  Colonne 2 : 1 + 1 + 1 = 11, retenue 1
+  Colonne 3 : 0 + 0 + 1 = 1
+  Colonne 4 : 1 + 0 = 1
+  Colonne 5 : 0 + 1 = 1
+  Colonne 6 : 0 + 0 = 0
+  Colonne 7 : 1 + 1 = 10, retenue 1
+
+  Résultat (ignorant la retenue finale) : 00111101
+
+Etape 5 : vérification
+  00111101 = 32 + 16 + 8 + 4 + 1 = 61
+  150 - 89 = 61  (correct)
+```
+
+---
+
+### Exercice 16 : Multiplication binaire
+
+**Enoncé :** Calculer 1010 x 110 en binaire.
+
+**Correction :**
+
+```
+        1 0 1 0    (= 10)
+      x   1 1 0    (= 6)
+      ---------
+      0 0 0 0 0    (1010 x 0)
+    1 0 1 0 0      (1010 x 1, décalé de 1)
+  1 0 1 0 0 0      (1010 x 1, décalé de 2)
+  -------------
+
+Addition :
+    0 0 0 0 0
+  + 1 0 1 0 0
+  -----------
+    1 0 1 0 0
+
+    0 1 0 1 0 0
+  + 1 0 1 0 0 0
+  -------------
+    1 1 1 1 0 0
+
+Résultat : 1010 x 110 = 111100
+
+Vérification :
+10 x 6 = 60
+111100 = 32 + 16 + 8 + 4 = 60  (correct)
+```
+
+---
+
+### Exercice 17 : Stockage mémoire
+
+**Enoncé :** Un fichier image de 2400 x 1600 pixels utilise 3 octets par pixel (RGB). Calculer la taille du fichier en Mo.
+
+**Correction :**
+
+```
+Nombre de pixels : 2400 x 1600 = 3 840 000 pixels
+
+Taille en octets : 3 840 000 x 3 = 11 520 000 octets
+
+Conversion en Ko : 11 520 000 / 1024 = 11 250 Ko
+
+Conversion en Mo : 11 250 / 1024 = 10,99 Mo (environ 11 Mo)
+```
+
+---
+
+### Exercice 18 : Exercice de synthèse
+
+**Enoncé :** On donne deux nombres en hexadécimal : A = 1C8 et B = FA. Calculer A + B en hexadécimal, puis vérifier en décimal.
+
+**Correction :**
+
+```
+Etape 1 : conversion en décimal pour vérification
+  A = 1C8 = 1x256 + 12x16 + 8 = 256 + 192 + 8 = 456
+  B = FA  = 15x16 + 10 = 240 + 10 = 250
+
+Etape 2 : addition en hexadécimal
+    1 C 8
+  +   F A
+  -------
+
+  Colonne 0 : 8 + A = 8 + 10 = 18
+    18 / 16 = 1 reste 2
+    On écrit 2, retenue 1
+
+  Colonne 1 : C + F + 1 = 12 + 15 + 1 = 28
+    28 / 16 = 1 reste 12 (C)
+    On écrit C, retenue 1
+
+  Colonne 2 : 1 + 0 + 1 = 2
+    On écrit 2
+
+  Résultat : 1C8 + FA = 2C2
+
+Vérification :
+  2C2 = 2x256 + 12x16 + 2 = 512 + 192 + 2 = 706
+  456 + 250 = 706  (correct)
+```
+
+---
+
+## 12. Résumé des méthodes essentielles
+
+| Conversion | Méthode |
+|---|---|
+| Décimal vers binaire | Divisions successives par 2, lecture des restes de bas en haut |
+| Binaire vers décimal | Somme des puissances de 2 |
+| Décimal vers hexa | Divisions successives par 16 |
+| Hexa vers décimal | Somme des puissances de 16 |
+| Binaire vers hexa | Grouper par 4 bits |
+| Hexa vers binaire | Remplacer chaque chiffre par 4 bits |
+| Décimal vers octal | Divisions successives par 8 |
+| Octal vers binaire | Remplacer chaque chiffre par 3 bits |
+| Nombre négatif | Complément à 2 = inversion + 1 |
+| PGCD | Algorithme d'Euclide (divisions successives) |
+| PPCM | (a x b) / PGCD(a, b) |
+| Test premier | Diviser par tous les premiers jusqu'à racine carrée |
+
+---
+
+## 13. Erreurs fréquentes à éviter
+
+1. **Oublier de lire les restes de bas en haut** lors des conversions par divisions successives.
+
+2. **Confondre complément à 1 et complément à 2.** Le complément à 2 = complément à 1 + 1.
+
+3. **Ne pas compléter les groupes de bits à gauche.** Pour la conversion binaire vers hexa, si le nombre de bits n'est pas multiple de 4, ajouter des zéros à gauche.
+
+4. **Oublier la retenue** dans les additions binaires.
+
+5. **Confondre PGCD et PPCM.** PGCD = plus grand commun diviseur (toujours inférieur ou égal aux deux nombres). PPCM = plus petit commun multiple (toujours supérieur ou égal aux deux nombres).
+
+6. **Confondre Ko (1024 octets) et kB (1000 octets).** En informatique, on utilise les puissances de 2.
+
+7. **Oublier de retirer 2 adresses** (réseau et broadcast) pour calculer le nombre d'hôtes dans un sous-réseau.
+
+---
+
+*Ce document couvre l'intégralité du programme d'arithmétique du BTS SIO SLAM. Chaque méthode doit être maîtrisée avec la capacité de détailler chaque étape de calcul. En cas de doute lors de l'examen, toujours vérifier le résultat en reconvertissant en décimal.*

@@ -1,0 +1,1735 @@
+---
+title: "Mathematiques -- Logique booleenne"
+description: "Propositions, connecteurs, tables de verite, algebre de Boole, simplification, portes logiques"
+category: "Mathematiques"
+tags: ["logique", "boole", "tables de verite", "portes logiques", "maths"]
+difficulty: "Debutant"
+---
+
+# Logique booleenne
+
+---
+
+## 1. Propositions logiques
+
+### Definition
+
+Une **proposition logique** est un enonce declaratif qui est soit **vrai**, soit **faux**, jamais les deux a la fois.
+
+- On note la valeur de verite : **V** (vrai) ou **F** (faux).
+- En notation binaire : **1** (vrai) ou **0** (faux).
+
+### Exemples
+
+| Enonce | Proposition ? | Valeur |
+|---|---|---|
+| "3 est un nombre impair" | Oui | V (1) |
+| "Paris est la capitale de l'Allemagne" | Oui | F (0) |
+| "Quelle heure est-il ?" | Non (question) | -- |
+| "Ferme la porte" | Non (ordre) | -- |
+| "x + 2 = 5" | Non (variable libre, pas determinable) | -- |
+
+### Variables propositionnelles
+
+On designe les propositions par des lettres : **a**, **b**, **c** ou **P**, **Q**, **R**.
+
+Chaque variable peut prendre la valeur 0 ou 1.
+
+---
+
+## 2. Connecteurs logiques
+
+Les connecteurs combinent des propositions pour en former de nouvelles.
+
+### 2.1 NON -- Negation
+
+| Notation | Symbole | Autre notation |
+|---|---|---|
+| NON a | non a | a barre, ~a, !a |
+
+**Definition** : inverse la valeur de verite.
+
+| a | NON a |
+|---|---|
+| 0 | 1 |
+| 1 | 0 |
+
+### 2.2 ET -- Conjonction
+
+| Notation | Symbole | Autre notation |
+|---|---|---|
+| a ET b | a . b | a AND b, a ^ b |
+
+**Definition** : vrai uniquement si les deux propositions sont vraies.
+
+| a | b | a ET b |
+|---|---|---|
+| 0 | 0 | 0 |
+| 0 | 1 | 0 |
+| 1 | 0 | 0 |
+| 1 | 1 | 1 |
+
+### 2.3 OU -- Disjonction inclusive
+
+| Notation | Symbole | Autre notation |
+|---|---|---|
+| a OU b | a + b | a OR b, a v b |
+
+**Definition** : vrai si au moins une des deux propositions est vraie.
+
+| a | b | a OU b |
+|---|---|---|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 1 |
+
+### 2.4 OU EXCLUSIF -- XOR
+
+| Notation | Symbole | Autre notation |
+|---|---|---|
+| a XOR b | a (+) b | a ^ b (en programmation) |
+
+**Definition** : vrai si exactement une des deux propositions est vraie (pas les deux).
+
+| a | b | a XOR b |
+|---|---|---|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 0 |
+
+Formule equivalente : a XOR b = (a ET NON b) OU (NON a ET b)
+
+### 2.5 IMPLICATION
+
+| Notation | Symbole | Autre notation |
+|---|---|---|
+| a => b | a => b | si a alors b |
+
+**Definition** : fausse uniquement lorsque a est vrai et b est faux. "Le vrai n'implique pas le faux."
+
+| a | b | a => b |
+|---|---|---|
+| 0 | 0 | 1 |
+| 0 | 1 | 1 |
+| 1 | 0 | 0 |
+| 1 | 1 | 1 |
+
+Formule equivalente : a => b = NON a OU b
+
+**Attention** : quand a est faux, l'implication est toujours vraie (on dit "ex falso quodlibet").
+
+### 2.6 EQUIVALENCE (biconditionnelle)
+
+| Notation | Symbole | Autre notation |
+|---|---|---|
+| a <=> b | a <=> b | a ssi b |
+
+**Definition** : vraie lorsque a et b ont la meme valeur de verite.
+
+| a | b | a <=> b |
+|---|---|---|
+| 0 | 0 | 1 |
+| 0 | 1 | 0 |
+| 1 | 0 | 0 |
+| 1 | 1 | 1 |
+
+Formule equivalente : a <=> b = (a => b) ET (b => a)
+
+Autre forme : a <=> b = NON (a XOR b)
+
+---
+
+## 3. Tables de verite
+
+### Methode de construction
+
+**Etape 1** : Identifier toutes les variables (n variables).
+
+**Etape 2** : Calculer le nombre de lignes : 2^n.
+
+**Etape 3** : Remplir les colonnes des variables en alternant les valeurs. Pour n variables a, b, c :
+- Colonne a : alterne par blocs de 2^(n-1). Pour 3 variables : 4 fois 0, puis 4 fois 1.
+- Colonne b : alterne par blocs de 2^(n-2). Pour 3 variables : 2 fois 0, 2 fois 1, 2 fois 0, 2 fois 1.
+- Colonne c : alterne par blocs de 1. Pour 3 variables : 0, 1, 0, 1, 0, 1, 0, 1.
+
+**Etape 4** : Ajouter des colonnes intermediaires pour les sous-expressions.
+
+**Etape 5** : Calculer chaque colonne de gauche a droite.
+
+### Exemple a 2 variables : (a ET b) OU (NON a)
+
+| a | b | a ET b | NON a | (a ET b) OU (NON a) |
+|---|---|---|---|---|
+| 0 | 0 | 0 | 1 | 1 |
+| 0 | 1 | 0 | 1 | 1 |
+| 1 | 0 | 0 | 0 | 0 |
+| 1 | 1 | 1 | 0 | 1 |
+
+### Exemple a 3 variables : (a OU b) ET (NON c)
+
+| a | b | c | a OU b | NON c | (a OU b) ET (NON c) |
+|---|---|---|---|---|---|
+| 0 | 0 | 0 | 0 | 1 | 0 |
+| 0 | 0 | 1 | 0 | 0 | 0 |
+| 0 | 1 | 0 | 1 | 1 | 1 |
+| 0 | 1 | 1 | 1 | 0 | 0 |
+| 1 | 0 | 0 | 1 | 1 | 1 |
+| 1 | 0 | 1 | 1 | 0 | 0 |
+| 1 | 1 | 0 | 1 | 1 | 1 |
+| 1 | 1 | 1 | 1 | 0 | 0 |
+
+### Exemple a 4 variables : a ET b OU c ET d
+
+| a | b | c | d | a ET b | c ET d | (a ET b) OU (c ET d) |
+|---|---|---|---|---|---|---|
+| 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 0 | 0 | 0 | 1 | 0 | 0 | 0 |
+| 0 | 0 | 1 | 0 | 0 | 0 | 0 |
+| 0 | 0 | 1 | 1 | 0 | 1 | 1 |
+| 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| 0 | 1 | 0 | 1 | 0 | 0 | 0 |
+| 0 | 1 | 1 | 0 | 0 | 0 | 0 |
+| 0 | 1 | 1 | 1 | 0 | 1 | 1 |
+| 1 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1 | 0 | 0 | 1 | 0 | 0 | 0 |
+| 1 | 0 | 1 | 0 | 0 | 0 | 0 |
+| 1 | 0 | 1 | 1 | 0 | 1 | 1 |
+| 1 | 1 | 0 | 0 | 1 | 0 | 1 |
+| 1 | 1 | 0 | 1 | 1 | 0 | 1 |
+| 1 | 1 | 1 | 0 | 1 | 0 | 1 |
+| 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+
+---
+
+## 4. Priorite des operateurs logiques
+
+Du plus prioritaire au moins prioritaire :
+
+| Priorite | Operateur |
+|---|---|
+| 1 (plus forte) | NON |
+| 2 | ET |
+| 3 | OU |
+| 4 | XOR |
+| 5 | => (implication) |
+| 6 (plus faible) | <=> (equivalence) |
+
+Les parentheses forcent la priorite.
+
+**Exemple** : NON a OU b ET c se lit (NON a) OU (b ET c).
+
+Etape par etape :
+1. NON s'applique en premier : on calcule NON a.
+2. ET s'applique ensuite : on calcule b ET c.
+3. OU s'applique en dernier : on calcule (NON a) OU (b ET c).
+
+---
+
+## 5. Tautologie, contradiction, contingence
+
+### Tautologie
+
+Une expression qui est **toujours vraie** (1 pour toutes les combinaisons de variables).
+
+Exemple : a OU NON a
+
+| a | NON a | a OU NON a |
+|---|---|---|
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+
+Resultat : toujours 1. C'est une tautologie (loi du tiers exclu).
+
+### Contradiction
+
+Une expression qui est **toujours fausse** (0 pour toutes les combinaisons).
+
+Exemple : a ET NON a
+
+| a | NON a | a ET NON a |
+|---|---|---|
+| 0 | 1 | 0 |
+| 1 | 0 | 0 |
+
+Resultat : toujours 0. C'est une contradiction.
+
+### Contingence
+
+Une expression qui n'est **ni une tautologie ni une contradiction** : elle prend les valeurs 0 et 1 selon les cas.
+
+Exemple : a OU b est une contingence (vaut 0 quand a=0 et b=0, vaut 1 sinon).
+
+---
+
+## 6. Lois de l'algebre de Boole
+
+### 6.1 Elements neutres
+
+```
+a + 0 = a          (0 est neutre pour OU)
+a . 1 = a          (1 est neutre pour ET)
+```
+
+### 6.2 Elements absorbants
+
+```
+a + 1 = 1          (1 est absorbant pour OU)
+a . 0 = 0          (0 est absorbant pour ET)
+```
+
+### 6.3 Idempotence
+
+```
+a + a = a
+a . a = a
+```
+
+### 6.4 Complementarite
+
+```
+a + NON a = 1
+a . NON a = 0
+```
+
+### 6.5 Double negation (involution)
+
+```
+NON (NON a) = a
+```
+
+### 6.6 Commutativite
+
+```
+a + b = b + a
+a . b = b . a
+```
+
+### 6.7 Associativite
+
+```
+(a + b) + c = a + (b + c)
+(a . b) . c = a . (b . c)
+```
+
+### 6.8 Distributivite
+
+```
+a . (b + c) = (a . b) + (a . c)       (ET distribue sur OU)
+a + (b . c) = (a + b) . (a + c)       (OU distribue sur ET)
+```
+
+Attention : la seconde loi n'existe pas en arithmetique classique. Elle est propre a l'algebre de Boole.
+
+### 6.9 Absorption
+
+```
+a + (a . b) = a
+a . (a + b) = a
+```
+
+**Demonstration de a + (a . b) = a :**
+
+```
+a + (a . b)
+= a . 1 + a . b          (element neutre : a = a . 1)
+= a . (1 + b)            (factorisation par a, distributivite)
+= a . 1                  (element absorbant : 1 + b = 1)
+= a                      (element neutre)
+```
+
+### 6.10 Lois de De Morgan
+
+```
+NON (a + b) = NON a . NON b
+NON (a . b) = NON a + NON b
+```
+
+En mots :
+- La negation d'un OU devient un ET des negations.
+- La negation d'un ET devient un OU des negations.
+
+**Demonstration par table de verite de NON (a + b) = NON a . NON b :**
+
+| a | b | a + b | NON (a + b) | NON a | NON b | NON a . NON b |
+|---|---|---|---|---|---|---|
+| 0 | 0 | 0 | 1 | 1 | 1 | 1 |
+| 0 | 1 | 1 | 0 | 1 | 0 | 0 |
+| 1 | 0 | 1 | 0 | 0 | 1 | 0 |
+| 1 | 1 | 1 | 0 | 0 | 0 | 0 |
+
+Les colonnes "NON (a + b)" et "NON a . NON b" sont identiques. CQFD.
+
+**Demonstration par table de verite de NON (a . b) = NON a + NON b :**
+
+| a | b | a . b | NON (a . b) | NON a | NON b | NON a + NON b |
+|---|---|---|---|---|---|---|
+| 0 | 0 | 0 | 1 | 1 | 1 | 1 |
+| 0 | 1 | 0 | 1 | 1 | 0 | 1 |
+| 1 | 0 | 0 | 1 | 0 | 1 | 1 |
+| 1 | 1 | 1 | 0 | 0 | 0 | 0 |
+
+Les colonnes "NON (a . b)" et "NON a + NON b" sont identiques. CQFD.
+
+**Generalisation** : les lois de De Morgan s'etendent a n variables :
+
+```
+NON (a + b + c + ...) = NON a . NON b . NON c . ...
+NON (a . b . c . ...) = NON a + NON b + NON c + ...
+```
+
+### Resume des lois
+
+| Loi | Forme OU | Forme ET |
+|---|---|---|
+| Element neutre | a + 0 = a | a . 1 = a |
+| Element absorbant | a + 1 = 1 | a . 0 = 0 |
+| Idempotence | a + a = a | a . a = a |
+| Complementarite | a + NON a = 1 | a . NON a = 0 |
+| Commutativite | a + b = b + a | a . b = b . a |
+| Associativite | (a+b)+c = a+(b+c) | (a.b).c = a.(b.c) |
+| Distributivite | a+(b.c) = (a+b).(a+c) | a.(b+c) = a.b+a.c |
+| Absorption | a + a.b = a | a.(a+b) = a |
+| De Morgan | NON(a+b) = NON a . NON b | NON(a.b) = NON a + NON b |
+| Involution | NON(NON a) = a | NON(NON a) = a |
+
+---
+
+## 7. Simplification d'expressions booleennes -- Methode algebrique
+
+### Principe
+
+On applique les lois de l'algebre de Boole une par une, en justifiant chaque etape, jusqu'a obtenir l'expression la plus courte possible.
+
+### Exemple 1 : Simplifier F = a.b + a.NON b
+
+```
+F = a.b + a.NON b
+  = a . (b + NON b)          [distributivite : factorisation par a]
+  = a . 1                    [complementarite : b + NON b = 1]
+  = a                        [element neutre : a . 1 = a]
+```
+
+### Exemple 2 : Simplifier F = a.b + a.b.c
+
+```
+F = a.b + a.b.c
+  = a.b . (1 + c)            [distributivite : factorisation par a.b]
+  = a.b . 1                  [element absorbant : 1 + c = 1]
+  = a.b                      [element neutre]
+```
+
+### Exemple 3 : Simplifier F = NON a . NON b + NON a . b + a . NON b
+
+```
+F = NON a . NON b + NON a . b + a . NON b
+  = NON a . (NON b + b) + a . NON b    [distributivite : factorisation par NON a]
+  = NON a . 1 + a . NON b              [complementarite : NON b + b = 1]
+  = NON a + a . NON b                  [element neutre]
+  = (NON a + a) . (NON a + NON b)      [distributivite de OU sur ET]
+  = 1 . (NON a + NON b)                [complementarite]
+  = NON a + NON b                      [element neutre]
+```
+
+Verification par De Morgan : NON a + NON b = NON (a . b).
+
+### Exemple 4 : Simplifier F = a.b.c + a.b.NON c + a.NON b.c + a.NON b.NON c
+
+```
+F = a.b.c + a.b.NON c + a.NON b.c + a.NON b.NON c
+  = a.b.(c + NON c) + a.NON b.(c + NON c)    [distributivite]
+  = a.b.1 + a.NON b.1                         [complementarite]
+  = a.b + a.NON b                              [element neutre]
+  = a.(b + NON b)                              [distributivite]
+  = a.1                                        [complementarite]
+  = a                                          [element neutre]
+```
+
+### Exemple 5 : Simplifier F = (a + b) . (a + NON b)
+
+```
+F = (a + b) . (a + NON b)
+  = a + (b . NON b)               [distributivite de OU sur ET]
+  = a + 0                         [complementarite : b . NON b = 0]
+  = a                             [element neutre]
+```
+
+---
+
+## 8. Formes canoniques
+
+### 8.1 Minterme
+
+Un **minterme** est un produit (ET) de toutes les variables de la fonction, chaque variable apparaissant une seule fois (complementee ou non).
+
+Pour n=2 (variables a, b), les mintermes sont :
+
+| Indice | a | b | Minterme |
+|---|---|---|---|
+| m0 | 0 | 0 | NON a . NON b |
+| m1 | 0 | 1 | NON a . b |
+| m2 | 1 | 0 | a . NON b |
+| m3 | 1 | 1 | a . b |
+
+### 8.2 Maxterme
+
+Un **maxterme** est une somme (OU) de toutes les variables, chaque variable apparaissant une seule fois. La convention est **inversee** par rapport aux mintermes : on complementa la variable quand la valeur est 1.
+
+Pour n=2 (variables a, b), les maxtermes sont :
+
+| Indice | a | b | Maxterme |
+|---|---|---|---|
+| M0 | 0 | 0 | a + b |
+| M1 | 0 | 1 | a + NON b |
+| M2 | 1 | 0 | NON a + b |
+| M3 | 1 | 1 | NON a + NON b |
+
+### 8.3 Somme de mintermes (forme canonique disjonctive)
+
+On somme (OU) les mintermes correspondant aux lignes ou la fonction vaut 1.
+
+**Exemple** : soit F definie par la table :
+
+| a | b | F |
+|---|---|---|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 0 |
+
+F vaut 1 aux lignes 1 et 2 (indices 1 et 2).
+
+F = m1 + m2 = NON a . b + a . NON b
+
+Notation abregee : F = Somme(1, 2)
+
+### 8.4 Produit de maxtermes (forme canonique conjonctive)
+
+On multiplie (ET) les maxtermes correspondant aux lignes ou la fonction vaut 0.
+
+Avec le meme exemple, F vaut 0 aux lignes 0 et 3 (indices 0 et 3).
+
+F = M0 . M3 = (a + b) . (NON a + NON b)
+
+Notation abregee : F = Produit(0, 3)
+
+**Verification** : les deux formes donnent la meme fonction (c'est le XOR).
+
+---
+
+## 9. Tableaux de Karnaugh
+
+### Principe
+
+Le tableau de Karnaugh est une representation graphique de la table de verite qui facilite la simplification. Les cases adjacentes different d'une seule variable (code de Gray). On regroupe les cases contenant des 1 en groupes de 2^k cases (1, 2, 4, 8...) pour eliminer des variables.
+
+### 9.1 Karnaugh a 2 variables
+
+Variables : a, b.
+
+```
+         b=0    b=1
+  a=0  |  F00  |  F01  |
+  a=1  |  F10  |  F11  |
+```
+
+**Exemple** : F = NON a . b + a . b (F vaut 1 quand b=1)
+
+```
+         b=0    b=1
+  a=0  |   0   |   1   |
+  a=1  |   0   |   1   |
+```
+
+Regroupement : les deux 1 forment une colonne (b=1). On elimine a (qui change). Il reste : **F = b**.
+
+### 9.2 Karnaugh a 3 variables
+
+Variables : a, b, c. Les colonnes suivent le code de Gray pour b et c.
+
+```
+            bc=00  bc=01  bc=11  bc=10
+  a=0      |      |      |      |      |
+  a=1      |      |      |      |      |
+```
+
+**Attention** : l'ordre des colonnes est 00, 01, 11, 10 (code de Gray), pas 00, 01, 10, 11.
+
+**Exemple** : F(a,b,c) = Somme(0, 2, 4, 6) -- F vaut 1 quand c=0.
+
+```
+            bc=00  bc=01  bc=11  bc=10
+  a=0      |  1   |  0   |  0   |  1   |
+  a=1      |  1   |  0   |  0   |  1   |
+```
+
+Regroupement : les quatre 1 occupent les colonnes bc=00 et bc=10.
+
+Observation : dans ces 4 cases, a varie (0 et 1) et b varie (0 et 1), mais c est toujours 0.
+
+Resultat : **F = NON c**.
+
+### 9.3 Karnaugh a 4 variables
+
+Variables : a, b, c, d. Lignes en code de Gray pour a, b. Colonnes en code de Gray pour c, d.
+
+```
+              cd=00  cd=01  cd=11  cd=10
+  ab=00      |      |      |      |      |
+  ab=01      |      |      |      |      |
+  ab=11      |      |      |      |      |
+  ab=10      |      |      |      |      |
+```
+
+**Important** : le tableau est **torique**. La premiere ligne est adjacente a la derniere. La premiere colonne est adjacente a la derniere.
+
+### Regles de regroupement
+
+1. On ne regroupe que des cases contenant des 1.
+2. Les groupes doivent etre de taille 1, 2, 4, 8 ou 16 (puissances de 2).
+3. Les groupes doivent etre rectangulaires (en tenant compte de la toricite).
+4. Chaque groupe doit etre le plus grand possible.
+5. Chaque 1 doit appartenir a au moins un groupe.
+6. Les groupes peuvent se chevaucher.
+7. On cherche a minimiser le nombre de groupes.
+
+### Extraction de l'expression
+
+Pour chaque groupe, on identifie les variables qui restent constantes dans tout le groupe. Les variables qui changent sont eliminees.
+
+- Si une variable vaut 1 dans tout le groupe : on ecrit la variable telle quelle.
+- Si une variable vaut 0 dans tout le groupe : on ecrit sa negation.
+- Si une variable prend les deux valeurs : elle est eliminee.
+
+Chaque groupe donne un terme produit. L'expression finale est la somme (OU) de tous les termes produit.
+
+### Exemple complet a 4 variables
+
+F(a,b,c,d) = Somme(0, 1, 2, 5, 8, 9, 10)
+
+Etape 1 : remplir le tableau.
+
+```
+              cd=00  cd=01  cd=11  cd=10
+  ab=00      |  1   |  1   |  0   |  1   |
+  ab=01      |  0   |  1   |  0   |  0   |
+  ab=11      |  0   |  0   |  0   |  0   |
+  ab=10      |  1   |  1   |  0   |  1   |
+```
+
+Placement des 1 :
+- Indice 0 : abcd = 0000, position ab=00, cd=00.
+- Indice 1 : abcd = 0001, position ab=00, cd=01.
+- Indice 2 : abcd = 0010, position ab=00, cd=10.
+- Indice 5 : abcd = 0101, position ab=01, cd=01.
+- Indice 8 : abcd = 1000, position ab=10, cd=00.
+- Indice 9 : abcd = 1001, position ab=10, cd=01.
+- Indice 10 : abcd = 1010, position ab=10, cd=10.
+
+Etape 2 : identifier les groupes.
+
+Groupe G1 (taille 4) : cases (ab=00, cd=00), (ab=00, cd=10), (ab=10, cd=00), (ab=10, cd=10).
+- a varie, b=0 constant, c varie, d=0 constant.
+- Terme : NON b . NON d.
+
+Groupe G2 (taille 4) : cases (ab=00, cd=00), (ab=00, cd=01), (ab=10, cd=00), (ab=10, cd=01).
+- a varie, b=0 constant, c=0 constant, d varie.
+- Terme : NON b . NON c.
+
+Groupe G3 (taille 2) : cases (ab=00, cd=01), (ab=01, cd=01).
+- a=0 constant, b varie, c=0 constant, d=1 constant.
+- Terme : NON a . NON c . d.
+
+Etape 3 : verification que tous les 1 sont couverts.
+- 0000 : G1 et G2. Couvert.
+- 0001 : G2 et G3. Couvert.
+- 0010 : G1. Couvert.
+- 0101 : G3. Couvert.
+- 1000 : G1 et G2. Couvert.
+- 1001 : G2. Couvert.
+- 1010 : G1. Couvert.
+
+Tous couverts.
+
+Etape 4 : expression simplifiee.
+
+**F = NON b . NON d + NON b . NON c + NON a . NON c . d**
+
+---
+
+## 10. Portes logiques
+
+### 10.1 Porte NOT (inverseur)
+
+Symbole : triangle avec un cercle a la sortie.
+
+```
+  a ---[>o]--- S
+```
+
+| a | S |
+|---|---|
+| 0 | 1 |
+| 1 | 0 |
+
+S = NON a
+
+### 10.2 Porte AND
+
+Symbole : forme en D.
+
+```
+  a ---\
+        |D)--- S
+  b ---/
+```
+
+| a | b | S |
+|---|---|---|
+| 0 | 0 | 0 |
+| 0 | 1 | 0 |
+| 1 | 0 | 0 |
+| 1 | 1 | 1 |
+
+S = a . b
+
+### 10.3 Porte OR
+
+Symbole : forme en bouclier pointe.
+
+```
+  a ---\
+        |))--- S
+  b ---/
+```
+
+| a | b | S |
+|---|---|---|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 1 |
+
+S = a + b
+
+### 10.4 Porte NAND (NON ET)
+
+Symbole : AND avec un cercle a la sortie.
+
+```
+  a ---\
+        |D)o--- S
+  b ---/
+```
+
+| a | b | S |
+|---|---|---|
+| 0 | 0 | 1 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 0 |
+
+S = NON (a . b)
+
+**Propriete fondamentale** : la porte NAND est universelle. On peut construire toute fonction logique avec uniquement des portes NAND.
+
+### 10.5 Porte NOR (NON OU)
+
+Symbole : OR avec un cercle a la sortie.
+
+```
+  a ---\
+        |))o--- S
+  b ---/
+```
+
+| a | b | S |
+|---|---|---|
+| 0 | 0 | 1 |
+| 0 | 1 | 0 |
+| 1 | 0 | 0 |
+| 1 | 1 | 0 |
+
+S = NON (a + b)
+
+**Propriete fondamentale** : la porte NOR est aussi universelle.
+
+### 10.6 Porte XOR
+
+Symbole : OR avec une double courbe a l'entree.
+
+```
+  a ---\
+        |=))--- S
+  b ---/
+```
+
+| a | b | S |
+|---|---|---|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 0 |
+
+S = a XOR b
+
+---
+
+## 11. Circuits logiques
+
+### 11.1 Demi-additionneur (half adder)
+
+Additionne deux bits a et b. Produit une somme S et une retenue C (carry).
+
+```
+S = a XOR b
+C = a ET b
+```
+
+| a | b | S | C |
+|---|---|---|---|
+| 0 | 0 | 0 | 0 |
+| 0 | 1 | 1 | 0 |
+| 1 | 0 | 1 | 0 |
+| 1 | 1 | 0 | 1 |
+
+Circuit : une porte XOR (pour S) et une porte AND (pour C).
+
+```
+  a ---+---[XOR]--- S
+       |     |
+  b ---+-----+
+       |
+       +---[AND]--- C
+```
+
+### 11.2 Additionneur complet (full adder)
+
+Additionne deux bits a, b et une retenue entrante Cin. Produit une somme S et une retenue sortante Cout.
+
+```
+S = a XOR b XOR Cin
+Cout = (a ET b) OU (Cin ET (a XOR b))
+```
+
+| a | b | Cin | S | Cout |
+|---|---|---|---|---|
+| 0 | 0 | 0 | 0 | 0 |
+| 0 | 0 | 1 | 1 | 0 |
+| 0 | 1 | 0 | 1 | 0 |
+| 0 | 1 | 1 | 0 | 1 |
+| 1 | 0 | 0 | 1 | 0 |
+| 1 | 0 | 1 | 0 | 1 |
+| 1 | 1 | 0 | 0 | 1 |
+| 1 | 1 | 1 | 1 | 1 |
+
+Circuit : deux demi-additionneurs et une porte OR.
+
+```
+  Demi-add 1 : a, b       => S1 = a XOR b,  C1 = a AND b
+  Demi-add 2 : S1, Cin    => S = S1 XOR Cin, C2 = S1 AND Cin
+  Cout = C1 OR C2
+```
+
+### 11.3 Multiplexeur (MUX)
+
+Un multiplexeur 2 vers 1 selectionne une entree parmi deux en fonction d'un signal de selection s.
+
+```
+S = (NON s . e0) + (s . e1)
+```
+
+| s | e0 | e1 | S |
+|---|---|---|---|
+| 0 | x | - | x (= e0) |
+| 1 | - | x | x (= e1) |
+
+Table de verite complete :
+
+| s | e0 | e1 | S |
+|---|---|---|---|
+| 0 | 0 | 0 | 0 |
+| 0 | 0 | 1 | 0 |
+| 0 | 1 | 0 | 1 |
+| 0 | 1 | 1 | 1 |
+| 1 | 0 | 0 | 0 |
+| 1 | 0 | 1 | 1 |
+| 1 | 1 | 0 | 0 |
+| 1 | 1 | 1 | 1 |
+
+Un multiplexeur 4 vers 1 possede 4 entrees (e0, e1, e2, e3) et 2 bits de selection (s1, s0) :
+
+```
+S = (NON s1 . NON s0 . e0) + (NON s1 . s0 . e1) + (s1 . NON s0 . e2) + (s1 . s0 . e3)
+```
+
+---
+
+## 12. Applications informatiques
+
+### 12.1 Conditions en programmation
+
+Les operateurs logiques en programmation correspondent directement a la logique booleenne.
+
+**Python :**
+```python
+age = 20
+majeur = True
+permis = False
+
+# ET logique
+if majeur and age >= 18:
+    print("Acces autorise")
+
+# OU logique
+if majeur or permis:
+    print("Au moins une condition remplie")
+
+# NON logique
+if not permis:
+    print("Pas de permis")
+
+# Combinaison
+if (age >= 18 and majeur) or (not permis and age > 21):
+    print("Condition complexe remplie")
+```
+
+**Correspondance :**
+
+| Logique booleenne | Python | Java / C | JavaScript |
+|---|---|---|---|
+| ET | and | && | && |
+| OU | or | \|\| | \|\| |
+| NON | not | ! | ! |
+
+### 12.2 Masques binaires
+
+Un masque binaire utilise l'operateur ET bit a bit pour extraire certains bits d'un nombre.
+
+**Principe** : ET avec 1 conserve le bit, ET avec 0 efface le bit.
+
+**Exemple** : extraire les 4 bits de poids faible du nombre 0b11010110.
+
+```
+  1101 0110    (nombre = 214)
+ET 0000 1111    (masque = 15)
+= 0000 0110    (resultat = 6)
+```
+
+**Exemple** : tester si le bit 3 (en partant de 0) est a 1.
+
+```
+  1101 0110    (nombre)
+ET 0000 1000    (masque = 8, seul le bit 3 est a 1)
+= 0000 0000    (resultat = 0, donc le bit 3 est a 0)
+```
+
+En Python :
+```python
+nombre = 0b11010110
+masque = 0b00001111
+resultat = nombre & masque   # 0b00000110 = 6
+
+# Tester un bit
+bit3 = (nombre & (1 << 3)) != 0   # False (le bit 3 vaut 0)
+bit4 = (nombre & (1 << 4)) != 0   # True  (le bit 4 vaut 1)
+```
+
+### 12.3 Permissions Unix
+
+Les permissions Unix utilisent 3 groupes de 3 bits : proprietaire, groupe, autres.
+
+Chaque groupe : lecture (r=4), ecriture (w=2), execution (x=1).
+
+```
+rwxr-xr-- = 111 101 100 = 754 en octal
+```
+
+Operations avec masques :
+
+```python
+perms = 0o754   # rwxr-xr--
+
+# Tester si le proprietaire a le droit d'ecriture
+has_write = (perms & 0o200) != 0   # True (200 = 010 000 000)
+
+# Retirer le droit d'execution pour les autres
+new_perms = perms & ~0o001   # 754 & ~001 = 754 (deja pas de x)
+
+# Ajouter le droit d'execution pour les autres
+new_perms = perms | 0o001   # 754 | 001 = 755
+
+# Inverser le droit d'ecriture du groupe
+new_perms = perms ^ 0o020   # 754 ^ 020 = 774 (toggle w du groupe)
+```
+
+### 12.4 Operateurs bit a bit
+
+| Operateur | Python | C/Java | Description |
+|---|---|---|---|
+| ET | & | & | AND bit a bit |
+| OU | \| | \| | OR bit a bit |
+| XOR | ^ | ^ | XOR bit a bit |
+| NON | ~ | ~ | Complement a 1 |
+| Decalage gauche | << | << | Multiplie par 2^n |
+| Decalage droite | >> | >> | Divise par 2^n |
+
+**Exemple complet :**
+
+```python
+a = 0b1100   # 12
+b = 0b1010   # 10
+
+print(bin(a & b))   # 0b1000 = 8
+print(bin(a | b))   # 0b1110 = 14
+print(bin(a ^ b))   # 0b0110 = 6
+print(bin(~a))      # -0b1101 (complement a deux)
+print(bin(a << 2))  # 0b110000 = 48
+print(bin(a >> 1))  # 0b110 = 6
+```
+
+---
+
+## 13. Exercices corriges
+
+### Exercice 1 : Table de verite
+
+Construire la table de verite de F = (a => b) ET (b => a).
+
+**Correction :**
+
+| a | b | a => b | b => a | F |
+|---|---|---|---|---|
+| 0 | 0 | 1 | 1 | 1 |
+| 0 | 1 | 1 | 0 | 0 |
+| 1 | 0 | 0 | 1 | 0 |
+| 1 | 1 | 1 | 1 | 1 |
+
+Conclusion : F = a <=> b. L'equivalence est la conjonction des deux implications.
+
+---
+
+### Exercice 2 : Tautologie ou non ?
+
+Montrer que F = (a => b) OU (b => a) est une tautologie.
+
+**Correction :**
+
+| a | b | a => b | b => a | F |
+|---|---|---|---|---|
+| 0 | 0 | 1 | 1 | 1 |
+| 0 | 1 | 1 | 0 | 1 |
+| 1 | 0 | 0 | 1 | 1 |
+| 1 | 1 | 1 | 1 | 1 |
+
+F vaut 1 pour toutes les combinaisons. C'est une tautologie.
+
+---
+
+### Exercice 3 : Simplification algebrique
+
+Simplifier F = a.b.c + a.b.NON c + a.NON b.c.
+
+**Correction :**
+
+```
+F = a.b.c + a.b.NON c + a.NON b.c
+  = a.b.(c + NON c) + a.NON b.c          [distributivite, factorisation par a.b]
+  = a.b.1 + a.NON b.c                    [complementarite]
+  = a.b + a.NON b.c                      [element neutre]
+  = a.(b + NON b.c)                      [distributivite, factorisation par a]
+  = a.((b + NON b).(b + c))              [distributivite de OU sur ET]
+  = a.(1.(b + c))                        [complementarite]
+  = a.(b + c)                            [element neutre]
+```
+
+**F = a.b + a.c**
+
+---
+
+### Exercice 4 : Lois de De Morgan
+
+Simplifier F = NON(NON a . b + a . NON b).
+
+**Correction :**
+
+```
+F = NON(NON a . b + a . NON b)
+  = NON(NON a . b) . NON(a . NON b)                  [De Morgan sur le OU]
+  = (NON(NON a) + NON b) . (NON a + NON(NON b))      [De Morgan sur chaque ET]
+  = (a + NON b) . (NON a + b)                         [involution]
+```
+
+Developpons :
+```
+  = a.NON a + a.b + NON b.NON a + NON b.b            [distributivite]
+  = 0 + a.b + NON a.NON b + 0                        [complementarite]
+  = a.b + NON a.NON b
+```
+
+**F = a.b + NON a . NON b** (c'est l'equivalence a <=> b, autrement dit NON(a XOR b)).
+
+---
+
+### Exercice 5 : Karnaugh 2 variables
+
+Simplifier par Karnaugh : F(a,b) = Somme(0, 1, 3).
+
+**Correction :**
+
+```
+         b=0    b=1
+  a=0  |  1   |  1   |
+  a=1  |  0   |  1   |
+```
+
+Groupe G1 (taille 2) : cases (a=0, b=0) et (a=0, b=1). Variable constante : a=0. Terme : NON a.
+
+Groupe G2 (taille 2) : cases (a=0, b=1) et (a=1, b=1). Variable constante : b=1. Terme : b.
+
+La case (a=0, b=1) est couverte par les deux groupes (chevauchement autorise).
+
+**F = NON a + b**
+
+---
+
+### Exercice 6 : Karnaugh 3 variables
+
+Simplifier par Karnaugh : F(a,b,c) = Somme(0, 1, 2, 4, 5).
+
+**Correction :**
+
+```
+            bc=00  bc=01  bc=11  bc=10
+  a=0      |  1   |  1   |  1   |  1   |
+  a=1      |  1   |  1   |  0   |  0   |
+```
+
+Groupe G1 (taille 4) : toute la ligne a=0. Variables constantes : a=0. Terme : NON a.
+
+Groupe G2 (taille 2) : cases (a=0, bc=00) et (a=1, bc=00), plus (a=0, bc=01) et (a=1, bc=01).
+
+Attendons, reorganisons. Cases contenant 1 : indices 0(000), 1(001), 2(010), 4(100), 5(101).
+
+```
+            bc=00  bc=01  bc=11  bc=10
+  a=0      |  1   |  1   |  1   |  1   |
+  a=1      |  1   |  1   |  0   |  0   |
+```
+
+Groupe G1 (taille 4) : ligne a=0 entiere. Terme : NON a.
+
+Groupe G2 (taille 4) : colonnes bc=00 et bc=01 (les deux lignes). Dans ces 4 cases : a varie, b varie, c=0 constant. Terme : NON c.
+
+Attendons : bc=00 signifie b=0,c=0 et bc=01 signifie b=0,c=1. Non, verifions.
+
+bc=00 : b=0, c=0. bc=01 : b=0, c=1. bc=11 : b=1, c=1. bc=10 : b=1, c=0.
+
+Cases de G2 : (a=0,b=0,c=0), (a=0,b=0,c=1), (a=1,b=0,c=0), (a=1,b=0,c=1). Variable constante : b=0. Terme : NON b.
+
+Verification : NON a couvre 0,1,2,3 (mais 3=011 vaut 1, oui). NON b couvre 0,1,4,5. Tous les 1 couverts : 0(G1,G2), 1(G1,G2), 2(G1), 4(G2), 5(G2). Indice 3 (a=0,b=1,c=1) : G1 le couvre (F=1, oui c'est bc=11 a=0).
+
+Attendons, l'indice 3 (011) vaut-il 1 ? L'enonce dit Somme(0,1,2,4,5). L'indice 3 n'est PAS dans la somme. Corrigeons le tableau.
+
+Indice 3 = abc = 011, donc a=0, b=1, c=1. Position : a=0, bc=11. Doit etre 0.
+
+```
+            bc=00  bc=01  bc=11  bc=10
+  a=0      |  1   |  1   |  0   |  1   |
+  a=1      |  1   |  1   |  0   |  0   |
+```
+
+Groupe G1 (taille 4) : colonnes bc=00 et bc=01 (deux lignes). a varie, b=0 constant, c varie. Attendons : bc=00 donne b=0,c=0 ; bc=01 donne b=0,c=1. Oui, b=0 constant, c varie, a varie. Terme : NON b.
+
+Groupe G2 (taille 2) : cases (a=0, bc=00) et (a=0, bc=10). Cela fait (0,0,0) et (0,1,0). Adjacence ? En Karnaugh, bc=00 et bc=10 sont adjacentes (colonne 1 et colonne 4, qui sont adjacentes car le tableau est cyclique). a=0 constant, b varie, c=0 constant. Terme : NON a . NON c.
+
+Verification : NON b couvre 0,1,4,5. NON a . NON c couvre 0,2. Union = {0,1,2,4,5}. Complet.
+
+**F = NON b + NON a . NON c**
+
+---
+
+### Exercice 7 : Karnaugh 4 variables
+
+Simplifier par Karnaugh : F(a,b,c,d) = Somme(0, 2, 5, 7, 8, 10, 13, 15).
+
+**Correction :**
+
+Placement (abcd) :
+
+- 0 = 0000 : ab=00, cd=00
+- 2 = 0010 : ab=00, cd=10
+- 5 = 0101 : ab=01, cd=01
+- 7 = 0111 : ab=01, cd=11
+- 8 = 1000 : ab=10, cd=00
+- 10 = 1010 : ab=10, cd=10
+- 13 = 1101 : ab=11, cd=01
+- 15 = 1111 : ab=11, cd=11
+
+```
+              cd=00  cd=01  cd=11  cd=10
+  ab=00      |  1   |  0   |  0   |  1   |
+  ab=01      |  0   |  1   |  1   |  0   |
+  ab=11      |  0   |  1   |  1   |  0   |
+  ab=10      |  1   |  0   |  0   |  1   |
+```
+
+Groupe G1 (taille 4) : cases (ab=00,cd=00), (ab=00,cd=10), (ab=10,cd=00), (ab=10,cd=10).
+- b=0 constant, d=0 constant. a et c varient.
+- Terme : NON b . NON d.
+
+Groupe G2 (taille 4) : cases (ab=01,cd=01), (ab=01,cd=11), (ab=11,cd=01), (ab=11,cd=11).
+- b=1 constant, d=1 constant. a et c varient.
+- Terme : b . d.
+
+Verification : G1 couvre {0,2,8,10}, G2 couvre {5,7,13,15}. Union = tous les 1. Complet.
+
+**F = NON b . NON d + b . d**
+
+Observation : c'est l'equivalence b <=> d, autrement dit NON(b XOR d).
+
+---
+
+### Exercice 8 : Simplification algebrique avancee
+
+Simplifier F = NON a.NON b.NON c + NON a.b.NON c + a.NON b.NON c + a.b.NON c.
+
+**Correction :**
+
+```
+F = NON a.NON b.NON c + NON a.b.NON c + a.NON b.NON c + a.b.NON c
+  = NON a.NON c.(NON b + b) + a.NON c.(NON b + b)    [distributivite, deux factorisations]
+  = NON a.NON c.1 + a.NON c.1                         [complementarite]
+  = NON a.NON c + a.NON c                             [element neutre]
+  = NON c.(NON a + a)                                 [distributivite]
+  = NON c.1                                           [complementarite]
+  = NON c                                             [element neutre]
+```
+
+**F = NON c**
+
+---
+
+### Exercice 9 : Forme canonique
+
+Soit F(a,b) = a + b. Ecrire F sous forme de somme de mintermes et de produit de maxtermes.
+
+**Correction :**
+
+Table de verite :
+
+| a | b | F |
+|---|---|---|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 1 |
+
+Somme de mintermes : F vaut 1 aux indices 1, 2, 3.
+F = m1 + m2 + m3 = NON a.b + a.NON b + a.b = Somme(1, 2, 3)
+
+Produit de maxtermes : F vaut 0 a l'indice 0.
+F = M0 = a + b = Produit(0)
+
+Remarque : dans ce cas, le produit de maxtermes est directement l'expression minimale.
+
+---
+
+### Exercice 10 : Circuit demi-additionneur
+
+Donner l'expression booleenne et la table de verite du demi-additionneur, puis le dessiner avec des portes logiques.
+
+**Correction :**
+
+Entrees : a, b. Sorties : S (somme), C (retenue).
+
+```
+S = a XOR b
+C = a AND b
+```
+
+| a | b | S | C |
+|---|---|---|---|
+| 0 | 0 | 0 | 0 |
+| 0 | 1 | 1 | 0 |
+| 1 | 0 | 1 | 0 |
+| 1 | 1 | 0 | 1 |
+
+Schema :
+```
+  a ----+-----[XOR]---- S
+        |       |
+  b ----+-------+
+        |
+        +-----[AND]---- C
+```
+
+Le circuit utilise exactement 2 portes : 1 XOR et 1 AND.
+
+---
+
+### Exercice 11 : Circuit avec portes NAND uniquement
+
+Realiser la fonction F = a + b en utilisant uniquement des portes NAND.
+
+**Correction :**
+
+On utilise De Morgan : a + b = NON(NON a . NON b).
+
+Or NON x = NAND(x, x) (une porte NAND avec les deux entrees reliees ensemble).
+
+Donc :
+- NON a = NAND(a, a)
+- NON b = NAND(b, b)
+- NON a . NON b : c'est l'entree du dernier NAND, et NAND(NON a, NON b) = NON(NON a . NON b) = a + b.
+
+Circuit :
+```
+  a ---[NAND]--- NON a ---\
+       (a,a)               [NAND]--- F = a + b
+  b ---[NAND]--- NON b ---/
+       (b,b)
+```
+
+Total : 3 portes NAND.
+
+---
+
+### Exercice 12 : Masque binaire
+
+On dispose du nombre n = 0b10110101 (181 en decimal). Effectuer les operations suivantes et donner le resultat en binaire et en decimal.
+
+a) Extraire les 4 bits de poids faible.
+b) Mettre a 1 les bits 4 et 5.
+c) Inverser le bit 7.
+d) Tester si le bit 2 est a 1.
+
+**Correction :**
+
+a) Masque = 0b00001111 (0x0F). Operation : AND.
+```
+  1011 0101
+& 0000 1111
+= 0000 0101 = 5
+```
+
+b) Masque = 0b00110000 (0x30). Operation : OR.
+```
+  1011 0101
+| 0011 0000
+= 1011 0101  (les bits 4 et 5 etaient deja 1 et 0)
+```
+Attendons, le bit 4 est le 5e en partant de 0 a droite.
+n = 1 0 1 1 0 1 0 1 (bits 7 6 5 4 3 2 1 0).
+Bit 4 = 0, bit 5 = 1.
+```
+  1011 0101
+| 0011 0000
+= 1011 0101
+```
+Non, recalculons : bit 5 = 1, bit 4 = 0.
+```
+  10110101
+| 00110000
+  --------
+  10110101
+```
+Bit 5 (position 5) du nombre : 1. Bit 4 (position 4) du nombre : 0.
+Le OR met a 1 : le bit 4 passe de 0 a 1.
+```
+  10110101  = 181
+| 00110000  = 48
+= 10110101... 
+```
+
+Recalculons proprement avec les positions :
+```
+Position : 7 6 5 4 3 2 1 0
+Nombre :   1 0 1 1 0 1 0 1
+Masque :   0 0 1 1 0 0 0 0
+OR :       1 0 1 1 0 1 0 1
+```
+Le bit 5 etait deja 1 et le bit 4 etait deja 1. Resultat inchange : 10110101 = 181.
+
+Attendons : position 4 = bit a la position 4. Nombre = 10110101. De droite a gauche : pos 0=1, 1=0, 2=1, 3=0, 4=1, 5=1, 6=0, 7=1. Donc bits 4 et 5 sont deja a 1. Resultat : 181 inchange.
+
+```
+Resultat : 0b10110101 = 181 (inchange, les bits 4 et 5 etaient deja a 1)
+```
+
+c) Masque = 0b10000000 (0x80). Operation : XOR.
+```
+Position : 7 6 5 4 3 2 1 0
+Nombre :   1 0 1 1 0 1 0 1
+Masque :   1 0 0 0 0 0 0 0
+XOR :      0 0 1 1 0 1 0 1 = 53
+```
+Le bit 7 passe de 1 a 0. Resultat : 0b00110101 = 53.
+
+d) Masque = 0b00000100 (4). Operation : AND puis test != 0.
+```
+Position : 7 6 5 4 3 2 1 0
+Nombre :   1 0 1 1 0 1 0 1
+Masque :   0 0 0 0 0 1 0 0
+AND :      0 0 0 0 0 1 0 0 = 4
+```
+Le resultat est 4 (non nul), donc le bit 2 est a 1. **Oui.**
+
+---
+
+### Exercice 13 : Permissions Unix
+
+Un fichier a les permissions 0o645. Determiner :
+a) Les droits en format rwx.
+b) Si le groupe a le droit d'execution.
+c) L'operation pour ajouter le droit d'execution au groupe.
+d) Le resultat en octal apres cette operation.
+
+**Correction :**
+
+a) 0o645 = 110 100 101 en binaire.
+- Proprietaire : 6 = 110 = rw-
+- Groupe : 4 = 100 = r--
+- Autres : 5 = 101 = r-x
+
+Format complet : rw-r--r-x
+
+b) Le groupe a les droits r-- (100). Le bit d'execution est a 0. **Non**, le groupe n'a pas le droit d'execution.
+
+c) Le droit d'execution du groupe correspond au bit 0o010.
+Operation : OR avec 0o010.
+
+```python
+new_perms = 0o645 | 0o010
+```
+
+d) 0o645 | 0o010 :
+```
+645 = 110 100 101
+010 = 000 001 000
+OR  = 110 101 101 = 655
+```
+
+Resultat : **0o655** (rw-r-xr-x).
+
+---
+
+### Exercice 14 : Simplification par Karnaugh 4 variables
+
+Simplifier par Karnaugh : F(a,b,c,d) = Somme(1, 3, 5, 7, 9, 11, 13, 15).
+
+**Correction :**
+
+Placement :
+
+- 1 = 0001 : ab=00, cd=01
+- 3 = 0011 : ab=00, cd=11
+- 5 = 0101 : ab=01, cd=01
+- 7 = 0111 : ab=01, cd=11
+- 9 = 1001 : ab=10, cd=01
+- 11 = 1011 : ab=10, cd=11
+- 13 = 1101 : ab=11, cd=01
+- 15 = 1111 : ab=11, cd=11
+
+```
+              cd=00  cd=01  cd=11  cd=10
+  ab=00      |  0   |  1   |  1   |  0   |
+  ab=01      |  0   |  1   |  1   |  0   |
+  ab=11      |  0   |  1   |  1   |  0   |
+  ab=10      |  0   |  1   |  1   |  0   |
+```
+
+Un seul groupe de 8 cases (les deux colonnes centrales). Variables constantes : d=1. Les variables a, b, c varient toutes.
+
+**F = d**
+
+Observation : tous les indices sont impairs, ce qui correspond exactement a d=1.
+
+---
+
+### Exercice 15 : Karnaugh avec simplification non triviale
+
+Simplifier par Karnaugh : F(a,b,c,d) = Somme(0, 1, 2, 4, 5, 6, 8, 9, 12, 13, 14).
+
+**Correction :**
+
+Placement :
+
+- 0=0000: ab=00,cd=00 | 1=0001: ab=00,cd=01 | 2=0010: ab=00,cd=10
+- 4=0100: ab=01,cd=00 | 5=0101: ab=01,cd=01 | 6=0110: ab=01,cd=10
+- 8=1000: ab=10,cd=00 | 9=1001: ab=10,cd=01
+- 12=1100: ab=11,cd=00 | 13=1101: ab=11,cd=01 | 14=1110: ab=11,cd=10
+
+```
+              cd=00  cd=01  cd=11  cd=10
+  ab=00      |  1   |  1   |  0   |  1   |
+  ab=01      |  1   |  1   |  0   |  1   |
+  ab=11      |  1   |  1   |  0   |  1   |
+  ab=10      |  1   |  1   |  0   |  0   |
+```
+
+Les 0 sont aux positions : 3(0011), 7(0111), 10(1010), 11(1011), 15(1111).
+
+Groupe G1 (taille 8) : colonne cd=00 (4 cases) + colonne cd=01 (4 cases). Variables constantes : c=0. a et b varient, d varie.
+Terme : NON c.
+
+Groupe G2 (taille 4) : colonne cd=10, lignes ab=00, ab=01, ab=11. Ce sont les cases (00,10), (01,10), (11,10). Mais 3 cases ne forment pas une puissance de 2. Cherchons autrement.
+
+Cases restantes non couvertes par G1 : (ab=00,cd=10), (ab=01,cd=10), (ab=11,cd=10). Ce sont les indices 2, 6, 14.
+
+Groupe G2 (taille 4) : cases (ab=00,cd=10), (ab=01,cd=10), (ab=11,cd=10), (ab=10,cd=10).
+Mais (ab=10,cd=10) = indice 10, qui vaut 0. On ne peut pas l'inclure.
+
+Groupe G2 (taille 2) : cases (ab=00,cd=10) et (ab=01,cd=10). Indices 2 et 6. a=0, b varie, c=1, d=0. Terme : NON a . c . NON d.
+
+Groupe G3 (taille 2) : cases (ab=01,cd=10) et (ab=11,cd=10). Indices 6 et 14. a varie, b=1, c=1, d=0. Terme : b . c . NON d.
+
+Mais cherchons des groupes plus grands. Les cases avec 1 dans la colonne cd=10 sont aux lignes ab=00, ab=01, ab=11. En Karnaugh, ab=00 et ab=01 sont adjacentes, ab=01 et ab=11 sont adjacentes, mais ab=00 et ab=11 ne sont pas adjacentes (ab=00 est adjacent a ab=10 par toricite).
+
+Groupe G2 (taille 4) : cases (ab=00,cd=00), (ab=00,cd=10), (ab=01,cd=00), (ab=01,cd=10). Mais les cases cd=00 sont deja couvertes par G1. Ce n'est pas un probleme (chevauchement autorise) mais cela n'aide pas a couvrir les cases cd=10 de ab=11.
+
+Alternative : Groupe G2' (taille 4) : cases aux coins. (ab=00,cd=00), (ab=00,cd=10), (ab=11,cd=00), (ab=11,cd=10). Adjacence par toricite ? ab=00 et ab=10 sont adjacents (toricite), pas ab=00 et ab=11. Non, en Karnaugh 4x4, ab=00 (ligne 1) est adjacent a ab=01 (ligne 2) et ab=10 (ligne 4, par toricite). ab=11 (ligne 3) est adjacent a ab=01 (ligne 2) et ab=10 (ligne 4). Donc ab=00 et ab=11 ne sont PAS adjacents.
+
+Reprenons avec des groupes valides :
+
+G1 (taille 8) : toutes les cases des colonnes cd=00 et cd=01 = NON c. Couvre {0,1,4,5,8,9,12,13}.
+
+Reste a couvrir : {2, 6, 14} (colonne cd=10, lignes ab=00, ab=01, ab=11).
+
+G2 (taille 2) : (ab=00,cd=10) et (ab=01,cd=10). Indices 2 et 6. NON a . c . NON d.
+
+G3 (taille 2) : (ab=01,cd=10) et (ab=11,cd=10). Indices 6 et 14. b . c . NON d.
+
+Chevauchement sur l'indice 6 : autorise.
+
+**F = NON c + NON a . c . NON d + b . c . NON d**
+
+Simplifions algebriquement :
+```
+F = NON c + c . NON d . (NON a + b)
+```
+
+On peut encore simplifier par absorption. NON c + c.X = NON c + X quand on developpe :
+En fait NON c + c.NON d.(NON a + b) : par la regle a + NON a.b = a + b, on a :
+NON c + c.K = NON c + K seulement si... non, cette regle donne NON c + c.K = NON c + K.
+
+Verifions : NON c + c.K. Posons x = NON c. x + NON x.K = x + K (propriete demontreable).
+Preuve : x + K >= x + NON x.K (car K >= NON x.K). Et x + NON x.K = x + K par distributivite : (x + NON x).(x + K) = 1.(x+K) = x+K.
+
+Donc : F = NON c + NON d.(NON a + b).
+
+**F = NON c + NON a . NON d + b . NON d**
+
+Verifions cette expression sur les 16 combinaisons :
+- 0(0000): NON c=1. F=1. Correct.
+- 1(0001): NON c=1. F=1. Correct.
+- 2(0010): NON c=0, NON a.NON d=1.0=... a=0,d=0: NON a.NON d=1. F=1. Correct.
+- 3(0011): NON c=0, NON a.NON d=1.0=0 (d=1), b.NON d=0.0=0. F=0. Correct.
+- 4(0100): NON c=1. F=1. Correct.
+- 5(0101): NON c=1. F=1. Correct.
+- 6(0110): NON c=0, NON a.NON d=1.1=... a=0,d=0: NON a=1,NON d=1. F=1. Correct.
+- 7(0111): NON c=0, NON a.NON d=1.0=0, b.NON d=1.0=0. F=0. Correct.
+- 8(1000): NON c=1. F=1. Correct.
+- 9(1001): NON c=1. F=1. Correct.
+- 10(1010): NON c=0, NON a.NON d=0.1=0, b.NON d=0.1=0. F=0. Correct.
+- 11(1011): NON c=0, NON a=0, b=0. F=0. Correct.
+- 12(1100): NON c=1. F=1. Correct.
+- 13(1101): NON c=1. F=1. Correct.
+- 14(1110): NON c=0, NON a.NON d=0, b.NON d=1.1=1. F=1. Correct.
+- 15(1111): NON c=0, NON a=0, b.NON d=0. F=0. Correct.
+
+Verification reussie.
+
+**F = NON c + NON a . NON d + b . NON d**
+
+---
+
+### Exercice 16 : Multiplexeur
+
+Un multiplexeur 4 vers 1 a les entrees e0=1, e1=0, e2=1, e3=1 et les bits de selection s1, s0. Donner la sortie S pour chaque valeur de (s1, s0).
+
+**Correction :**
+
+Formule : S = NON s1.NON s0.e0 + NON s1.s0.e1 + s1.NON s0.e2 + s1.s0.e3
+
+Avec e0=1, e1=0, e2=1, e3=1 :
+
+S = NON s1.NON s0.1 + NON s1.s0.0 + s1.NON s0.1 + s1.s0.1
+S = NON s1.NON s0 + 0 + s1.NON s0 + s1.s0
+S = NON s1.NON s0 + s1.(NON s0 + s0)
+S = NON s1.NON s0 + s1
+S = NON s0 + s1 (par la regle x.y + NON x = y + NON x, ici avec x=s1, y=NON s0)
+
+Verifions : NON s0 + s1.
+
+| s1 | s0 | Entree selectionnee | Valeur | NON s0 + s1 |
+|---|---|---|---|---|
+| 0 | 0 | e0 | 1 | 1+0=1 |
+| 0 | 1 | e1 | 0 | 0+0=0 |
+| 1 | 0 | e2 | 1 | 1+1=1 |
+| 1 | 1 | e3 | 1 | 0+1=1 |
+
+Correct. **S = NON s0 + s1**
+
+---
+
+### Exercice 17 : Operateurs bit a bit en Python
+
+Calculer les resultats suivants et les donner en binaire et en decimal.
+
+a) 0b1101 & 0b1011
+b) 0b1101 | 0b1011
+c) 0b1101 ^ 0b1011
+d) 0b1101 << 2
+e) 0b1101 >> 1
+
+**Correction :**
+
+a) AND bit a bit :
+```
+  1101
+& 1011
+= 1001 = 9
+```
+
+b) OR bit a bit :
+```
+  1101
+| 1011
+= 1111 = 15
+```
+
+c) XOR bit a bit :
+```
+  1101
+^ 1011
+= 0110 = 6
+```
+
+d) Decalage a gauche de 2 positions :
+```
+1101 << 2 = 110100 = 52
+```
+Cela revient a multiplier par 2^2 = 4. Verification : 13 x 4 = 52.
+
+e) Decalage a droite de 1 position :
+```
+1101 >> 1 = 110 = 6
+```
+Cela revient a diviser par 2 (division entiere). Verification : 13 / 2 = 6 (reste 1, perdu).
+
+---
+
+### Exercice 18 : Equivalence entre formules
+
+Montrer par table de verite que a => b est equivalent a NON a + b.
+
+**Correction :**
+
+| a | b | a => b | NON a | NON a + b |
+|---|---|---|---|---|
+| 0 | 0 | 1 | 1 | 1 |
+| 0 | 1 | 1 | 1 | 1 |
+| 1 | 0 | 0 | 0 | 0 |
+| 1 | 1 | 1 | 0 | 1 |
+
+Les colonnes "a => b" et "NON a + b" sont identiques. CQFD.
+
+Cette equivalence est fondamentale : elle permet de transformer toute implication en une expression n'utilisant que NON et OU (ou NON et ET via De Morgan).
+
+---
+
+### Exercice 19 : Expression a partir d'une table de verite
+
+Soit la table de verite suivante. Trouver l'expression simplifiee de F.
+
+| a | b | c | F |
+|---|---|---|---|
+| 0 | 0 | 0 | 1 |
+| 0 | 0 | 1 | 0 |
+| 0 | 1 | 0 | 1 |
+| 0 | 1 | 1 | 1 |
+| 1 | 0 | 0 | 1 |
+| 1 | 0 | 1 | 0 |
+| 1 | 1 | 0 | 1 |
+| 1 | 1 | 1 | 1 |
+
+**Correction :**
+
+F = Somme(0, 2, 3, 4, 6, 7)
+
+Karnaugh 3 variables :
+
+```
+            bc=00  bc=01  bc=11  bc=10
+  a=0      |  1   |  0   |  1   |  1   |
+  a=1      |  1   |  0   |  1   |  1   |
+```
+
+Groupe G1 (taille 4) : colonnes bc=11 et bc=10 (les deux lignes). b=1, a et c varient. Terme : b.
+
+Attendons : bc=11 signifie b=1,c=1 et bc=10 signifie b=1,c=0. Oui, b=1 constant.
+
+Groupe G2 (taille 4) : colonnes bc=00 et bc=10 (les deux lignes). Dans bc=00 : b=0,c=0. Dans bc=10 : b=1,c=0. Donc c=0 constant, b varie, a varie. Terme : NON c.
+
+Verification : b couvre {2,3,6,7}. NON c couvre {0,2,4,6}. Union = {0,2,3,4,6,7}. Complet.
+
+**F = b + NON c**
+
+Verification rapide : F=0 seulement quand b=0 ET c=1, soit aux indices 1 et 5. C'est bien le cas.
+
+---
+
+## 14. Recapitulatif des formules essentielles
+
+```
+NON (NON a) = a
+a + 0 = a                    a . 1 = a
+a + 1 = 1                    a . 0 = 0
+a + a = a                    a . a = a
+a + NON a = 1                a . NON a = 0
+a + b = b + a                a . b = b . a
+(a+b)+c = a+(b+c)            (a.b).c = a.(b.c)
+a.(b+c) = a.b + a.c          a+(b.c) = (a+b).(a+c)
+a + a.b = a                  a.(a+b) = a
+NON(a+b) = NON a . NON b     NON(a.b) = NON a + NON b
+a => b = NON a + b
+a <=> b = a.b + NON a.NON b
+a XOR b = a.NON b + NON a.b
+```
+
+---
+
+## 15. Methode de resolution type examen
+
+Face a un exercice de logique booleenne au BTS SIO, suivre cette demarche :
+
+**1. Identifier le type de probleme** : simplification, table de verite, Karnaugh, circuit.
+
+**2. Si on demande une table de verite** :
+- Compter les variables (n).
+- Faire 2^n lignes.
+- Colonnes intermediaires pour chaque sous-expression.
+- Calculer methodiquement de gauche a droite.
+
+**3. Si on demande une simplification algebrique** :
+- Ecrire l'expression de depart.
+- Chercher des factorisations (termes communs).
+- Appliquer complementarite (x + NON x = 1, x . NON x = 0).
+- Appliquer absorption (a + a.b = a).
+- Appliquer De Morgan si necessaire.
+- Justifier CHAQUE etape par le nom de la loi.
+
+**4. Si on demande une simplification par Karnaugh** :
+- Dessiner le tableau avec le code de Gray.
+- Placer les 1 correctement (attention a la correspondance indice / position).
+- Former les groupes les plus grands possibles.
+- Extraire les termes (variables constantes).
+- Ecrire la somme des termes.
+
+**5. Si on demande un circuit** :
+- Partir de l'expression booleenne.
+- Dessiner une porte pour chaque operateur.
+- Connecter les entrees et sorties.
+- Verifier avec la table de verite.
