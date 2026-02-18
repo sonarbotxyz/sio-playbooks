@@ -3,10 +3,14 @@ import { getAllGuides, getAllCategories } from '../../lib/guides'
 import { getCategoryColor, CATEGORY_ORDER } from '../../lib/types'
 import { GuideCard } from '@/components/GuideCard'
 
+const SLAM_CATS = ['Fondamentaux', 'Programmation', 'Bases de donnees', 'Architecture', 'Qualite et Securite', 'Mathematiques']
+const SISR_CATS = ['Fondamentaux', 'Reseaux', 'Systemes', 'Virtualisation', 'Securite', 'Exploitation', 'Mathematiques']
+
 export default function HomePage() {
   const guides = getAllGuides()
-  const totalMinutes = guides.reduce((sum, g) => sum + parseInt(g.readTime), 0)
-  const totalHours = Math.round(totalMinutes / 60)
+  const slamMinutes = guides.filter(g => SLAM_CATS.includes(g.frontmatter.category)).reduce((s, g) => s + parseInt(g.readTime), 0)
+  const sisrMinutes = guides.filter(g => SISR_CATS.includes(g.frontmatter.category)).reduce((s, g) => s + parseInt(g.readTime), 0)
+  const totalHours = Math.round(Math.max(slamMinutes, sisrMinutes) / 60)
   const categories = getAllCategories().sort((a, b) => {
     const ai = CATEGORY_ORDER.indexOf(a)
     const bi = CATEGORY_ORDER.indexOf(b)
@@ -34,11 +38,14 @@ export default function HomePage() {
         <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-base-blue/4 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="relative z-10 text-center px-4 sm:px-6 py-24 max-w-3xl mx-auto">
-          <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white tracking-tight leading-[1.05] mb-6 animate-fade-up" style={{ animationDelay: '0.2s', opacity: 0 }}>
-            <span className="gradient-text">{totalHours} heures</span>
-            <br />
-            pour maitriser ton BTS SIO.
-          </h1>
+          <div className="animate-fade-up" style={{ animationDelay: '0.2s', opacity: 0 }}>
+            <div className="font-display font-extrabold text-6xl sm:text-7xl md:text-8xl lg:text-9xl tracking-tight leading-none mb-4">
+              <span className="gradient-text">{totalHours}h</span>
+            </div>
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl md:text-4xl text-white tracking-tight leading-tight mb-6">
+              pour reussir ton BTS SIO.
+            </h1>
+          </div>
 
           <p className="text-lg sm:text-xl text-dark-200 max-w-xl mx-auto leading-relaxed mb-10 animate-fade-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
             {guides.length} playbooks. SLAM, SISR, maths, droit.
