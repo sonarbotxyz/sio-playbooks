@@ -1,0 +1,2463 @@
+---
+title: "Cybersécurité infrastructure"
+description: "Pare-feu pfSense, VPN, proxy, IDS/IPS, certificats SSL/TLS, PKI, durcissement des systèmes"
+category: "Sécurité"
+tags: ["cybersécurité", "pare-feu", "vpn", "pfsense", "ssl", "ids", "durcissement"]
+difficulty: "Avancé"
+---
+
+# Cybersécurité infrastructure
+
+Ce playbook couvre l'ensemble des connaissances requises en sécurité des infrastructures pour le BTS SIO option SISR. Il constitue une référence exhaustive allant des fondamentaux théoriques aux configurations pratiques.
+
+---
+
+## Table des matières
+
+1. [Menaces et vulnérabilités](#1-menaces-et-vulnérabilités)
+2. [Principes de sécurité](#2-principes-de-sécurité)
+3. [Pare-feu : concepts et types](#3-pare-feu--concepts-et-types)
+4. [pfSense](#4-pfsense)
+5. [DMZ](#5-dmz)
+6. [VPN](#6-vpn)
+7. [OpenVPN en pratique](#7-openvpn-en-pratique)
+8. [Proxy et filtrage web](#8-proxy-et-filtrage-web)
+9. [IDS/IPS](#9-idsips)
+10. [Chiffrement](#10-chiffrement)
+11. [PKI et certificats](#11-pki-et-certificats)
+12. [SSL/TLS](#12-ssltls)
+13. [Durcissement des systèmes](#13-durcissement-des-systèmes)
+14. [Analyse de logs](#14-analyse-de-logs)
+15. [Wi-Fi sécurisé](#15-wi-fi-sécurisé)
+16. [Exercices corrigés](#16-exercices-corrigés)
+
+---
+
+## 1. Menaces et vulnérabilités
+
+### 1.1 Classification des menaces
+
+Les menaces pesant sur un système d'information se classent selon plusieurs axes :
+
+| Critère | Catégories |
+|---|---|
+| Origine | Externe (attaquant distant) / Interne (employé malveillant ou négligent) |
+| Intention | Volontaire (attaque ciblée) / Involontaire (erreur humaine) |
+| Cible | Réseau, système, application, données, utilisateur |
+
+### 1.2 Types d'attaques
+
+#### Attaques sur la disponibilité
+
+**DDoS (Distributed Denial of Service)** : attaque par déni de service distribué. Des milliers de machines compromises (botnet) envoient simultanément des requêtes vers une cible pour saturer ses ressources.
+
+- **Volumétrique** : saturation de la bande passante (UDP flood, amplification DNS/NTP). L'attaquant envoie des requêtes à des serveurs ouverts avec l'adresse IP source usurpée de la victime. Les réponses, bien plus volumineuses que les requêtes, submergent la cible.
+- **Protocolaire** : exploitation des faiblesses des protocoles (SYN flood, Ping of Death). Le SYN flood consiste à envoyer massivement des paquets TCP SYN sans jamais compléter le three-way handshake, épuisant la table des connexions du serveur.
+- **Applicative** : ciblage de la couche 7 (HTTP flood, Slowloris). Slowloris maintient ouvertes de nombreuses connexions HTTP en envoyant des en-têtes incomplets très lentement.
+
+Contre-mesures : limitation du débit (rate limiting), filtrage par géolocalisation, services anti-DDoS (Cloudflare, Arbor), SYN cookies.
+
+#### Attaques sur la confidentialité
+
+**Man-in-the-Middle (MITM)** : l'attaquant s'interpose entre deux parties communicantes pour intercepter ou modifier les échanges sans que les victimes ne s'en aperçoivent.
+
+Techniques courantes :
+- **ARP spoofing** : envoi de trames ARP falsifiées pour associer l'adresse MAC de l'attaquant à l'adresse IP de la passerelle. Tout le trafic du réseau local transite alors par la machine de l'attaquant.
+- **DNS spoofing** : modification des réponses DNS pour rediriger la victime vers un serveur contrôlé par l'attaquant.
+- **SSL stripping** : interception de la connexion HTTPS et rétrogradation vers HTTP. L'attaquant maintient une connexion HTTPS avec le serveur légitime mais communique en HTTP avec la victime.
+
+Contre-mesures : HTTPS systématique, HSTS, détection ARP (arpwatch), DNSSEC, 802.1X.
+
+**Sniffing** : écoute passive du trafic réseau à l'aide d'un analyseur de paquets (Wireshark, tcpdump). Particulièrement dangereux sur les réseaux non chiffrés et les réseaux Wi-Fi ouverts. Sur un réseau commuté, l'attaquant doit d'abord réaliser un ARP spoofing ou un MAC flooding pour recevoir le trafic des autres machines.
+
+Contre-mesures : chiffrement des communications (TLS, SSH, VPN), segmentation réseau, port security sur les commutateurs.
+
+#### Attaques sur l'authentification
+
+**Brute force** : essai systématique de toutes les combinaisons possibles de mots de passe. Variantes :
+- **Attaque par dictionnaire** : utilisation d'une liste de mots de passe courants.
+- **Credential stuffing** : réutilisation de couples identifiant/mot de passe issus de fuites de données.
+- **Password spraying** : test d'un petit nombre de mots de passe courants sur un grand nombre de comptes.
+
+Outils courants : Hydra, John the Ripper, Hashcat.
+
+Contre-mesures : politique de complexité des mots de passe, verrouillage de compte après N tentatives, fail2ban, authentification multifacteur (MFA).
+
+#### Attaques par ingénierie sociale
+
+**Phishing** : envoi de messages frauduleux (courriel, SMS) imitant une entité légitime pour inciter la victime à divulguer des informations sensibles ou à cliquer sur un lien malveillant.
+
+Variantes :
+- **Spear phishing** : attaque ciblée visant une personne ou un groupe précis.
+- **Whaling** : ciblage des dirigeants.
+- **Vishing** : phishing par téléphone.
+- **Smishing** : phishing par SMS.
+
+Contre-mesures : sensibilisation des utilisateurs, filtrage des courriels (SPF, DKIM, DMARC), signalement des messages suspects.
+
+#### Attaques par logiciel malveillant
+
+**Ransomware** (rançongiciel) : logiciel malveillant qui chiffre les fichiers de la victime et exige une rançon pour fournir la clé de déchiffrement. Propagation par pièces jointes, exploitation de vulnérabilités, ou mouvement latéral dans le réseau.
+
+Exemples : WannaCry (2017, exploitation d'EternalBlue sur SMBv1), NotPetya, LockBit.
+
+Contre-mesures : sauvegardes régulières déconnectées (règle 3-2-1), mises à jour de sécurité, segmentation réseau, EDR (Endpoint Detection and Response).
+
+#### Attaques par usurpation
+
+**Spoofing** : usurpation d'identité au niveau réseau.
+- **IP spoofing** : falsification de l'adresse IP source d'un paquet.
+- **MAC spoofing** : modification de l'adresse MAC d'une interface réseau.
+- **Mail spoofing** : falsification de l'expéditeur d'un courriel.
+
+Contre-mesures : filtrage en entrée (ingress filtering, BCP38), SPF/DKIM/DMARC, port security, 802.1X.
+
+### 1.3 Vulnérabilités courantes
+
+| Type | Exemples |
+|---|---|
+| Configuration | Services par défaut actifs, mots de passe par défaut, ports ouverts inutilement |
+| Logicielle | Failles non corrigées (CVE), buffer overflow, injection SQL |
+| Humaine | Mot de passe faible, clic sur lien malveillant, clé USB inconnue |
+| Physique | Accès non contrôlé aux locaux, câbles réseau accessibles |
+| Architecturale | Absence de segmentation, pas de redondance, absence de DMZ |
+
+### 1.4 Cadre réglementaire
+
+- **RGPD** : protection des données personnelles, obligation de notification en cas de violation.
+- **ANSSI** : Agence nationale de la sécurité des systèmes d'information, publie des guides et recommandations.
+- **PSSI** : Politique de Sécurité du Système d'Information, document interne définissant les règles de sécurité.
+- **ISO 27001** : norme internationale de gestion de la sécurité de l'information.
+
+---
+
+## 2. Principes de sécurité
+
+### 2.1 Triade CIA
+
+Les trois piliers fondamentaux de la sécurité de l'information :
+
+**Confidentialité** : garantir que l'information n'est accessible qu'aux personnes autorisées.
+- Mécanismes : chiffrement, contrôle d'accès, classification des données.
+
+**Intégrité** : garantir que l'information n'a pas été altérée de manière non autorisée.
+- Mécanismes : hachage, signatures numériques, contrôle de version, journalisation.
+
+**Disponibilité** : garantir que l'information et les services sont accessibles quand nécessaire.
+- Mécanismes : redondance, sauvegarde, plan de reprise d'activité (PRA), haute disponibilité.
+
+Propriétés complémentaires :
+- **Authentification** : vérification de l'identité d'un utilisateur ou d'un système.
+- **Non-répudiation** : impossibilité de nier avoir réalisé une action (signatures numériques, journaux).
+- **Traçabilité** : capacité à retrouver l'historique des actions (logs, audit).
+
+### 2.2 Défense en profondeur
+
+Principe consistant à superposer plusieurs couches de sécurité indépendantes. Si une couche est compromise, les suivantes continuent de protéger le système.
+
+Couches typiques (de l'extérieur vers l'intérieur) :
+
+1. **Périmètre physique** : contrôle d'accès aux locaux, vidéosurveillance.
+2. **Périmètre réseau** : pare-feu, IDS/IPS, segmentation (VLAN, DMZ).
+3. **Réseau interne** : ACL sur les commutateurs, 802.1X, NAC.
+4. **Hôte** : pare-feu local, antivirus/EDR, durcissement OS.
+5. **Application** : WAF, validation des entrées, gestion des sessions.
+6. **Données** : chiffrement, sauvegarde, DLP (Data Loss Prevention).
+7. **Utilisateur** : sensibilisation, authentification forte, moindre privilège.
+
+### 2.3 Principe du moindre privilège
+
+Chaque utilisateur, processus ou système ne doit disposer que des droits strictement nécessaires à l'accomplissement de ses tâches. Cela limite l'impact d'une compromission.
+
+Applications pratiques :
+- Comptes utilisateurs sans droits d'administration.
+- Comptes de service avec permissions restreintes.
+- Règles de pare-feu : tout ce qui n'est pas explicitement autorisé est interdit (deny by default).
+- Segmentation réseau : isolation des flux entre services.
+
+### 2.4 Autres principes
+
+- **Séparation des responsabilités** : aucune personne ne doit contrôler seule un processus critique de bout en bout.
+- **Fail-safe** : en cas de défaillance, le système doit se placer dans un état sécurisé (exemple : un pare-feu qui tombe doit bloquer tout le trafic, pas tout autoriser).
+- **Security by design** : intégrer la sécurité dès la conception, pas en tant qu'ajout ultérieur.
+- **KISS (Keep It Simple)** : un système simple est plus facile à sécuriser et à auditer.
+
+---
+
+## 3. Pare-feu : concepts et types
+
+### 3.1 Définition
+
+Un pare-feu (firewall) est un dispositif matériel ou logiciel qui filtre le trafic réseau entre deux zones de confiance différente selon un ensemble de règles prédéfinies.
+
+### 3.2 Types de pare-feu
+
+#### Pare-feu sans état (stateless)
+
+Filtre chaque paquet individuellement en se basant uniquement sur les en-têtes (adresse IP source/destination, port source/destination, protocole). Ne conserve aucune information sur les connexions en cours.
+
+Caractéristiques :
+- Rapide (traitement paquet par paquet).
+- Ne peut pas distinguer un paquet de réponse légitime d'un paquet non sollicité.
+- Nécessite des règles explicites pour le trafic retour.
+- Utilisé principalement sur les routeurs (ACL Cisco).
+
+Exemple de règle ACL Cisco :
+
+```
+access-list 100 permit tcp 192.168.1.0 0.0.0.255 any eq 80
+access-list 100 permit tcp any eq 80 192.168.1.0 0.0.0.255 established
+access-list 100 deny ip any any
+```
+
+#### Pare-feu à état (stateful)
+
+Maintient une table des connexions actives (state table). Chaque nouveau flux est vérifié par les règles ; les paquets appartenant à une connexion déjà autorisée sont acceptés automatiquement.
+
+Caractéristiques :
+- Plus sécurisé que le stateless : seuls les paquets appartenant à des connexions initiées légitimement sont acceptés.
+- Table de connexions consommatrice de mémoire.
+- Exemples : pfSense, iptables/nftables, Fortinet, Palo Alto.
+
+Fonctionnement simplifié :
+1. Un paquet SYN arrive de LAN vers WAN. Le pare-feu vérifie les règles. Si autorisé, il crée une entrée dans la table d'état.
+2. Le paquet SYN-ACK de retour est automatiquement autorisé car il correspond à l'entrée dans la table.
+3. Les échanges suivants de cette connexion sont autorisés sans nouvelle vérification des règles.
+4. A la fermeture (FIN/RST) ou par timeout, l'entrée est supprimée.
+
+#### Pare-feu applicatif (proxy / couche 7)
+
+Analyse le contenu des paquets au niveau applicatif (couche 7 du modèle OSI). Capable d'inspecter le contenu HTTP, les requêtes DNS, les commandes FTP, etc.
+
+Caractéristiques :
+- Filtrage par URL, type MIME, mots-clés dans le contenu.
+- Déchiffrement SSL/TLS possible (inspection HTTPS).
+- Plus gourmand en ressources.
+- Exemples : WAF (Web Application Firewall), Squid, pfSense avec packages.
+
+#### Pare-feu nouvelle génération (NGFW)
+
+Combine les fonctionnalités d'un pare-feu stateful avec l'inspection applicative, l'IDS/IPS, l'antivirus, le filtrage URL et le contrôle applicatif.
+
+Exemples : Fortinet FortiGate, Palo Alto, Check Point.
+
+### 3.3 Zones de sécurité
+
+Un pare-feu segmente le réseau en zones de niveaux de confiance différents :
+
+| Zone | Description | Niveau de confiance |
+|---|---|---|
+| **LAN** | Réseau interne de l'organisation | Elevé |
+| **WAN** | Internet, réseau externe | Aucun |
+| **DMZ** | Zone démilitarisée, serveurs accessibles depuis Internet | Intermédiaire |
+
+Règles de flux par défaut entre zones :
+
+| Source | Destination | Politique par défaut |
+|---|---|---|
+| LAN | WAN | Autorisé (avec NAT) |
+| LAN | DMZ | Autorisé (vers services spécifiques) |
+| WAN | DMZ | Autorisé (vers services publiés uniquement) |
+| WAN | LAN | Interdit |
+| DMZ | LAN | Interdit (sauf exceptions justifiées) |
+| DMZ | WAN | Restreint (mises à jour, DNS) |
+
+### 3.4 Règles de filtrage
+
+Une règle de pare-feu se compose des éléments suivants :
+
+| Champ | Description |
+|---|---|
+| Action | Pass (autoriser), Block (bloquer), Reject (bloquer avec notification) |
+| Interface | Interface réseau d'application de la règle |
+| Direction | Entrante (in) ou sortante (out) |
+| Protocole | TCP, UDP, ICMP, ou tout |
+| Source | Adresse IP/réseau source |
+| Port source | Port TCP/UDP source |
+| Destination | Adresse IP/réseau destination |
+| Port destination | Port TCP/UDP destination |
+| Options | Journalisation, gateway, schedule |
+
+Principes de rédaction des règles :
+- Les règles sont évaluées de haut en bas, la première correspondance s'applique.
+- Dernière règle implicite : deny all (tout ce qui n'est pas autorisé est bloqué).
+- Placer les règles les plus spécifiques en haut.
+- Documenter chaque règle (description).
+- Journaliser les règles de blocage pour la détection d'anomalies.
+
+---
+
+## 4. pfSense
+
+### 4.1 Présentation
+
+pfSense est une distribution FreeBSD spécialisée dans les fonctions de pare-feu et de routage. Open source (licence Apache 2.0 pour pfSense CE), elle offre via une interface web complète :
+
+- Pare-feu stateful
+- NAT (Network Address Translation)
+- VPN (OpenVPN, IPSec, WireGuard)
+- DHCP et DNS (Unbound, dnsmasq)
+- Haute disponibilité (CARP)
+- Extensibilité par packages (Squid, Snort, Suricata, ntopng, pfBlockerNG)
+
+### 4.2 Installation
+
+#### Prérequis matériels minimaux
+
+| Composant | Minimum | Recommandé |
+|---|---|---|
+| CPU | 64 bits, 500 MHz | Multi-coeur 1 GHz+ |
+| RAM | 1 Go | 4 Go+ (selon packages) |
+| Stockage | 8 Go | 32 Go+ SSD |
+| Interfaces réseau | 2 (WAN + LAN) | 3+ (WAN + LAN + DMZ) |
+
+#### Etapes d'installation
+
+1. Télécharger l'image ISO depuis le site officiel (netgate.com).
+2. Créer une clé USB bootable (Rufus, balenaEtcher) ou monter l'ISO dans la VM.
+3. Démarrer sur le support d'installation.
+4. Accepter les termes de licence.
+5. Choisir "Install pfSense".
+6. Sélectionner la disposition clavier.
+7. Choisir le partitionnement (Auto ZFS recommandé).
+8. Attendre la copie des fichiers et redémarrer.
+9. Assigner les interfaces réseau : WAN (em0), LAN (em1).
+10. L'interface LAN obtient par défaut l'adresse 192.168.1.1/24.
+
+#### Premier accès
+
+- Navigateur web : `https://192.168.1.1`
+- Identifiants par défaut : `admin` / `pfsense`
+- L'assistant de configuration (Setup Wizard) guide la configuration initiale :
+  - Nom d'hôte et domaine
+  - Serveurs DNS
+  - Configuration WAN (DHCP, PPPoE, IP statique)
+  - Configuration LAN
+  - Changement du mot de passe administrateur (obligatoire)
+
+### 4.3 Interface web
+
+L'interface se divise en menus principaux :
+
+| Menu | Fonctions |
+|---|---|
+| System | Configuration générale, utilisateurs, certificats, packages, mises à jour |
+| Interfaces | Configuration des interfaces réseau (IP, VLAN, activation) |
+| Firewall | Règles, NAT, aliases, schedules, traffic shaper |
+| Services | DHCP, DNS, NTP, SNMP, packages installés |
+| VPN | OpenVPN, IPSec, WireGuard |
+| Status | Tableau de bord, journaux, interfaces, trafic, connexions |
+| Diagnostics | Ping, traceroute, capture de paquets, table ARP, routes |
+
+### 4.4 Aliases
+
+Les aliases permettent de regrouper des adresses IP, des réseaux ou des ports sous un nom logique, facilitant la gestion des règles.
+
+Types d'aliases :
+- **Host(s)** : une ou plusieurs adresses IP.
+- **Network(s)** : un ou plusieurs sous-réseaux CIDR.
+- **Port(s)** : un ou plusieurs ports ou plages de ports.
+- **URL (IPs)** : liste d'adresses IP téléchargée depuis une URL.
+- **URL Table (IPs)** : idem mais chargé dans une table pf (plus performant pour les grandes listes).
+
+Exemples :
+
+```
+Alias : SERVEURS_DMZ
+Type  : Host(s)
+Valeur : 10.0.0.10, 10.0.0.11, 10.0.0.12
+
+Alias : PORTS_WEB
+Type  : Port(s)
+Valeur : 80, 443
+
+Alias : RFC1918
+Type  : Network(s)
+Valeur : 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+```
+
+### 4.5 Règles de filtrage dans pfSense
+
+Les règles s'appliquent par interface et sont évaluées sur le trafic **entrant** sur cette interface (par défaut).
+
+Navigation : Firewall > Rules > [Interface]
+
+Exemple de configuration type pour l'interface LAN :
+
+| # | Action | Protocole | Source | Port src | Destination | Port dst | Description |
+|---|---|---|---|---|---|---|---|
+| 1 | Pass | TCP | LAN net | * | SERVEURS_DMZ | 80, 443 | Accès web vers DMZ |
+| 2 | Pass | TCP/UDP | LAN net | * | * | 53 | DNS sortant |
+| 3 | Pass | TCP | LAN net | * | * | 80, 443 | Navigation web |
+| 4 | Pass | ICMP | LAN net | * | * | * | Ping sortant |
+| 5 | Block | * | * | * | * | * | Blocage implicite (par défaut) |
+
+Bonne pratique : désactiver la règle "anti-lockout" uniquement après avoir créé des règles d'accès d'administration explicites.
+
+### 4.6 NAT (Network Address Translation)
+
+pfSense gère plusieurs types de NAT :
+
+**NAT sortant (Outbound NAT)** : traduit les adresses privées en adresse publique pour accéder à Internet.
+
+- Mode automatique : pfSense crée automatiquement les règles pour les réseaux directement connectés.
+- Mode hybride : règles automatiques + règles manuelles.
+- Mode manuel : contrôle total.
+
+**NAT entrant (Port Forward)** : redirige le trafic entrant sur un port de l'adresse publique vers un serveur interne.
+
+Exemple : rediriger le port 443 du WAN vers le serveur web en DMZ.
+
+```
+Interface : WAN
+Protocole : TCP
+Dest. Address : WAN address
+Dest. Port : 443
+Redirect Target IP : 10.0.0.10
+Redirect Target Port : 443
+Description : HTTPS vers serveur web DMZ
+```
+
+pfSense crée automatiquement la règle de pare-feu associée (ou permet de la créer manuellement).
+
+**NAT 1:1** : association statique entre une adresse IP publique et une adresse IP privée. Tout le trafic destiné à l'IP publique est redirigé vers l'IP privée et inversement.
+
+### 4.7 Schedules
+
+Les schedules permettent d'appliquer des règles de pare-feu uniquement pendant certaines plages horaires.
+
+Cas d'utilisation : autoriser l'accès Internet uniquement pendant les heures de bureau (8h-18h, lundi-vendredi).
+
+Configuration : Firewall > Schedules > Add, puis associer le schedule à une règle via le champ "Schedule" dans les options avancées de la règle.
+
+---
+
+## 5. DMZ
+
+### 5.1 Concept
+
+La DMZ (DeMilitarized Zone) est un sous-réseau isolé qui héberge les services accessibles depuis Internet tout en protégeant le réseau interne. Elle constitue une zone tampon entre le réseau externe (WAN) et le réseau interne (LAN).
+
+### 5.2 Architecture
+
+#### Architecture à un pare-feu (trois pattes)
+
+Le pare-feu dispose de trois interfaces : WAN, LAN, DMZ.
+
+```
+Internet
+    |
+  [WAN]
+    |
+[Pare-feu]---[DMZ : 10.0.0.0/24]
+    |              |
+  [LAN]      Serveur web
+192.168.1.0/24  Serveur mail
+                Serveur DNS public
+```
+
+Avantage : un seul équipement à gérer.
+Inconvénient : point unique de défaillance, si le pare-feu est compromis tout est exposé.
+
+#### Architecture à deux pare-feu
+
+Un pare-feu externe (frontal) filtre le trafic WAN vers DMZ. Un pare-feu interne filtre le trafic DMZ vers LAN. Idéalement de constructeurs différents pour éviter qu'une même vulnérabilité ne compromette les deux.
+
+```
+Internet
+    |
+[Pare-feu externe]
+    |
+  [DMZ]
+    |
+[Pare-feu interne]
+    |
+  [LAN]
+```
+
+### 5.3 Serveurs typiques en DMZ
+
+| Service | Port(s) | Rôle |
+|---|---|---|
+| Serveur web (Apache, Nginx) | 80, 443 | Site internet de l'organisation |
+| Serveur de messagerie (Postfix) | 25, 587, 993 | Réception/envoi de courriels |
+| Serveur DNS public (Bind) | 53 | Résolution des noms du domaine public |
+| Reverse proxy | 443 | Point d'entrée unique, répartition de charge |
+| Serveur FTP/SFTP | 21, 22 | Transfert de fichiers |
+
+### 5.4 Règles entre zones
+
+#### WAN vers DMZ
+
+Autoriser uniquement les ports des services publiés :
+
+```
+Pass TCP  WAN_net  -> DMZ_SERVEUR_WEB   port 443   (HTTPS)
+Pass TCP  WAN_net  -> DMZ_SERVEUR_MAIL  port 25    (SMTP entrant)
+Pass TCP  WAN_net  -> DMZ_DNS           port 53    (DNS)
+Pass UDP  WAN_net  -> DMZ_DNS           port 53    (DNS)
+Block *   WAN_net  -> DMZ_net           *          (tout le reste)
+```
+
+#### LAN vers DMZ
+
+Autoriser l'administration et l'accès aux services :
+
+```
+Pass TCP  LAN_net  -> DMZ_SERVEUR_WEB   port 443   (HTTPS)
+Pass TCP  LAN_net  -> DMZ_SERVEUR_WEB   port 22    (SSH admin)
+Pass TCP  LAN_net  -> DMZ_SERVEUR_MAIL  port 993   (IMAP)
+Block *   LAN_net  -> DMZ_net           *          (tout le reste)
+```
+
+#### DMZ vers LAN
+
+Par principe, la DMZ ne doit **jamais** initier de connexion vers le LAN, sauf exception justifiée et documentée :
+
+```
+Pass TCP  DMZ_SERVEUR_WEB  -> LAN_BDD  port 3306  (MySQL, si BDD interne)
+Block *   DMZ_net          -> LAN_net  *           (tout le reste)
+```
+
+Cette exception doit être limitée au strict minimum (adresse IP précise, port précis).
+
+#### DMZ vers WAN
+
+Restreindre aux besoins légitimes :
+
+```
+Pass TCP  DMZ_net  -> *  port 80, 443  (mises à jour)
+Pass UDP  DMZ_net  -> *  port 53       (résolution DNS)
+Pass TCP  DMZ_net  -> *  port 25       (envoi mail)
+Block *   DMZ_net  -> *  *             (tout le reste)
+```
+
+---
+
+## 6. VPN
+
+### 6.1 Concepts fondamentaux
+
+Un VPN (Virtual Private Network) crée un tunnel chiffré entre deux points à travers un réseau non sûr (Internet). Il permet :
+
+- **Confidentialité** : le trafic est chiffré, illisible pour un observateur.
+- **Authentification** : les extrémités du tunnel sont vérifiées.
+- **Intégrité** : toute modification du trafic en transit est détectée.
+
+### 6.2 Types de VPN
+
+#### VPN site-à-site (site-to-site)
+
+Relie deux réseaux distants de manière permanente. Configuré sur les pare-feu ou routeurs de chaque site. Transparent pour les utilisateurs.
+
+```
+[LAN Site A] --- [Pare-feu A] ===tunnel chiffré=== [Pare-feu B] --- [LAN Site B]
+ 192.168.1.0/24                   Internet                          192.168.2.0/24
+```
+
+Cas d'utilisation : interconnexion de sites géographiquement distants d'une même organisation.
+
+#### VPN client-à-site (client-to-site / remote access)
+
+Un utilisateur distant se connecte au réseau de l'entreprise via un client VPN installé sur son poste. Le tunnel est établi à la demande.
+
+```
+[Poste nomade] ===tunnel chiffré=== [Pare-feu/Serveur VPN] --- [LAN Entreprise]
+                    Internet
+```
+
+Cas d'utilisation : télétravail, accès aux ressources internes en déplacement.
+
+### 6.3 Protocoles VPN
+
+#### IPSec (Internet Protocol Security)
+
+Protocole standard (IETF) fonctionnant au niveau de la couche 3 (réseau). Compose deux sous-protocoles :
+
+- **AH (Authentication Header)** : authentification et intégrité, pas de chiffrement.
+- **ESP (Encapsulating Security Payload)** : chiffrement + authentification + intégrité. Le plus utilisé.
+
+Modes :
+- **Transport** : chiffre uniquement la charge utile (payload) du paquet IP. Utilisé entre deux hôtes.
+- **Tunnel** : encapsule et chiffre le paquet IP complet dans un nouveau paquet IP. Utilisé pour les VPN site-à-site.
+
+Phases de négociation (IKE - Internet Key Exchange) :
+- **Phase 1 (IKE SA)** : authentification mutuelle des pairs, négociation des paramètres de sécurité, échange de clés Diffie-Hellman. Résultat : un canal sécurisé pour la phase 2.
+- **Phase 2 (IPSec SA)** : négociation des paramètres du tunnel IPSec (algorithmes de chiffrement, durée de vie). Résultat : le tunnel opérationnel.
+
+Algorithmes courants :
+- Chiffrement : AES-128, AES-256
+- Hachage : SHA-256, SHA-384, SHA-512
+- Groupe DH : 14 (2048 bits), 19 (ECP 256), 20 (ECP 384)
+
+Ports et protocoles utilisés : UDP 500 (IKE), UDP 4500 (NAT-T), protocole IP 50 (ESP), protocole IP 51 (AH).
+
+#### OpenVPN
+
+Solution VPN open source basée sur SSL/TLS. Fonctionne en espace utilisateur (pas de module noyau nécessaire). Très flexible et largement déployé.
+
+Caractéristiques :
+- Utilise OpenSSL pour le chiffrement.
+- Fonctionne sur UDP (recommandé, port 1194) ou TCP (port 443 pour contourner les pare-feu).
+- Authentification par certificats (PKI), clé partagée, ou identifiant/mot de passe.
+- Supporte les modes TUN (couche 3, routage) et TAP (couche 2, pont).
+- Multiplateforme : Linux, Windows, macOS, Android, iOS.
+
+#### WireGuard
+
+Protocole VPN moderne, conçu pour être simple, performant et sécurisé. Intégré au noyau Linux depuis la version 5.6.
+
+Caractéristiques :
+- Code source minimal (environ 4 000 lignes contre des centaines de milliers pour OpenVPN ou IPSec).
+- Cryptographie moderne et fixe : Curve25519 (échange de clés), ChaCha20 (chiffrement), Poly1305 (authentification), BLAKE2s (hachage).
+- Très hautes performances (proche du débit natif).
+- Configuration simple par paires de clés publiques/privées.
+- UDP uniquement.
+- Pas de notion de connexion/déconnexion : le tunnel existe dès qu'un pair est configuré.
+
+### 6.4 Comparaison des protocoles
+
+| Critère | IPSec | OpenVPN | WireGuard |
+|---|---|---|---|
+| Couche OSI | 3 | 3-4 (TUN) ou 2 (TAP) | 3 |
+| Chiffrement | AES, 3DES | AES, ChaCha20 | ChaCha20 |
+| Performance | Bonne | Moyenne | Excellente |
+| Complexité | Elevée | Moyenne | Faible |
+| NAT traversal | NAT-T (UDP 4500) | Natif (UDP/TCP) | Natif (UDP) |
+| Intégration pfSense | Oui (natif) | Oui (natif) | Oui (package) |
+| Cas d'usage BTS SIO | Site-à-site | Client-à-site, site-à-site | Client-à-site |
+
+---
+
+## 7. OpenVPN en pratique
+
+### 7.1 Architecture PKI pour OpenVPN
+
+OpenVPN en mode certificat nécessite une infrastructure à clé publique (PKI) :
+
+```
+Autorité de certification (CA)
+    |
+    +-- Certificat serveur (signé par CA)
+    |
+    +-- Certificat client 1 (signé par CA)
+    |
+    +-- Certificat client 2 (signé par CA)
+    |
+    +-- Liste de révocation (CRL)
+```
+
+Chaque élément possède :
+- Une clé privée (à protéger absolument).
+- Un certificat (contenant la clé publique, signé par la CA).
+
+### 7.2 Configuration dans pfSense
+
+#### Etape 1 : Créer l'autorité de certification
+
+System > Cert. Manager > CAs > Add
+
+```
+Descriptive name : CA-VPN-Entreprise
+Method           : Create an Internal Certificate Authority
+Key type         : RSA
+Key length       : 4096
+Digest Algorithm : SHA256
+Lifetime         : 3650 jours (10 ans)
+Common Name      : CA-VPN-Entreprise
+Country          : FR
+```
+
+#### Etape 2 : Créer le certificat serveur
+
+System > Cert. Manager > Certificates > Add/Sign
+
+```
+Method           : Create an Internal Certificate
+Descriptive name : CERT-SERVEUR-VPN
+Certificate Authority : CA-VPN-Entreprise
+Key type         : RSA
+Key length       : 2048
+Digest Algorithm : SHA256
+Lifetime         : 825 jours
+Common Name      : vpn.entreprise.fr
+Certificate Type : Server Certificate
+```
+
+#### Etape 3 : Configurer le serveur OpenVPN
+
+VPN > OpenVPN > Servers > Add
+
+```
+Server mode      : Remote Access (SSL/TLS + User Auth)
+Backend          : Local Database
+Protocol         : UDP on IPv4 only
+Device mode      : tun - Layer 3 Tunnel Mode
+Interface        : WAN
+Local port       : 1194
+TLS Configuration : Use a TLS Key (auto-generate)
+Peer Certificate Authority : CA-VPN-Entreprise
+Server certificate : CERT-SERVEUR-VPN
+DH Parameter Length : 2048
+Encryption Algorithm : AES-256-GCM
+Auth digest algorithm : SHA256
+Tunnel Network   : 10.8.0.0/24
+Local Network    : 192.168.1.0/24
+Compression      : Omit Preference (no compression)
+DNS Server 1     : 192.168.1.1
+```
+
+#### Etape 4 : Créer les utilisateurs et certificats clients
+
+System > User Manager > Add
+
+Créer un utilisateur, puis lui attribuer un certificat :
+System > Cert. Manager > Certificates > Add/Sign
+
+```
+Method           : Create an Internal Certificate
+Descriptive name : CERT-CLIENT-DUPONT
+Certificate Authority : CA-VPN-Entreprise
+Key type         : RSA
+Key length       : 2048
+Certificate Type : User Certificate
+```
+
+#### Etape 5 : Règles de pare-feu
+
+Créer une règle sur l'interface WAN :
+
+```
+Action    : Pass
+Protocol  : UDP
+Source     : *
+Dest.     : WAN address
+Dest. port: 1194
+Description : OpenVPN entrant
+```
+
+Créer les règles sur l'interface OpenVPN :
+
+```
+Action    : Pass
+Protocol  : *
+Source     : OpenVPN net (10.8.0.0/24)
+Dest.     : LAN net (192.168.1.0/24)
+Description : Clients VPN vers LAN
+```
+
+#### Etape 6 : Exporter la configuration client
+
+Installer le package "openvpn-client-export" (System > Package Manager).
+
+VPN > OpenVPN > Client Export : télécharger le fichier .ovpn pour chaque utilisateur.
+
+### 7.3 Configuration manuelle (Linux)
+
+#### Serveur
+
+Fichier `/etc/openvpn/server/server.conf` :
+
+```
+port 1194
+proto udp
+dev tun
+ca /etc/openvpn/server/ca.crt
+cert /etc/openvpn/server/server.crt
+key /etc/openvpn/server/server.key
+dh /etc/openvpn/server/dh2048.pem
+tls-auth /etc/openvpn/server/ta.key 0
+server 10.8.0.0 255.255.255.0
+push "route 192.168.1.0 255.255.255.0"
+push "dhcp-option DNS 192.168.1.1"
+keepalive 10 120
+cipher AES-256-GCM
+auth SHA256
+user nobody
+group nogroup
+persist-key
+persist-tun
+status /var/log/openvpn-status.log
+log-append /var/log/openvpn.log
+verb 3
+```
+
+Activer le routage IP :
+
+```bash
+echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
+sysctl -p
+```
+
+Configurer le NAT (iptables) :
+
+```bash
+iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+```
+
+#### Client
+
+Fichier `client.ovpn` :
+
+```
+client
+dev tun
+proto udp
+remote vpn.entreprise.fr 1194
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+ca ca.crt
+cert client.crt
+key client.key
+tls-auth ta.key 1
+cipher AES-256-GCM
+auth SHA256
+verb 3
+```
+
+### 7.4 Split tunneling vs full tunneling
+
+- **Full tunneling** : tout le trafic du client passe par le VPN. Ajouter `push "redirect-gateway def1 bypass-dhcp"` dans la configuration serveur.
+- **Split tunneling** : seul le trafic destiné au réseau de l'entreprise passe par le VPN. Le reste sort directement par la connexion Internet du client. Configurer avec `push "route ..."`.
+
+---
+
+## 8. Proxy et filtrage web
+
+### 8.1 Concepts
+
+Un serveur proxy est un intermédiaire entre les clients et les serveurs web. Les requêtes des clients transitent par le proxy qui les transmet au serveur cible, puis renvoie la réponse au client.
+
+Fonctions :
+- **Filtrage** : bloquer l'accès à certains sites (catégories, URL, mots-clés).
+- **Cache** : stocker localement les contenus fréquemment consultés pour accélérer les accès et réduire la bande passante.
+- **Journalisation** : enregistrer tous les accès web (qui, quand, quoi).
+- **Authentification** : obliger les utilisateurs à s'identifier avant de naviguer.
+- **Anonymisation** : masquer l'adresse IP interne des clients.
+
+### 8.2 Types de proxy
+
+**Proxy explicite** : les navigateurs clients sont configurés pour utiliser le proxy (paramétrage manuel ou fichier PAC/WPAD). Le client sait qu'il passe par un proxy.
+
+**Proxy transparent** : le trafic HTTP (port 80) est intercepté et redirigé vers le proxy par le pare-feu, sans configuration sur le client. Le client ne sait pas qu'il passe par un proxy.
+
+Limitation du proxy transparent : l'interception HTTPS nécessite le déchiffrement SSL (MITM), ce qui impose le déploiement du certificat CA du proxy sur tous les postes clients.
+
+### 8.3 Squid
+
+Squid est le serveur proxy open source le plus utilisé. Disponible comme package pfSense.
+
+#### Installation dans pfSense
+
+System > Package Manager > Available Packages > squid > Install
+
+#### Configuration
+
+Services > Squid Proxy Server
+
+Onglet General :
+
+```
+Enable Squid Proxy     : coché
+Proxy Interface(s)     : LAN
+Proxy Port             : 3128
+Allow Users on Interface : coché
+Enable Logging         : coché
+Log Store Directory    : /var/squid/logs
+Visible Hostname       : proxy.entreprise.local
+```
+
+Onglet Local Cache :
+
+```
+Hard Disk Cache Size   : 500 (Mo)
+Cache Replacement Policy : Heap LFUDA
+```
+
+#### Mode transparent
+
+Onglet General :
+
+```
+Transparent HTTP Proxy : coché
+Transparent Proxy Interface(s) : LAN
+```
+
+pfSense redirige automatiquement le trafic HTTP (port 80) du LAN vers Squid.
+
+### 8.4 Filtrage URL avec SquidGuard
+
+SquidGuard est un redirecteur d'URL pour Squid, permettant un filtrage par catégories.
+
+Installation : System > Package Manager > squidGuard
+
+Configuration : Services > SquidGuard Proxy Filter
+
+#### Listes noires
+
+Onglet Blacklist :
+
+```
+Blacklist URL : http://dsi.ut-capitole.fr/blacklists/download/blacklists.tar.gz
+```
+
+Cliquer sur "Download" pour récupérer et appliquer les listes.
+
+#### Catégories disponibles (exemples)
+
+adult, agressif, audio-video, gambling, hacking, malware, phishing, porn, proxy, redirector, remote-control, social_networks, warez...
+
+#### ACL (Access Control Lists)
+
+Onglet Common ACL :
+
+```
+Target Rules :
+  [adult]           : deny
+  [malware]         : deny
+  [phishing]        : deny
+  [social_networks] : deny (ou allow selon la politique)
+  [Default access]  : allow
+```
+
+Redirect mode : afficher une page d'erreur personnalisée expliquant le blocage.
+
+### 8.5 Authentification
+
+Méthodes d'authentification Squid :
+
+- **Local** : base d'utilisateurs locale.
+- **LDAP** : interrogation d'un annuaire (Active Directory, OpenLDAP).
+- **RADIUS** : serveur d'authentification centralisé.
+
+Exemple de configuration LDAP dans Squid :
+
+```
+auth_param basic program /usr/lib/squid/basic_ldap_auth \
+  -b "dc=entreprise,dc=local" \
+  -D "cn=squid,ou=services,dc=entreprise,dc=local" \
+  -w "motdepasse" \
+  -f "sAMAccountName=%s" \
+  -h 192.168.1.10
+
+acl ldap_auth proxy_auth REQUIRED
+http_access allow ldap_auth
+```
+
+### 8.6 Analyse des logs
+
+Les logs Squid (`access.log`) contiennent une ligne par requête :
+
+```
+1708214400.123    342 192.168.1.50 TCP_MISS/200 15234 GET https://www.example.com/ - HIER_DIRECT/93.184.216.34 text/html
+```
+
+Décomposition :
+- Timestamp Unix
+- Durée de traitement (ms)
+- IP client
+- Code résultat (TCP_MISS = non trouvé en cache, TCP_HIT = servi depuis le cache)
+- Code HTTP de réponse
+- Taille de la réponse
+- Méthode HTTP
+- URL demandée
+
+Outils d'analyse : SARG (Squid Analysis Report Generator), Lightsquid, grep/awk pour l'analyse manuelle.
+
+---
+
+## 9. IDS/IPS
+
+### 9.1 Concepts
+
+**IDS (Intrusion Detection System)** : système de détection d'intrusion. Analyse le trafic réseau ou l'activité système et génère des alertes en cas de comportement suspect. N'agit pas sur le trafic (passif).
+
+**IPS (Intrusion Prevention System)** : système de prévention d'intrusion. Identique à l'IDS mais capable de bloquer automatiquement le trafic malveillant (actif).
+
+### 9.2 Types
+
+| Type | Emplacement | Analyse |
+|---|---|---|
+| NIDS/NIPS (Network) | Sur le réseau, en écoute sur un lien | Trafic réseau (paquets) |
+| HIDS/HIPS (Host) | Sur un hôte spécifique | Fichiers système, logs, processus |
+
+Exemples :
+- NIDS/NIPS : Snort, Suricata, Zeek (ex-Bro).
+- HIDS : OSSEC, Wazuh, Tripwire, AIDE.
+
+### 9.3 Méthodes de détection
+
+**Détection par signatures (misuse detection)** : comparaison du trafic avec une base de signatures d'attaques connues. Efficace contre les attaques connues, inefficace contre les attaques inédites (zero-day).
+
+**Détection par anomalies (anomaly detection)** : modélisation du comportement normal du réseau, puis détection des écarts. Peut détecter des attaques inconnues mais génère plus de faux positifs.
+
+**Détection par politique (policy-based)** : définition manuelle de règles décrivant les comportements interdits.
+
+### 9.4 Snort
+
+Snort est un IDS/IPS open source développé par Sourcefire (maintenant Cisco). C'est la référence historique dans le domaine.
+
+#### Modes de fonctionnement
+
+- **Sniffer** : capture et affiche les paquets (comme tcpdump).
+- **Packet Logger** : enregistre les paquets dans des fichiers.
+- **NIDS** : analyse le trafic en temps réel selon les règles et génère des alertes.
+- **IPS (inline)** : bloque le trafic malveillant en temps réel.
+
+#### Structure d'une règle Snort
+
+```
+action protocole IP_source port_source -> IP_dest port_dest (options;)
+```
+
+Exemple :
+
+```
+alert tcp $EXTERNAL_NET any -> $HOME_NET 22 (msg:"Tentative SSH brute force"; \
+  flow:to_server,established; \
+  threshold:type threshold, track by_src, count 5, seconds 60; \
+  classtype:attempted-admin; \
+  sid:1000001; rev:1;)
+```
+
+Décomposition :
+- `alert` : action (alert, log, pass, drop, reject).
+- `tcp` : protocole.
+- `$EXTERNAL_NET any` : source (variable et port).
+- `->` : direction (unidirectionnelle).
+- `$HOME_NET 22` : destination (réseau interne, port SSH).
+- Options entre parenthèses :
+  - `msg` : message d'alerte.
+  - `flow` : direction et état du flux.
+  - `threshold` : seuil de déclenchement (5 occurrences en 60 secondes).
+  - `classtype` : classification de l'attaque.
+  - `sid` : identifiant unique de la règle.
+  - `rev` : numéro de révision.
+
+#### Catégories de règles
+
+- **Community Rules** : gratuites, maintenues par la communauté.
+- **Registered Rules** : gratuites après inscription, publiées par Cisco Talos avec 30 jours de délai.
+- **Subscriber Rules** : payantes, accès immédiat aux dernières signatures.
+- **Emerging Threats** : règles gratuites maintenues par Proofpoint.
+
+### 9.5 Suricata
+
+Suricata est un IDS/IPS/NSM open source développé par l'OISF (Open Information Security Foundation). Compatible avec les règles Snort et offrant des fonctionnalités avancées.
+
+Avantages par rapport à Snort :
+- Multi-threading natif (meilleures performances sur matériel multi-coeur).
+- Inspection applicative native (HTTP, TLS, DNS, SMB, etc.).
+- Extraction de fichiers depuis les flux réseau.
+- Support EVE JSON (journalisation structurée).
+- Compatible avec les règles Snort.
+
+### 9.6 Déploiement dans pfSense
+
+Installation : System > Package Manager > suricata (ou snort)
+
+Configuration type : Services > Suricata
+
+#### Interfaces
+
+Ajouter les interfaces à surveiller (WAN et/ou LAN). Le choix dépend de l'objectif :
+- **WAN** : détecter les attaques venant d'Internet avant le NAT.
+- **LAN** : détecter les comportements suspects internes et le trafic non chiffré.
+
+#### Activation du mode IPS
+
+```
+IPS Mode          : Legacy Mode
+Block Offenders   : coché
+Kill States        : coché
+Which IP to Block : Both
+```
+
+En mode IPS, Suricata bloque automatiquement les adresses IP sources des alertes. Attention aux faux positifs pouvant provoquer des blocages légitimes.
+
+#### Gestion des alertes
+
+Services > Suricata > Alerts
+
+Les alertes affichent : date/heure, priorité, signature déclenchée, IP source, IP destination, protocole.
+
+Il est essentiel de :
+- Analyser régulièrement les alertes.
+- Supprimer les faux positifs (Suppress List).
+- Ajuster les seuils de détection.
+- Ne pas activer toutes les règles : sélectionner celles pertinentes pour l'environnement.
+
+---
+
+## 10. Chiffrement
+
+### 10.1 Chiffrement symétrique
+
+Un seul et même secret (clé) sert au chiffrement et au déchiffrement. L'expéditeur et le destinataire doivent partager cette clé secrète.
+
+```
+Texte clair --[clé K]--> Texte chiffré --[clé K]--> Texte clair
+```
+
+Avantages : rapide, adapté aux grands volumes de données.
+Inconvénient : le partage sécurisé de la clé est problématique (comment transmettre la clé sans qu'elle soit interceptée ?).
+
+#### AES (Advanced Encryption Standard)
+
+Standard actuel du chiffrement symétrique, adopté par le NIST en 2001. Remplace le DES.
+
+| Caractéristique | Valeur |
+|---|---|
+| Taille de bloc | 128 bits |
+| Tailles de clé | 128, 192 ou 256 bits |
+| Type | Chiffrement par bloc |
+| Sécurité | AES-256 considéré comme inviolable avec les moyens actuels |
+
+Modes de fonctionnement :
+- **ECB (Electronic Codebook)** : chaque bloc est chiffré indépendamment. Faible sécurité, ne pas utiliser.
+- **CBC (Cipher Block Chaining)** : chaque bloc est XOR avec le bloc chiffré précédent. Nécessite un vecteur d'initialisation (IV).
+- **GCM (Galois/Counter Mode)** : mode authentifié, combine chiffrement et vérification d'intégrité. Recommandé.
+
+### 10.2 Chiffrement asymétrique
+
+Deux clés mathématiquement liées : une clé publique (diffusée) et une clé privée (secrète). Ce que l'une chiffre, seule l'autre peut le déchiffrer.
+
+**Chiffrement** :
+```
+Texte clair --[clé publique du destinataire]--> Texte chiffré --[clé privée du destinataire]--> Texte clair
+```
+
+**Signature** :
+```
+Message --[clé privée de l'expéditeur]--> Signature
+Signature --[clé publique de l'expéditeur]--> Vérification
+```
+
+Avantage : pas besoin de partager de secret, la clé publique est distribuée librement.
+Inconvénient : beaucoup plus lent que le chiffrement symétrique (facteur 100 à 1000).
+
+#### RSA (Rivest-Shamir-Adleman)
+
+Algorithme asymétrique le plus répandu, basé sur la difficulté de factoriser le produit de deux grands nombres premiers.
+
+| Caractéristique | Valeur |
+|---|---|
+| Tailles de clé recommandées | 2048 bits (minimum), 4096 bits (recommandé) |
+| Usages | Chiffrement, signature numérique, échange de clés |
+| Sécurité | 2048 bits considéré sûr jusqu'en 2030 environ |
+
+#### ECDSA / ECDH (Elliptic Curve)
+
+Algorithmes basés sur les courbes elliptiques. A sécurité équivalente, les clés sont beaucoup plus courtes que RSA.
+
+| RSA | Courbe elliptique | Sécurité équivalente |
+|---|---|---|
+| 2048 bits | 224 bits | 112 bits |
+| 3072 bits | 256 bits | 128 bits |
+| 4096 bits | 384 bits | 192 bits |
+
+### 10.3 Hachage
+
+Une fonction de hachage transforme une donnée de taille quelconque en une empreinte (hash) de taille fixe. Propriétés essentielles :
+
+- **Déterministe** : la même entrée produit toujours la même empreinte.
+- **Irréversible** : impossible de retrouver l'entrée à partir de l'empreinte.
+- **Résistance aux collisions** : infaisable de trouver deux entrées différentes produisant la même empreinte.
+- **Effet avalanche** : une modification minime de l'entrée change radicalement l'empreinte.
+
+| Algorithme | Taille de sortie | Statut |
+|---|---|---|
+| MD5 | 128 bits | Obsolète, vulnérable aux collisions |
+| SHA-1 | 160 bits | Déprécié, collisions démontrées (2017) |
+| SHA-256 | 256 bits | Recommandé, famille SHA-2 |
+| SHA-3 | 256/512 bits | Standard récent, alternative à SHA-2 |
+
+Usages : vérification d'intégrité de fichiers, stockage de mots de passe (avec sel), signatures numériques, blockchain.
+
+Exemple :
+
+```bash
+echo -n "BTS SIO SISR" | sha256sum
+# Résultat : une empreinte de 64 caractères hexadécimaux (256 bits)
+```
+
+### 10.4 Signatures numériques
+
+La signature numérique combine hachage et chiffrement asymétrique pour garantir l'authentification, l'intégrité et la non-répudiation.
+
+Processus de signature :
+1. L'expéditeur calcule le hash du message (SHA-256).
+2. L'expéditeur chiffre ce hash avec sa clé privée : c'est la signature.
+3. L'expéditeur envoie le message + la signature.
+
+Processus de vérification :
+1. Le destinataire calcule le hash du message reçu.
+2. Le destinataire déchiffre la signature avec la clé publique de l'expéditeur.
+3. Si les deux hash correspondent, le message est authentique et intègre.
+
+### 10.5 Echange de clés Diffie-Hellman
+
+Protocole permettant à deux parties d'établir un secret partagé sur un canal non sécurisé, sans jamais transmettre ce secret.
+
+Principe simplifié :
+1. Alice et Bob conviennent publiquement d'un nombre premier `p` et d'un générateur `g`.
+2. Alice choisit un secret `a`, calcule `A = g^a mod p`, envoie A à Bob.
+3. Bob choisit un secret `b`, calcule `B = g^b mod p`, envoie B à Alice.
+4. Alice calcule `s = B^a mod p`.
+5. Bob calcule `s = A^b mod p`.
+6. Les deux obtiennent le même secret `s`, qui n'a jamais transité sur le réseau.
+
+Ce secret partagé est ensuite utilisé comme clé de chiffrement symétrique (AES).
+
+### 10.6 Chiffrement hybride
+
+En pratique, on combine chiffrement asymétrique et symétrique :
+1. Le chiffrement asymétrique (RSA, DH) est utilisé pour échanger une clé de session.
+2. Le chiffrement symétrique (AES) est utilisé pour chiffrer les données avec cette clé de session.
+
+C'est le principe utilisé par TLS, SSH, IPSec, PGP.
+
+---
+
+## 11. PKI et certificats
+
+### 11.1 Infrastructure à clé publique (PKI)
+
+Une PKI (Public Key Infrastructure) est l'ensemble des composants, procédures et politiques permettant de gérer les certificats numériques et les clés cryptographiques.
+
+Composants :
+
+| Composant | Rôle |
+|---|---|
+| CA (Certificate Authority) | Autorité de certification, signe les certificats |
+| RA (Registration Authority) | Autorité d'enregistrement, vérifie l'identité des demandeurs |
+| Certificat numérique | Document électronique liant une identité à une clé publique |
+| CRL (Certificate Revocation List) | Liste des certificats révoqués |
+| OCSP (Online Certificate Status Protocol) | Vérification en temps réel du statut d'un certificat |
+| Dépôt (Repository) | Stockage des certificats et CRL |
+
+### 11.2 Certificats X.509
+
+Le standard X.509 définit le format des certificats numériques. Un certificat contient :
+
+| Champ | Description |
+|---|---|
+| Version | V3 (la plus courante) |
+| Serial Number | Identifiant unique attribué par la CA |
+| Signature Algorithm | Algorithme utilisé par la CA pour signer (ex : SHA256withRSA) |
+| Issuer | Identité de la CA émettrice (DN) |
+| Validity | Dates de début et fin de validité |
+| Subject | Identité du titulaire (DN) |
+| Subject Public Key Info | Clé publique du titulaire et algorithme |
+| Extensions | Usage de la clé, SAN, contraintes |
+| Signature | Signature de la CA sur l'ensemble du certificat |
+
+Extensions importantes (V3) :
+- **Key Usage** : digitalSignature, keyEncipherment, etc.
+- **Extended Key Usage** : serverAuth, clientAuth, codeSigning, emailProtection.
+- **Subject Alternative Name (SAN)** : noms DNS et IP alternatifs couverts par le certificat.
+- **Basic Constraints** : indique si le certificat est une CA (CA:TRUE) ou non.
+
+### 11.3 CSR (Certificate Signing Request)
+
+Demande de signature de certificat. Le demandeur génère une paire de clés, puis crée un CSR contenant sa clé publique et son identité, signé avec sa clé privée.
+
+Génération d'un CSR avec OpenSSL :
+
+```bash
+# Générer la clé privée
+openssl genrsa -out serveur.key 2048
+
+# Générer le CSR
+openssl req -new -key serveur.key -out serveur.csr \
+  -subj "/C=FR/ST=Ile-de-France/L=Paris/O=Entreprise/CN=www.entreprise.fr"
+
+# Vérifier le contenu du CSR
+openssl req -in serveur.csr -text -noout
+```
+
+### 11.4 Chaîne de confiance
+
+La vérification d'un certificat remonte la chaîne de certification jusqu'à une CA racine de confiance :
+
+```
+CA Racine (auto-signée, stockée dans le navigateur/OS)
+    |
+    +-- CA Intermédiaire (signée par la CA Racine)
+            |
+            +-- Certificat du serveur (signé par la CA Intermédiaire)
+```
+
+Le navigateur vérifie :
+1. Le certificat du serveur est signé par la CA intermédiaire.
+2. Le certificat de la CA intermédiaire est signé par la CA racine.
+3. La CA racine est dans le magasin de certificats de confiance.
+4. Aucun certificat de la chaîne n'est expiré.
+5. Aucun certificat n'est révoqué (CRL ou OCSP).
+6. Le nom de domaine correspond au CN ou SAN du certificat.
+
+### 11.5 Révocation
+
+Un certificat peut être révoqué avant sa date d'expiration en cas de :
+- Compromission de la clé privée.
+- Changement d'affectation du titulaire.
+- Cessation d'activité.
+- Erreur dans le certificat.
+
+Mécanismes :
+- **CRL** : liste signée par la CA, publiée périodiquement, contenant les numéros de série des certificats révoqués. Inconvénient : mise à jour non instantanée.
+- **OCSP** : protocole de vérification en temps réel. Le client interroge un répondeur OCSP qui indique si le certificat est valide, révoqué ou inconnu.
+
+### 11.6 Création d'une CA interne avec OpenSSL
+
+```bash
+# Créer la clé privée de la CA
+openssl genrsa -aes256 -out ca.key 4096
+
+# Créer le certificat auto-signé de la CA (10 ans)
+openssl req -new -x509 -days 3650 -key ca.key -out ca.crt \
+  -subj "/C=FR/O=Entreprise/CN=CA Interne Entreprise"
+
+# Signer un CSR avec la CA
+openssl x509 -req -in serveur.csr -CA ca.crt -CAkey ca.key \
+  -CAcreateserial -out serveur.crt -days 825 -sha256
+
+# Créer une CRL vide
+openssl ca -gencrl -out ca.crl -config openssl.cnf
+
+# Révoquer un certificat
+openssl ca -revoke serveur.crt -config openssl.cnf
+openssl ca -gencrl -out ca.crl -config openssl.cnf
+```
+
+### 11.7 Let's Encrypt
+
+Autorité de certification gratuite et automatisée. Utilise le protocole ACME pour la validation de domaine et l'émission de certificats.
+
+- Certificats DV (Domain Validation) uniquement.
+- Durée de vie : 90 jours (renouvellement automatique via certbot ou acme.sh).
+- Intégration disponible dans pfSense via le package ACME.
+
+```bash
+# Installation et obtention d'un certificat avec certbot
+apt install certbot
+certbot certonly --standalone -d www.entreprise.fr
+
+# Renouvellement automatique
+certbot renew --dry-run
+```
+
+---
+
+## 12. SSL/TLS
+
+### 12.1 Présentation
+
+TLS (Transport Layer Security) est le protocole de sécurisation des communications sur Internet. Il succède à SSL (Secure Sockets Layer), aujourd'hui obsolète.
+
+| Version | Année | Statut |
+|---|---|---|
+| SSL 2.0 | 1995 | Obsolète, interdit (RFC 6176) |
+| SSL 3.0 | 1996 | Obsolète, vulnérable (POODLE) |
+| TLS 1.0 | 1999 | Déprécié (RFC 8996) |
+| TLS 1.1 | 2006 | Déprécié (RFC 8996) |
+| TLS 1.2 | 2008 | En usage, sécurisé avec bonne configuration |
+| TLS 1.3 | 2018 | Recommandé, version actuelle |
+
+### 12.2 Fonctionnement du handshake TLS 1.2
+
+Le handshake établit les paramètres de la session sécurisée :
+
+```
+Client                                      Serveur
+  |                                            |
+  |--- ClientHello --------------------------->|
+  |    (versions TLS, cipher suites,           |
+  |     random client)                         |
+  |                                            |
+  |<-- ServerHello ----------------------------|
+  |    (version TLS choisie, cipher suite,     |
+  |     random serveur)                        |
+  |<-- Certificate ----------------------------|
+  |    (certificat X.509 du serveur)           |
+  |<-- ServerKeyExchange ----------------------|
+  |    (paramètres DH si nécessaire)           |
+  |<-- ServerHelloDone ------------------------|
+  |                                            |
+  |--- ClientKeyExchange --------------------->|
+  |    (pre-master secret chiffré avec         |
+  |     la clé publique du serveur)            |
+  |--- ChangeCipherSpec ---------------------->|
+  |--- Finished (chiffré) ------------------->|
+  |                                            |
+  |<-- ChangeCipherSpec -----------------------|
+  |<-- Finished (chiffré) --------------------|
+  |                                            |
+  |<========= Données chiffrées =============>|
+```
+
+Etapes détaillées :
+1. **ClientHello** : le client envoie les versions TLS supportées, les suites cryptographiques proposées et un nombre aléatoire.
+2. **ServerHello** : le serveur choisit la version TLS et la suite cryptographique, envoie son nombre aléatoire.
+3. **Certificate** : le serveur envoie son certificat X.509 (contenant sa clé publique).
+4. **ServerKeyExchange** : (optionnel) paramètres pour l'échange de clés DH/ECDH.
+5. **ClientKeyExchange** : le client génère un pre-master secret, le chiffre avec la clé publique du serveur et l'envoie.
+6. Les deux parties calculent le master secret à partir du pre-master secret et des nombres aléatoires, puis dérivent les clés de session (chiffrement + MAC).
+7. **ChangeCipherSpec** + **Finished** : basculement vers le chiffrement et vérification mutuelle.
+
+### 12.3 Handshake TLS 1.3
+
+TLS 1.3 simplifie et accélère le handshake :
+
+- **1-RTT** : le handshake complet se fait en un seul aller-retour (contre deux pour TLS 1.2).
+- **0-RTT** : possibilité d'envoyer des données dès le premier message (reconnexion), au prix d'un risque de rejeu.
+- Suppression des suites cryptographiques obsolètes (RSA key exchange, CBC, RC4, SHA-1, DES, 3DES).
+- Echange de clés obligatoirement par (EC)DHE : Perfect Forward Secrecy garanti.
+
+Suites cryptographiques TLS 1.3 :
+- TLS_AES_256_GCM_SHA384
+- TLS_AES_128_GCM_SHA256
+- TLS_CHACHA20_POLY1305_SHA256
+
+### 12.4 Perfect Forward Secrecy (PFS)
+
+Propriété garantissant que la compromission d'une clé privée à long terme ne permet pas de déchiffrer les communications passées. Chaque session utilise des clés éphémères (DHE ou ECDHE) qui sont détruites après usage.
+
+Sans PFS : si l'attaquant capture le trafic chiffré et obtient plus tard la clé privée du serveur, il peut déchiffrer toutes les sessions passées.
+
+Avec PFS : chaque session utilise une paire de clés DH éphémère. Même avec la clé privée du serveur, les sessions passées restent protégées.
+
+### 12.5 Configuration sécurisée
+
+Recommandations de l'ANSSI et de Mozilla :
+
+**Profil moderne (recommandé)** :
+```
+Protocoles : TLS 1.3 uniquement
+Suites     : TLS_AES_256_GCM_SHA384, TLS_CHACHA20_POLY1305_SHA256
+```
+
+**Profil intermédiaire (compatibilité)** :
+```
+Protocoles : TLS 1.2, TLS 1.3
+Suites TLS 1.2 :
+  ECDHE-ECDSA-AES256-GCM-SHA384
+  ECDHE-RSA-AES256-GCM-SHA384
+  ECDHE-ECDSA-AES128-GCM-SHA256
+  ECDHE-RSA-AES128-GCM-SHA256
+```
+
+Configuration Nginx :
+
+```nginx
+ssl_protocols TLSv1.2 TLSv1.3;
+ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
+ssl_prefer_server_ciphers on;
+ssl_session_timeout 1d;
+ssl_session_cache shared:SSL:10m;
+ssl_stapling on;
+ssl_stapling_verify on;
+add_header Strict-Transport-Security "max-age=63072000" always;
+```
+
+Configuration Apache :
+
+```apache
+SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1
+SSLCipherSuite ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256
+SSLHonorCipherOrder on
+SSLCompression off
+SSLSessionTickets off
+Header always set Strict-Transport-Security "max-age=63072000"
+```
+
+### 12.6 HSTS (HTTP Strict Transport Security)
+
+En-tête HTTP indiquant au navigateur de toujours utiliser HTTPS pour le domaine concerné. Protège contre les attaques de type SSL stripping.
+
+```
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+```
+
+### 12.7 Outils de test
+
+- **SSL Labs (ssllabs.com/ssltest)** : analyse complète de la configuration TLS d'un serveur.
+- **testssl.sh** : outil en ligne de commande pour auditer la configuration TLS.
+- **nmap** : `nmap --script ssl-enum-ciphers -p 443 exemple.fr`
+- **openssl s_client** : `openssl s_client -connect exemple.fr:443 -tls1_3`
+
+---
+
+## 13. Durcissement des systèmes
+
+### 13.1 Principes
+
+Le durcissement (hardening) consiste à réduire la surface d'attaque d'un système en supprimant tout ce qui n'est pas nécessaire et en renforçant ce qui reste.
+
+### 13.2 Durcissement du système d'exploitation
+
+#### Gestion des services
+
+```bash
+# Lister les services actifs (Linux systemd)
+systemctl list-units --type=service --state=running
+
+# Désactiver un service inutile
+systemctl disable --now cups.service
+systemctl disable --now avahi-daemon.service
+systemctl disable --now bluetooth.service
+
+# Vérifier les ports en écoute
+ss -tlnp
+netstat -tlnp
+```
+
+Seuls les services strictement nécessaires doivent être actifs.
+
+#### Mises à jour
+
+```bash
+# Debian/Ubuntu
+apt update && apt upgrade -y
+
+# Configuration des mises à jour automatiques de sécurité
+apt install unattended-upgrades
+dpkg-reconfigure unattended-upgrades
+
+# CentOS/RHEL
+dnf update -y
+dnf install dnf-automatic
+systemctl enable --now dnf-automatic-install.timer
+```
+
+Appliquer les mises à jour de sécurité dans les plus brefs délais. Planifier les mises à jour majeures avec des fenêtres de maintenance.
+
+#### Politique de mots de passe
+
+Fichier `/etc/login.defs` (Linux) :
+
+```
+PASS_MAX_DAYS   90
+PASS_MIN_DAYS   1
+PASS_MIN_LEN    12
+PASS_WARN_AGE   14
+```
+
+Module PAM (`/etc/pam.d/common-password`) :
+
+```
+password requisite pam_pwquality.so retry=3 minlen=12 dcredit=-1 ucredit=-1 lcredit=-1 ocredit=-1
+```
+
+Paramètres :
+- `minlen=12` : longueur minimale 12 caractères.
+- `dcredit=-1` : au moins 1 chiffre.
+- `ucredit=-1` : au moins 1 majuscule.
+- `lcredit=-1` : au moins 1 minuscule.
+- `ocredit=-1` : au moins 1 caractère spécial.
+
+Verrouillage après tentatives échouées (`/etc/pam.d/common-auth`) :
+
+```
+auth required pam_tally2.so deny=5 unlock_time=900 onerr=fail
+```
+
+#### Gestion des comptes
+
+```bash
+# Vérifier les comptes avec UID 0 (root)
+awk -F: '($3 == 0) {print $1}' /etc/passwd
+
+# Verrouiller un compte inutilisé
+usermod -L utilisateur
+
+# Définir une expiration de compte
+chage -E 2026-12-31 utilisateur
+
+# Forcer le changement de mot de passe à la prochaine connexion
+chage -d 0 utilisateur
+
+# Vérifier les comptes sans mot de passe
+awk -F: '($2 == "" || $2 == "!") {print $1}' /etc/shadow
+```
+
+#### Permissions et fichiers sensibles
+
+```bash
+# Permissions des fichiers critiques
+chmod 600 /etc/shadow
+chmod 644 /etc/passwd
+chmod 600 /etc/ssh/sshd_config
+chmod 700 /root
+
+# Rechercher les fichiers SUID/SGID (vecteurs d'élévation de privilèges)
+find / -type f \( -perm -4000 -o -perm -2000 \) -exec ls -la {} \;
+
+# Rechercher les fichiers world-writable
+find / -type f -perm -o+w -exec ls -la {} \;
+
+# Rechercher les fichiers sans propriétaire
+find / -nouser -o -nogroup
+```
+
+#### Durcissement SSH
+
+Fichier `/etc/ssh/sshd_config` :
+
+```
+Port 2222                          # Changer le port par défaut
+PermitRootLogin no                 # Interdire la connexion root
+MaxAuthTries 3                     # Maximum 3 tentatives
+PasswordAuthentication no          # Authentification par clé uniquement
+PubkeyAuthentication yes           # Activer l'authentification par clé
+AllowUsers admin operateur         # Restreindre les utilisateurs autorisés
+Protocol 2                         # SSH version 2 uniquement
+ClientAliveInterval 300            # Timeout d'inactivité (5 min)
+ClientAliveCountMax 2              # Nombre de tentatives keepalive
+X11Forwarding no                   # Désactiver le transfert X11
+AllowTcpForwarding no              # Désactiver le tunnel TCP
+Banner /etc/ssh/banner.txt         # Bannière d'avertissement légal
+```
+
+Génération de clé SSH :
+
+```bash
+ssh-keygen -t ed25519 -C "admin@entreprise.fr"
+ssh-copy-id -i ~/.ssh/id_ed25519.pub admin@serveur
+```
+
+### 13.3 Durcissement réseau
+
+#### Pare-feu local (iptables/nftables)
+
+```bash
+# Politique par défaut : tout bloquer
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+
+# Autoriser le loopback
+iptables -A INPUT -i lo -j ACCEPT
+
+# Autoriser les connexions établies
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Autoriser SSH (port personnalisé)
+iptables -A INPUT -p tcp --dport 2222 -j ACCEPT
+
+# Autoriser HTTP/HTTPS (si serveur web)
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+
+# Journaliser le trafic bloqué
+iptables -A INPUT -j LOG --log-prefix "IPTABLES_DROP: "
+
+# Sauvegarder les règles
+iptables-save > /etc/iptables/rules.v4
+```
+
+#### Paramètres noyau (`/etc/sysctl.conf`)
+
+```bash
+# Désactiver le routage IP (sauf sur les routeurs/pare-feu)
+net.ipv4.ip_forward = 0
+
+# Protection contre le SYN flood
+net.ipv4.tcp_syncookies = 1
+
+# Ignorer les redirections ICMP
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv6.conf.all.accept_redirects = 0
+
+# Ne pas envoyer de redirections ICMP
+net.ipv4.conf.all.send_redirects = 0
+
+# Ignorer les requêtes de broadcast ICMP (smurf attack)
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+# Protection contre le source routing
+net.ipv4.conf.all.accept_source_route = 0
+
+# Activer le reverse path filtering
+net.ipv4.conf.all.rp_filter = 1
+
+# Journaliser les paquets avec adresse source impossible
+net.ipv4.conf.all.log_martians = 1
+```
+
+Appliquer : `sysctl -p`
+
+### 13.4 Durcissement Windows Server
+
+- Désactiver les services inutiles (Services.msc).
+- Appliquer les GPO de sécurité (politique de mots de passe, verrouillage de compte, audit).
+- Activer le pare-feu Windows avec des règles restrictives.
+- Désactiver SMBv1 : `Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol`.
+- Configurer Windows Update pour les mises à jour automatiques.
+- Activer BitLocker pour le chiffrement des disques.
+- Installer et configurer LAPS (Local Administrator Password Solution).
+- Activer l'audit des connexions et des accès aux objets.
+
+### 13.5 Outils d'audit
+
+| Outil | Fonction |
+|---|---|
+| Lynis | Audit de sécurité Linux (lynis audit system) |
+| CIS Benchmarks | Guides de durcissement par système (CIS Center for Internet Security) |
+| OpenSCAP | Vérification de conformité automatisée |
+| Nessus / OpenVAS | Scanner de vulnérabilités |
+| Nmap | Découverte de ports et services |
+
+```bash
+# Audit avec Lynis
+apt install lynis
+lynis audit system
+
+# Scan de ports avec Nmap
+nmap -sS -sV -O -p- 192.168.1.0/24
+```
+
+---
+
+## 14. Analyse de logs
+
+### 14.1 Importance
+
+Les journaux (logs) sont essentiels pour la sécurité :
+- Détection d'incidents de sécurité.
+- Investigation post-incident (forensique).
+- Conformité réglementaire (RGPD, preuve légale).
+- Supervision et optimisation.
+
+### 14.2 Sources de logs
+
+| Source | Emplacement type (Linux) | Contenu |
+|---|---|---|
+| Système | /var/log/syslog, /var/log/messages | Messages système généraux |
+| Authentification | /var/log/auth.log | Connexions, sudo, SSH |
+| Pare-feu | /var/log/pfSense (pfSense), iptables via syslog | Paquets autorisés/bloqués |
+| Serveur web | /var/log/apache2/access.log, error.log | Requêtes HTTP, erreurs |
+| Proxy | /var/log/squid/access.log | Accès web |
+| IDS/IPS | /var/log/suricata/eve.json | Alertes de détection |
+| Mail | /var/log/mail.log | Envoi/réception de courriels |
+| DNS | /var/log/named/query.log | Requêtes DNS |
+
+### 14.3 Format Syslog
+
+Le protocole syslog (RFC 5424) standardise la journalisation. Chaque message contient :
+
+- **Facility** : source du message (kern, auth, daemon, local0-local7...).
+- **Severity** : niveau de gravité (0=Emergency, 1=Alert, 2=Critical, 3=Error, 4=Warning, 5=Notice, 6=Informational, 7=Debug).
+- **Timestamp** : date et heure.
+- **Hostname** : nom de la machine.
+- **Message** : contenu du log.
+
+### 14.4 Centralisation avec rsyslog
+
+La centralisation des logs sur un serveur dédié est indispensable en environnement de production.
+
+**Serveur rsyslog** (`/etc/rsyslog.conf`) :
+
+```bash
+# Activer la réception UDP
+module(load="imudp")
+input(type="imudp" port="514")
+
+# Activer la réception TCP
+module(load="imtcp")
+input(type="imtcp" port="514")
+
+# Stocker les logs par machine
+template(name="RemoteLogs" type="string"
+  string="/var/log/remote/%HOSTNAME%/%PROGRAMNAME%.log")
+
+*.* ?RemoteLogs
+```
+
+**Client rsyslog** (`/etc/rsyslog.conf`) :
+
+```bash
+# Envoyer tous les logs au serveur central
+*.* @@192.168.1.200:514    # @@ = TCP, @ = UDP
+```
+
+### 14.5 Outils d'analyse
+
+#### Ligne de commande
+
+```bash
+# Rechercher les connexions SSH échouées
+grep "Failed password" /var/log/auth.log
+
+# Compter les tentatives par IP source
+grep "Failed password" /var/log/auth.log | awk '{print $(NF-3)}' | sort | uniq -c | sort -rn | head
+
+# Rechercher les accès bloqués par le pare-feu
+grep "BLOCK" /var/log/pfSense/filter.log | tail -50
+
+# Surveiller un fichier en temps réel
+tail -f /var/log/auth.log
+
+# Analyser les logs Suricata (JSON)
+cat /var/log/suricata/eve.json | jq 'select(.event_type=="alert")' | head -20
+```
+
+#### Stack ELK (Elasticsearch, Logstash, Kibana)
+
+Solution de centralisation, indexation et visualisation des logs.
+
+- **Elasticsearch** : moteur de recherche et d'indexation des logs.
+- **Logstash** : collecte, transformation et envoi des logs vers Elasticsearch.
+- **Kibana** : interface web de visualisation et de recherche.
+- **Filebeat** : agent léger installé sur les machines, envoie les logs vers Logstash ou Elasticsearch.
+
+Architecture :
+
+```
+[Serveurs/Pare-feu/IDS]
+    |
+[Filebeat] --> [Logstash] --> [Elasticsearch] --> [Kibana]
+```
+
+#### SIEM (Security Information and Event Management)
+
+Solution intégrée de gestion des événements de sécurité. Combine collecte, corrélation, alertes et reporting.
+
+Exemples open source : Wazuh, OSSIM (AlienVault), Security Onion.
+Exemples commerciaux : Splunk, QRadar (IBM), Sentinel (Microsoft).
+
+### 14.6 Corrélation d'événements
+
+La corrélation consiste à rapprocher des événements provenant de sources différentes pour détecter des attaques complexes.
+
+Exemple : détection d'une attaque par brute force suivie d'une connexion réussie.
+
+1. Le pare-feu enregistre de multiples connexions depuis une IP sur le port 22.
+2. L'IDS génère une alerte "SSH brute force attempt".
+3. Le log auth.log montre 50 tentatives échouées puis une connexion réussie depuis la même IP.
+4. Le log syslog montre l'exécution de commandes inhabituelles.
+
+Corrélation : ces quatre événements, pris individuellement, pourraient passer inaperçus. Combinés, ils révèlent une compromission.
+
+### 14.7 Rétention et conformité
+
+- Conserver les logs selon les obligations légales (1 an minimum pour les logs de connexion selon la loi française).
+- Protéger l'intégrité des logs (serveur dédié, droits restreints, horodatage fiable).
+- Synchroniser les horloges de tous les équipements (NTP) pour garantir la cohérence temporelle.
+
+---
+
+## 15. Wi-Fi sécurisé
+
+### 15.1 Protocoles de sécurité Wi-Fi
+
+| Protocole | Année | Chiffrement | Statut |
+|---|---|---|---|
+| WEP | 1999 | RC4 | Obsolète, cassable en minutes |
+| WPA | 2003 | TKIP (RC4 amélioré) | Déprécié |
+| WPA2 | 2004 | AES-CCMP | Standard actuel |
+| WPA3 | 2018 | AES-CCMP / AES-GCMP | Recommandé |
+
+#### WPA2-Personal (PSK)
+
+Authentification par clé pré-partagée (Pre-Shared Key). Tous les utilisateurs partagent le même mot de passe. Adapté aux petites structures.
+
+Vulnérabilité : la capture du four-way handshake permet une attaque par dictionnaire hors ligne. Un mot de passe faible peut être découvert rapidement.
+
+#### WPA2-Enterprise (802.1X)
+
+Authentification individuelle via un serveur RADIUS. Chaque utilisateur dispose de ses propres identifiants (ou certificat). Adapté aux organisations.
+
+#### WPA3
+
+Améliorations par rapport à WPA2 :
+- **SAE (Simultaneous Authentication of Equals)** : remplace PSK, résistant aux attaques par dictionnaire hors ligne (même en mode Personal).
+- **Forward secrecy** : la compromission du mot de passe ne permet pas de déchiffrer les captures passées.
+- **PMF (Protected Management Frames)** : protection obligatoire des trames de gestion (contre les attaques de déauthentification).
+- **Chiffrement individuel** : en mode ouvert (OWE - Opportunistic Wireless Encryption), chaque client bénéficie d'un chiffrement unique.
+
+### 15.2 802.1X et RADIUS
+
+#### Architecture 802.1X
+
+Le standard IEEE 802.1X définit un cadre d'authentification par port (filaire ou Wi-Fi) :
+
+```
+[Supplicant]  <--EAP-->  [Authenticator]  <--RADIUS-->  [Authentication Server]
+  (Client)                (Point d'accès                   (Serveur RADIUS
+   Wi-Fi)                  ou commutateur)                  ex: FreeRADIUS)
+```
+
+Rôles :
+- **Supplicant** : le client qui demande l'accès (poste Windows, smartphone).
+- **Authenticator** : l'équipement réseau qui contrôle l'accès (borne Wi-Fi, commutateur).
+- **Authentication Server** : le serveur RADIUS qui vérifie les identifiants.
+
+Fonctionnement :
+1. Le client se connecte au réseau. Le port est dans l'état "non autorisé" : seul le trafic EAP est permis.
+2. Le client envoie une demande d'authentification (EAP).
+3. L'authenticator relaie la demande au serveur RADIUS.
+4. Le serveur RADIUS vérifie les identifiants et renvoie Accept ou Reject.
+5. Si accepté, le port passe en état "autorisé" et le client accède au réseau.
+
+#### Méthodes EAP
+
+| Méthode | Description | Certificat requis |
+|---|---|---|
+| EAP-TLS | Authentification mutuelle par certificats | Serveur + Client |
+| PEAP (EAP-MSCHAPv2) | Tunnel TLS + identifiant/mot de passe | Serveur uniquement |
+| EAP-TTLS | Similaire à PEAP, plus flexible | Serveur uniquement |
+
+**EAP-TLS** est la méthode la plus sécurisée mais nécessite le déploiement de certificats sur tous les clients (via PKI interne et GPO).
+
+**PEAP** est le compromis le plus courant : seul le serveur RADIUS a besoin d'un certificat. Les clients s'authentifient par identifiant/mot de passe dans un tunnel TLS.
+
+#### Configuration FreeRADIUS
+
+Installation :
+
+```bash
+apt install freeradius freeradius-utils
+```
+
+Fichier `/etc/freeradius/3.0/clients.conf` (déclarer les points d'accès) :
+
+```
+client borne-wifi-1 {
+    ipaddr    = 192.168.1.50
+    secret    = SecretPartageRADIUS2024!
+    shortname = borne-rdc
+}
+```
+
+Fichier `/etc/freeradius/3.0/users` (utilisateurs locaux) :
+
+```
+dupont  Cleartext-Password := "MotDePasse2024!"
+        Reply-Message := "Bienvenue %{User-Name}"
+```
+
+Pour l'intégration Active Directory, configurer le module `mschap` et `ntlm_auth` (winbind/samba).
+
+Test :
+
+```bash
+radtest dupont MotDePasse2024! 127.0.0.1 0 testing123
+```
+
+#### Configuration du point d'accès
+
+Sur le point d'accès Wi-Fi ou le contrôleur :
+- Mode de sécurité : WPA2-Enterprise.
+- Serveur RADIUS : adresse IP du serveur FreeRADIUS.
+- Port RADIUS : 1812 (authentification), 1813 (comptabilité).
+- Secret partagé : identique à celui configuré dans clients.conf.
+
+### 15.3 Bonnes pratiques Wi-Fi
+
+- Utiliser WPA2-Enterprise (802.1X) ou WPA3 en environnement professionnel.
+- Séparer le réseau Wi-Fi invité du réseau interne (VLAN dédié).
+- Désactiver le SSID broadcast si non nécessaire (mesure cosmétique, pas une vraie protection).
+- Réduire la puissance d'émission pour limiter la couverture au strict nécessaire.
+- Activer les PMF (Protected Management Frames).
+- Mettre à jour le firmware des bornes régulièrement.
+- Surveiller les points d'accès non autorisés (rogue AP) avec un WIDS.
+- Désactiver le WPS (Wi-Fi Protected Setup), vulnérable aux attaques par brute force du PIN.
+
+---
+
+## 16. Exercices corrigés
+
+### Exercice 1 : Configuration de base pfSense
+
+**Enoncé** : Vous installez pfSense comme pare-feu pour une PME. Le réseau est le suivant :
+- WAN : 203.0.113.10/24 (passerelle 203.0.113.1)
+- LAN : 192.168.1.0/24 (pfSense en 192.168.1.1)
+- DMZ : 10.0.0.0/24 (pfSense en 10.0.0.1)
+
+Un serveur web est en DMZ (10.0.0.10). Configurez les règles pour :
+1. Permettre aux utilisateurs LAN d'accéder à Internet (HTTP/HTTPS).
+2. Permettre l'accès au serveur web depuis Internet (HTTPS uniquement).
+3. Interdire tout accès de la DMZ vers le LAN.
+4. Autoriser le serveur DMZ à effectuer des mises à jour (HTTP/HTTPS sortant).
+
+**Corrigé** :
+
+Aliases à créer :
+- SERVEUR_WEB : 10.0.0.10 (Host)
+- PORTS_WEB : 80, 443 (Port)
+
+Règles sur l'interface LAN :
+
+| # | Action | Proto | Source | Dest | Port dst | Description |
+|---|---|---|---|---|---|---|
+| 1 | Pass | TCP | LAN net | * | 80, 443 | LAN vers Internet HTTP/HTTPS |
+| 2 | Pass | TCP/UDP | LAN net | * | 53 | LAN DNS sortant |
+| 3 | Pass | ICMP | LAN net | * | * | Ping sortant |
+
+Règles sur l'interface WAN (avec NAT port forward) :
+
+NAT Port Forward :
+```
+Interface : WAN | Proto : TCP | Dest : WAN address | Port : 443
+Redirect : 10.0.0.10 port 443
+```
+
+Règle associée :
+
+| # | Action | Proto | Source | Dest | Port dst | Description |
+|---|---|---|---|---|---|---|
+| 1 | Pass | TCP | * | SERVEUR_WEB | 443 | HTTPS vers serveur web DMZ |
+
+Règles sur l'interface DMZ :
+
+| # | Action | Proto | Source | Dest | Port dst | Description |
+|---|---|---|---|---|---|---|
+| 1 | Block | * | DMZ net | LAN net | * | Bloquer DMZ vers LAN |
+| 2 | Pass | TCP | SERVEUR_WEB | * | 80, 443 | Mises à jour serveur web |
+| 3 | Pass | UDP | DMZ net | * | 53 | DNS pour la DMZ |
+
+La règle de blocage DMZ vers LAN doit être placée avant la règle d'autorisation sortante.
+
+---
+
+### Exercice 2 : Analyse d'une attaque par brute force SSH
+
+**Enoncé** : Vous analysez le fichier `/var/log/auth.log` d'un serveur Linux et constatez les lignes suivantes :
+
+```
+Feb 15 14:22:01 srv01 sshd[4521]: Failed password for root from 185.234.72.15 port 43210 ssh2
+Feb 15 14:22:03 srv01 sshd[4523]: Failed password for root from 185.234.72.15 port 43211 ssh2
+Feb 15 14:22:05 srv01 sshd[4525]: Failed password for admin from 185.234.72.15 port 43212 ssh2
+[... 200 lignes similaires ...]
+Feb 15 14:30:12 srv01 sshd[4891]: Accepted password for admin from 185.234.72.15 port 43890 ssh2
+Feb 15 14:30:15 srv01 sshd[4891]: pam_unix(sshd:session): session opened for user admin
+```
+
+1. Identifiez le type d'attaque.
+2. L'attaque a-t-elle réussi ? Justifiez.
+3. Proposez des mesures correctives immédiates et préventives.
+
+**Corrigé** :
+
+1. **Type d'attaque** : attaque par brute force (force brute) sur le service SSH. L'adresse IP 185.234.72.15 tente de manière répétée différents identifiants (root, admin) avec des mots de passe différents. Les tentatives sont espacées de 2 secondes, caractéristique d'un outil automatisé (Hydra, Medusa).
+
+2. **Résultat** : l'attaque a réussi. La ligne `Accepted password for admin` indique que le mot de passe du compte "admin" a été trouvé. La session a été ouverte, l'attaquant a obtenu un accès au serveur.
+
+3. **Mesures correctives immédiates** :
+   - Bloquer immédiatement l'IP 185.234.72.15 au niveau du pare-feu : `iptables -A INPUT -s 185.234.72.15 -j DROP`.
+   - Fermer les sessions actives de l'attaquant : identifier le PID avec `who` ou `w`, puis `kill -9`.
+   - Changer immédiatement le mot de passe du compte admin : `passwd admin`.
+   - Vérifier si l'attaquant a créé des portes dérobées : examiner les clés SSH autorisées (`~admin/.ssh/authorized_keys`), les tâches cron (`crontab -l -u admin`), les fichiers récemment modifiés (`find / -mmin -60 -type f`).
+   - Examiner l'historique des commandes : `cat ~admin/.bash_history`.
+
+   **Mesures préventives** :
+   - Installer et configurer fail2ban pour bloquer les IP après 3 tentatives échouées.
+   - Désactiver l'authentification par mot de passe SSH, imposer l'authentification par clé.
+   - Interdire la connexion SSH en tant que root (`PermitRootLogin no`).
+   - Changer le port SSH (22 vers un port non standard).
+   - Limiter les utilisateurs autorisés à se connecter en SSH (`AllowUsers`).
+   - Mettre en place un système d'alerte sur les tentatives de connexion échouées.
+
+---
+
+### Exercice 3 : Mise en place d'un VPN OpenVPN client-à-site
+
+**Enoncé** : Configurez un VPN OpenVPN sur pfSense pour permettre aux télétravailleurs d'accéder au réseau interne 192.168.1.0/24. Le tunnel utilisera le réseau 10.8.0.0/24. L'authentification se fait par certificat + identifiant/mot de passe.
+
+Décrivez les étapes complètes.
+
+**Corrigé** :
+
+**Etape 1 : Créer la CA**
+- System > Cert. Manager > CAs > Add
+- Method : Create an Internal Certificate Authority
+- Key length : 4096, SHA256, Lifetime : 3650
+- CN : CA-VPN-ENTREPRISE
+
+**Etape 2 : Créer le certificat serveur**
+- System > Cert. Manager > Certificates > Add
+- Method : Create an Internal Certificate
+- CA : CA-VPN-ENTREPRISE
+- Key length : 2048, SHA256, Lifetime : 825
+- CN : vpn.entreprise.fr
+- Type : Server Certificate
+
+**Etape 3 : Créer les utilisateurs**
+- System > User Manager > Add
+- Username : dupont, mot de passe fort
+- Cocher "Click to create a user certificate"
+- CA : CA-VPN-ENTREPRISE, Key length : 2048
+
+**Etape 4 : Configurer le serveur OpenVPN**
+- VPN > OpenVPN > Servers > Add
+- Server mode : Remote Access (SSL/TLS + User Auth)
+- Protocol : UDP on IPv4 only
+- Interface : WAN, Port : 1194
+- TLS Authentication : activée (auto-generate)
+- Peer CA : CA-VPN-ENTREPRISE
+- Server Certificate : vpn.entreprise.fr
+- Encryption : AES-256-GCM
+- Tunnel Network : 10.8.0.0/24
+- Local Network : 192.168.1.0/24
+- DNS Server : 192.168.1.1
+
+**Etape 5 : Règles de pare-feu**
+
+Interface WAN :
+```
+Pass | UDP | * | WAN address | 1194 | OpenVPN entrant
+```
+
+Interface OpenVPN :
+```
+Pass | * | 10.8.0.0/24 | 192.168.1.0/24 | * | VPN vers LAN
+```
+
+**Etape 6 : Export client**
+- System > Package Manager > installer openvpn-client-export
+- VPN > OpenVPN > Client Export
+- Télécharger le fichier .ovpn pour l'utilisateur dupont
+- Distribuer le fichier de manière sécurisée au télétravailleur
+
+**Etape 7 : Vérification**
+- Le client installe OpenVPN Connect et importe le fichier .ovpn.
+- A la connexion, il saisit son identifiant et mot de passe.
+- Vérifier la connectivité : `ping 192.168.1.1` depuis le poste distant.
+- Vérifier dans pfSense : Status > OpenVPN pour voir les clients connectés.
+
+---
+
+### Exercice 4 : Règles IDS/IPS Suricata
+
+**Enoncé** : Rédigez les règles Suricata pour détecter les situations suivantes :
+1. Scan de ports depuis le réseau externe.
+2. Tentative de téléchargement d'un exécutable Windows (.exe) via HTTP.
+3. Requête DNS vers un domaine suspect (malware.example.com).
+
+**Corrigé** :
+
+1. **Détection de scan de ports** :
+
+```
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (msg:"SCAN Port scan detected"; \
+  flow:stateless; \
+  flags:S; \
+  threshold:type both, track by_src, count 20, seconds 10; \
+  classtype:attempted-recon; \
+  sid:2000001; rev:1;)
+```
+
+Explication : alerte si une même IP source envoie plus de 20 paquets SYN en 10 secondes vers le réseau interne. Le flag `S` cible les paquets d'initiation de connexion TCP. Le seuil `type both` déclenche l'alerte une seule fois par intervalle.
+
+2. **Téléchargement d'exécutable** :
+
+```
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"POLICY Executable download detected"; \
+  flow:established,to_client; \
+  http.uri; content:".exe"; nocase; endswith; \
+  classtype:policy-violation; \
+  sid:2000002; rev:1;)
+```
+
+Explication : alerte sur toute réponse HTTP contenant une URI se terminant par ".exe". Le mot-clé `http.uri` inspecte spécifiquement l'URI HTTP. `endswith` garantit que ".exe" est à la fin de l'URI.
+
+3. **Requête DNS suspecte** :
+
+```
+alert dns $HOME_NET any -> any any (msg:"MALWARE DNS query to malware.example.com"; \
+  dns.query; content:"malware.example.com"; nocase; \
+  classtype:trojan-activity; \
+  sid:2000003; rev:1;)
+```
+
+Explication : alerte sur toute requête DNS contenant le domaine "malware.example.com". Le mot-clé `dns.query` cible spécifiquement le champ de requête DNS.
+
+---
+
+### Exercice 5 : Chiffrement et PKI
+
+**Enoncé** :
+1. Expliquez la différence entre chiffrement symétrique et asymétrique. Donnez un exemple d'algorithme pour chacun.
+2. Pourquoi utilise-t-on un chiffrement hybride dans TLS ?
+3. Créez une CA auto-signée, puis un certificat serveur signé par cette CA, en utilisant les commandes OpenSSL.
+
+**Corrigé** :
+
+1. **Chiffrement symétrique** : utilise une seule clé partagée entre l'émetteur et le récepteur pour chiffrer et déchiffrer. Exemple : AES-256. Avantage : rapide. Inconvénient : distribution de la clé.
+
+   **Chiffrement asymétrique** : utilise une paire de clés (publique/privée). La clé publique chiffre, la clé privée déchiffre (ou inversement pour la signature). Exemple : RSA-2048. Avantage : pas de partage de secret. Inconvénient : lent.
+
+2. **Chiffrement hybride** : TLS utilise le chiffrement asymétrique (RSA ou ECDHE) uniquement pour l'échange de la clé de session. Les données sont ensuite chiffrées avec un algorithme symétrique (AES-GCM). Cela combine la facilité de l'échange de clés asymétrique avec la performance du chiffrement symétrique. Le chiffrement asymétrique seul serait trop lent pour de grands volumes de données.
+
+3. **Commandes OpenSSL** :
+
+```bash
+# 1. Générer la clé privée de la CA (4096 bits, protégée par mot de passe)
+openssl genrsa -aes256 -out ca.key 4096
+
+# 2. Créer le certificat auto-signé de la CA (valide 10 ans)
+openssl req -new -x509 -days 3650 -key ca.key -sha256 -out ca.crt \
+  -subj "/C=FR/ST=IDF/L=Paris/O=MonEntreprise/CN=CA MonEntreprise"
+
+# 3. Générer la clé privée du serveur (2048 bits)
+openssl genrsa -out serveur.key 2048
+
+# 4. Créer le CSR (Certificate Signing Request)
+openssl req -new -key serveur.key -out serveur.csr \
+  -subj "/C=FR/ST=IDF/L=Paris/O=MonEntreprise/CN=www.monentreprise.fr"
+
+# 5. Signer le CSR avec la CA (valide 825 jours)
+openssl x509 -req -in serveur.csr -CA ca.crt -CAkey ca.key \
+  -CAcreateserial -out serveur.crt -days 825 -sha256
+
+# 6. Vérifier le certificat
+openssl x509 -in serveur.crt -text -noout
+
+# 7. Vérifier la chaîne de confiance
+openssl verify -CAfile ca.crt serveur.crt
+# Résultat attendu : serveur.crt: OK
+```
+
+---
+
+### Exercice 6 : Handshake TLS
+
+**Enoncé** : Un utilisateur accède à https://www.entreprise.fr depuis son navigateur.
+1. Décrivez les étapes du handshake TLS 1.2.
+2. A quel moment la clé de session est-elle établie ?
+3. Quel est l'intérêt du Perfect Forward Secrecy ?
+
+**Corrigé** :
+
+1. **Etapes du handshake TLS 1.2** :
+
+   a) **ClientHello** : le navigateur envoie au serveur la liste des versions TLS supportées, les suites cryptographiques proposées (ex : TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384), un nombre aléatoire (client random) et les extensions (SNI avec le nom de domaine).
+
+   b) **ServerHello** : le serveur choisit la version TLS (1.2) et la suite cryptographique. Il envoie son nombre aléatoire (server random).
+
+   c) **Certificate** : le serveur envoie son certificat X.509 contenant sa clé publique. Le navigateur vérifie la chaîne de confiance jusqu'à une CA racine de confiance.
+
+   d) **ServerKeyExchange** : le serveur envoie ses paramètres ECDHE (courbe et point public éphémère), signés avec sa clé privée RSA.
+
+   e) **ServerHelloDone** : le serveur indique qu'il a terminé.
+
+   f) **ClientKeyExchange** : le client génère sa paire de clés ECDHE éphémère et envoie son point public au serveur. Les deux parties calculent indépendamment le pre-master secret à partir de l'échange ECDHE.
+
+   g) **Dérivation** : les deux parties calculent le master secret à partir du pre-master secret, du client random et du server random. Puis elles dérivent les clés de chiffrement, les clés MAC et les vecteurs d'initialisation.
+
+   h) **ChangeCipherSpec + Finished** (client puis serveur) : basculement vers le chiffrement. Le message Finished contient un hash de tous les messages du handshake, vérifiant son intégrité.
+
+2. **Etablissement de la clé de session** : la clé de session est établie après l'étape ClientKeyExchange (étape f), lorsque les deux parties calculent le pre-master secret via ECDHE, puis dérivent le master secret et les clés de session. Elle est utilisée à partir du message ChangeCipherSpec.
+
+3. **Perfect Forward Secrecy** : grâce à l'utilisation d'ECDHE (clés éphémères), chaque session TLS utilise des clés uniques qui sont détruites après la session. Si la clé privée RSA du serveur est compromise ultérieurement, les sessions passées restent protégées car les clés éphémères ECDHE n'existent plus. Sans PFS (échange de clé RSA statique), la compromission de la clé privée du serveur permettrait de déchiffrer toutes les sessions passées capturées.
+
+---
+
+### Exercice 7 : Proxy Squid
+
+**Enoncé** : Vous configurez un proxy Squid sur pfSense pour le réseau LAN 192.168.1.0/24.
+1. Configurez Squid en mode transparent sur le port 3128.
+2. Mettez en place un filtrage SquidGuard pour bloquer les catégories "adult", "malware" et "social_networks".
+3. Comment vérifier qu'un utilisateur passe bien par le proxy ?
+
+**Corrigé** :
+
+1. **Configuration Squid en mode transparent** :
+
+   - Services > Squid Proxy Server > General
+   - Enable Squid Proxy : coché
+   - Proxy Interface(s) : LAN
+   - Proxy Port : 3128
+   - Transparent HTTP Proxy : coché
+   - Transparent Proxy Interface(s) : LAN
+   - Enable Access Logging : coché
+
+   pfSense redirige automatiquement le port 80 (HTTP) du LAN vers le proxy Squid. Pour HTTPS, il faut activer "HTTPS/SSL Interception" avec un certificat CA interne (attention : nécessite le déploiement du certificat CA sur les postes clients).
+
+2. **Filtrage SquidGuard** :
+
+   - Services > SquidGuard Proxy Filter > General Settings
+   - Enable : coché
+   - Blacklist URL : `http://dsi.ut-capitole.fr/blacklists/download/blacklists.tar.gz`
+   - Cliquer sur "Download" dans l'onglet Blacklist
+
+   - Onglet Common ACL > Target Rules List :
+     - `[blk_BL_adult]` : deny
+     - `[blk_BL_malware]` : deny
+     - `[blk_BL_social_networks]` : deny
+     - `Default access [all]` : allow
+
+   - Redirect mode : int error page
+   - Cliquer sur "Save" puis "Apply"
+
+3. **Vérification** :
+
+   - Depuis un poste client, accéder à un site bloqué (ex : facebook.com). La page de blocage SquidGuard doit s'afficher.
+   - Vérifier les logs : Services > Squid Proxy Server > Real Time > Access Log (ou `/var/squid/logs/access.log`).
+   - Tester avec `curl -v http://example.com` depuis un poste client et observer les en-têtes HTTP : la présence de `X-Forwarded-For` ou `Via` indique le passage par le proxy.
+   - Dans les logs d'accès, vérifier que les requêtes du client apparaissent avec son adresse IP source.
+
+---
+
+### Exercice 8 : Architecture DMZ
+
+**Enoncé** : Dessinez l'architecture réseau d'une entreprise disposant de :
+- Un réseau LAN (192.168.1.0/24) avec 50 postes et un serveur de fichiers.
+- Une DMZ (10.0.0.0/24) avec un serveur web, un serveur mail et un serveur DNS public.
+- Un accès Internet via un pare-feu pfSense.
+
+Rédigez l'ensemble des règles de filtrage nécessaires.
+
+**Corrigé** :
+
+**Architecture** :
+
+```
+Internet (WAN : 203.0.113.10/24)
+         |
+    [pfSense]
+     /       \
+   LAN       DMZ
+192.168.1.0/24  10.0.0.0/24
+   |              |-- Serveur web    (10.0.0.10)
+   |-- Postes     |-- Serveur mail   (10.0.0.11)
+   |-- Srv fichiers (192.168.1.100) |-- Serveur DNS (10.0.0.12)
+```
+
+**Aliases** :
+
+```
+SRV_WEB    : 10.0.0.10
+SRV_MAIL   : 10.0.0.11
+SRV_DNS    : 10.0.0.12
+SRV_FICHIERS : 192.168.1.100
+PORTS_WEB  : 80, 443
+```
+
+**Règles interface WAN** (trafic entrant depuis Internet, via NAT port forward) :
+
+| # | Action | Proto | Source | Dest | Port dst | Description |
+|---|---|---|---|---|---|---|
+| 1 | Pass | TCP | * | SRV_WEB | 443 | HTTPS vers serveur web |
+| 2 | Pass | TCP | * | SRV_MAIL | 25 | SMTP vers serveur mail |
+| 3 | Pass | TCP/UDP | * | SRV_DNS | 53 | DNS vers serveur DNS public |
+
+**Règles interface LAN** :
+
+| # | Action | Proto | Source | Dest | Port dst | Description |
+|---|---|---|---|---|---|---|
+| 1 | Pass | TCP | LAN net | SRV_WEB | 443 | LAN vers serveur web |
+| 2 | Pass | TCP | LAN net | SRV_MAIL | 993, 587 | LAN vers mail (IMAP, SMTP submission) |
+| 3 | Pass | TCP | LAN net | SRV_WEB | 22 | SSH admin serveur web |
+| 4 | Pass | TCP | LAN net | SRV_MAIL | 22 | SSH admin serveur mail |
+| 5 | Pass | TCP | LAN net | SRV_DNS | 22 | SSH admin serveur DNS |
+| 6 | Pass | TCP/UDP | LAN net | * | 53 | DNS sortant |
+| 7 | Pass | TCP | LAN net | * | 80, 443 | Navigation web |
+| 8 | Pass | ICMP | LAN net | * | * | Ping |
+
+**Règles interface DMZ** :
+
+| # | Action | Proto | Source | Dest | Port dst | Description |
+|---|---|---|---|---|---|---|
+| 1 | Block | * | DMZ net | LAN net | * | Bloquer tout trafic DMZ vers LAN |
+| 2 | Pass | TCP/UDP | DMZ net | * | 53 | DNS sortant pour la DMZ |
+| 3 | Pass | TCP | SRV_WEB | * | 80, 443 | Mises à jour serveur web |
+| 4 | Pass | TCP | SRV_MAIL | * | 25 | Envoi de mail sortant |
+| 5 | Pass | TCP | DMZ net | * | 123 | NTP |
+
+---
+
+### Exercice 9 : Durcissement d'un serveur Linux
+
+**Enoncé** : Vous devez durcir un serveur Debian 12 qui hébergera un serveur web Apache. Listez et justifiez 10 mesures de durcissement à appliquer.
+
+**Corrigé** :
+
+1. **Mettre à jour le système** :
+   ```bash
+   apt update && apt upgrade -y
+   apt install unattended-upgrades
+   ```
+   Justification : corriger les vulnérabilités connues. Les mises à jour automatiques de sécurité réduisent la fenêtre d'exposition.
+
+2. **Désactiver les services inutiles** :
+   ```bash
+   systemctl disable --now cups bluetooth avahi-daemon rpcbind
+   ```
+   Justification : chaque service actif est un vecteur d'attaque potentiel. Seuls Apache, SSH et les services essentiels doivent tourner.
+
+3. **Configurer le pare-feu local (nftables)** :
+   ```bash
+   nft add rule inet filter input tcp dport {22, 80, 443} accept
+   nft add rule inet filter input ct state established,related accept
+   nft add rule inet filter input iif lo accept
+   nft add rule inet filter input drop
+   ```
+   Justification : limiter les connexions entrantes aux seuls ports nécessaires.
+
+4. **Durcir SSH** :
+   ```
+   PermitRootLogin no
+   PasswordAuthentication no
+   MaxAuthTries 3
+   AllowUsers webadmin
+   Port 2222
+   ```
+   Justification : réduire la surface d'attaque SSH. L'authentification par clé est résistante aux attaques par brute force.
+
+5. **Installer fail2ban** :
+   ```bash
+   apt install fail2ban
+   ```
+   Configuration pour SSH et Apache. Justification : bloquer automatiquement les adresses IP effectuant des tentatives de connexion répétées.
+
+6. **Politique de mots de passe** :
+   ```bash
+   apt install libpam-pwquality
+   ```
+   Configurer minlen=12, complexité requise. Justification : les mots de passe faibles sont le premier vecteur de compromission.
+
+7. **Permissions des fichiers web** :
+   ```bash
+   chown -R www-data:www-data /var/www/html
+   chmod -R 750 /var/www/html
+   find /var/www/html -type f -exec chmod 640 {} \;
+   ```
+   Justification : limiter les droits d'accès aux fichiers du site web. Le serveur Apache ne doit pas pouvoir écrire dans son propre DocumentRoot sauf nécessité.
+
+8. **Durcir Apache** :
+   ```apache
+   ServerTokens Prod
+   ServerSignature Off
+   TraceEnable Off
+   Header always set X-Content-Type-Options "nosniff"
+   Header always set X-Frame-Options "DENY"
+   Header always set Content-Security-Policy "default-src 'self'"
+   ```
+   Justification : masquer les informations de version, empêcher les attaques XSS et clickjacking.
+
+9. **Configurer les paramètres noyau** :
+   ```
+   net.ipv4.tcp_syncookies = 1
+   net.ipv4.conf.all.accept_redirects = 0
+   net.ipv4.conf.all.rp_filter = 1
+   ```
+   Justification : protection contre les attaques réseau (SYN flood, spoofing).
+
+10. **Mettre en place la journalisation centralisée** :
+    ```bash
+    apt install rsyslog
+    echo "*.* @@192.168.1.200:514" >> /etc/rsyslog.conf
+    systemctl restart rsyslog
+    ```
+    Justification : en cas de compromission, l'attaquant pourrait effacer les logs locaux. Les logs centralisés sur un serveur distinct garantissent la traçabilité.
+
+---
+
+### Exercice 10 : Analyse de capture réseau
+
+**Enoncé** : Lors d'une analyse avec Wi

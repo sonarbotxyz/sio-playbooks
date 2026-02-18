@@ -1,0 +1,1932 @@
+---
+title: "Supervision et monitoring"
+description: "Nagios, Zabbix, GLPI, SNMP, alertes, tableaux de bord, gestion de parc informatique"
+category: "Exploitation"
+tags: ["supervision", "nagios", "zabbix", "glpi", "snmp", "monitoring"]
+difficulty: "Intermédiaire"
+---
+
+# Supervision et monitoring
+
+## Table des matieres
+
+1. [Pourquoi superviser](#pourquoi-superviser)
+2. [SNMP](#snmp)
+3. [Nagios et Centreon](#nagios-et-centreon)
+4. [Zabbix](#zabbix)
+5. [Alertes et notifications](#alertes-et-notifications)
+6. [Tableaux de bord et Grafana](#tableaux-de-bord-et-grafana)
+7. [Gestion de parc avec GLPI](#gestion-de-parc-avec-glpi)
+8. [ITIL : concepts fondamentaux](#itil-concepts-fondamentaux)
+9. [Gestion des incidents](#gestion-des-incidents)
+10. [Supervision reseau : Wireshark et tcpdump](#supervision-reseau)
+11. [Metriques systeme](#metriques-systeme)
+12. [Centralisation des logs](#centralisation-des-logs)
+13. [Exercices corriges](#exercices-corriges)
+
+---
+
+## Pourquoi superviser
+
+### Les enjeux de la supervision
+
+La supervision informatique consiste a surveiller en continu le fonctionnement des equipements, des services et des applications d'un systeme d'information. Elle repond a quatre objectifs fondamentaux.
+
+**Disponibilite.** Garantir que les services sont accessibles aux utilisateurs conformement aux engagements pris. Un serveur web qui tombe sans que personne ne le detecte peut rester hors service pendant des heures. La supervision permet de detecter la panne en quelques secondes et de declencher une intervention immediate.
+
+**Performance.** Mesurer les temps de reponse, les debits, les taux d'utilisation des ressources. Un service peut etre disponible mais degradee : une base de donnees qui repond en 15 secondes au lieu de 200 millisecondes est techniquement accessible, mais inutilisable. La supervision de performance identifie ces situations avant qu'elles n'affectent les utilisateurs.
+
+**Anticipation.** Detecter les tendances avant qu'elles ne deviennent des pannes. Un disque dur qui se remplit de 2 Go par jour atteindra sa capacite maximale dans un delai calculable. Une supervision correctement configuree leve une alerte quand le seuil de 80 % est franchi, laissant le temps d'intervenir.
+
+**Respect des SLA (Service Level Agreement).** Les contrats de niveau de service definissent des engagements mesurables : taux de disponibilite de 99,9 %, temps de retablissement inferieur a 4 heures, temps de reponse inferieur a 500 ms. La supervision fournit les metriques necessaires pour verifier le respect de ces engagements et produire des rapports de conformite.
+
+### Les types de supervision
+
+| Type | Objet surveille | Exemples de metriques |
+|------|----------------|----------------------|
+| Supervision systeme | Serveurs physiques et virtuels | CPU, RAM, disque, charge, swap |
+| Supervision reseau | Equipements reseau | Bande passante, latence, perte de paquets, etat des ports |
+| Supervision applicative | Services et applications | Temps de reponse HTTP, nombre de connexions, codes d'erreur |
+| Supervision environnementale | Conditions physiques | Temperature, humidite, alimentation electrique |
+
+### Supervision active vs supervision passive
+
+La **supervision active** (ou polling) consiste a interroger regulierement l'equipement supervise. Le serveur de supervision envoie une requete et attend une reponse. Exemple : une requete SNMP GET toutes les 5 minutes pour recuperer l'utilisation CPU d'un routeur.
+
+La **supervision passive** consiste a attendre que l'equipement supervise envoie lui-meme une information. Le serveur de supervision ne fait qu'ecouter. Exemple : un trap SNMP envoye par un commutateur lorsqu'un port tombe.
+
+Les deux approches sont complementaires. La supervision active permet de detecter l'indisponibilite totale d'un equipement (s'il ne repond plus, c'est qu'il est en panne). La supervision passive est plus adaptee aux evenements ponctuels et imprevisibles.
+
+---
+
+## SNMP
+
+### Presentation du protocole
+
+SNMP (Simple Network Management Protocol) est le protocole standard de supervision reseau. Il fonctionne sur UDP, ports 161 (requetes agent) et 162 (traps). Il definit un modele a trois composants :
+
+- Le **manager** (ou NMS, Network Management Station) : le serveur de supervision qui interroge les agents.
+- L'**agent** : un processus logiciel embarque dans chaque equipement supervise (routeur, commutateur, serveur, imprimante).
+- La **MIB** (Management Information Base) : la base de donnees hierarchique qui decrit les informations accessibles sur un equipement.
+
+### Les versions de SNMP
+
+| Version | Authentification | Chiffrement | Particularites |
+|---------|-----------------|-------------|----------------|
+| SNMPv1 | Communaute (texte clair) | Aucun | Version historique, tres repandue mais non securisee |
+| SNMPv2c | Communaute (texte clair) | Aucun | Ajout du GetBulk, meilleure gestion des erreurs, compteurs 64 bits |
+| SNMPv3 | Utilisateur (USM) | DES, AES | Authentification (MD5, SHA), chiffrement, controle d'acces (VACM) |
+
+**Communaute SNMP.** En v1 et v2c, l'authentification repose sur une chaine de caracteres appelee communaute. Par defaut, la communaute de lecture est `public` et la communaute d'ecriture est `private`. Ces valeurs par defaut doivent imperativement etre modifiees en production. La communaute circule en clair sur le reseau, ce qui rend les versions 1 et 2c vulnerables a l'ecoute passive.
+
+**SNMPv3.** Introduit trois niveaux de securite :
+- `noAuthNoPriv` : pas d'authentification, pas de chiffrement (equivalent a v1/v2c).
+- `authNoPriv` : authentification par mot de passe (MD5 ou SHA), pas de chiffrement.
+- `authPriv` : authentification et chiffrement (DES ou AES).
+
+### MIB et OID
+
+La MIB est organisee sous forme d'arborescence hierarchique. Chaque noeud de l'arbre est identifie par un **OID** (Object Identifier), une sequence de nombres separes par des points.
+
+```
+iso(1).org(3).dod(6).internet(1).mgmt(2).mib-2(1)
+```
+
+Soit numeriquement : `1.3.6.1.2.1`
+
+Les OID les plus utilises en supervision :
+
+| OID | Nom | Description |
+|-----|-----|-------------|
+| 1.3.6.1.2.1.1.1.0 | sysDescr | Description du systeme |
+| 1.3.6.1.2.1.1.3.0 | sysUpTime | Duree depuis le dernier redemarrage |
+| 1.3.6.1.2.1.1.5.0 | sysName | Nom de l'equipement |
+| 1.3.6.1.2.1.2.2.1.10 | ifInOctets | Nombre d'octets recus sur une interface |
+| 1.3.6.1.2.1.2.2.1.16 | ifOutOctets | Nombre d'octets emis sur une interface |
+| 1.3.6.1.2.1.25.3.3.1.2 | hrProcessorLoad | Charge CPU (%) |
+| 1.3.6.1.2.1.25.2.3.1.6 | hrStorageUsed | Espace de stockage utilise |
+
+Les MIB constructeur (dites "privees") se trouvent sous l'OID `1.3.6.1.4.1` (enterprises). Chaque constructeur possede un numero unique attribue par l'IANA : Cisco = 9, HP = 11, etc.
+
+### Les requetes SNMP
+
+**GET.** Le manager demande la valeur d'un OID precis a l'agent.
+
+```bash
+snmpget -v2c -c public 192.168.1.1 1.3.6.1.2.1.1.5.0
+```
+
+Resultat : le nom de l'equipement (sysName).
+
+**GETNEXT.** Le manager demande la valeur de l'OID suivant dans l'arborescence. Utilise pour parcourir une MIB.
+
+```bash
+snmpgetnext -v2c -c public 192.168.1.1 1.3.6.1.2.1.1.5
+```
+
+**GETBULK (v2c et v3).** Recupere un grand nombre de valeurs en une seule requete. Plus efficace que des GETNEXT successifs.
+
+```bash
+snmpbulkget -v2c -c public -Cn0 -Cr10 192.168.1.1 1.3.6.1.2.1.2.2.1
+```
+
+**SET.** Le manager modifie la valeur d'un OID sur l'agent. Necessite la communaute d'ecriture.
+
+```bash
+snmpset -v2c -c private 192.168.1.1 1.3.6.1.2.1.1.5.0 s "Routeur-Paris"
+```
+
+**TRAP.** L'agent envoie spontanement une notification au manager. C'est le seul message initie par l'agent. Les traps sont envoyes vers le port UDP 162 du manager.
+
+Exemples de traps standards :
+- `coldStart` : l'equipement vient de redemarrer.
+- `linkDown` : une interface reseau est tombee.
+- `linkUp` : une interface reseau est remontee.
+- `authenticationFailure` : une tentative d'acces SNMP avec une mauvaise communaute.
+
+**WALK.** Commande utilitaire (pas un type de requete protocolaire) qui effectue des GETNEXT successifs pour parcourir une branche complete de la MIB.
+
+```bash
+snmpwalk -v2c -c public 192.168.1.1 1.3.6.1.2.1.2.2.1
+```
+
+### Configuration SNMP sur un equipement Cisco
+
+```
+Router(config)# snmp-server community lectureSeule RO
+Router(config)# snmp-server community ecritureSecrete RW
+Router(config)# snmp-server host 192.168.1.100 version 2c lectureSeule
+Router(config)# snmp-server enable traps
+Router(config)# snmp-server contact admin@entreprise.fr
+Router(config)# snmp-server location "Salle serveur Paris"
+```
+
+### Configuration SNMP sur un serveur Linux
+
+Installation de l'agent SNMP :
+
+```bash
+sudo apt install snmpd snmp
+```
+
+Fichier de configuration `/etc/snmp/snmpd.conf` :
+
+```
+agentAddress udp:161
+rocommunity lectureSeule 192.168.1.0/24
+syscontact admin@entreprise.fr
+syslocation "Salle serveur Paris"
+```
+
+Redemarrage du service :
+
+```bash
+sudo systemctl restart snmpd
+sudo systemctl enable snmpd
+```
+
+---
+
+## Nagios et Centreon
+
+### Architecture de Nagios
+
+Nagios est un logiciel libre de supervision. Son architecture repose sur un moteur central (Nagios Core) qui ordonnance l'execution de **plugins** (programmes externes) charges de verifier l'etat des equipements et des services.
+
+```
++---------------------+
+|   Interface web     |
+|   (CGI / Thruk)     |
++----------+----------+
+           |
++----------+----------+
+|   Nagios Core       |
+|   (ordonnanceur)    |
++----------+----------+
+           |
++----------+----------+
+|   Plugins           |
+|   (check_ping,      |
+|    check_http, ...) |
++----------+----------+
+           |
+     Equipements supervises
+```
+
+Le moteur lit les fichiers de configuration, planifie les verifications selon les intervalles definis, execute les plugins et traite les resultats (changement d'etat, notification, journalisation).
+
+### Les plugins Nagios
+
+Un plugin Nagios est un programme executable (script shell, Perl, Python, binaire C) qui respecte une convention simple :
+
+- Il recoit des parametres en ligne de commande.
+- Il affiche un message texte sur la sortie standard.
+- Il retourne un code de sortie qui indique l'etat :
+
+| Code de retour | Etat | Signification |
+|----------------|------|---------------|
+| 0 | OK | Le service fonctionne normalement |
+| 1 | WARNING | Seuil d'avertissement franchi |
+| 2 | CRITICAL | Seuil critique franchi ou service indisponible |
+| 3 | UNKNOWN | Impossible de determiner l'etat |
+
+Plugins courants :
+
+| Plugin | Fonction |
+|--------|----------|
+| `check_ping` | Teste l'accessibilite d'un hote par ICMP |
+| `check_http` | Verifie un serveur web (code HTTP, temps de reponse, contenu) |
+| `check_ssh` | Verifie qu'un serveur SSH repond |
+| `check_disk` | Verifie l'espace disque (local, via NRPE) |
+| `check_load` | Verifie la charge systeme (via NRPE) |
+| `check_snmp` | Interroge un OID SNMP et compare la valeur a des seuils |
+| `check_tcp` | Verifie qu'un port TCP est ouvert et repond |
+| `check_dns` | Verifie la resolution DNS |
+
+### NRPE (Nagios Remote Plugin Executor)
+
+Pour superviser des metriques locales d'un serveur distant (CPU, RAM, disque), Nagios utilise NRPE. L'architecture est la suivante :
+
+1. Le serveur Nagios execute le plugin `check_nrpe` en lui passant le nom de la commande distante.
+2. Le plugin `check_nrpe` se connecte au daemon NRPE sur le serveur distant (port TCP 5666).
+3. Le daemon NRPE execute localement le plugin demande et renvoie le resultat.
+
+Installation de NRPE sur le serveur distant :
+
+```bash
+sudo apt install nagios-nrpe-server nagios-plugins-basic
+```
+
+Configuration `/etc/nagios/nrpe.cfg` :
+
+```
+allowed_hosts=127.0.0.1,192.168.1.100
+command[check_disk]=/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /
+command[check_load]=/usr/lib/nagios/plugins/check_load -w 5,4,3 -c 10,8,6
+command[check_mem]=/usr/lib/nagios/plugins/check_mem -w 80 -c 90
+```
+
+Appel depuis le serveur Nagios :
+
+```bash
+/usr/lib/nagios/plugins/check_nrpe -H 192.168.1.50 -c check_disk
+```
+
+### Fichiers de configuration Nagios
+
+La configuration de Nagios est repartie dans plusieurs fichiers situes par defaut dans `/usr/local/nagios/etc/` ou `/etc/nagios3/`.
+
+**nagios.cfg** : fichier principal, reference les autres fichiers et repertoires de configuration.
+
+```
+cfg_dir=/usr/local/nagios/etc/servers
+cfg_dir=/usr/local/nagios/etc/services
+cfg_file=/usr/local/nagios/etc/objects/contacts.cfg
+cfg_file=/usr/local/nagios/etc/objects/commands.cfg
+```
+
+**Definition d'un hote :**
+
+```
+define host {
+    use                     linux-server
+    host_name               srv-web-01
+    alias                   Serveur Web Production
+    address                 192.168.1.50
+    max_check_attempts      5
+    check_period            24x7
+    notification_interval   30
+    notification_period     24x7
+    contacts                admin
+    check_command           check-host-alive
+}
+```
+
+**Definition d'un service :**
+
+```
+define service {
+    use                     generic-service
+    host_name               srv-web-01
+    service_description     HTTP
+    check_command           check_http!-p 80 -w 5 -c 10
+    check_interval          5
+    retry_interval          1
+    max_check_attempts      3
+    notification_interval   30
+    notification_period     24x7
+    contacts                admin
+}
+```
+
+**Definition d'un contact :**
+
+```
+define contact {
+    contact_name            admin
+    use                     generic-contact
+    alias                   Administrateur Systeme
+    email                   admin@entreprise.fr
+    service_notification_period     24x7
+    host_notification_period        24x7
+    service_notification_options    w,u,c,r
+    host_notification_options       d,u,r
+    service_notification_commands   notify-service-by-email
+    host_notification_commands      notify-host-by-email
+}
+```
+
+Les options de notification :
+- `w` : warning, `c` : critical, `u` : unknown, `r` : recovery (services)
+- `d` : down, `u` : unreachable, `r` : recovery (hotes)
+
+**Definition d'une commande :**
+
+```
+define command {
+    command_name    check_http
+    command_line    $USER1$/check_http -H $HOSTADDRESS$ $ARG1$
+}
+```
+
+Les macros Nagios (`$HOSTADDRESS$`, `$USER1$`, `$ARG1$`, etc.) sont remplacees par leurs valeurs a l'execution.
+
+### Centreon
+
+Centreon est une surcouche a Nagios (puis a son propre moteur Centreon Engine) qui apporte :
+
+- Une **interface web complete** pour configurer les hotes, services, contacts sans editer les fichiers texte.
+- Un systeme de **templates** (modeles) hierarchiques qui simplifient la configuration.
+- Des **graphiques de performance** integres (via Centreon Broker et RRDtool).
+- La gestion multi-site (**Centreon Remote Server** et **Centreon MAP**).
+- Un **catalogue de plugins** (Plugin Packs) pour les equipements courants.
+
+L'installation de Centreon se fait via un depot officiel sur CentOS/AlmaLinux ou via des conteneurs Docker.
+
+### Cycle de vie d'un etat dans Nagios
+
+Un service passe par les etats suivants :
+
+1. **SOFT state** : l'etat a change mais le nombre de tentatives (`max_check_attempts`) n'est pas encore atteint. Aucune notification n'est envoyee.
+2. **HARD state** : le nombre de tentatives est atteint et l'etat se confirme. La notification est declenchee.
+
+Ce mecanisme evite les fausses alertes dues a des problemes transitoires. Par exemple, avec `max_check_attempts=3` et `retry_interval=1`, Nagios reessaie 3 fois a 1 minute d'intervalle avant de confirmer un etat CRITICAL et d'envoyer une notification.
+
+---
+
+## Zabbix
+
+### Presentation
+
+Zabbix est une solution de supervision libre et complete, capable de superviser reseaux, serveurs, machines virtuelles, applications et services cloud. Contrairement a Nagios, Zabbix integre nativement l'interface web, la base de donnees, les graphiques et le systeme de notification.
+
+### Architecture
+
+```
++-------------------+     +-------------------+     +------------------+
+| Interface web     |     | Serveur Zabbix    |     | Base de donnees  |
+| (PHP/Apache/Nginx)|<--->| (zabbix_server)   |<--->| (MySQL/PostgreSQL|
++-------------------+     +--------+----------+     |  /TimescaleDB)   |
+                                   |                 +------------------+
+                          +--------+----------+
+                          |  Agents Zabbix /   |
+                          |  SNMP / IPMI /     |
+                          |  JMX / HTTP        |
+                          +--------------------+
+```
+
+### Installation (Debian/Ubuntu)
+
+```bash
+# Ajout du depot Zabbix
+wget https://repo.zabbix.com/zabbix/6.4/ubuntu/pool/main/z/zabbix-release/zabbix-release_6.4-1+ubuntu22.04_all.deb
+sudo dpkg -i zabbix-release_6.4-1+ubuntu22.04_all.deb
+sudo apt update
+
+# Installation des composants
+sudo apt install zabbix-server-mysql zabbix-frontend-php zabbix-apache-conf zabbix-sql-scripts zabbix-agent
+
+# Creation de la base de donnees
+mysql -u root -p
+> CREATE DATABASE zabbix CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+> CREATE USER 'zabbix'@'localhost' IDENTIFIED BY 'motdepasse';
+> GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'localhost';
+
+# Import du schema
+zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | mysql -uzabbix -p zabbix
+
+# Configuration du serveur
+sudo nano /etc/zabbix/zabbix_server.conf
+# DBPassword=motdepasse
+
+# Demarrage
+sudo systemctl restart zabbix-server zabbix-agent apache2
+sudo systemctl enable zabbix-server zabbix-agent apache2
+```
+
+Acces a l'interface web : `http://adresse-serveur/zabbix` (identifiants par defaut : Admin / zabbix).
+
+### Agent Zabbix
+
+L'agent Zabbix est un daemon installe sur chaque machine supervisee. Il collecte les metriques locales et les transmet au serveur Zabbix.
+
+Installation de l'agent :
+
+```bash
+sudo apt install zabbix-agent
+```
+
+Configuration `/etc/zabbix/zabbix_agentd.conf` :
+
+```
+Server=192.168.1.100
+ServerActive=192.168.1.100
+Hostname=srv-web-01
+```
+
+- `Server` : adresse du serveur Zabbix autorise a interroger l'agent (mode passif).
+- `ServerActive` : adresse du serveur vers lequel l'agent envoie les donnees (mode actif).
+- `Hostname` : doit correspondre exactement au nom de l'hote declare dans l'interface Zabbix.
+
+**Mode passif** : le serveur Zabbix interroge l'agent a intervalles reguliers.
+**Mode actif** : l'agent se connecte au serveur, recupere la liste des metriques a collecter et envoie les resultats de maniere autonome. Plus efficace quand le nombre d'hotes est eleve.
+
+### Templates
+
+Un template Zabbix est un ensemble reutilisable de :
+- **Items** : metriques a collecter (CPU, RAM, espace disque, etc.).
+- **Triggers** : conditions de declenchement d'alerte.
+- **Graphiques** : representations visuelles des metriques.
+- **Regles de decouverte** : detection automatique de systemes de fichiers, interfaces reseau, etc.
+
+Zabbix fournit des templates officiels : "Linux by Zabbix agent", "Windows by Zabbix agent", "Cisco IOS by SNMP", "Apache by HTTP", etc.
+
+Pour appliquer un template : Configuration > Hotes > selectionner l'hote > onglet Templates > lier le template souhaite.
+
+### Items (elements de donnees)
+
+Un item definit une metrique a collecter. Parametres principaux :
+
+| Parametre | Description |
+|-----------|-------------|
+| Name | Nom affiche (ex : "CPU utilization") |
+| Type | Mode de collecte (Zabbix agent, SNMP, HTTP, calculated, etc.) |
+| Key | Cle de l'item (ex : `system.cpu.util[,idle]`, `vfs.fs.size[/,pfree]`) |
+| Update interval | Frequence de collecte (ex : 60s, 5m) |
+| History storage period | Duree de conservation des donnees brutes |
+| Trend storage period | Duree de conservation des tendances (min/max/moy par heure) |
+
+Cles d'items courantes (agent Zabbix) :
+
+| Cle | Description |
+|-----|-------------|
+| `system.cpu.util[,idle]` | Pourcentage de CPU inactif |
+| `vm.memory.utilization` | Utilisation memoire en % |
+| `vfs.fs.size[/,pfree]` | Espace libre sur / en % |
+| `net.if.in[eth0]` | Octets entrants sur eth0 |
+| `net.if.out[eth0]` | Octets sortants sur eth0 |
+| `system.uptime` | Duree de fonctionnement |
+| `agent.ping` | Test de connectivite agent |
+
+### Triggers
+
+Un trigger est une expression logique evaluee a chaque reception de donnees. Lorsque l'expression devient vraie, le trigger passe en etat "PROBLEM" et une alerte est generee.
+
+Syntaxe d'un trigger :
+
+```
+/srv-web-01/vfs.fs.size[/,pfree].last()<10
+```
+
+Cette expression signifie : si le dernier pourcentage d'espace libre sur / de l'hote srv-web-01 est inferieur a 10 %, declencher l'alerte.
+
+Exemples de triggers :
+
+```
+# CPU superieur a 90% pendant 5 minutes
+/srv-web-01/system.cpu.util[,idle].avg(5m)<10
+
+# Memoire utilisee a plus de 90%
+/srv-web-01/vm.memory.utilization.last()>90
+
+# Hote injoignable
+/srv-web-01/agent.ping.nodata(5m)=1
+
+# Espace disque inferieur a 20%
+/srv-web-01/vfs.fs.size[/,pfree].last()<20
+```
+
+Les niveaux de severite des triggers :
+
+| Severite | Couleur | Usage typique |
+|----------|---------|---------------|
+| Not classified | Gris | Non categorise |
+| Information | Bleu clair | Information, pas d'action requise |
+| Warning | Jaune | Seuil d'attention franchi |
+| Average | Orange | Probleme significatif |
+| High | Rouge clair | Probleme important |
+| Disaster | Rouge | Panne critique, intervention immediate |
+
+### Graphiques et cartes
+
+Zabbix genere automatiquement des graphiques a partir des items collectes. On peut creer des graphiques personnalises combinant plusieurs items.
+
+Les **cartes reseau** (network maps) representent visuellement la topologie du reseau supervise. Chaque element de la carte est lie a un hote ou un groupe d'hotes, et change de couleur en fonction de l'etat (vert = OK, rouge = probleme).
+
+### Decouverte automatique (LLD - Low Level Discovery)
+
+La decouverte automatique permet de detecter et superviser dynamiquement des elements sans configuration manuelle. Exemples :
+
+- **Decouverte de systemes de fichiers** : Zabbix detecte automatiquement toutes les partitions et cree un item et un trigger pour chacune.
+- **Decouverte d'interfaces reseau** : supervision automatique de chaque interface.
+- **Decouverte reseau** : scan d'une plage IP pour detecter de nouveaux equipements et les ajouter automatiquement.
+
+Configuration de la decouverte reseau : Configuration > Discovery > creer une regle avec la plage IP, les services a verifier (SNMP, agent Zabbix, ICMP) et les actions a declencher (ajout automatique, liaison a un template, envoi de notification).
+
+---
+
+## Alertes et notifications
+
+### Niveaux de severite
+
+Une bonne politique d'alerte repose sur une hierarchisation claire des severites. Le modele suivant est couramment adopte :
+
+| Niveau | Signification | Reaction attendue |
+|--------|--------------|-------------------|
+| Information | Evenement normal, pas de probleme | Aucune action, journalise |
+| Warning | Seuil de vigilance franchi | Surveillance accrue, planification |
+| Critical | Service degrade ou indisponible | Intervention rapide necessaire |
+| Emergency | Panne majeure, impact etendu | Intervention immediate, mobilisation |
+
+### Escalade
+
+L'escalade definit une chaine de notification progressive :
+
+1. **Niveau 1 (0 min)** : notification au technicien d'astreinte par email.
+2. **Niveau 2 (15 min)** : si pas d'acquittement, notification par SMS au technicien.
+3. **Niveau 3 (30 min)** : notification au responsable de l'equipe.
+4. **Niveau 4 (60 min)** : notification au directeur technique.
+
+Configuration de l'escalade dans Nagios :
+
+```
+define serviceescalation {
+    host_name               srv-web-01
+    service_description     HTTP
+    first_notification      3
+    last_notification       5
+    notification_interval   15
+    contact_groups          responsables
+}
+```
+
+Dans Zabbix, l'escalade se configure via les **actions** : Configuration > Actions > Operations. Chaque etape definit un delai, un destinataire et un canal de notification.
+
+### Canaux de notification
+
+| Canal | Usage | Configuration |
+|-------|-------|---------------|
+| Email | Canal principal, tous niveaux | Serveur SMTP configure dans l'outil de supervision |
+| SMS | Alertes critiques, astreinte | Passerelle SMS (API, modem GSM) |
+| Messagerie instantanee | Notification rapide equipe | Webhook vers Slack, Teams, Mattermost, Telegram |
+| Appel vocal | Situations d'urgence | Service tiers (PagerDuty, OpsGenie) |
+
+### Gestion des faux positifs
+
+Un faux positif est une alerte declenchee alors qu'il n'y a pas de reel probleme. Les causes courantes :
+
+- Seuils trop bas ou inadaptes.
+- Verifications trop frequentes sur des services instables par nature.
+- Pics de charge temporaires et normaux (sauvegardes nocturnes, mises a jour).
+- Probleme de connectivite entre le serveur de supervision et l'equipement.
+
+Strategies pour reduire les faux positifs :
+
+- **Ajuster les seuils** en fonction des valeurs historiques observees.
+- **Augmenter max_check_attempts** pour confirmer l'etat avant notification.
+- **Definir des periodes de maintenance** pendant les operations planifiees.
+- **Utiliser des dependances** : si le routeur est en panne, ne pas alerter pour tous les equipements situes derriere.
+- **Correler les alertes** : un disque plein et des erreurs applicatives sur le meme serveur ne doivent generer qu'une seule alerte contextuelle.
+
+### Acquittement
+
+L'acquittement (acknowledge) est l'action par laquelle un operateur signale qu'il a pris connaissance d'une alerte et qu'il la traite. L'alerte reste visible mais les notifications d'escalade sont suspendues. Dans Zabbix, l'acquittement se fait depuis l'interface web (Monitoring > Problems > Ack).
+
+---
+
+## Tableaux de bord et Grafana
+
+### Role des tableaux de bord
+
+Un tableau de bord (dashboard) offre une vue synthetique de l'etat du systeme d'information. Il rassemble les indicateurs cles sur un ecran unique, permettant une prise de decision rapide.
+
+Les indicateurs cles (KPI) couramment affiches :
+
+- Taux de disponibilite des services (uptime en %).
+- Nombre d'alertes actives par severite.
+- Temps de reponse des applications.
+- Utilisation des ressources (CPU, RAM, disque, bande passante).
+- Nombre de tickets d'incident ouverts.
+- Respect des SLA.
+
+### Grafana
+
+Grafana est une plateforme open source de visualisation. Elle ne collecte pas de donnees elle-meme mais se connecte a des sources de donnees existantes.
+
+**Sources de donnees supportees :**
+- Zabbix (via le plugin Grafana-Zabbix)
+- Prometheus
+- InfluxDB
+- Elasticsearch
+- MySQL / PostgreSQL
+- Graphite
+
+**Installation de Grafana :**
+
+```bash
+sudo apt install -y apt-transport-https software-properties-common
+wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee /etc/apt/sources.list.d/grafana.list
+sudo apt update
+sudo apt install grafana
+sudo systemctl start grafana-server
+sudo systemctl enable grafana-server
+```
+
+Acces : `http://adresse-serveur:3000` (identifiants par defaut : admin / admin).
+
+**Connexion a Zabbix :**
+
+1. Installer le plugin : `grafana-cli plugins install alexanderzobnin-zabbix-app`.
+2. Redemarrer Grafana.
+3. Configuration > Data Sources > Add data source > Zabbix.
+4. Renseigner l'URL de l'API Zabbix (`http://serveur-zabbix/api_jsonrpc.php`), l'utilisateur et le mot de passe.
+
+**Connexion a Prometheus :**
+
+Prometheus est un systeme de collecte de metriques par scraping HTTP. Les applications exposent leurs metriques sur un endpoint `/metrics` au format texte. Prometheus les collecte periodiquement.
+
+1. Configuration > Data Sources > Add data source > Prometheus.
+2. Renseigner l'URL du serveur Prometheus (`http://serveur-prometheus:9090`).
+
+**Creation d'un dashboard :**
+
+1. Creer un nouveau dashboard.
+2. Ajouter un panneau (panel).
+3. Selectionner la source de donnees.
+4. Construire la requete (selection du groupe, de l'hote, de l'item).
+5. Choisir le type de visualisation (graphique temporel, jauge, tableau, heatmap, etc.).
+6. Configurer les seuils visuels (zones vertes, jaunes, rouges).
+
+### Bonnes pratiques des tableaux de bord
+
+- Un tableau de bord par audience : un pour les operateurs (technique et detaille), un pour la direction (synthetique et oriente SLA).
+- Limiter le nombre de panneaux par ecran pour maintenir la lisibilite.
+- Utiliser des variables (templates) Grafana pour filtrer dynamiquement par hote, service ou site.
+- Configurer des alertes Grafana en complement de celles de l'outil de supervision.
+
+---
+
+## Gestion de parc avec GLPI
+
+### Presentation
+
+GLPI (Gestionnaire Libre de Parc Informatique) est une application web open source de gestion de parc et de helpdesk. Elle couvre :
+
+- L'inventaire du materiel et des logiciels.
+- La gestion des tickets d'incident et de demande.
+- La gestion financiere (achats, contrats, garanties).
+- La base de connaissances.
+- La gestion des SLA.
+
+### Installation
+
+GLPI necessite un serveur web (Apache ou Nginx), PHP et une base de donnees (MySQL ou MariaDB).
+
+```bash
+# Prerequis
+sudo apt install apache2 php php-mysql php-curl php-gd php-intl php-xml php-mbstring php-ldap php-zip mariadb-server
+
+# Telechargement de GLPI
+cd /var/www/html
+sudo wget https://github.com/glpi-project/glpi/releases/download/10.0.10/glpi-10.0.10.tgz
+sudo tar xzf glpi-10.0.10.tgz
+sudo chown -R www-data:www-data glpi
+
+# Creation de la base de donnees
+mysql -u root -p
+> CREATE DATABASE glpi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+> CREATE USER 'glpi'@'localhost' IDENTIFIED BY 'motdepasse';
+> GRANT ALL PRIVILEGES ON glpi.* TO 'glpi'@'localhost';
+```
+
+Acceder a `http://adresse-serveur/glpi` et suivre l'assistant d'installation.
+
+Identifiants par defaut :
+- glpi / glpi (super-administrateur)
+- tech / tech (technicien)
+- normal / normal (utilisateur)
+- post-only / postonly (lecture seule)
+
+**Action de securite obligatoire apres installation** : modifier tous les mots de passe par defaut et supprimer le fichier `install/install.php`.
+
+### Inventaire automatique
+
+L'inventaire manuel est fastidieux et source d'erreurs. GLPI s'interface avec des outils d'inventaire automatique.
+
+**FusionInventory** (integre nativement depuis GLPI 10) : un agent installe sur chaque poste collecte les informations materielles et logicielles et les transmet au serveur GLPI.
+
+Installation de l'agent FusionInventory sur un poste :
+
+```bash
+sudo apt install fusioninventory-agent
+```
+
+Configuration `/etc/fusioninventory/agent.cfg` :
+
+```
+server = http://adresse-glpi/front/inventory.php
+```
+
+Lancement :
+
+```bash
+sudo fusioninventory-agent
+```
+
+L'agent remonte : nom de machine, systeme d'exploitation, processeur, memoire, disques, cartes reseau (adresses MAC et IP), logiciels installes, peripheriques USB, moniteurs, imprimantes.
+
+**OCS Inventory NG** : alternative a FusionInventory, fonctionnant sur un modele client-serveur propre avec sa propre base de donnees. Un plugin GLPI permet de synchroniser les donnees d'OCS vers GLPI.
+
+### Fiches materielles
+
+Chaque equipement dans GLPI dispose d'une fiche complete :
+
+- **Informations generales** : nom, numero de serie, numero d'inventaire, fabricant, modele, type.
+- **Emplacement** : site, batiment, salle, baie.
+- **Utilisateur et groupe** : affectation.
+- **Composants** : processeur, memoire, disques, cartes reseau.
+- **Logiciels** : liste des logiciels installes avec versions.
+- **Connexions reseau** : ports, prises reseau, VLAN.
+- **Gestion** : date d'achat, fournisseur, garantie, valeur, amortissement.
+- **Historique** : toutes les modifications apportees a la fiche.
+- **Tickets** : incidents et demandes lies a cet equipement.
+
+### Gestion des tickets
+
+GLPI implemente un systeme de gestion de tickets conforme aux bonnes pratiques ITIL.
+
+**Cycle de vie d'un ticket :**
+
+1. **Nouveau** : le ticket vient d'etre cree (par un utilisateur, un email, ou automatiquement).
+2. **En cours (attribue)** : un technicien est assigne au ticket.
+3. **En cours (planifie)** : une intervention est planifiee.
+4. **En attente** : le traitement est suspendu (attente d'information, de materiel, etc.).
+5. **Resolu** : le technicien a applique une solution.
+6. **Clos** : l'utilisateur a valide la solution ou le delai de cloture automatique est ecoule.
+
+**Champs principaux d'un ticket :**
+
+| Champ | Description |
+|-------|-------------|
+| Type | Incident ou demande |
+| Categorie | Classification thematique (reseau, poste de travail, messagerie, etc.) |
+| Urgence | Perception de l'utilisateur (basse, moyenne, haute, tres haute) |
+| Impact | Etendue du dysfonctionnement (un utilisateur, un service, toute l'entreprise) |
+| Priorite | Calculee automatiquement a partir de l'urgence et de l'impact |
+| SLA | Engagement de temps de prise en charge et de resolution |
+
+**Matrice urgence / impact / priorite :**
+
+|  | Impact faible | Impact moyen | Impact fort |
+|--|--------------|-------------|------------|
+| Urgence haute | Moyenne | Haute | Tres haute |
+| Urgence moyenne | Basse | Moyenne | Haute |
+| Urgence basse | Tres basse | Basse | Moyenne |
+
+### SLA dans GLPI
+
+GLPI permet de definir des SLA avec deux niveaux d'engagement :
+
+- **TTO (Time To Own)** : delai maximal de prise en charge du ticket (temps entre la creation et l'attribution a un technicien).
+- **TTR (Time To Resolve)** : delai maximal de resolution du ticket.
+
+Configuration : Configuration > SLA > Ajouter.
+
+Exemple :
+- SLA "Standard" : TTO = 4 heures, TTR = 8 heures ouvrables.
+- SLA "Critique" : TTO = 30 minutes, TTR = 2 heures.
+
+Les SLA sont associes a des calendriers (heures ouvrables) et peuvent declencher des actions d'escalade automatiques.
+
+### Base de connaissances
+
+La base de connaissances de GLPI permet de capitaliser les solutions aux problemes recurrents. Chaque article peut etre :
+
+- Public (accessible a tous les utilisateurs) ou restreint (visible uniquement des techniciens).
+- Associe a une categorie.
+- Lie a des tickets.
+
+L'objectif est de permettre aux utilisateurs de trouver eux-memes la solution (self-service) et aux techniciens de resoudre plus rapidement les incidents deja documentes.
+
+---
+
+## ITIL : concepts fondamentaux
+
+### Presentation
+
+ITIL (Information Technology Infrastructure Library) est un referentiel de bonnes pratiques pour la gestion des services informatiques (ITSM - IT Service Management). Il est organise autour du cycle de vie du service.
+
+### Les processus cles pour le BTS SIO
+
+**Gestion des incidents.** Objectif : retablir le service le plus rapidement possible en minimisant l'impact sur l'activite. Un incident est une interruption non planifiee ou une degradation de la qualite d'un service.
+
+**Gestion des problemes.** Objectif : identifier la cause racine des incidents recurrents et mettre en place des solutions definitives. Un probleme est la cause sous-jacente d'un ou plusieurs incidents.
+
+Distinction fondamentale :
+- Un **incident** est un symptome : "le serveur web ne repond plus".
+- Un **probleme** est la cause : "le disque dur du serveur est defectueux".
+
+Un incident est traite dans l'urgence pour retablir le service (eventuellement par un contournement temporaire). Un probleme fait l'objet d'une analyse approfondie pour eviter la recurrence.
+
+**Gestion des changements.** Objectif : controler les modifications apportees au systeme d'information pour minimiser les risques de perturbation. Tout changement (installation de logiciel, modification de configuration, mise a jour) doit etre enregistre, evalue, approuve et planifie.
+
+Types de changements :
+- **Standard** : pre-approuve, faible risque, procedure etablie (ex : creation de compte utilisateur).
+- **Normal** : necessite une evaluation et une approbation par le CAB (Change Advisory Board).
+- **Urgent** : traitement accelere pour corriger un incident critique.
+
+**SLA (Service Level Agreement).** Contrat entre le fournisseur de services et le client definissant les niveaux de service attendus. Il contient :
+- La description du service.
+- Les niveaux de disponibilite (ex : 99,9 %).
+- Les temps de reponse et de resolution.
+- Les penalites en cas de non-respect.
+- Les indicateurs de mesure (KPI).
+
+Relation avec les OLA et UC :
+- **OLA (Operational Level Agreement)** : accord interne entre equipes du fournisseur.
+- **UC (Underpinning Contract)** : contrat avec un sous-traitant externe.
+
+**Base de connaissances (SKMS - Service Knowledge Management System).** Referentiel centralise de toutes les connaissances liees aux services : documentation technique, procedures, solutions connues, erreurs connues, fiches de configuration.
+
+**CMDB (Configuration Management Database).** Base de donnees contenant les elements de configuration (CI - Configuration Items) et leurs relations. Un CI peut etre un serveur, un routeur, une application, un contrat, un document. La CMDB permet de comprendre les dependances entre elements.
+
+---
+
+## Gestion des incidents
+
+### Workflow complet
+
+```
+Detection
+    |
+    v
+Enregistrement
+    |
+    v
+Classification (categorie, urgence, impact, priorite)
+    |
+    v
+Affectation (assignation a un technicien ou un groupe)
+    |
+    v
+Diagnostic (analyse du probleme, recherche dans la base de connaissances)
+    |
+    v
+Resolution (application de la solution ou escalade)
+    |
+    v
+Verification (test de la solution, validation par l'utilisateur)
+    |
+    v
+Cloture (fermeture du ticket, mise a jour de la base de connaissances)
+```
+
+### Detection
+
+La detection d'un incident peut provenir de plusieurs sources :
+
+- **Supervision automatique** : alerte Nagios, Zabbix, Centreon.
+- **Signalement utilisateur** : appel telephonique, email, portail web GLPI.
+- **Detection proactive** : analyse de tendances, revue des logs.
+
+### Priorite, urgence et impact
+
+Ces trois concepts sont distincts et ne doivent pas etre confondus :
+
+- **Urgence** : mesure de la rapidite necessaire pour traiter l'incident. Determinee par l'impact sur l'activite et les delais contractuels (SLA).
+- **Impact** : mesure de l'etendue du dysfonctionnement. Un incident touchant un seul utilisateur a un impact faible ; un incident touchant l'ensemble des utilisateurs a un impact fort.
+- **Priorite** : resultat du croisement entre urgence et impact. C'est la priorite qui determine l'ordre de traitement des incidents.
+
+Exemple concret :
+- L'imprimante d'un stagiaire ne fonctionne plus : urgence basse, impact faible, priorite basse.
+- Le serveur de messagerie est en panne : urgence haute, impact fort (tous les utilisateurs), priorite maximale.
+- Un directeur ne peut plus acceder a son agenda : urgence haute (VIP), impact faible (un utilisateur), priorite moyenne a haute selon la politique interne.
+
+### Escalade
+
+**Escalade fonctionnelle (horizontale)** : transfert du ticket vers une equipe possedant les competences necessaires. Exemple : le technicien de niveau 1 transfiere un incident reseau complexe a l'equipe reseau de niveau 2.
+
+**Escalade hierarchique (verticale)** : notification du management lorsque l'incident n'est pas resolu dans les delais ou lorsque son impact le justifie. Exemple : notification du DSI pour une panne majeure affectant la production.
+
+---
+
+## Supervision reseau
+
+### Wireshark
+
+Wireshark est un analyseur de protocoles reseau (sniffer) graphique. Il capture les trames circulant sur une interface reseau et permet de les analyser en detail.
+
+**Capture de trames :**
+
+1. Lancer Wireshark.
+2. Selectionner l'interface reseau (eth0, wlan0, etc.).
+3. Cliquer sur "Start Capturing".
+4. Effectuer les operations a analyser.
+5. Arreter la capture.
+
+**Filtres d'affichage (display filters) :**
+
+Les filtres d'affichage permettent d'isoler les trames pertinentes dans une capture. Ils s'appliquent apres la capture.
+
+| Filtre | Description |
+|--------|-------------|
+| `ip.addr == 192.168.1.50` | Trames impliquant cette adresse IP |
+| `ip.src == 192.168.1.50` | Trames emises par cette adresse |
+| `ip.dst == 192.168.1.50` | Trames a destination de cette adresse |
+| `tcp.port == 80` | Trames sur le port TCP 80 |
+| `tcp.port == 443` | Trames HTTPS |
+| `udp.port == 53` | Trames DNS |
+| `http` | Trames HTTP uniquement |
+| `dns` | Trames DNS uniquement |
+| `icmp` | Trames ICMP (ping) uniquement |
+| `tcp.flags.syn == 1` | Trames TCP SYN (debut de connexion) |
+| `tcp.flags.rst == 1` | Trames TCP RST (connexion refusee) |
+| `arp` | Trames ARP |
+| `ip.addr == 192.168.1.0/24` | Trames du sous-reseau |
+| `http.request.method == "GET"` | Requetes HTTP GET |
+| `tcp.analysis.retransmission` | Retransmissions TCP |
+| `frame.len > 1000` | Trames de plus de 1000 octets |
+
+**Operateurs logiques dans les filtres :**
+
+- `&&` ou `and` : ET logique. Exemple : `ip.src == 192.168.1.50 && tcp.port == 80`
+- `||` ou `or` : OU logique. Exemple : `dns || http`
+- `!` ou `not` : negation. Exemple : `!arp`
+
+**Filtres de capture (capture filters) :**
+
+Syntaxe BPF (Berkeley Packet Filter), s'appliquent pendant la capture :
+
+| Filtre | Description |
+|--------|-------------|
+| `host 192.168.1.50` | Trames depuis/vers cette IP |
+| `port 80` | Trames sur le port 80 |
+| `net 192.168.1.0/24` | Trames du sous-reseau |
+| `tcp` | Trames TCP uniquement |
+| `not arp` | Exclure ARP |
+
+**Analyse d'une trame :**
+
+Wireshark decompose chaque trame en couches :
+
+1. **Frame** : informations de capture (taille, horodatage).
+2. **Ethernet II** : adresses MAC source et destination, type (0x0800 = IPv4, 0x0806 = ARP).
+3. **Internet Protocol** : adresses IP source et destination, TTL, protocole (6 = TCP, 17 = UDP, 1 = ICMP).
+4. **Transmission Control Protocol** ou **User Datagram Protocol** : ports source et destination, flags, numeros de sequence.
+5. **Couche applicative** : donnees HTTP, DNS, SNMP, etc.
+
+**Suivi de flux TCP (Follow TCP Stream) :**
+
+Clic droit sur une trame TCP > Follow > TCP Stream. Affiche l'integralite de l'echange entre client et serveur de maniere lisible (requetes et reponses HTTP par exemple).
+
+### tcpdump
+
+tcpdump est l'equivalent en ligne de commande de Wireshark. Il est disponible sur la quasi-totalite des systemes Unix/Linux.
+
+```bash
+# Capturer sur l'interface eth0
+sudo tcpdump -i eth0
+
+# Capturer uniquement le trafic HTTP
+sudo tcpdump -i eth0 port 80
+
+# Capturer le trafic vers/depuis une IP
+sudo tcpdump -i eth0 host 192.168.1.50
+
+# Capturer avec resolution de noms desactivee et details
+sudo tcpdump -i eth0 -nn -v
+
+# Enregistrer la capture dans un fichier (lisible par Wireshark)
+sudo tcpdump -i eth0 -w capture.pcap
+
+# Lire un fichier de capture
+sudo tcpdump -r capture.pcap
+
+# Capturer uniquement les paquets ICMP
+sudo tcpdump -i eth0 icmp
+
+# Capturer les 100 premiers paquets et s'arreter
+sudo tcpdump -i eth0 -c 100
+
+# Capturer le trafic DNS
+sudo tcpdump -i eth0 port 53
+
+# Combiner des filtres
+sudo tcpdump -i eth0 'host 192.168.1.50 and port 80'
+```
+
+Options principales :
+
+| Option | Description |
+|--------|-------------|
+| `-i` | Interface de capture |
+| `-w` | Ecrire dans un fichier pcap |
+| `-r` | Lire un fichier pcap |
+| `-c` | Nombre de paquets a capturer |
+| `-n` | Ne pas resoudre les adresses IP |
+| `-nn` | Ne pas resoudre les adresses ni les ports |
+| `-v`, `-vv`, `-vvv` | Niveaux de verbosite |
+| `-X` | Afficher le contenu en hexadecimal et ASCII |
+| `-A` | Afficher le contenu en ASCII |
+
+---
+
+## Metriques systeme
+
+### CPU
+
+| Metrique | Description | Commande Linux |
+|----------|-------------|----------------|
+| Utilisation (%) | Pourcentage de temps CPU occupe | `top`, `htop`, `mpstat` |
+| Charge (load average) | Nombre moyen de processus en attente d'execution | `uptime`, `cat /proc/loadavg` |
+| Temps utilisateur (user) | CPU consomme par les processus utilisateur | `mpstat` |
+| Temps systeme (system) | CPU consomme par le noyau | `mpstat` |
+| Temps d'attente E/S (iowait) | CPU en attente d'operations disque | `mpstat`, `iostat` |
+| Temps inactif (idle) | CPU disponible | `mpstat` |
+
+Le **load average** represente le nombre moyen de processus dans la file d'execution sur 1, 5 et 15 minutes. Sur un systeme a 4 coeurs, un load average de 4.0 signifie que les processeurs sont pleinement utilises. Au-dela, des processus attendent.
+
+```bash
+$ uptime
+ 14:23:01 up 45 days, 3:12, 2 users, load average: 1.25, 2.10, 1.85
+
+$ mpstat 1 5
+# Affiche les statistiques CPU chaque seconde pendant 5 iterations
+```
+
+### Memoire (RAM)
+
+| Metrique | Description | Commande |
+|----------|-------------|----------|
+| Totale | Capacite totale de RAM | `free -h` |
+| Utilisee | RAM effectivement occupee | `free -h` |
+| Disponible | RAM pouvant etre allouee | `free -h` (colonne available) |
+| Cache/Buffer | RAM utilisee comme cache disque | `free -h` |
+| Swap utilise | Espace d'echange sur disque | `free -h`, `swapon -s` |
+
+```bash
+$ free -h
+              total        used        free      shared  buff/cache   available
+Mem:           15Gi       4.2Gi       2.1Gi       256Mi       9.1Gi        10Gi
+Swap:         2.0Gi          0B       2.0Gi
+```
+
+L'utilisation intensive du swap est un signe de manque de RAM. Un serveur en production ne devrait idealement pas utiliser de swap de maniere significative.
+
+### Disque
+
+| Metrique | Description | Commande |
+|----------|-------------|----------|
+| Espace utilise/libre | Occupation des partitions | `df -h` |
+| Utilisation inodes | Nombre de fichiers | `df -i` |
+| IOPS | Operations d'entree/sortie par seconde | `iostat -x` |
+| Debit (throughput) | Mo/s en lecture et ecriture | `iostat -x` |
+| Latence | Temps moyen par operation | `iostat -x` (await) |
+| File d'attente | Operations en attente | `iostat -x` (avgqu-sz) |
+
+```bash
+$ df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1        50G   32G   16G  67% /
+/dev/sda2       200G  150G   40G  79% /var
+
+$ iostat -x 1 3
+# Statistiques detaillees des disques, 1 sec d'intervalle, 3 iterations
+```
+
+**IOPS (Input/Output Operations Per Second)** : nombre d'operations de lecture/ecriture par seconde. Un disque HDD classique supporte 100 a 200 IOPS. Un SSD atteint 10 000 a 100 000 IOPS.
+
+### Reseau
+
+| Metrique | Description | Commande |
+|----------|-------------|----------|
+| Bande passante utilisee | Debit entrant/sortant | `iftop`, `nload`, `vnstat` |
+| Paquets emis/recus | Volume de trafic | `ip -s link`, `netstat -i` |
+| Erreurs | Paquets errones | `ip -s link` |
+| Paquets perdus (drops) | Paquets abandonnes | `ip -s link` |
+| Connexions etablies | Nombre de sessions TCP actives | `ss -s`, `netstat -an` |
+| Latence | Temps aller-retour | `ping` |
+
+```bash
+$ ip -s link show eth0
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
+    link/ether aa:bb:cc:dd:ee:ff
+    RX: bytes  packets  errors  dropped
+    1234567890 9876543  0       0
+    TX: bytes  packets  errors  dropped
+    987654321  7654321  0       0
+
+$ ss -s
+Total: 256
+TCP:   128 (estab 45, closed 12, orphaned 0, timewait 15)
+```
+
+### Outils de supervision systeme recapitulatifs
+
+| Outil | Description |
+|-------|-------------|
+| `top` / `htop` | Vue temps reel des processus et ressources |
+| `vmstat` | Statistiques memoire, swap, CPU, E/S |
+| `iostat` | Statistiques d'E/S des disques |
+| `mpstat` | Statistiques CPU detaillees |
+| `sar` | Collecte et archivage de statistiques (package sysstat) |
+| `nmon` | Outil interactif complet (CPU, RAM, disque, reseau) |
+| `dstat` | Remplacement combine de vmstat, iostat et ifstat |
+| `iftop` | Bande passante par connexion en temps reel |
+| `ss` / `netstat` | Connexions reseau et sockets |
+
+---
+
+## Centralisation des logs
+
+### Pourquoi centraliser
+
+Sur un parc de dizaines ou centaines de serveurs, consulter les logs individuellement sur chaque machine est impraticable. La centralisation apporte :
+
+- Une vue unifiee de tous les evenements du systeme d'information.
+- La possibilite de correler des evenements provenant de sources differentes.
+- La conservation des logs meme en cas de panne ou compromission d'un serveur.
+- La recherche rapide et le filtrage.
+- La conformite reglementaire (conservation des traces).
+
+### Syslog et rsyslog
+
+**Syslog** est le protocole standard de journalisation sur les systemes Unix/Linux. Il definit un format de message et un mecanisme de transport (UDP 514 ou TCP 514).
+
+**rsyslog** est l'implementation de reference de syslog sur les distributions Linux modernes. Il supporte le filtrage avance, le transport TCP fiable, le chiffrement TLS et la redirection vers des fichiers, des bases de donnees ou des serveurs distants.
+
+**Configuration d'un client rsyslog pour envoyer les logs a un serveur central :**
+
+Fichier `/etc/rsyslog.d/50-remote.conf` sur le client :
+
+```
+# Envoi de tous les logs au serveur central via TCP
+*.* @@192.168.1.100:514
+```
+
+Le double `@@` indique TCP (un seul `@` pour UDP).
+
+**Configuration du serveur rsyslog pour recevoir les logs :**
+
+Fichier `/etc/rsyslog.conf` sur le serveur :
+
+```
+# Activer la reception TCP
+module(load="imtcp")
+input(type="imtcp" port="514")
+
+# Classer les logs par hote source
+template(name="RemoteLogs" type="string"
+    string="/var/log/remote/%HOSTNAME%/%PROGRAMNAME%.log")
+*.* ?RemoteLogs
+```
+
+Redemarrer rsyslog :
+
+```bash
+sudo systemctl restart rsyslog
+```
+
+**Niveaux de severite syslog (RFC 5424) :**
+
+| Code | Niveau | Description |
+|------|--------|-------------|
+| 0 | Emergency | Systeme inutilisable |
+| 1 | Alert | Action immediate requise |
+| 2 | Critical | Condition critique |
+| 3 | Error | Erreur |
+| 4 | Warning | Avertissement |
+| 5 | Notice | Condition normale mais significative |
+| 6 | Informational | Information |
+| 7 | Debug | Debogage |
+
+**Facilities syslog :**
+
+| Facility | Description |
+|----------|-------------|
+| kern | Messages du noyau |
+| auth / authpriv | Authentification et securite |
+| mail | Systeme de messagerie |
+| cron | Taches planifiees |
+| daemon | Services systeme |
+| local0 a local7 | Usage personnalise |
+
+### ELK Stack
+
+La pile ELK (Elasticsearch, Logstash, Kibana) est une solution de centralisation, d'indexation et de visualisation des logs.
+
+**Elasticsearch** : moteur de recherche et d'indexation distribue. Il stocke les logs sous forme de documents JSON et permet des recherches textuelles tres rapides.
+
+**Logstash** : pipeline de traitement des logs. Il recoit les logs de multiples sources (syslog, fichiers, bases de donnees), les transforme (parsing, enrichissement, filtrage) et les envoie vers Elasticsearch.
+
+**Kibana** : interface web de visualisation. Elle permet de rechercher dans les logs, de creer des tableaux de bord et de visualiser des tendances.
+
+**Beats** : agents legers de collecte (complement de la pile ELK). Filebeat collecte les fichiers de logs, Metricbeat collecte les metriques systeme, Packetbeat analyse le trafic reseau.
+
+Architecture :
+
+```
+Sources de logs
+    |
+    v
+Beats (Filebeat) --> Logstash --> Elasticsearch --> Kibana
+```
+
+**Pipeline Logstash simplifie :**
+
+```ruby
+input {
+  beats {
+    port => 5044
+  }
+}
+
+filter {
+  grok {
+    match => { "message" => "%{SYSLOGTIMESTAMP:timestamp} %{SYSLOGHOST:host} %{DATA:program}: %{GREEDYDATA:message}" }
+  }
+  date {
+    match => [ "timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" ]
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["localhost:9200"]
+    index => "syslog-%{+YYYY.MM.dd}"
+  }
+}
+```
+
+**Configuration de Filebeat :**
+
+```yaml
+# /etc/filebeat/filebeat.yml
+filebeat.inputs:
+  - type: log
+    paths:
+      - /var/log/syslog
+      - /var/log/auth.log
+
+output.logstash:
+  hosts: ["192.168.1.100:5044"]
+```
+
+### Graylog
+
+Graylog est une alternative a la pile ELK. Il utilise Elasticsearch comme moteur de stockage et MongoDB pour sa configuration. Son interface web est integree et orientee vers l'analyse des logs en temps reel.
+
+Avantages de Graylog par rapport a ELK :
+- Interface de gestion des utilisateurs et des droits integree.
+- Systeme d'alertes natif.
+- Notion de "streams" pour classer les logs en temps reel.
+- Extracteurs pour parser les messages sans configuration Logstash.
+
+Graylog recoit les logs via le protocole **GELF** (Graylog Extended Log Format) sur UDP ou TCP, ou via syslog standard.
+
+---
+
+## Exercices corriges
+
+### Exercice 1 : Configuration SNMP sur un routeur Cisco
+
+**Enonce.** Vous devez configurer SNMP v2c sur un routeur Cisco pour permettre la supervision par un serveur Zabbix situe en 192.168.1.100. La communaute de lecture doit etre "supervBTS" et le routeur doit envoyer les traps au serveur de supervision.
+
+**Correction :**
+
+```
+Router> enable
+Router# configure terminal
+Router(config)# snmp-server community supervBTS RO
+Router(config)# snmp-server host 192.168.1.100 version 2c supervBTS
+Router(config)# snmp-server enable traps
+Router(config)# snmp-server contact admin@lycee.fr
+Router(config)# snmp-server location "Salle reseau B204"
+Router(config)# end
+Router# write memory
+```
+
+Verification :
+
+```
+Router# show snmp
+Router# show snmp community
+Router# show snmp host
+```
+
+Pour tester depuis le serveur de supervision :
+
+```bash
+snmpwalk -v2c -c supervBTS 192.168.1.1 system
+```
+
+---
+
+### Exercice 2 : Requetes SNMP en ligne de commande
+
+**Enonce.** A l'aide des commandes snmp, effectuez les operations suivantes sur un equipement a l'adresse 10.0.0.1 avec la communaute "public" en version 2c :
+1. Recuperer le nom de l'equipement.
+2. Recuperer la duree de fonctionnement.
+3. Lister toutes les interfaces reseau.
+4. Recuperer le nombre d'octets recus sur l'interface index 2.
+
+**Correction :**
+
+```bash
+# 1. Nom de l'equipement
+snmpget -v2c -c public 10.0.0.1 1.3.6.1.2.1.1.5.0
+# ou avec le nom MIB :
+snmpget -v2c -c public 10.0.0.1 sysName.0
+
+# 2. Duree de fonctionnement
+snmpget -v2c -c public 10.0.0.1 1.3.6.1.2.1.1.3.0
+# ou :
+snmpget -v2c -c public 10.0.0.1 sysUpTime.0
+
+# 3. Liste des interfaces
+snmpwalk -v2c -c public 10.0.0.1 1.3.6.1.2.1.2.2.1.2
+# ou :
+snmpwalk -v2c -c public 10.0.0.1 ifDescr
+
+# 4. Octets recus sur l'interface index 2
+snmpget -v2c -c public 10.0.0.1 1.3.6.1.2.1.2.2.1.10.2
+# ou :
+snmpget -v2c -c public 10.0.0.1 ifInOctets.2
+```
+
+---
+
+### Exercice 3 : Configuration d'un hote et d'un service dans Nagios
+
+**Enonce.** Configurez la supervision d'un serveur web Apache (192.168.1.50, nom : srv-web-prod) dans Nagios. Vous devez surveiller : la connectivite ICMP, le service HTTP sur le port 80 et le service HTTPS sur le port 443. Les alertes doivent etre envoyees au contact "technicien1".
+
+**Correction :**
+
+Fichier `/usr/local/nagios/etc/servers/srv-web-prod.cfg` :
+
+```
+define host {
+    use                     linux-server
+    host_name               srv-web-prod
+    alias                   Serveur Web Production
+    address                 192.168.1.50
+    max_check_attempts      5
+    check_period            24x7
+    notification_interval   30
+    notification_period     24x7
+    contacts                technicien1
+}
+
+define service {
+    use                     generic-service
+    host_name               srv-web-prod
+    service_description     PING
+    check_command           check_ping!200.0,20%!500.0,60%
+    check_interval          5
+    retry_interval          1
+    max_check_attempts      3
+    contacts                technicien1
+}
+
+define service {
+    use                     generic-service
+    host_name               srv-web-prod
+    service_description     HTTP
+    check_command           check_http!-p 80
+    check_interval          5
+    retry_interval          1
+    max_check_attempts      3
+    contacts                technicien1
+}
+
+define service {
+    use                     generic-service
+    host_name               srv-web-prod
+    service_description     HTTPS
+    check_command           check_http!-p 443 -S
+    check_interval          5
+    retry_interval          1
+    max_check_attempts      3
+    contacts                technicien1
+}
+```
+
+Verification de la configuration :
+
+```bash
+/usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+```
+
+Rechargement de Nagios :
+
+```bash
+sudo systemctl reload nagios
+```
+
+---
+
+### Exercice 4 : Creation d'un trigger Zabbix
+
+**Enonce.** Creez les triggers suivants pour un serveur Linux supervise par Zabbix :
+1. Alerte WARNING si l'espace disque libre sur / descend sous 20 %.
+2. Alerte CRITICAL si l'espace disque libre sur / descend sous 10 %.
+3. Alerte si la charge CPU depasse 90 % pendant plus de 10 minutes.
+
+**Correction :**
+
+Trigger 1 (severite : Warning) :
+- Nom : "Espace disque faible sur / (< 20%)"
+- Expression : `/NomHote/vfs.fs.size[/,pfree].last()<20`
+
+Trigger 2 (severite : High) :
+- Nom : "Espace disque critique sur / (< 10%)"
+- Expression : `/NomHote/vfs.fs.size[/,pfree].last()<10`
+
+Trigger 3 (severite : Average) :
+- Nom : "Charge CPU elevee (> 90% pendant 10 min)"
+- Expression : `/NomHote/system.cpu.util[,idle].avg(10m)<10`
+
+Le trigger 3 utilise `idle < 10` car si le CPU inactif est inferieur a 10 %, cela signifie que l'utilisation depasse 90 %.
+
+Pour le trigger espace disque, il est recommande de configurer une **dependance** du trigger WARNING vers le trigger CRITICAL : si le seuil critique est atteint, le trigger warning ne doit pas generer de notification supplementaire.
+
+---
+
+### Exercice 5 : Creation d'un ticket dans GLPI
+
+**Enonce.** Un utilisateur du service comptabilite appelle pour signaler que son poste de travail ne demarre plus depuis ce matin. Creez le ticket correspondant dans GLPI avec tous les champs pertinents.
+
+**Correction :**
+
+| Champ | Valeur |
+|-------|--------|
+| Type | Incident |
+| Categorie | Materiel > Poste de travail |
+| Titre | Poste de travail ne demarre plus - Service comptabilite |
+| Description | L'utilisateur M. Dupont du service comptabilite signale que son poste (PC-COMPTA-04) ne demarre plus depuis ce matin. Aucun voyant sur l'unite centrale. L'ecran fonctionne normalement lorsqu'il est branche sur un autre poste. |
+| Urgence | Haute (l'utilisateur ne peut pas travailler) |
+| Impact | Moyen (un seul utilisateur affecte) |
+| Priorite | Haute (calculee automatiquement) |
+| Demandeur | M. Dupont |
+| Attribue a | Equipe Support Niveau 1 |
+| Materiel associe | PC-COMPTA-04 (lier l'element du parc) |
+| SLA | Standard (TTO : 1h, TTR : 8h) |
+
+Suivi du ticket :
+1. Attribution au technicien de garde.
+2. Diagnostic sur site : verification de l'alimentation electrique, test avec un autre cable d'alimentation, test du bouton power.
+3. Constat : alimentation defectueuse.
+4. Solution : remplacement de l'alimentation par un modele de rechange.
+5. Test : le poste demarre normalement, l'utilisateur confirme le bon fonctionnement.
+6. Cloture du ticket.
+
+---
+
+### Exercice 6 : Filtres Wireshark
+
+**Enonce.** Ecrivez les filtres d'affichage Wireshark correspondant aux situations suivantes :
+1. Afficher uniquement le trafic HTTP entre le poste 192.168.1.10 et le serveur 10.0.0.50.
+2. Afficher les requetes DNS.
+3. Afficher les paquets TCP dont le flag RST est active.
+4. Afficher tout le trafic sauf ARP et ICMP.
+5. Afficher les trames dont la taille depasse 1500 octets.
+6. Afficher les tentatives de connexion TCP (SYN sans ACK).
+
+**Correction :**
+
+```
+# 1. Trafic HTTP entre deux hotes
+http && ip.addr == 192.168.1.10 && ip.addr == 10.0.0.50
+
+# 2. Requetes DNS
+dns
+
+# 3. Paquets TCP RST
+tcp.flags.rst == 1
+
+# 4. Tout sauf ARP et ICMP
+!arp && !icmp
+
+# 5. Trames de plus de 1500 octets
+frame.len > 1500
+
+# 6. Tentatives de connexion TCP (SYN sans ACK)
+tcp.flags.syn == 1 && tcp.flags.ack == 0
+```
+
+---
+
+### Exercice 7 : Analyse d'une capture tcpdump
+
+**Enonce.** Vous observez la sortie suivante de tcpdump. Analysez chaque ligne.
+
+```
+14:23:01.123456 IP 192.168.1.10.54321 > 10.0.0.50.80: Flags [S], seq 1000, win 65535
+14:23:01.125678 IP 10.0.0.50.80 > 192.168.1.10.54321: Flags [S.], seq 2000, ack 1001, win 65535
+14:23:01.126000 IP 192.168.1.10.54321 > 10.0.0.50.80: Flags [.], ack 2001, win 65535
+14:23:01.130000 IP 192.168.1.10.54321 > 10.0.0.50.80: Flags [P.], seq 1001:1501, ack 2001
+14:23:01.145000 IP 10.0.0.50.80 > 192.168.1.10.54321: Flags [.], ack 1501, win 65535
+```
+
+**Correction :**
+
+**Ligne 1** : Le poste 192.168.1.10 (port source 54321) envoie un paquet TCP SYN vers le serveur 10.0.0.50 sur le port 80 (HTTP). C'est la premiere etape du three-way handshake TCP. Le numero de sequence initial est 1000.
+
+**Ligne 2** : Le serveur repond avec un paquet SYN-ACK (Flags [S.]). Il propose son propre numero de sequence (2000) et acquitte le SYN du client (ack 1001 = seq client + 1). Deuxieme etape du handshake.
+
+**Ligne 3** : Le client envoie un ACK (Flags [.]). Il acquitte le SYN du serveur (ack 2001 = seq serveur + 1). Troisieme etape du handshake. La connexion TCP est maintenant etablie.
+
+**Ligne 4** : Le client envoie des donnees (Flags [P.] = PUSH + ACK). Il transmet 500 octets (seq 1001 a 1501). Il s'agit probablement d'une requete HTTP GET.
+
+**Ligne 5** : Le serveur acquitte la reception des donnees (ack 1501, confirmant la reception de tous les octets jusqu'a 1500).
+
+Il s'agit d'un echange TCP classique : etablissement de connexion (three-way handshake) suivi de l'envoi d'une requete HTTP.
+
+---
+
+### Exercice 8 : Configuration de rsyslog pour la centralisation
+
+**Enonce.** Configurez un serveur de logs central (192.168.1.100) et un client (192.168.1.50) pour centraliser les logs. Les logs doivent etre classes par nom d'hote source dans des repertoires separes. Le transport doit utiliser TCP.
+
+**Correction :**
+
+**Sur le serveur (192.168.1.100) :**
+
+Fichier `/etc/rsyslog.conf` :
+
+```
+# Charger le module de reception TCP
+module(load="imtcp")
+input(type="imtcp" port="514")
+
+# Template pour classer par hote
+template(name="RemoteLogs" type="string"
+    string="/var/log/remote/%HOSTNAME%/%PROGRAMNAME%.log")
+
+# Appliquer le template aux logs distants
+if $fromhost-ip != '127.0.0.1' then ?RemoteLogs
+& stop
+```
+
+Creer le repertoire :
+
+```bash
+sudo mkdir -p /var/log/remote
+sudo chown syslog:adm /var/log/remote
+sudo systemctl restart rsyslog
+```
+
+Verifier que le port 514 est en ecoute :
+
+```bash
+ss -tlnp | grep 514
+```
+
+**Sur le client (192.168.1.50) :**
+
+Fichier `/etc/rsyslog.d/50-central.conf` :
+
+```
+# Envoyer tous les logs au serveur central via TCP
+*.* @@192.168.1.100:514
+```
+
+```bash
+sudo systemctl restart rsyslog
+```
+
+**Test :**
+
+```bash
+# Depuis le client, generer un message de test
+logger -t test "Message de test centralisation"
+
+# Sur le serveur, verifier la reception
+ls /var/log/remote/
+cat /var/log/remote/client-hostname/test.log
+```
+
+---
+
+### Exercice 9 : Supervision systeme avec commandes Linux
+
+**Enonce.** Un serveur est signale comme lent par les utilisateurs. Indiquez les commandes a executer pour diagnostiquer le probleme, dans l'ordre, et expliquez ce que vous recherchez a chaque etape.
+
+**Correction :**
+
+**Etape 1 : Vue d'ensemble avec uptime**
+
+```bash
+$ uptime
+ 15:30:01 up 120 days, 3:45, 5 users, load average: 12.50, 10.20, 8.75
+```
+
+Le load average est tres eleve (12.50 pour la derniere minute). Si le serveur a 4 coeurs, cela signifie que 12 processus sont en moyenne en attente d'execution. Le probleme est confirme.
+
+**Etape 2 : Identifier la ressource saturee avec top**
+
+```bash
+$ top
+```
+
+Observer :
+- `%Cpu(s)` : si `us` (user) ou `sy` (system) sont eleves, le CPU est sature.
+- `%Cpu(s)` : si `wa` (iowait) est eleve, le disque est le goulot d'etranglement.
+- `KiB Mem` et `KiB Swap` : si le swap est fortement utilise, la RAM est insuffisante.
+- La liste des processus tries par CPU ou memoire : identifier les processus consommateurs.
+
+**Etape 3 : Verifier la memoire**
+
+```bash
+$ free -h
+```
+
+Si `available` est tres faible et que le swap est utilise massivement, le serveur manque de RAM.
+
+**Etape 4 : Verifier les disques**
+
+```bash
+$ df -h
+$ iostat -x 1 5
+```
+
+`df -h` : verifier qu'aucune partition n'est pleine.
+`iostat -x` : examiner `%util` (si proche de 100 %, le disque est sature), `await` (temps moyen d'attente par operation, en ms), `avgqu-sz` (taille de la file d'attente).
+
+**Etape 5 : Verifier le reseau**
+
+```bash
+$ ss -s
+$ ip -s link show eth0
+```
+
+Verifier le nombre de connexions, les erreurs et les paquets perdus.
+
+**Etape 6 : Examiner les logs**
+
+```bash
+$ tail -100 /var/log/syslog
+$ dmesg | tail -50
+```
+
+Rechercher des erreurs noyau (OOM killer, erreurs disque, erreurs materiel).
+
+---
+
+### Exercice 10 : Matrice urgence/impact dans GLPI
+
+**Enonce.** Determinez l'urgence, l'impact et la priorite pour chacun des incidents suivants :
+
+1. Le Wi-Fi de la salle de reunion B ne fonctionne plus. Une reunion importante a lieu dans 2 heures.
+2. Le serveur de fichiers est inaccessible pour tous les utilisateurs du site.
+3. Un utilisateur ne peut plus imprimer en couleur (l'impression noir et blanc fonctionne).
+4. Le site web public de l'entreprise affiche une erreur 503.
+
+**Correction :**
+
+| Incident | Urgence | Impact | Priorite |
+|----------|---------|--------|----------|
+| 1. Wi-Fi salle de reunion | Haute (reunion dans 2h) | Moyen (une salle, quelques utilisateurs) | Haute |
+| 2. Serveur de fichiers inaccessible | Haute (service essentiel) | Fort (tous les utilisateurs du site) | Tres haute |
+| 3. Impression couleur impossible | Basse (contournement existant : N&B) | Faible (un utilisateur) | Tres basse |
+| 4. Site web public en erreur 503 | Haute (image de l'entreprise, clients) | Fort (tous les visiteurs) | Tres haute |
+
+Justifications :
+- L'incident 1 est urgent a cause de l'echeance proche mais l'impact reste limite.
+- L'incident 2 cumule urgence et impact : c'est la priorite la plus haute.
+- L'incident 3 dispose d'un contournement et ne touche qu'un utilisateur : priorite minimale.
+- L'incident 4 a un impact externe (clients, partenaires) qui justifie une priorite maximale.
+
+---
+
+### Exercice 11 : ITIL - Distinction incident, probleme, changement
+
+**Enonce.** Classez chacune des situations suivantes : incident, probleme ou changement.
+
+1. Le serveur de messagerie est tombe a 14h30. Les utilisateurs ne peuvent plus envoyer d'emails.
+2. Apres investigation, on decouvre que les pannes repetees du serveur de messagerie sont dues a un module memoire defectueux.
+3. Le remplacement du module memoire defectueux est planifie pour samedi matin.
+4. Un utilisateur signale qu'il ne recoit plus les emails de son client principal.
+5. L'equipe reseau souhaite migrer le pare-feu vers une nouvelle version du firmware.
+6. On constate que 5 tickets ont ete ouverts ce mois-ci pour le meme probleme d'impression sur le site de Lyon.
+
+**Correction :**
+
+1. **Incident.** Interruption non planifiee du service de messagerie. Action immediate : retablir le service (redemarrage du serveur, basculement sur le serveur secondaire).
+
+2. **Probleme.** Identification de la cause racine (module memoire defectueux) des incidents recurrents. C'est le passage de la gestion reactive (incidents) a la gestion proactive (probleme).
+
+3. **Changement.** Modification planifiee de l'infrastructure pour resoudre le probleme identifie. Ce changement doit etre enregistre, evalue (risques, impact, plan de retour arriere) et approuve.
+
+4. **Incident.** Degradation du service pour un utilisateur. Le diagnostic determinera s'il s'agit d'un probleme de configuration, de filtrage anti-spam ou d'un probleme cote expediteur.
+
+5. **Changement.** Migration planifiee d'un composant de l'infrastructure. Ce changement de type "normal" doit passer par le processus d'approbation (CAB) avec une analyse de risques et un plan de retour arriere.
+
+6. **Probleme.** La recurrence de 5 incidents similaires justifie l'ouverture d'un ticket de probleme pour identifier et traiter la cause racine (driver d'imprimante, configuration reseau, materiel defectueux).
+
+---
+
+### Exercice 12 : Configuration complete de supervision avec Zabbix
+
+**Enonce.** Vous devez mettre en place la supervision d'un serveur Linux (srv-bdd-01, 192.168.1.60) hebergeant une base de donnees MySQL. Decrivez les etapes completes.
+
+**Correction :**
+
+**Etape 1 : Installation de l'agent Zabbix sur le serveur**
+
+```bash
+# Sur srv-bdd-01
+sudo apt install zabbix-agent
+sudo nano /etc/zabbix/zabbix_agentd.conf
+```
+
+Configuration :
+
+```
+Server=192.168.1.100
+ServerActive=192.168.1.100
+Hostname=srv-bdd-01
+```
+
+```bash
+sudo systemctl restart zabbix-agent
+sudo systemctl enable zabbix-agent
+```
+
+Verifier que le port 10050 est ouvert dans le pare-feu :
+
+```bash
+sudo ufw allow from 192.168.1.100 to any port 10050
+```
+
+**Etape 2 : Declaration de l'hote dans Zabbix**
+
+1. Interface web Zabbix : Configuration > Hosts > Create host.
+2. Nom de l'hote : `srv-bdd-01`.
+3. Groupes : "Linux servers", "Database servers".
+4. Interfaces : Agent, IP = 192.168.1.60, port = 10050.
+
+**Etape 3 : Liaison des templates**
+
+Onglet Templates, ajouter :
+- "Linux by Zabbix agent" : supervision systeme (CPU, RAM, disque, reseau, processus).
+- "MySQL by Zabbix agent" : supervision MySQL (connexions, requetes, replication, taille des bases).
+
+Pour le template MySQL, il faut creer un fichier de configuration sur le serveur :
+
+```bash
+sudo nano /var/lib/zabbix/.my.cnf
+```
+
+```
+[client]
+user=zabbix_monitor
+password=motdepasse_monitoring
+```
+
+```bash
+sudo chmod 600 /var/lib/zabbix/.my.cnf
+sudo chown zabbix:zabbix /var/lib/zabbix/.my.cnf
+```
+
+Creer l'utilisateur MySQL dedie :
+
+```sql
+CREATE USER 'zabbix_monitor'@'localhost' IDENTIFIED BY 'motdepasse_monitoring';
+GRANT USAGE, REPLICATION CLIENT, PROCESS, SHOW DATABASES, SHOW VIEW ON *.* TO 'zabbix_monitor'@'localhost';
+```
+
+**Etape 4 : Verification**
+
+1. Monitoring > Latest data > filtrer sur srv-bdd-01.
+2. Verifier que les items remontent des donnees (pas de "ZBX" rouge indiquant un probleme de collecte).
+3. Attendre quelques minutes pour que l'historique se construise.
+
+**Etape 5 : Configuration des notifications**
+
+1. Configuration > Actions > Trigger actions > creer une action.
+2. Conditions : severite >= "Average" ET groupe = "Database servers".
+3. Operations : envoyer un email au groupe "DBA" immediatement.
+4. Escalade : si pas d'acquittement apres 30 minutes, envoyer au responsable d'equipe.
+
+**Etape 6 : Creation d'un tableau de bord**
+
+1. Monitoring > Dashboards > creer un dashboard "Serveurs BDD".
+2. Ajouter les widgets : graphique CPU, graphique RAM, graphique espace disque, graphique connexions MySQL, problemes actifs.
+
+---
+
+### Exercice 13 : Decouverte automatique Zabbix
+
+**Enonce.** Configurez une regle de decouverte automatique dans Zabbix pour detecter tous les equipements du reseau 192.168.1.0/24 repondant au ping ICMP ou possedant un agent Zabbix. Les serveurs Linux decouverts doivent etre automatiquement ajoutes au groupe "Linux servers" avec le template "Linux by Zabbix agent".
+
+**Correction :**
+
+**Etape 1 : Creer la regle de decouverte**
+
+Configuration > Discovery > Create discovery rule :
+
+| Parametre | Valeur |
+|-----------|--------|
+| Name | Decouverte LAN 192.168.1.0/24 |
+| IP range | 192.168.1.1-254 |
+| Update interval | 1h |
+| Checks | ICMP ping ; Zabbix agent "system.uname" |
+| Device uniqueness criteria | IP address |
+
+**Etape 2 : Creer les actions de decouverte**
+
+Configuration > Actions > Discovery actions > Create action :
+
+**Conditions :**
+- Discovery check = Zabbix agent "system.uname"
+- Discovery status = Up
+- Received value contains "Linux"
+
+**Operations :**
+- Add host
+- Add to host groups : "Linux servers"
+- Link to templates : "Linux by Zabbix agent"
+- Enable host
+
+Ainsi, tout nouveau serveur Linux connecte au reseau sera automatiquement detecte, ajoute a l'inventaire Zabbix et supervise sans intervention manuelle.
+
+---
+
+### Exercice 14 : Configuration d'un dashboard Grafana connecte a Zabbix
+
+**Enonce.** Creez un tableau de bord Grafana affichant les metriques suivantes pour un groupe de serveurs : utilisation CPU moyenne, memoire utilisee, espace disque libre, et un tableau des alertes actives.
+
+**Correction :**
+
+**Prerequis** : Grafana installe, plugin Zabbix configure, source de donnees Zabbix fonctionnelle.
+
+**Panneau 1 : Utilisation CPU moyenne (graphique temporel)**
+
+- Type : Time series
+- Data source : Zabbix
+- Query mode : Metrics
+- Group : "Linux servers"
+- Host : /.*/ (regex pour tous les hotes du groupe)
+- Item : "CPU utilization"
+- Functions : groupBy(1h, avg)
+
+**Panneau 2 : Memoire utilisee (jauge)**
+
+- Type : Gauge
+- Query : Group "Linux servers", Host "srv-web-01", Item "Memory utilization"
+- Thresholds : 0-70 vert, 70-85 jaune, 85-100 rouge
+
+**Panneau 3 : Espace disque (tableau)**
+
+- Type : Table
+- Query : Group "Linux servers", Host /.*/, Item "Free disk space on /"
+- Transform : organiser par hote
+
+**Panneau 4 : Alertes actives (liste de problemes)**
+
+- Type : Zabbix Problems
+- Data source : Zabbix
+- Filters : Group "Linux servers", min severity "Warning"
+- Sort : par severite decroissante
+
+Enregistrer le dashboard et configurer un rafraichissement automatique toutes les 60 secondes.
+
+---
+
+## Synthese des points cles pour l'examen
+
+| Theme | Points essentiels a retenir |
+|-------|---------------------------|
+| SNMP | Versions (v1/v2c : communaute en clair ; v3 : authentification + chiffrement), port 161/162, MIB/OID, GET/SET/TRAP |
+| Nagios | Plugins (code retour 0-3), NRPE, etats SOFT/HARD, fichiers de configuration (host, service, contact, command) |
+| Zabbix | Agent (passif/actif), templates, items, triggers, severites, decouverte automatique |
+| Alertes | Severite, escalade, acquittement, faux positifs, dependances |
+| Grafana | Sources de donnees, panneaux, variables, seuils visuels |
+| GLPI | Inventaire automatique (FusionInventory), tickets (cycle de vie), SLA (TTO/TTR), base de connaissances |
+| ITIL | Incident vs probleme vs changement, SLA/OLA/UC, CAB, CMDB |
+| Incidents | Workflow complet, priorite = f(urgence, impact), escalade fonctionnelle et hierarchique |
+| Wireshark | Filtres d'affichage vs filtres de capture, analyse des couches, three-way handshake |
+| Metriques | CPU (load average, iowait), RAM (available, swap), disque (IOPS, await), reseau (debit, erreurs) |
+| Logs | rsyslog (@@TCP, @UDP), ELK (Elasticsearch + Logstash + Kibana), severites syslog (0-7) |

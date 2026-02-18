@@ -1,0 +1,1740 @@
+---
+title: "GLPI et gestion de parc"
+description: "Inventaire automatisé, gestion des tickets, base de connaissances, OCS Inventory, ITIL"
+category: "Exploitation"
+tags: ["glpi", "gestion de parc", "tickets", "inventaire", "itil", "ocs"]
+difficulty: "Intermédiaire"
+---
+
+# GLPI et gestion de parc informatique
+
+## 1. Presentation de GLPI
+
+### 1.1 Definition et role
+
+GLPI (Gestionnaire Libre de Parc Informatique) est une application web open source de gestion de parc informatique et de helpdesk. Elle permet de :
+
+- Recenser l'ensemble des ressources informatiques d'une organisation (materiels, logiciels, consommables)
+- Gerer les demandes d'assistance via un systeme de tickets
+- Suivre les contrats, licences et aspects financiers du parc
+- Constituer une base de connaissances pour capitaliser les solutions
+- Appliquer les bonnes pratiques ITIL (Information Technology Infrastructure Library)
+
+GLPI est distribue sous licence GPL v2. Il est developpe en PHP et utilise une base de donnees MySQL/MariaDB.
+
+### 1.2 Architecture technique
+
+GLPI repose sur une architecture LAMP classique :
+
+| Composant | Role |
+|-----------|------|
+| Linux | Systeme d'exploitation serveur (Debian, Ubuntu, Rocky Linux) |
+| Apache | Serveur web HTTP/HTTPS |
+| MySQL/MariaDB | Systeme de gestion de base de donnees relationnelle |
+| PHP | Langage d'execution de l'application (PHP 8.1 minimum pour GLPI 10.x) |
+
+L'acces se fait via un navigateur web. Aucun client lourd n'est necessaire pour les utilisateurs.
+
+### 1.3 Versions et historique
+
+- GLPI 0.x a 0.90 : versions historiques
+- GLPI 9.x : refonte de l'interface, support ITIL renforce
+- GLPI 10.x : nouvelle interface moderne, abandon du support PHP 7, integration native de l'inventaire (remplacement progressif de FusionInventory)
+
+---
+
+## 2. Installation de GLPI sur un serveur LAMP
+
+### 2.1 Pre-requis systeme
+
+Configuration minimale recommandee pour un parc de moins de 500 postes :
+
+- Processeur : 2 vCPU
+- RAM : 2 Go minimum, 4 Go recommandes
+- Disque : 20 Go minimum
+- Systeme : Debian 12 ou Ubuntu 22.04 LTS
+- PHP : 8.1 ou superieur avec extensions requises
+- Base de donnees : MariaDB 10.5 ou superieur
+
+### 2.2 Installation des paquets LAMP
+
+```bash
+# Mise a jour du systeme
+sudo apt update && sudo apt upgrade -y
+
+# Installation d'Apache
+sudo apt install apache2 -y
+
+# Installation de MariaDB
+sudo apt install mariadb-server mariadb-client -y
+
+# Securisation de MariaDB
+sudo mysql_secure_installation
+
+# Installation de PHP et des extensions requises
+sudo apt install php php-mysql php-curl php-gd php-intl \
+  php-xml php-mbstring php-ldap php-xmlrpc php-cas \
+  php-zip php-bz2 php-imap php-apcu -y
+```
+
+### 2.3 Configuration de la base de donnees
+
+```sql
+-- Connexion a MariaDB
+sudo mysql -u root -p
+
+-- Creation de la base de donnees
+CREATE DATABASE glpi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Creation de l'utilisateur dedie
+CREATE USER 'glpi_user'@'localhost' IDENTIFIED BY 'MotDePasseComplexe!2024';
+
+-- Attribution des privileges
+GRANT ALL PRIVILEGES ON glpi.* TO 'glpi_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+### 2.4 Configuration de PHP
+
+Editer le fichier `/etc/php/8.1/apache2/php.ini` :
+
+```ini
+memory_limit = 256M
+upload_max_filesize = 20M
+post_max_size = 20M
+max_execution_time = 600
+session.cookie_httponly = On
+session.cookie_secure = On
+```
+
+### 2.5 Telechargement et installation de GLPI
+
+```bash
+# Telechargement de la derniere version stable
+cd /tmp
+wget https://github.com/glpi-project/glpi/releases/download/10.0.15/glpi-10.0.15.tgz
+
+# Extraction dans le repertoire web
+sudo tar -xzf glpi-10.0.15.tgz -C /var/www/html/
+
+# Attribution des droits
+sudo chown -R www-data:www-data /var/www/html/glpi
+sudo chmod -R 755 /var/www/html/glpi
+```
+
+### 2.6 Configuration du VirtualHost Apache
+
+Creer le fichier `/etc/apache2/sites-available/glpi.conf` :
+
+```apache
+<VirtualHost *:80>
+    ServerName glpi.mondomaine.local
+    DocumentRoot /var/www/html/glpi/public
+
+    <Directory /var/www/html/glpi/public>
+        AllowOverride All
+        Require all granted
+        RewriteEngine On
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteRule ^(.*)$ index.php [QSA,L]
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/glpi_error.log
+    CustomLog ${APACHE_LOG_DIR}/glpi_access.log combined
+</VirtualHost>
+```
+
+```bash
+# Activation du site et des modules necessaires
+sudo a2ensite glpi.conf
+sudo a2enmod rewrite
+sudo systemctl restart apache2
+```
+
+### 2.7 Installation via l'interface web
+
+1. Ouvrir le navigateur a l'adresse `http://glpi.mondomaine.local`
+2. Selectionner la langue (francais)
+3. Accepter la licence GPL
+4. Cliquer sur "Installer"
+5. Verifier que tous les pre-requis sont valides (indicateurs verts)
+6. Renseigner les parametres de connexion a la base de donnees :
+   - Serveur : `localhost`
+   - Utilisateur : `glpi_user`
+   - Mot de passe : celui defini precedemment
+7. Selectionner la base `glpi`
+8. Finaliser l'installation
+
+### 2.8 Securisation post-installation
+
+```bash
+# Suppression du fichier d'installation
+sudo rm /var/www/html/glpi/install/install.php
+
+# Deplacer les repertoires sensibles hors du DocumentRoot (GLPI 10)
+sudo mv /var/www/html/glpi/files /var/lib/glpi/
+sudo mv /var/www/html/glpi/config /etc/glpi/
+sudo mv /var/www/html/glpi/marketplace /var/lib/glpi/marketplace/
+```
+
+Comptes par defaut a modifier immediatement :
+
+| Identifiant | Mot de passe par defaut | Profil |
+|-------------|------------------------|--------|
+| glpi | glpi | Super-Admin |
+| tech | tech | Technicien |
+| normal | normal | Utilisateur normal |
+| post-only | postonly | Post-only (creation de tickets uniquement) |
+
+Changer tous les mots de passe par defaut. Supprimer ou desactiver les comptes inutiles.
+
+---
+
+## 3. Inventaire du parc informatique
+
+### 3.1 Saisie manuelle
+
+La saisie manuelle consiste a creer chaque fiche d'equipement individuellement dans GLPI.
+
+Procedure pour ajouter un ordinateur :
+
+1. Menu **Parc > Ordinateurs**
+2. Cliquer sur le bouton **+** (Ajouter)
+3. Remplir les champs :
+   - **Nom** : nom reseau de la machine (ex : PC-COMPTA-01)
+   - **Statut** : En service, En stock, En reparation, etc.
+   - **Lieu** : emplacement physique (batiment, salle, bureau)
+   - **Type** : ordinateur de bureau, portable, serveur
+   - **Fabricant** : Dell, HP, Lenovo, etc.
+   - **Modele** : reference constructeur
+   - **Numero de serie** : identifiant unique du constructeur
+   - **Numero d'inventaire** : reference interne de l'organisation
+   - **Utilisateur** : personne utilisant l'equipement
+   - **Groupe** : service ou equipe rattache
+   - **Systeme d'exploitation** : Windows 11, Debian 12, etc.
+4. Valider la creation
+
+La saisie manuelle est adaptee pour un parc de petite taille (moins de 50 postes) ou pour des equipements ne pouvant pas etre inventories automatiquement (mobilier, equipements non informatiques).
+
+### 3.2 Import CSV
+
+L'import CSV permet d'ajouter un grand nombre d'equipements a partir d'un fichier tabulaire.
+
+Structure type du fichier CSV :
+
+```csv
+Nom;Type;Fabricant;Modele;Numero de serie;Lieu;Statut;Utilisateur
+PC-COMPTA-01;Ordinateur de bureau;Dell;OptiPlex 7090;ABC123;Bureau 201;En service;Jean Dupont
+PC-RH-01;Portable;Lenovo;ThinkPad T14;DEF456;Bureau 305;En service;Marie Martin
+SRV-AD-01;Serveur;HP;ProLiant DL380;GHI789;Salle serveur;En service;Admin SI
+```
+
+Procedure d'import :
+
+1. Preparer le fichier CSV avec les colonnes correspondant aux champs GLPI
+2. Menu **Outils > Importation par fichier CSV** (necessite le plugin Data Injection ou la fonctionnalite native selon la version)
+3. Charger le fichier
+4. Mapper chaque colonne du CSV avec le champ GLPI correspondant
+5. Choisir le delimiteur (point-virgule recommande pour le francais)
+6. Lancer l'import en mode test d'abord, puis en mode reel
+7. Verifier les resultats et corriger les eventuelles erreurs
+
+### 3.3 Inventaire automatise avec FusionInventory
+
+FusionInventory est un agent d'inventaire automatise qui collecte les informations materielles et logicielles des postes et les remonte a GLPI.
+
+#### 3.3.1 Principe de fonctionnement
+
+1. L'agent FusionInventory est installe sur chaque poste a inventorier
+2. L'agent collecte les informations systeme (materiel, logiciels, reseau)
+3. L'agent transmet les donnees au serveur GLPI via HTTP/HTTPS
+4. Le plugin FusionInventory dans GLPI recoit et integre les donnees
+5. Les fiches d'equipement sont creees ou mises a jour automatiquement
+
+#### 3.3.2 Installation du plugin FusionInventory dans GLPI
+
+```bash
+# Telechargement du plugin
+cd /var/www/html/glpi/plugins/
+sudo wget https://github.com/fusioninventory/fusioninventory-for-glpi/releases/download/glpi10.0.6%2B1.1/fusioninventory-10.0.6+1.1.tar.bz2
+
+# Extraction
+sudo tar -xjf fusioninventory-10.0.6+1.1.tar.bz2
+
+# Droits
+sudo chown -R www-data:www-data fusioninventory
+```
+
+Activation dans GLPI :
+
+1. Menu **Configuration > Plugins**
+2. Cliquer sur **Installer** pour FusionInventory
+3. Cliquer sur **Activer**
+
+#### 3.3.3 Installation de l'agent FusionInventory sur les postes
+
+Sur un poste Windows :
+
+1. Telecharger l'installeur depuis le site officiel
+2. Lancer l'installation
+3. Renseigner l'URL du serveur GLPI : `http://glpi.mondomaine.local/plugins/fusioninventory/`
+4. Configurer la frequence d'inventaire (par defaut : toutes les 24 heures)
+
+Sur un poste Linux (Debian/Ubuntu) :
+
+```bash
+sudo apt install fusioninventory-agent -y
+
+# Configuration
+sudo nano /etc/fusioninventory/agent.cfg
+# Modifier la ligne server :
+# server = http://glpi.mondomaine.local/plugins/fusioninventory/
+```
+
+```bash
+# Lancement immediat d'un inventaire
+sudo fusioninventory-agent --force
+
+# Verification du service
+sudo systemctl status fusioninventory-agent
+```
+
+Deploiement en masse via GPO (Active Directory) :
+
+1. Placer l'installeur MSI dans un partage reseau accessible
+2. Creer une GPO de deploiement logiciel
+3. Configurer les parametres via le fichier de reponse ou les proprietes MSI
+4. Appliquer la GPO a l'OU contenant les postes cibles
+
+#### 3.3.4 Donnees collectees par l'agent
+
+L'agent FusionInventory collecte automatiquement :
+
+- **Materiel** : processeur, memoire RAM, disques durs, carte mere, BIOS
+- **Systeme** : nom, domaine, OS, version, architecture, cle de produit
+- **Reseau** : cartes reseau, adresses IP, adresses MAC, passerelle, DNS
+- **Logiciels** : liste complete des logiciels installes avec versions
+- **Peripheriques** : moniteurs, imprimantes USB, claviers, souris
+- **Antivirus** : nom et version de l'antivirus installe
+- **Machines virtuelles** : detection de l'hyperviseur et des VM hebergees
+
+### 3.4 Inventaire automatise avec OCS Inventory NG
+
+OCS Inventory NG (Open Computers and Software Inventory Next Generation) est une solution alternative d'inventaire automatise.
+
+#### 3.4.1 Architecture OCS Inventory NG
+
+OCS Inventory NG utilise une architecture client-serveur :
+
+- **Serveur de communication** : recoit les inventaires des agents (Perl, Apache)
+- **Serveur de deploiement** : distribue les paquets logiciels
+- **Console d'administration** : interface web de gestion (PHP)
+- **Base de donnees** : stockage des inventaires (MySQL/MariaDB)
+- **Agent** : installe sur chaque poste, collecte et transmet les donnees
+
+#### 3.4.2 Installation du serveur OCS Inventory NG
+
+```bash
+# Pre-requis
+sudo apt install apache2 libapache2-mod-perl2 libxml-simple-perl \
+  libdbi-perl libdbd-mysql-perl libapache-dbi-perl libnet-ip-perl \
+  libsoap-lite-perl libarchive-zip-perl make build-essential \
+  php php-mysql php-gd php-mbstring php-soap php-xml -y
+
+# Telechargement
+cd /tmp
+wget https://github.com/OCSInventory-NG/OCSInventory-ocsreports/releases/download/2.12.1/OCSNG_UNIX_SERVER-2.12.1.tar.gz
+
+# Extraction et installation
+tar -xzf OCSNG_UNIX_SERVER-2.12.1.tar.gz
+cd OCSNG_UNIX_SERVER-2.12.1
+sudo ./setup.sh
+```
+
+#### 3.4.3 Synchronisation OCS Inventory avec GLPI
+
+Le plugin OCS Inventory pour GLPI permet d'importer les donnees d'inventaire collectees par OCS dans GLPI.
+
+1. Installer le plugin **OCS Inventory NG** dans GLPI (menu Plugins)
+2. Configurer la connexion vers la base de donnees OCS :
+   - Nom du serveur OCS
+   - Base de donnees OCS
+   - Utilisateur et mot de passe
+3. Definir les regles d'import :
+   - Criteres d'unicite (numero de serie, adresse MAC, nom)
+   - Elements a importer (materiels, logiciels, moniteurs, etc.)
+   - Mode de synchronisation (creation, mise a jour, verrouillage)
+4. Lancer l'import : **Outils > OCS Inventory NG > Import de nouveaux ordinateurs**
+
+#### 3.4.4 Comparaison FusionInventory / OCS Inventory NG
+
+| Critere | FusionInventory | OCS Inventory NG |
+|---------|----------------|------------------|
+| Integration GLPI | Native (plugin direct) | Via plugin de synchronisation |
+| Base de donnees | Directement dans GLPI | Base OCS separee + import |
+| Deploiement logiciel | Oui (via GLPI) | Oui (natif, tres performant) |
+| Decouverte reseau | SNMP, NetBIOS, Nmap | SNMP (via plugin ipdiscover) |
+| Agent | Meme agent multi-plateforme | Agent specifique par OS |
+| Maintenance | Communaute GLPI | Communaute OCS independante |
+| GLPI 10.x | Inventaire natif integre | Plugin OCS maintenu |
+
+---
+
+## 4. Fiches materielles et types d'equipements
+
+### 4.1 Ordinateurs
+
+La fiche ordinateur est l'element central du parc. Elle comporte les onglets suivants :
+
+- **Ordinateur** : informations generales (nom, type, modele, numero de serie, statut, lieu, utilisateur, groupe)
+- **Systeme d'exploitation** : nom, version, service pack, architecture, cle de produit, numero de licence
+- **Composants** : processeurs, memoire, disques durs, controleurs, cartes graphiques, cartes son, cartes reseau, alimentations
+- **Volumes** : partitions et systemes de fichiers
+- **Logiciels** : liste des logiciels installes avec versions
+- **Connexions** : peripheriques connectes (moniteurs, imprimantes, peripheriques)
+- **Ports reseau** : interfaces reseau, adresses IP, adresses MAC, VLAN
+- **Gestion** : informations financieres (date d'achat, garantie, fournisseur, valeur)
+- **Contrats** : contrats de maintenance associes
+- **Documents** : fichiers joints (factures, bons de livraison, photos)
+- **Tickets** : historique des demandes d'assistance liees
+- **Historique** : journal de toutes les modifications
+
+### 4.2 Moniteurs
+
+Champs specifiques :
+
+- Taille (pouces)
+- Type d'ecran (LCD, LED, OLED)
+- Resolution
+- Connectique (VGA, DVI, HDMI, DisplayPort)
+- Connexion a un ordinateur (relation directe)
+
+### 4.3 Imprimantes
+
+Champs specifiques :
+
+- Type (laser, jet d'encre, matricielle, thermique)
+- Connectivite (USB, reseau, Wi-Fi)
+- Compteur de pages
+- Cartouches et consommables associes
+- Gestion des consommables avec alertes de seuil
+
+### 4.4 Equipements reseau
+
+Types d'equipements reseau dans GLPI :
+
+- **Commutateurs (switches)** : ports, VLAN, empilage
+- **Routeurs** : interfaces, tables de routage
+- **Points d'acces Wi-Fi** : SSID, canaux, puissance
+- **Pare-feu** : regles, zones, interfaces
+- **Modems** : connexion WAN
+
+Chaque equipement reseau peut etre associe a :
+
+- Des ports reseau avec adresses MAC et IP
+- Des VLAN
+- Des connexions vers d'autres equipements (topologie)
+
+### 4.5 Logiciels
+
+GLPI distingue :
+
+- **Logiciel** : l'application elle-meme (ex : Microsoft Office)
+- **Version** : une version specifique du logiciel (ex : Microsoft Office 2021)
+- **Installation** : le lien entre une version et un ordinateur
+
+Cette structure permet de suivre precisement quels logiciels sont installes sur quels postes, et en quelles versions.
+
+### 4.6 Connexions entre elements
+
+GLPI permet d'etablir des connexions logiques entre les elements du parc :
+
+- Ordinateur -- Moniteur (connexion directe, un ou plusieurs moniteurs par poste)
+- Ordinateur -- Imprimante (connexion directe USB ou reseau)
+- Ordinateur -- Peripherique (clavier, souris, scanner, etc.)
+- Equipement reseau -- Equipement reseau (liaison inter-switches, uplinks)
+- Equipement reseau -- Ordinateur (port de connexion)
+
+Ces connexions permettent de reconstituer la topologie physique et logique du reseau.
+
+### 4.7 Telephones
+
+GLPI gere egalement les telephones (fixes IP, mobiles) avec les champs :
+
+- Marque et modele
+- Numero de telephone
+- Firmware
+- Ligne associee
+- Utilisateur
+
+### 4.8 Consommables et cartouches
+
+- **Consommables** : papier, cles USB, cables (gestion par lot avec stock)
+- **Cartouches** : associees aux modeles d'imprimantes, suivi des niveaux
+
+---
+
+## 5. Gestion des logiciels et des licences
+
+### 5.1 Types de licences
+
+GLPI permet de gerer differents types de licences :
+
+| Type | Description | Exemple |
+|------|-------------|---------|
+| OEM | Liee au materiel, non transferable | Windows pre-installe sur un PC Dell |
+| Volume | Nombre d'installations defini par contrat | Microsoft Select, Open License |
+| Par poste (device) | Une licence par machine | Licence Adobe par machine |
+| Par utilisateur (user) | Une licence par utilisateur | Microsoft 365 E3 par utilisateur |
+| Concurrent | Nombre d'utilisations simultanees limite | Licence flottante AutoCAD |
+| Site | Illimitee pour un site geographique | Licence site antivirus |
+| Libre/GPL | Pas de restriction d'usage | LibreOffice, Firefox |
+| Abonnement | Duree limitee, renouvellement periodique | SaaS, Microsoft 365 |
+
+### 5.2 Gestion de la conformite
+
+La conformite logicielle consiste a verifier que le nombre d'installations ne depasse pas le nombre de licences acquises.
+
+Dans GLPI, pour chaque logiciel :
+
+- **Nombre d'installations** : comptabilise automatiquement via l'inventaire
+- **Nombre de licences** : saisi manuellement dans la fiche licence
+- **Statut de conformite** : conforme (installations inferieur ou egal aux licences), non conforme (depassement)
+
+Procedure de verification :
+
+1. Menu **Parc > Logiciels**
+2. Selectionner un logiciel
+3. Comparer l'onglet **Installations** (nombre reel) avec l'onglet **Licences** (nombre autorise)
+4. Un indicateur visuel signale les depassements
+
+### 5.3 Alertes d'expiration
+
+GLPI permet de configurer des alertes automatiques pour :
+
+- Licences arrivant a expiration (30 jours, 15 jours, 7 jours avant)
+- Contrats de maintenance arrivant a echeance
+- Garanties constructeur expirant
+
+Configuration : **Configuration > Notifications > Alertes sur les licences**
+
+Les alertes sont envoyees par courriel aux administrateurs ou aux responsables de contrats.
+
+---
+
+## 6. Gestion financiere
+
+### 6.1 Fournisseurs
+
+Chaque fournisseur est defini par :
+
+- Raison sociale, adresse, telephone, courriel, site web
+- Contact(s) commercial(aux) et technique(s)
+- Commentaires
+
+Les fournisseurs sont associes aux equipements via les informations de gestion.
+
+### 6.2 Contrats
+
+Types de contrats geres :
+
+- **Contrat de maintenance** : couverture du materiel (garantie etendue, support)
+- **Contrat de prestation** : service recurrent (infomanage, hebergement)
+- **Contrat de licence** : droits d'utilisation logicielle
+- **Contrat de location** : leasing de materiel
+
+Chaque contrat comporte :
+
+- Numero de contrat, type, duree
+- Date de debut et date de fin
+- Fournisseur associe
+- Cout periodique ou total
+- Conditions de renouvellement (tacite reconduction, preavis)
+- Alertes avant echeance
+- Elements du parc couverts
+
+### 6.3 Budgets
+
+Les budgets permettent de regrouper les depenses par poste budgetaire :
+
+- Budget annuel du service informatique
+- Budget par projet (renouvellement parc, migration, etc.)
+- Budget par entite ou service
+
+Chaque element du parc peut etre rattache a un budget. GLPI calcule automatiquement :
+
+- Montant total engage
+- Montant restant disponible
+- Repartition par type d'equipement
+
+### 6.4 Amortissement
+
+GLPI integre le calcul d'amortissement des immobilisations informatiques :
+
+- **Amortissement lineaire** : repartition uniforme sur la duree d'amortissement
+  - Formule : Annuite = Valeur d'acquisition / Duree d'amortissement
+  - Exemple : un serveur a 5000 euros amorti sur 5 ans = 1000 euros par an
+- **Amortissement degressif** : amortissement accelere les premieres annees
+  - Coefficient fiscal applique au taux lineaire
+  - Adapte aux equipements a obsolescence rapide
+
+Champs de gestion financiere dans chaque fiche :
+
+- Date d'achat
+- Valeur d'achat (HT)
+- Date de mise en service
+- Duree d'amortissement (en annees)
+- Type d'amortissement (lineaire ou degressif)
+- Valeur nette comptable (calculee automatiquement)
+- Date de fin de garantie
+
+---
+
+## 7. Module d'assistance (Helpdesk)
+
+### 7.1 Concepts fondamentaux
+
+Le module d'assistance de GLPI est un systeme de gestion de tickets conforme aux principes ITIL. Il permet de :
+
+- Centraliser les demandes des utilisateurs
+- Qualifier, prioriser et affecter les demandes
+- Suivre le traitement jusqu'a resolution
+- Mesurer la qualite de service (SLA)
+- Capitaliser les solutions dans la base de connaissances
+
+### 7.2 Creation d'un ticket
+
+Un ticket peut etre cree par :
+
+- **L'utilisateur** : via l'interface simplifiee (profil Self-Service) ou par courriel
+- **Le technicien** : via l'interface complete lors d'un appel telephonique ou d'une ronde
+- **Automatiquement** : par courriel entrant (collecteur de courriels) ou via l'API
+
+Champs d'un ticket :
+
+| Champ | Description |
+|-------|-------------|
+| Type | Incident ou Demande |
+| Categorie | Classification thematique (reseau, poste de travail, messagerie, etc.) |
+| Urgence | Perception de l'utilisateur (tres haute, haute, moyenne, basse, tres basse) |
+| Impact | Etendue du dysfonctionnement (individuel, service, organisation) |
+| Priorite | Calculee automatiquement a partir de l'urgence et de l'impact |
+| Titre | Description courte du probleme |
+| Description | Description detaillee avec contexte |
+| Demandeur | Utilisateur a l'origine de la demande |
+| Observateur | Personnes suivant le ticket sans intervenir |
+| Attribue a | Technicien ou groupe de techniciens |
+| Element associe | Equipement du parc concerne |
+| Lieu | Localisation physique |
+| Source de la demande | Telephone, courriel, interface, direct |
+
+### 7.3 Matrice de priorite
+
+La priorite est calculee par croisement de l'urgence et de l'impact :
+
+| Urgence / Impact | Tres large | Important | Moyen | Faible |
+|------------------|-----------|-----------|-------|--------|
+| Tres haute | Majeure | Majeure | Haute | Haute |
+| Haute | Majeure | Haute | Haute | Moyenne |
+| Moyenne | Haute | Haute | Moyenne | Basse |
+| Basse | Haute | Moyenne | Basse | Basse |
+| Tres basse | Moyenne | Basse | Basse | Tres basse |
+
+Cette matrice est configurable dans **Configuration > Generale > Assistance**.
+
+### 7.4 Qualification et affectation
+
+La qualification consiste a :
+
+1. Verifier que le ticket est complet et comprehensible
+2. Attribuer la bonne categorie
+3. Evaluer l'urgence et l'impact
+4. Affecter le ticket au technicien ou au groupe competent
+
+Modes d'affectation :
+
+- **Manuelle** : le superviseur ou le technicien de niveau 1 attribue le ticket
+- **Automatique par categorie** : chaque categorie est associee a un groupe par defaut
+- **Automatique par regle** : des regles d'affectation automatique (menu **Administration > Regles**) permettent de router les tickets selon des criteres (categorie, lieu, entite, demandeur)
+
+### 7.5 Traitement du ticket
+
+Le technicien dispose de plusieurs actions :
+
+- **Suivi** : ajouter un commentaire (public visible par le demandeur, ou prive visible uniquement par les techniciens)
+- **Tache** : creer une tache a realiser (planifiee ou non, affectee a soi ou a un autre technicien)
+- **Solution** : proposer une solution au probleme
+- **Document** : joindre un fichier (capture d'ecran, procedure, etc.)
+- **Validation** : soumettre le ticket a validation avant traitement (pour les demandes de changement par exemple)
+
+### 7.6 Resolution et cloture
+
+Processus de resolution :
+
+1. Le technicien ajoute une **solution** au ticket
+2. Le statut passe a **Resolu**
+3. Le demandeur est notifie par courriel
+4. Le demandeur peut :
+   - **Approuver** la solution : le ticket passe a **Clos**
+   - **Refuser** la solution : le ticket repasse a **En cours**
+5. Si le demandeur ne repond pas dans le delai configure (par defaut : 7 jours), le ticket est automatiquement clos
+
+### 7.7 SLA (Service Level Agreement)
+
+Les SLA definissent les engagements de delai de traitement :
+
+- **TTO (Time To Own)** : delai maximum pour la prise en charge (affectation) du ticket
+- **TTR (Time To Resolve)** : delai maximum pour la resolution du ticket
+
+Configuration des SLA dans GLPI :
+
+1. Menu **Configuration > SLA**
+2. Creer un SLA avec :
+   - Nom (ex : SLA Standard, SLA Critique)
+   - Type : TTO ou TTR
+   - Duree maximale (ex : 4 heures ouvrables, 8 heures ouvrables)
+   - Calendrier applicable (heures ouvrables, 24/7)
+3. Definir des niveaux d'escalade :
+   - Niveau 1 : notification au technicien a 50% du delai
+   - Niveau 2 : notification au superviseur a 75% du delai
+   - Niveau 3 : escalade hierarchique a 100% du delai
+
+Exemple de SLA par priorite :
+
+| Priorite | TTO (prise en charge) | TTR (resolution) |
+|----------|----------------------|-------------------|
+| Majeure | 15 minutes | 2 heures |
+| Haute | 30 minutes | 4 heures |
+| Moyenne | 2 heures | 8 heures |
+| Basse | 4 heures | 24 heures |
+| Tres basse | 8 heures | 48 heures |
+
+### 7.8 Enquetes de satisfaction
+
+GLPI permet d'envoyer automatiquement un questionnaire de satisfaction apres la cloture d'un ticket.
+
+Configuration : **Configuration > Generale > Assistance > Enquete de satisfaction**
+
+Parametres :
+
+- Delai avant envoi (ex : 1 jour apres cloture)
+- Duree de validite du lien
+- Echelle de notation (0 a 5)
+- Champ commentaire libre
+
+Les resultats sont consultables dans les statistiques du helpdesk.
+
+---
+
+## 8. Workflow des tickets
+
+### 8.1 Statuts d'un ticket
+
+| Statut | Description | Actions possibles |
+|--------|-------------|-------------------|
+| Nouveau | Ticket venant d'etre cree, non encore pris en charge | Affecter, qualifier, traiter |
+| En cours (attribue) | Ticket affecte a un technicien, traitement en cours | Ajouter suivi, tache, solution |
+| En cours (planifie) | Ticket avec tache planifiee dans le futur | Attendre l'echeance de la tache |
+| En attente | Traitement suspendu (attente information, piece, fournisseur) | Reprendre le traitement |
+| Resolu | Solution proposee, en attente de validation par le demandeur | Approuver ou refuser |
+| Clos | Ticket termine et archive | Consulter, rouvrir si necessaire |
+
+### 8.2 Diagramme du workflow
+
+```
+[Nouveau] --> affectation --> [En cours (attribue)]
+                                    |
+                         +----------+----------+
+                         |          |          |
+                    ajout suivi  tache    mise en attente
+                         |       planifiee     |
+                         |          |     [En attente]
+                         |   [En cours         |
+                         |   (planifie)]       |
+                         |          |     reprise
+                         +----------+----------+
+                                    |
+                              proposition
+                              de solution
+                                    |
+                               [Resolu]
+                                    |
+                         +----------+----------+
+                         |                     |
+                    approbation             refus
+                         |                     |
+                      [Clos]          [En cours (attribue)]
+```
+
+### 8.3 Escalade
+
+L'escalade intervient lorsque le delai du SLA est depasse ou lorsque le technicien de niveau 1 ne peut pas resoudre le ticket.
+
+Types d'escalade :
+
+- **Escalade fonctionnelle** : transfert vers un technicien ou un groupe plus specialise (niveau 1 vers niveau 2 vers niveau 3)
+- **Escalade hierarchique** : notification au responsable du service informatique
+
+Configuration de l'escalade automatique dans les SLA :
+
+1. Definir les niveaux d'escalade dans le SLA
+2. Pour chaque niveau, specifier :
+   - Le pourcentage ou le delai avant escalade
+   - L'action : notification, changement de groupe, changement de technicien
+
+### 8.4 Validation
+
+La validation permet de soumettre un ticket a approbation avant ou pendant son traitement.
+
+Cas d'usage :
+
+- Demande d'achat de materiel : validation par le responsable budgetaire
+- Demande de changement : validation par le comite des changements (CAB)
+- Demande d'acces : validation par le responsable de la securite
+
+Fonctionnement :
+
+1. Le technicien ou l'utilisateur ajoute une demande de validation
+2. Le valideur recoit une notification
+3. Le valideur peut approuver ou refuser avec commentaire
+4. Le traitement du ticket reprend ou est arrete selon la decision
+
+---
+
+## 9. Base de connaissances
+
+### 9.1 Objectif
+
+La base de connaissances (Knowledge Base) permet de :
+
+- Documenter les solutions aux problemes recurrents
+- Fournir une FAQ accessible aux utilisateurs
+- Reduire le nombre de tickets en favorisant l'auto-resolution
+- Capitaliser l'experience des techniciens
+
+### 9.2 Structure des articles
+
+Chaque article comporte :
+
+- **Titre** : description courte et explicite
+- **Contenu** : procedure detaillee, captures d'ecran, commandes
+- **Categorie** : classement thematique (reseau, messagerie, impression, etc.)
+- **Cible** : visibilite (public pour tous, restreint aux techniciens, par entite)
+- **Date de debut et de fin de publication** : duree de validite
+- **FAQ** : indicateur pour apparaitre dans la foire aux questions
+
+### 9.3 Categories
+
+Organiser la base de connaissances en categories hierarchiques :
+
+```
+Base de connaissances
+|-- Poste de travail
+|   |-- Windows
+|   |-- Linux
+|   |-- Logiciels bureautiques
+|-- Reseau
+|   |-- Connexion Wi-Fi
+|   |-- VPN
+|   |-- Impression reseau
+|-- Messagerie
+|   |-- Outlook
+|   |-- Webmail
+|   |-- Calendrier partage
+|-- Securite
+|   |-- Antivirus
+|   |-- Mot de passe
+|   |-- Chiffrement
+|-- Telephonie
+```
+
+### 9.4 Lien avec les tickets
+
+- Lors de la resolution d'un ticket, le technicien peut creer un article a partir de la solution
+- Lors de la creation d'un ticket, l'utilisateur se voit proposer des articles similaires
+- Un ticket peut etre lie a un article existant de la base de connaissances
+- Les statistiques permettent de mesurer l'efficacite des articles (nombre de consultations, tickets evites)
+
+### 9.5 FAQ
+
+La FAQ est un sous-ensemble de la base de connaissances. Elle regroupe les articles les plus frequemment consultes ou les questions les plus courantes.
+
+Configuration :
+
+1. Lors de la creation ou de la modification d'un article, cocher la case "FAQ"
+2. L'article apparait dans la section FAQ de l'interface simplifiee
+3. Les utilisateurs peuvent consulter la FAQ avant de creer un ticket
+
+---
+
+## 10. Utilisateurs et gestion des droits
+
+### 10.1 Profils
+
+Un profil definit un ensemble de droits (lecture, ecriture, suppression) sur chaque module de GLPI.
+
+Profils par defaut :
+
+| Profil | Description | Droits principaux |
+|--------|-------------|-------------------|
+| Super-Admin | Administration complete | Tous les droits, configuration, plugins |
+| Admin | Administration sans configuration globale | Gestion du parc, tickets, utilisateurs |
+| Technicien | Support technique | Tickets (creation, traitement), parc (lecture), base de connaissances |
+| Superviseur | Encadrement des techniciens | Comme technicien + statistiques, affectation |
+| Hotliner | Accueil et qualification | Creation de tickets, qualification, orientation |
+| Observer | Consultation uniquement | Lecture seule sur le parc et les tickets |
+| Self-Service | Utilisateur final | Creation de tickets, suivi de ses tickets, consultation FAQ |
+
+Chaque profil est parametrable de maniere granulaire : pour chaque module (Parc, Assistance, Gestion, Outils, Administration, Configuration), on definit les permissions (aucun droit, lecture, ecriture, suppression, purge).
+
+### 10.2 Entites
+
+Les entites permettent de segmenter GLPI en unites organisationnelles independantes (sites, filiales, services).
+
+Structure arborescente :
+
+```
+Entite racine
+|-- Siege social
+|   |-- Direction informatique
+|   |-- Direction financiere
+|   |-- Direction RH
+|-- Site Lyon
+|   |-- Service technique
+|   |-- Service commercial
+|-- Site Marseille
+```
+
+Chaque entite possede :
+
+- Son propre parc informatique
+- Ses propres tickets
+- Ses propres parametres (SLA, notifications, categories)
+- Ses propres utilisateurs ou une visibilite sur les entites filles
+
+Les regles de visibilite :
+
+- **Entite propre** : acces uniquement a son entite
+- **Entites filles** : acces a son entite et a toutes les sous-entites (recursif)
+
+### 10.3 Habilitations
+
+Une habilitation est l'association d'un **utilisateur**, d'un **profil** et d'une **entite**. Un meme utilisateur peut avoir des habilitations differentes selon l'entite.
+
+Exemple :
+
+| Utilisateur | Profil | Entite | Recursif |
+|-------------|--------|--------|----------|
+| Jean Dupont | Technicien | Siege social | Oui |
+| Jean Dupont | Admin | Direction informatique | Non |
+| Marie Martin | Self-Service | Site Lyon | Non |
+| Pierre Durand | Super-Admin | Entite racine | Oui |
+
+### 10.4 Synchronisation LDAP / Active Directory
+
+GLPI peut importer et synchroniser les utilisateurs depuis un annuaire LDAP ou Active Directory.
+
+Configuration :
+
+1. Menu **Configuration > Authentification > Annuaires LDAP**
+2. Ajouter un annuaire :
+   - **Nom** : nom de la connexion
+   - **Serveur** : adresse IP ou FQDN du controleur de domaine
+   - **Port** : 389 (LDAP) ou 636 (LDAPS)
+   - **Base DN** : racine de recherche (ex : `dc=mondomaine,dc=local`)
+   - **DN du compte de connexion** : compte de service (ex : `cn=glpi-ldap,ou=Services,dc=mondomaine,dc=local`)
+   - **Mot de passe** du compte de connexion
+   - **Filtre de connexion** : filtre LDAP (ex : `(&(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))` pour exclure les comptes desactives)
+3. Mapper les champs LDAP avec les champs GLPI :
+   - `sAMAccountName` --> Identifiant
+   - `sn` --> Nom
+   - `givenName` --> Prenom
+   - `mail` --> Courriel
+   - `telephoneNumber` --> Telephone
+   - `department` --> Groupe ou entite
+   - `memberOf` --> Attribution automatique de profil et d'entite
+
+Import et synchronisation :
+
+- **Import initial** : menu **Administration > Utilisateurs > Liaison annuaire LDAP > Importation de nouveaux utilisateurs**
+- **Synchronisation periodique** : tache automatique GLPI (cron interne) ou tache cron systeme :
+
+```bash
+# Synchronisation LDAP via CLI
+php /var/www/html/glpi/bin/console glpi:ldap:synchronize_users --all
+```
+
+Regles d'affectation d'habilitations :
+
+1. Menu **Administration > Regles > Regles d'affectation d'habilitations a un utilisateur**
+2. Creer des regles basees sur les attributs LDAP :
+   - Si `memberOf` contient `CN=IT-Support` --> Profil Technicien, Entite Direction informatique
+   - Si `department` = `Comptabilite` --> Profil Self-Service, Entite Direction financiere
+
+---
+
+## 11. Plugins utiles
+
+### 11.1 FusionInventory
+
+Deja detaille en section 3.3. Fonctionnalites complementaires :
+
+- **Decouverte reseau** : scan SNMP des equipements reseau (switches, routeurs, imprimantes reseau)
+- **Deploiement de paquets** : distribution de logiciels et de scripts sur les postes
+- **Collecte de donnees SNMP** : surveillance des equipements reseau (utilisation CPU, memoire, ports)
+- **Wake-on-LAN** : reveil a distance des postes
+
+Depuis GLPI 10.x, un module d'inventaire natif remplace progressivement FusionInventory. L'agent natif GLPI (GLPI Agent) est compatible avec les agents FusionInventory existants.
+
+### 11.2 FormCreator
+
+FormCreator permet de creer des formulaires personnalises pour la creation de tickets.
+
+Cas d'usage :
+
+- Formulaire de demande de materiel (avec champs : type de materiel, justification, budget, validation)
+- Formulaire de demande d'acces (application, niveau d'acces, date de debut)
+- Formulaire de signalement d'incident (categorie pre-remplie, champs guides)
+- Formulaire d'arrivee d'un nouveau collaborateur (nom, service, equipements necessaires)
+
+Configuration :
+
+1. Installer et activer le plugin FormCreator
+2. Creer un formulaire avec les sections et champs souhaites
+3. Definir les conditions d'affichage (champs conditionnels)
+4. Configurer la cible : creation automatique d'un ticket avec les champs pre-remplis
+5. Publier le formulaire dans le catalogue de services
+
+### 11.3 Dashboard
+
+Le plugin Dashboard fournit des tableaux de bord visuels avances :
+
+- Nombre de tickets ouverts par statut, categorie, technicien
+- Temps moyen de resolution
+- Taux de respect des SLA
+- Repartition du parc par type, statut, lieu
+- Evolution dans le temps (graphiques)
+
+Depuis GLPI 10.x, un systeme de tableaux de bord est integre nativement avec la possibilite de creer des tableaux personnalises.
+
+### 11.4 Autres plugins notables
+
+| Plugin | Fonction |
+|--------|----------|
+| Data Injection | Import massif de donnees via CSV |
+| Accounts | Gestion des comptes et mots de passe partages |
+| Fields | Ajout de champs personnalises aux formulaires |
+| GLPI Inventory | Agent natif GLPI 10 (remplace FusionInventory) |
+| Escalade | Regles d'escalade avancees des tickets |
+| TimelineTicket | Visualisation chronologique du cycle de vie d'un ticket |
+| Reports | Rapports supplementaires parametrables |
+
+---
+
+## 12. Rapports et statistiques
+
+### 12.1 Rapports natifs
+
+GLPI integre des rapports natifs accessibles via **Outils > Rapports** :
+
+- Rapport par defaut sur les equipements (par type, statut, lieu, fabricant)
+- Rapport sur les logiciels (installations, versions, conformite)
+- Rapport sur les tickets (par statut, categorie, technicien, periode)
+- Rapport sur les contrats (en cours, a renouveler, expires)
+
+### 12.2 Statistiques du helpdesk
+
+Menu **Assistance > Statistiques** :
+
+- **Statistiques globales** : nombre de tickets ouverts, resolus, clos par periode
+- **Par technicien** : charge de travail, temps moyen de traitement, nombre de tickets resolus
+- **Par categorie** : volume de tickets par thematique, identification des incidents recurrents
+- **Par priorite** : repartition des tickets selon la priorite
+- **Respect des SLA** : pourcentage de tickets traites dans les delais (TTO et TTR)
+- **Enquetes de satisfaction** : note moyenne, evolution, commentaires
+
+### 12.3 Exports
+
+Les listes et rapports peuvent etre exportes aux formats :
+
+- CSV (tableur)
+- PDF
+- SLK (tableur)
+
+Procedure : dans toute vue de liste, cliquer sur l'icone d'export et selectionner le format souhaite.
+
+### 12.4 Indicateurs de performance (KPI)
+
+Indicateurs cles a suivre pour piloter le service informatique :
+
+| Indicateur | Description | Objectif type |
+|------------|-------------|---------------|
+| Taux de resolution au premier contact | Tickets resolus sans escalade | Superieur a 70% |
+| Temps moyen de prise en charge (TTO) | Delai entre creation et affectation | Inferieur a 1 heure |
+| Temps moyen de resolution (TTR) | Delai entre creation et resolution | Inferieur a 8 heures |
+| Taux de respect du SLA | Pourcentage de tickets dans les delais | Superieur a 90% |
+| Backlog | Nombre de tickets ouverts non resolus | Tendance a la baisse |
+| Taux de satisfaction | Note moyenne des enquetes | Superieur a 4/5 |
+| Taux de reouverture | Tickets rouverts apres resolution | Inferieur a 5% |
+| Nombre d'incidents par poste | Ratio incidents / nombre de postes | Inferieur a 2 par trimestre |
+
+---
+
+## 13. ITIL dans GLPI
+
+### 13.1 Rappel des processus ITIL
+
+ITIL (Information Technology Infrastructure Library) est un ensemble de bonnes pratiques pour la gestion des services informatiques. GLPI implemente trois processus principaux :
+
+### 13.2 Gestion des incidents
+
+**Definition** : un incident est une interruption non planifiee d'un service informatique ou une degradation de la qualite d'un service.
+
+**Objectif** : retablir le fonctionnement normal du service le plus rapidement possible.
+
+**Processus dans GLPI** :
+
+1. Detection et enregistrement (creation du ticket de type "Incident")
+2. Classification (categorie, urgence, impact, priorite)
+3. Investigation et diagnostic (recherche de la cause, tests)
+4. Resolution et retablissement (application de la solution)
+5. Cloture (validation par l'utilisateur, documentation)
+
+**Exemples** : panne d'imprimante, ecran bleu, impossibilite de se connecter au reseau, application qui ne repond plus.
+
+### 13.3 Gestion des problemes
+
+**Definition** : un probleme est la cause sous-jacente d'un ou plusieurs incidents.
+
+**Objectif** : identifier la cause racine et la supprimer definitivement pour eviter la recurrence des incidents.
+
+**Processus dans GLPI** :
+
+1. Identification du probleme (incidents recurrents, analyse des tendances)
+2. Enregistrement (creation d'un ticket de type "Probleme" dans GLPI, menu Assistance > Problemes)
+3. Investigation (recherche de la cause racine : methode des 5 pourquoi, diagramme d'Ishikawa)
+4. Contournement temporaire (workaround) documente
+5. Resolution definitive (correction de la cause racine)
+6. Cloture et revue post-incident
+
+**Lien incidents-problemes dans GLPI** : un probleme peut etre lie a plusieurs incidents. Lorsque le probleme est resolu, tous les incidents associes peuvent etre resolus simultanement.
+
+**Exemples** : serveur DHCP sature causant des incidents de connexion recurrents, mise a jour defaillante causant des plantages sur plusieurs postes.
+
+### 13.4 Gestion des changements
+
+**Definition** : un changement est une modification planifiee de l'infrastructure informatique ou d'un service.
+
+**Objectif** : minimiser les risques lies aux modifications en les planifiant et les controlant.
+
+**Processus dans GLPI** :
+
+1. Demande de changement (RFC - Request For Change) : creation dans GLPI (menu Assistance > Changements)
+2. Evaluation : analyse d'impact, risques, plan de retour arriere
+3. Approbation : validation par le CAB (Change Advisory Board) via le systeme de validation de GLPI
+4. Planification : date, creneau, ressources necessaires
+5. Implementation : execution du changement
+6. Revue post-implementation : verification du succes, documentation
+
+**Types de changements** :
+
+| Type | Description | Approbation |
+|------|-------------|-------------|
+| Standard | Changement pre-approuve, risque faible, procedure connue | Automatique |
+| Normal | Changement planifie, necessite evaluation et approbation | CAB |
+| Urgent | Changement non planifie en reponse a un incident critique | CAB d'urgence ou approbation rapide |
+
+**Exemples** : migration de serveur, mise a jour d'un logiciel metier, modification des regles du pare-feu, remplacement d'un switch.
+
+### 13.5 Relations entre les processus
+
+```
+Incidents multiples --> Detection d'un probleme
+                              |
+                    Analyse de la cause racine
+                              |
+                    Solution definitive identifiee
+                              |
+                    Demande de changement (RFC)
+                              |
+                    Evaluation et approbation
+                              |
+                    Implementation du changement
+                              |
+                    Cloture du probleme et des incidents associes
+```
+
+---
+
+## 14. Exercices d'integration
+
+### Exercice 1 : Installation de GLPI
+
+**Enonce** : Installer GLPI 10.0 sur un serveur Debian 12. Le serveur doit etre accessible a l'adresse `http://glpi.labo.local`. Securiser l'installation.
+
+**Correction** :
+
+1. Installer les paquets LAMP :
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install apache2 mariadb-server php php-mysql php-curl \
+  php-gd php-intl php-xml php-mbstring php-ldap php-zip php-bz2 php-imap php-apcu -y
+```
+
+2. Securiser MariaDB :
+```bash
+sudo mysql_secure_installation
+# Definir un mot de passe root, supprimer les utilisateurs anonymes,
+# desactiver l'acces root distant, supprimer la base de test
+```
+
+3. Creer la base de donnees :
+```sql
+sudo mysql -u root -p
+CREATE DATABASE glpi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'glpi_user'@'localhost' IDENTIFIED BY 'P@ssw0rd_GLPI!';
+GRANT ALL PRIVILEGES ON glpi.* TO 'glpi_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+4. Telecharger et installer GLPI :
+```bash
+cd /tmp
+wget https://github.com/glpi-project/glpi/releases/download/10.0.15/glpi-10.0.15.tgz
+sudo tar -xzf glpi-10.0.15.tgz -C /var/www/html/
+sudo chown -R www-data:www-data /var/www/html/glpi
+```
+
+5. Configurer Apache :
+```bash
+sudo nano /etc/apache2/sites-available/glpi.conf
+```
+Contenu du fichier :
+```apache
+<VirtualHost *:80>
+    ServerName glpi.labo.local
+    DocumentRoot /var/www/html/glpi/public
+    <Directory /var/www/html/glpi/public>
+        AllowOverride All
+        Require all granted
+        RewriteEngine On
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteRule ^(.*)$ index.php [QSA,L]
+    </Directory>
+</VirtualHost>
+```
+```bash
+sudo a2ensite glpi.conf
+sudo a2enmod rewrite
+sudo systemctl restart apache2
+```
+
+6. Completer l'installation via le navigateur
+
+7. Securisation :
+```bash
+sudo rm /var/www/html/glpi/install/install.php
+```
+Changer les quatre mots de passe par defaut (glpi, tech, normal, post-only).
+
+---
+
+### Exercice 2 : Configuration de l'inventaire automatise
+
+**Enonce** : Configurer FusionInventory dans GLPI pour inventorier automatiquement les postes du reseau. Installer l'agent sur un poste Windows et un poste Linux. Verifier que l'inventaire remonte correctement.
+
+**Correction** :
+
+1. Installer le plugin FusionInventory :
+```bash
+cd /var/www/html/glpi/plugins/
+sudo wget [URL du plugin FusionInventory compatible]
+sudo tar -xjf fusioninventory-*.tar.bz2
+sudo chown -R www-data:www-data fusioninventory/
+```
+Activer dans GLPI : Configuration > Plugins > Installer > Activer.
+
+2. Sur le poste Windows :
+   - Telecharger l'installeur MSI de FusionInventory Agent
+   - Installer avec les parametres : serveur = `http://glpi.labo.local/plugins/fusioninventory/`
+   - Verifier dans les services Windows que le service `FusionInventory Agent` est demarre
+
+3. Sur le poste Linux :
+```bash
+sudo apt install fusioninventory-agent -y
+sudo nano /etc/fusioninventory/agent.cfg
+# Modifier : server = http://glpi.labo.local/plugins/fusioninventory/
+sudo systemctl restart fusioninventory-agent
+sudo fusioninventory-agent --force
+```
+
+4. Verification :
+   - Dans GLPI, menu Parc > Ordinateurs
+   - Les deux postes doivent apparaitre avec toutes les informations collectees
+   - Verifier les composants, logiciels, ports reseau
+
+---
+
+### Exercice 3 : Creation et traitement d'un ticket d'incident
+
+**Enonce** : Un utilisateur signale que son imprimante reseau HP LaserJet Pro ne fonctionne plus depuis ce matin. Creer le ticket, le qualifier, le traiter et le cloturer. Documenter chaque etape.
+
+**Correction** :
+
+1. **Creation du ticket** :
+   - Type : Incident
+   - Categorie : Impression
+   - Urgence : Haute (l'utilisateur a des impressions urgentes)
+   - Impact : Moyen (un seul service concerne)
+   - Priorite calculee : Haute
+   - Titre : "Imprimante HP LaserJet Pro du bureau 203 hors service"
+   - Description : "L'imprimante reseau HP LaserJet Pro situee au bureau 203 ne repond plus depuis 8h30 ce matin. Le voyant d'erreur clignote en orange. Aucune impression possible depuis les postes du service comptabilite."
+   - Demandeur : Jean Dupont
+   - Element associe : IMP-COMPTA-01 (fiche imprimante dans le parc)
+   - Source : Telephone
+
+2. **Qualification et affectation** :
+   - Verifier la categorie et la priorite
+   - Affecter au groupe "Support Niveau 1"
+   - Statut passe a "En cours (attribue)"
+
+3. **Diagnostic** (ajouter un suivi) :
+   - Suivi prive : "Verification a distance : l'imprimante ne repond pas au ping (192.168.1.50). Deplacement prevu."
+   - Suivi prive : "Sur place : voyant erreur orange fixe. Bourrage papier dans le bac 2. Retrait du papier coince. Redemarrage de l'imprimante."
+
+4. **Resolution** :
+   - Solution : "Bourrage papier dans le bac 2 de l'imprimante. Le papier coince a ete retire. L'imprimante a ete redemarree et fonctionne normalement. Test d'impression realise avec succes. Recommandation : verifier regulierement l'etat du papier dans les bacs."
+   - Type de solution : Resolution
+
+5. **Cloture** :
+   - L'utilisateur approuve la solution
+   - Le ticket passe au statut "Clos"
+
+---
+
+### Exercice 4 : Configuration des SLA
+
+**Enonce** : Mettre en place les SLA suivants dans GLPI : prise en charge en 30 minutes et resolution en 4 heures pour les incidents de priorite haute, en heures ouvrables (8h-18h, lundi-vendredi). Configurer une escalade automatique.
+
+**Correction** :
+
+1. Creer le calendrier :
+   - Configuration > Listes deroulantes > Calendriers
+   - Nom : "Heures ouvrables"
+   - Definir les plages : lundi a vendredi, 08:00-12:00 et 13:00-18:00
+
+2. Creer le SLA TTO :
+   - Configuration > SLA > Ajouter
+   - Nom : "SLA Haute - TTO"
+   - Type : Time To Own
+   - Duree maximale : 30 minutes
+   - Calendrier : Heures ouvrables
+   - Niveau d'escalade 1 : a 75% du delai (22 min), envoyer notification au groupe
+   - Niveau d'escalade 2 : a 100% du delai (30 min), affecter au superviseur
+
+3. Creer le SLA TTR :
+   - Configuration > SLA > Ajouter
+   - Nom : "SLA Haute - TTR"
+   - Type : Time To Resolve
+   - Duree maximale : 4 heures
+   - Calendrier : Heures ouvrables
+   - Niveau d'escalade 1 : a 50% du delai (2h), notification au technicien
+   - Niveau d'escalade 2 : a 75% du delai (3h), notification au superviseur
+   - Niveau d'escalade 3 : a 100% du delai (4h), escalade au responsable SI
+
+4. Associer les SLA aux tickets :
+   - Configuration > Regles > Regles metier pour les tickets
+   - Creer une regle : Si priorite = Haute, alors SLA TTO = "SLA Haute - TTO" et SLA TTR = "SLA Haute - TTR"
+
+---
+
+### Exercice 5 : Gestion des entites et des droits
+
+**Enonce** : L'entreprise possede deux sites (Paris et Lyon). Creer la structure d'entites, les profils necessaires et les habilitations pour : un administrateur GLPI global, un technicien par site, et les utilisateurs de chaque site en self-service.
+
+**Correction** :
+
+1. Creation des entites :
+   - Administration > Entites
+   - Sous l'entite racine, creer :
+     - "Site Paris"
+     - "Site Lyon"
+
+2. Habilitations :
+
+| Utilisateur | Profil | Entite | Recursif |
+|-------------|--------|--------|----------|
+| admin_si | Super-Admin | Entite racine | Oui |
+| tech_paris | Technicien | Site Paris | Non |
+| tech_lyon | Technicien | Site Lyon | Non |
+| Utilisateurs Paris | Self-Service | Site Paris | Non |
+| Utilisateurs Lyon | Self-Service | Site Lyon | Non |
+
+3. Verification : chaque technicien ne voit que les tickets et le parc de son site. L'administrateur voit tout.
+
+---
+
+### Exercice 6 : Synchronisation LDAP
+
+**Enonce** : Configurer GLPI pour importer les utilisateurs depuis un Active Directory (controleur de domaine : `dc01.labo.local`, domaine : `labo.local`). Les membres du groupe "SI-Techniciens" doivent recevoir le profil Technicien, les autres le profil Self-Service.
+
+**Correction** :
+
+1. Configuration de l'annuaire LDAP :
+   - Configuration > Authentification > Annuaires LDAP > Ajouter
+   - Serveur : `dc01.labo.local`
+   - Port : 389
+   - Base DN : `dc=labo,dc=local`
+   - DN de connexion : `cn=glpi-ldap,ou=Services,dc=labo,dc=local`
+   - Mot de passe : [mot de passe du compte de service]
+   - Filtre : `(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))`
+   - Champ identifiant : `sAMAccountName`
+
+2. Mappage des champs :
+   - Nom : `sn`
+   - Prenom : `givenName`
+   - Courriel : `mail`
+   - Telephone : `telephoneNumber`
+
+3. Regles d'affectation :
+   - Administration > Regles > Regles d'affectation d'habilitations
+   - Regle 1 : Si `memberOf` contient `CN=SI-Techniciens,OU=Groupes,DC=labo,DC=local` alors Profil = Technicien, Entite = Entite racine (recursif)
+   - Regle 2 (par defaut) : Si aucune autre regle ne correspond, Profil = Self-Service, Entite = Entite racine
+
+4. Import initial :
+   - Administration > Utilisateurs > Liaison annuaire LDAP > Importation de nouveaux utilisateurs
+   - Selectionner l'annuaire, lancer la recherche, importer les utilisateurs
+
+---
+
+### Exercice 7 : Gestion des licences logicielles
+
+**Enonce** : L'entreprise dispose de 50 licences Microsoft Office 2021 Professional (licence volume). L'inventaire automatise revele 53 installations. Identifier le probleme et le resoudre dans GLPI.
+
+**Correction** :
+
+1. Constater la non-conformite :
+   - Parc > Logiciels > Microsoft Office Professional 2021
+   - Onglet Installations : 53 installations detectees
+   - Onglet Licences : 50 licences enregistrees
+   - Depassement de 3 licences
+
+2. Identifier les postes en surplus :
+   - Comparer la liste des installations avec la liste des postes autorises
+   - Trier par date d'installation pour identifier les installations les plus recentes
+
+3. Actions correctives :
+   - Option A : Acheter 3 licences supplementaires et les enregistrer dans GLPI
+   - Option B : Desinstaller Microsoft Office sur 3 postes non prioritaires et les remplacer par LibreOffice
+   - Option C : Verifier si certaines installations concernent des postes hors service (a destocker)
+
+4. Mise a jour dans GLPI :
+   - Si achat : ajouter 3 licences avec numero de contrat, date, fournisseur
+   - Si desinstallation : relancer l'inventaire pour mettre a jour le compteur
+   - Configurer une alerte de seuil pour etre prevenu en cas de nouveau depassement
+
+---
+
+### Exercice 8 : Gestion financiere d'un renouvellement de parc
+
+**Enonce** : L'entreprise prevoit le renouvellement de 20 ordinateurs de bureau. Creer le budget, le fournisseur, le contrat de garantie et enregistrer les equipements avec leurs informations financieres. Prix unitaire : 850 euros HT. Amortissement lineaire sur 5 ans.
+
+**Correction** :
+
+1. Creer le fournisseur :
+   - Gestion > Fournisseurs > Ajouter
+   - Nom : "Dell France"
+   - Adresse, telephone, contact commercial
+
+2. Creer le budget :
+   - Gestion > Budgets > Ajouter
+   - Nom : "Renouvellement parc 2024"
+   - Date de debut : 01/01/2024
+   - Date de fin : 31/12/2024
+   - Montant : 20 000 euros (20 x 850 + marge consommables)
+
+3. Creer le contrat de garantie :
+   - Gestion > Contrats > Ajouter
+   - Nom : "Garantie Dell ProSupport 3 ans"
+   - Fournisseur : Dell France
+   - Type : Contrat de maintenance
+   - Date de debut : date de livraison
+   - Duree : 36 mois
+   - Cout annuel : selon devis
+
+4. Enregistrer les equipements :
+   - Pour chaque ordinateur (ou par import CSV) :
+     - Date d'achat : date de la facture
+     - Valeur : 850 euros HT
+     - Fournisseur : Dell France
+     - Budget : Renouvellement parc 2024
+     - Duree d'amortissement : 5 ans
+     - Type d'amortissement : Lineaire
+     - Amortissement annuel calcule : 850 / 5 = 170 euros par an
+     - Garantie : date de fin = date d'achat + 3 ans
+
+5. Verification :
+   - Budget : 20 x 850 = 17 000 euros engages sur 20 000
+   - Valeur nette comptable apres 1 an : 850 - 170 = 680 euros par poste
+
+---
+
+### Exercice 9 : Creation d'un article de base de connaissances
+
+**Enonce** : Suite a la resolution de l'exercice 3 (bourrage papier imprimante), creer un article de base de connaissances pour que les utilisateurs puissent resoudre eux-memes ce type de probleme a l'avenir.
+
+**Correction** :
+
+1. Outils > Base de connaissances > Ajouter
+
+2. Article :
+   - **Titre** : "Resoudre un bourrage papier sur imprimante HP LaserJet Pro"
+   - **Categorie** : Impression
+   - **FAQ** : Oui
+   - **Cible** : Visible par tous les utilisateurs
+
+3. Contenu :
+
+```
+Symptome : L'imprimante HP LaserJet Pro affiche un voyant orange fixe ou 
+clignotant. Les impressions sont bloquees et les travaux restent en file 
+d'attente.
+
+Cause probable : Bourrage papier dans un des bacs ou dans le circuit 
+d'impression.
+
+Procedure de resolution :
+
+1. Eteindre l'imprimante et debrancher le cable d'alimentation.
+2. Ouvrir le capot avant de l'imprimante.
+3. Retirer delicatement la cartouche de toner.
+4. Verifier la presence de papier coince dans le circuit. Tirer doucement 
+   le papier dans le sens de sortie pour eviter de dechirer la feuille.
+5. Verifier le bac 1 (bac principal) : retirer le bac, verifier qu'aucune 
+   feuille n'est coincee.
+6. Verifier le bac 2 (si present) : meme operation.
+7. Verifier la sortie papier a l'arriere de l'imprimante.
+8. Remettre la cartouche de toner en place.
+9. Fermer le capot.
+10. Rebrancher et rallumer l'imprimante.
+11. Attendre l'initialisation complete (voyant vert fixe).
+12. Lancer une impression de test.
+
+Si le probleme persiste apres cette procedure, creer un ticket d'incident 
+en precisant les etapes deja realisees.
+```
+
+4. Lier l'article au ticket de l'exercice 3 pour tracabilite.
+
+---
+
+### Exercice 10 : Gestion d'un probleme ITIL
+
+**Enonce** : Depuis une semaine, 8 incidents ont ete signales concernant des deconnexions Wi-Fi aleatoires dans le batiment B. Identifier le probleme, le documenter dans GLPI et proposer un changement.
+
+**Correction** :
+
+1. Identification : 8 tickets d'incident avec la categorie "Reseau / Wi-Fi" et le lieu "Batiment B" sur les 7 derniers jours.
+
+2. Creation du probleme :
+   - Assistance > Problemes > Ajouter
+   - Titre : "Deconnexions Wi-Fi recurrentes dans le batiment B"
+   - Description : "Depuis le 11/02, 8 incidents de deconnexion Wi-Fi ont ete signales par des utilisateurs du batiment B. Les deconnexions sont aleatoires et affectent differents postes et utilisateurs."
+   - Lier les 8 tickets d'incident au probleme
+
+3. Investigation (ajout de suivis) :
+   - Analyse des logs du controleur Wi-Fi : le point d'acces AP-BATB-02 redemarrage frequemment
+   - Test sur site : signal faible dans l'aile est du batiment B
+   - Diagnostic : le point d'acces AP-BATB-02 presente un defaut materiel (surchauffe et redemarrage)
+
+4. Contournement temporaire :
+   - Augmenter la puissance du point d'acces AP-BATB-01 pour couvrir partiellement la zone
+   - Documenter le contournement dans le probleme
+
+5. Demande de changement :
+   - Assistance > Changements > Ajouter
+   - Titre : "Remplacement du point d'acces AP-BATB-02"
+   - Type : Normal
+   - Lier au probleme
+   - Plan : commander un nouveau point d'acces, planifier l'intervention, preparer le retour arriere
+   - Validation : soumettre au responsable SI
+
+6. Apres remplacement : cloturer le changement, le probleme et les 8 incidents.
+
+---
+
+### Exercice 11 : Deploiement massif de l'agent d'inventaire par GPO
+
+**Enonce** : Deployer l'agent FusionInventory sur les 150 postes Windows du domaine Active Directory via une strategie de groupe (GPO). L'agent doit pointer vers le serveur GLPI `http://glpi.entreprise.local`.
+
+**Correction** :
+
+1. Preparation :
+   - Telecharger le fichier MSI de l'agent FusionInventory
+   - Placer le fichier sur un partage reseau accessible en lecture par tous les ordinateurs du domaine : `\\dc01\partage$\deploiement\fusioninventory-agent.msi`
+
+2. Creation de la GPO :
+   - Ouvrir la console "Gestion des strategies de groupe" (gpmc.msc)
+   - Creer une nouvelle GPO : "Deploiement FusionInventory Agent"
+   - Lier la GPO a l'OU contenant les postes cibles
+
+3. Configuration de la GPO :
+   - Editer la GPO
+   - Configuration ordinateur > Strategies > Parametres du logiciel > Installation du logiciel
+   - Clic droit > Nouveau > Package
+   - Selectionner le fichier MSI via le chemin UNC
+   - Mode de deploiement : Attribue
+
+4. Parametres de l'agent :
+   - Configurer via les proprietes MSI ou un fichier de transformation (MST) :
+     - SERVER = `http://glpi.entreprise.local/plugins/fusioninventory/`
+     - EXECMODE = Service
+     - RUNNOW = 1
+
+5. Verification :
+   - Forcer l'application de la GPO sur un poste de test : `gpupdate /force` puis redemarrer
+   - Verifier le service FusionInventory Agent dans les services Windows
+   - Verifier la remontee d'inventaire dans GLPI
+
+6. Suivi du deploiement :
+   - Dans GLPI, suivre le nombre d'ordinateurs inventories au fil des jours
+   - Identifier les postes n'ayant pas recu l'agent (eteints, hors domaine)
+
+---
+
+### Exercice 12 : Redaction d'une procedure de gestion de parc
+
+**Enonce** : Rediger une procedure complete pour l'integration d'un nouveau poste de travail dans le parc informatique, depuis la reception du materiel jusqu'a la mise a disposition de l'utilisateur. La procedure doit s'appuyer sur GLPI.
+
+**Correction** :
+
+**Procedure : Integration d'un nouveau poste de travail**
+
+**1. Reception du materiel**
+   - Verifier la conformite du bon de livraison avec la commande
+   - Verifier l'etat physique de l'emballage et du materiel
+   - Relever le numero de serie sur le materiel
+
+**2. Enregistrement dans GLPI**
+   - Parc > Ordinateurs > Ajouter
+   - Renseigner : nom (selon la nomenclature), numero de serie, modele, fournisseur
+   - Statut : "En stock"
+   - Informations financieres : date d'achat, valeur, budget, garantie
+   - Associer au contrat de garantie du fournisseur
+   - Joindre le bon de livraison et la facture en document
+
+**3. Preparation du poste**
+   - Installer le systeme d'exploitation selon le master de reference
+   - Joindre le poste au domaine Active Directory
+   - Installer les logiciels standards (suite bureautique, antivirus, navigateur, client VPN)
+   - Installer l'agent d'inventaire (FusionInventory ou GLPI Agent)
+   - Forcer un premier inventaire pour verifier la remontee dans GLPI
+   - Appliquer les mises a jour de securite
+   - Effectuer les tests de validation (reseau, impression, applications)
+
+**4. Affectation a l'utilisateur**
+   - Dans GLPI, modifier la fiche de l'ordinateur :
+     - Utilisateur : nom de l'utilisateur destinataire
+     - Groupe : service de l'utilisateur
+     - Lieu : emplacement du bureau
+     - Statut : "En service"
+   - Connecter les peripheriques (moniteur, clavier, souris) et mettre a jour les connexions dans GLPI
+
+**5. Remise a l'utilisateur**
+   - Configurer la session utilisateur (profil, messagerie, imprimantes)
+   - Former l'utilisateur aux specificites du poste si necessaire
+   - Faire signer le formulaire de remise de materiel
+   - Joindre le formulaire signe a la fiche dans GLPI
+
+**6. Verification post-installation**
+   - Verifier que l'inventaire automatique a mis a jour la fiche dans les 24 heures
+   - Controler la liste des logiciels installes et la conformite des licences
+   - Confirmer que l'utilisateur peut creer un ticket dans GLPI
+
+**7. Documentation**
+   - Mettre a jour le plan de parc ou le plan de cablage si necessaire
+   - Archiver les documents (bon de livraison, facture, formulaire de remise)
+
+---
+
+## Synthese des commandes et chemins importants
+
+### Fichiers de configuration
+
+| Fichier | Emplacement |
+|---------|-------------|
+| Configuration GLPI | `/etc/glpi/` (GLPI 10 securise) ou `/var/www/html/glpi/config/` |
+| Fichiers uploades | `/var/lib/glpi/` ou `/var/www/html/glpi/files/` |
+| Configuration PHP | `/etc/php/8.1/apache2/php.ini` |
+| Configuration Apache | `/etc/apache2/sites-available/glpi.conf` |
+| Agent FusionInventory (Linux) | `/etc/fusioninventory/agent.cfg` |
+| Logs GLPI | `/var/log/glpi/` ou `/var/www/html/glpi/files/_log/` |
+
+### Commandes CLI GLPI 10
+
+```bash
+# Console GLPI (depuis le repertoire d'installation)
+php bin/console
+
+# Synchronisation LDAP
+php bin/console glpi:ldap:synchronize_users --all
+
+# Maintenance de la base de donnees
+php bin/console glpi:database:check_schema_integrity
+php bin/console glpi:database:update
+
+# Gestion des taches automatiques
+php bin/console glpi:task:unlock
+php bin/console glpi:system:check_requirements
+
+# Activation de la maintenance
+php bin/console glpi:maintenance:enable
+php bin/console glpi:maintenance:disable
+```
+
+### Taches automatiques (cron GLPI)
+
+GLPI utilise un systeme de taches automatiques interne, declenchees par les acces web ou par un cron systeme :
+
+```bash
+# Cron systeme recommande (toutes les minutes)
+* * * * * www-data php /var/www/html/glpi/front/cron.php
+```
+
+Taches automatiques importantes :
+
+| Tache | Fonction | Frequence recommandee |
+|-------|----------|----------------------|
+| mailgate | Collecte des courriels | Toutes les 5 minutes |
+| ticketrecurrent | Creation de tickets recurrents | Toutes les heures |
+| alertnotclosed | Alerte tickets non clos | Quotidienne |
+| contract | Alerte contrats | Quotidienne |
+| infocom | Alerte informations financieres | Quotidienne |
+| reservation | Alerte reservations | Quotidienne |
+| ldap_mass_sync | Synchronisation LDAP | Quotidienne |
+
+---
+
+## Points cles pour l'examen BTS SIO SISR
+
+1. **GLPI est un outil de GMAO/ITSM** (Gestion de Maintenance Assistee par Ordinateur / IT Service Management) reposant sur une architecture LAMP.
+
+2. **L'inventaire automatise** (FusionInventory, OCS Inventory, GLPI Agent natif) est preferable a la saisie manuelle pour garantir la fiabilite et l'exhaustivite des donnees.
+
+3. **La gestion des licences** est un enjeu juridique et financier majeur. La non-conformite expose l'organisation a des sanctions.
+
+4. **Le workflow des tickets** suit un cycle de vie precis : Nouveau > En cours > En attente > Resolu > Clos. Chaque transition est tracee.
+
+5. **Les SLA** (TTO et TTR) mesurent la qualite de service. Ils sont associes a des calendriers et des niveaux d'escalade.
+
+6. **Les entites** permettent de segmenter GLPI par site ou par service. Les **profils** definissent les droits. Les **habilitations** associent un utilisateur a un profil dans une entite.
+
+7. **ITIL distingue incidents, problemes et changements**. Un incident est un symptome. Un probleme est une cause. Un changement est une modification planifiee.
+
+8. **La synchronisation LDAP** permet d'importer et d'authentifier les utilisateurs depuis Active Directory, avec attribution automatique de profils et d'entites via des regles.
+
+9. **La base de connaissances** et la **FAQ** permettent de capitaliser les solutions et de favoriser l'autonomie des utilisateurs.
+
+10. **La gestion financiere** (budgets, contrats, amortissement) est integree a GLPI et permet un suivi complet du cout de possession du parc informatique (TCO).

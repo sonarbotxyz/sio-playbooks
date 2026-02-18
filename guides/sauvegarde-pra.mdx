@@ -1,0 +1,1447 @@
+---
+title: "Sauvegarde et PRA/PCA"
+description: "Stratégies de sauvegarde 3-2-1, RAID, haute disponibilité, plan de reprise et de continuité d'activité"
+category: "Sécurité"
+tags: ["sauvegarde", "raid", "pra", "pca", "haute disponibilité", "backup"]
+difficulty: "Intermédiaire"
+---
+
+# Sauvegarde et PRA/PCA
+
+## 1. Pourquoi sauvegarder
+
+La sauvegarde des donnees constitue un pilier fondamental de la securite informatique. Toute organisation doit anticiper la perte de donnees, quelle qu'en soit la cause.
+
+### 1.1 Les risques identifies
+
+| Risque | Description | Frequence | Impact |
+|---|---|---|---|
+| Panne materielle | Defaillance de disque dur, controleur RAID, alimentation | Elevee | Perte partielle ou totale des donnees |
+| Erreur humaine | Suppression accidentelle, ecrasement de fichiers, mauvaise manipulation | Tres elevee | Variable selon les donnees touchees |
+| Ransomware | Chiffrement malveillant des donnees avec demande de rancon | En hausse | Paralysie totale de l'activite |
+| Catastrophe naturelle | Incendie, inondation, seisme, foudre | Faible | Destruction physique du site |
+| Vol ou vandalisme | Intrusion physique, destruction volontaire | Moyenne | Perte de materiel et de donnees |
+| Corruption logicielle | Bug applicatif, mise a jour defectueuse | Moyenne | Donnees inexploitables |
+
+### 1.2 Consequences de la perte de donnees
+
+- Arret de production (chiffre d'affaires perdu)
+- Non-conformite reglementaire (RGPD, archivage legal)
+- Perte de confiance des clients et partenaires
+- Couts de reconstruction (si reconstruction possible)
+
+Statistique cle : environ 60 % des PME ayant subi une perte majeure de donnees cessent leur activite dans les 6 mois.
+
+---
+
+## 2. Types de sauvegarde
+
+### 2.1 Sauvegarde complete (Full Backup)
+
+Copie integrale de toutes les donnees selectionnees. Chaque sauvegarde complete est autonome : elle suffit a elle seule pour restaurer l'ensemble des donnees.
+
+**Avantages :**
+- Restauration simple et rapide (un seul jeu de sauvegarde necessaire)
+- Aucune dependance envers d'autres sauvegardes
+
+**Inconvenients :**
+- Volume de donnees important a chaque execution
+- Duree d'execution longue
+- Consommation d'espace de stockage elevee
+
+### 2.2 Sauvegarde incrementielle (Incremental Backup)
+
+Copie uniquement les donnees modifiees depuis la **derniere sauvegarde** (complete ou incrementielle).
+
+**Avantages :**
+- Volume de donnees faible a chaque execution
+- Duree d'execution courte
+
+**Inconvenients :**
+- Restauration complexe : necessite la derniere sauvegarde complete + toutes les incrementielles suivantes dans l'ordre
+- Si une incrementielle intermediaire est corrompue, les suivantes sont inutilisables
+
+### 2.3 Sauvegarde differentielle (Differential Backup)
+
+Copie uniquement les donnees modifiees depuis la **derniere sauvegarde complete**.
+
+**Avantages :**
+- Restauration plus simple que l'incrementielle : seules la derniere complete + la derniere differentielle sont necessaires
+- Volume intermediaire entre complete et incrementielle
+
+**Inconvenients :**
+- Le volume croit au fil du temps (jusqu'a la prochaine complete)
+- Plus lent qu'une incrementielle
+
+### 2.4 Tableau comparatif
+
+| Critere | Complete | Incrementielle | Differentielle |
+|---|---|---|---|
+| Donnees copiees | Toutes | Modifiees depuis derniere sauvegarde | Modifiees depuis derniere complete |
+| Volume par execution | Eleve | Faible | Croissant |
+| Duree d'execution | Longue | Courte | Moyenne |
+| Espace total consomme | Eleve | Faible | Moyen |
+| Restauration | 1 jeu | Complete + toutes les incrementielles | Complete + derniere differentielle |
+| Complexite de restauration | Faible | Elevee | Moyenne |
+
+### 2.5 Schema temporel : exemple sur une semaine
+
+```
+Lundi : Complete (C1)
+  Donnees sauvegardees : A, B, C, D, E
+
+Mardi : modification de B
+  Incrementielle (I1) : B        | Differentielle (D1) : B
+  Restauration : C1 + I1         | Restauration : C1 + D1
+
+Mercredi : modification de D
+  Incrementielle (I2) : D        | Differentielle (D2) : B, D
+  Restauration : C1 + I1 + I2    | Restauration : C1 + D2
+
+Jeudi : modification de A, E
+  Incrementielle (I3) : A, E     | Differentielle (D3) : B, D, A, E
+  Restauration : C1 + I1+I2+I3   | Restauration : C1 + D3
+
+Vendredi : modification de C
+  Incrementielle (I4) : C        | Differentielle (D4) : B, D, A, E, C
+  Restauration : C1+I1+I2+I3+I4  | Restauration : C1 + D4
+```
+
+---
+
+## 3. Strategie 3-2-1
+
+La regle 3-2-1 est un standard reconnu pour garantir la perennite des sauvegardes.
+
+### 3.1 Principe
+
+- **3** copies des donnees (l'original + 2 sauvegardes)
+- **2** supports de stockage differents (ex : disque local + bande magnetique)
+- **1** copie hors site (geographiquement distante)
+
+### 3.2 Pourquoi trois copies
+
+Deux copies sur le meme site et le meme support peuvent etre detruites simultanement (incendie, inondation). Trois copies sur des supports et des sites differents rendent la perte simultanee statistiquement negligeable.
+
+### 3.3 Exemple de mise en oeuvre
+
+| Copie | Support | Localisation |
+|---|---|---|
+| Donnees de production | Serveur RAID 5 | Salle serveur principale |
+| Sauvegarde locale | NAS dedie | Local technique separe |
+| Sauvegarde distante | Cloud chiffre (S3, Azure Blob) | Datacenter distant |
+
+### 3.4 Variante 3-2-1-1-0
+
+Extension moderne de la regle :
+- 3 copies, 2 supports, 1 hors site
+- **1** copie hors ligne (air-gapped, deconnectee du reseau)
+- **0** erreur de restauration verifiee (tests reguliers)
+
+La copie hors ligne protege contre les ransomwares qui chiffrent les sauvegardes accessibles par le reseau.
+
+---
+
+## 4. Supports de sauvegarde
+
+### 4.1 Disque dur (HDD / SSD)
+
+| Caracteristique | Detail |
+|---|---|
+| Capacite | Jusqu'a 20+ To par disque |
+| Vitesse | Acces rapide, ideal pour restauration frequente |
+| Cout | Modere |
+| Duree de vie | 3 a 5 ans en utilisation continue |
+| Usage | Sauvegarde locale, NAS, serveur de sauvegarde |
+
+### 4.2 Bande magnetique (LTO)
+
+| Generation | Capacite native | Capacite compressee | Debit |
+|---|---|---|---|
+| LTO-7 | 6 To | 15 To | 300 Mo/s |
+| LTO-8 | 12 To | 30 To | 360 Mo/s |
+| LTO-9 | 18 To | 45 To | 400 Mo/s |
+
+**Avantages :** cout par To tres faible, duree de vie de 30 ans, support hors ligne (protection ransomware).
+**Inconvenients :** acces sequentiel (restauration lente si fichier unique), necessite un lecteur dedie.
+
+### 4.3 NAS (Network Attached Storage)
+
+Boitier de stockage connecte au reseau local, accessible via des protocoles de partage de fichiers (NFS, SMB/CIFS). Ideal pour la sauvegarde centralisee en PME.
+
+### 4.4 SAN (Storage Area Network)
+
+Reseau de stockage dedie a haute performance, utilisant des protocoles specifiques (iSCSI, Fibre Channel). Reserve aux environnements exigeants (virtualisation, bases de donnees volumineuses).
+
+### 4.5 Cloud
+
+Stockage distant chez un fournisseur (AWS S3, Azure Blob Storage, OVH, Backblaze B2). Offre la copie hors site de la regle 3-2-1. Attention au chiffrement cote client avant envoi et aux couts de bande passante pour la restauration.
+
+---
+
+## 5. RAID (Redundant Array of Independent Disks)
+
+Le RAID n'est **pas** une sauvegarde. Il protege contre la panne d'un ou plusieurs disques mais ne protege pas contre la suppression accidentelle, le ransomware ou la corruption logicielle.
+
+### 5.1 RAID 0 -- Striping (entrelacement)
+
+```
+Disque 0 : A1  A3  A5  A7
+Disque 1 : A2  A4  A6  A8
+```
+
+| Propriete | Valeur |
+|---|---|
+| Nombre minimum de disques | 2 |
+| Tolerance de pannes | Aucune (1 disque en panne = perte totale) |
+| Capacite utile | N x taille du plus petit disque |
+| Performance lecture | Excellente (parallelisme) |
+| Performance ecriture | Excellente |
+
+**Calcul :** 4 disques de 1 To en RAID 0 = 4 To utiles, 0 disque de tolerance.
+
+### 5.2 RAID 1 -- Mirroring (miroir)
+
+```
+Disque 0 : A1  A2  A3  A4
+Disque 1 : A1  A2  A3  A4  (copie identique)
+```
+
+| Propriete | Valeur |
+|---|---|
+| Nombre minimum de disques | 2 |
+| Tolerance de pannes | 1 disque |
+| Capacite utile | Taille d'un seul disque (50 % de la capacite brute) |
+| Performance lecture | Amelioree (lecture sur les deux disques) |
+| Performance ecriture | Identique a un disque seul |
+
+**Calcul :** 2 disques de 1 To en RAID 1 = 1 To utile.
+
+### 5.3 RAID 5 -- Parite distribuee
+
+```
+Disque 0 : A1   A2   A3   P4
+Disque 1 : A4   A5   P3   A9
+Disque 2 : A7   P2   A6   A10
+Disque 3 : P1   A8   A11  A12
+```
+P = bloc de parite (calcule par XOR des blocs de donnees du meme stripe)
+
+| Propriete | Valeur |
+|---|---|
+| Nombre minimum de disques | 3 |
+| Tolerance de pannes | 1 disque |
+| Capacite utile | (N - 1) x taille du plus petit disque |
+| Performance lecture | Bonne |
+| Performance ecriture | Moyenne (calcul de parite) |
+
+**Calcul :** 4 disques de 2 To en RAID 5 = (4 - 1) x 2 = 6 To utiles.
+
+**Principe de reconstruction :** si un disque tombe en panne, le contenu manquant est recalcule par XOR des blocs restants. Exemple : si A XOR B XOR C = P, et que B est perdu, alors B = A XOR C XOR P.
+
+### 5.4 RAID 6 -- Double parite
+
+Comme le RAID 5 mais avec deux blocs de parite par stripe, calcules par deux algorithmes differents.
+
+| Propriete | Valeur |
+|---|---|
+| Nombre minimum de disques | 4 |
+| Tolerance de pannes | 2 disques |
+| Capacite utile | (N - 2) x taille du plus petit disque |
+| Performance ecriture | Inferieure au RAID 5 (double calcul de parite) |
+
+**Calcul :** 6 disques de 3 To en RAID 6 = (6 - 2) x 3 = 12 To utiles.
+
+### 5.5 RAID 10 (1+0) -- Miroir + Striping
+
+Combinaison de RAID 1 et RAID 0. Les donnees sont d'abord miroitees (RAID 1) puis entrelacees (RAID 0).
+
+```
+Paire miroir 1 :  Disque 0 (A1, A3)  |  Disque 1 (A1, A3)
+Paire miroir 2 :  Disque 2 (A2, A4)  |  Disque 3 (A2, A4)
+```
+
+| Propriete | Valeur |
+|---|---|
+| Nombre minimum de disques | 4 (nombre pair) |
+| Tolerance de pannes | 1 disque par paire miroir (jusqu'a N/2 disques si repartis) |
+| Capacite utile | N/2 x taille du plus petit disque |
+| Performance | Excellente en lecture et ecriture |
+
+**Calcul :** 6 disques de 4 To en RAID 10 = 6/2 x 4 = 12 To utiles.
+
+### 5.6 Tableau recapitulatif RAID
+
+| RAID | Disques min | Tolerance | Capacite utile | Performance | Cas d'usage |
+|---|---|---|---|---|---|
+| 0 | 2 | 0 | N x D | Excellente | Donnees temporaires, performance pure |
+| 1 | 2 | 1 disque | D | Bonne lecture | OS, donnees critiques faible volume |
+| 5 | 3 | 1 disque | (N-1) x D | Bonne | Serveurs de fichiers, NAS |
+| 6 | 4 | 2 disques | (N-2) x D | Moyenne | Stockage critique, gros volumes |
+| 10 | 4 | 1/paire | N/2 x D | Excellente | Bases de donnees, virtualisation |
+
+(N = nombre de disques, D = taille du plus petit disque)
+
+---
+
+## 6. Outils de sauvegarde
+
+### 6.1 rsync
+
+Outil de synchronisation incrementielle sous Linux. Copie uniquement les blocs modifies.
+
+```bash
+# Sauvegarde locale vers un repertoire distant via SSH
+rsync -avz --delete /srv/data/ user@backup-server:/backup/data/
+
+# Options courantes
+# -a : mode archive (preserve permissions, proprietaires, dates)
+# -v : verbose
+# -z : compression pendant le transfert
+# --delete : supprime les fichiers absents de la source
+# --exclude : exclut des fichiers ou repertoires
+```
+
+**Sauvegarde incrementielle avec rotation :**
+
+```bash
+#!/bin/bash
+# Sauvegarde incrementielle avec liens physiques (hard links)
+DATE=$(date +%Y-%m-%d)
+DEST="/backup/$DATE"
+LATEST="/backup/latest"
+
+rsync -avz --delete \
+  --link-dest="$LATEST" \
+  /srv/data/ "$DEST/"
+
+# Met a jour le lien symbolique vers la derniere sauvegarde
+rm -f "$LATEST"
+ln -s "$DEST" "$LATEST"
+```
+
+### 6.2 tar
+
+Outil d'archivage standard Unix. Cree une archive compressée d'un ensemble de fichiers.
+
+```bash
+# Sauvegarde complete compressee
+tar -czf /backup/data-$(date +%Y%m%d).tar.gz /srv/data/
+
+# Restauration
+tar -xzf /backup/data-20260218.tar.gz -C /srv/restore/
+
+# Sauvegarde incrementielle avec tar
+# Premiere sauvegarde (complete) :
+tar -czf /backup/full.tar.gz \
+  --listed-incremental=/backup/snapshot.snar /srv/data/
+
+# Sauvegardes suivantes (incrementielles) :
+tar -czf /backup/incr-$(date +%Y%m%d).tar.gz \
+  --listed-incremental=/backup/snapshot.snar /srv/data/
+```
+
+### 6.3 Bacula / Bareos
+
+Solution de sauvegarde client-serveur open source pour environnements heterogenes.
+
+**Architecture :**
+- **Director** : orchestre les sauvegardes (planification, politiques)
+- **Storage Daemon** : gere les supports de stockage (disque, bande)
+- **File Daemon** : agent installe sur chaque machine cliente
+- **Catalog** : base de donnees (MySQL/PostgreSQL) repertoriant les fichiers sauvegardes
+
+### 6.4 Veeam Backup & Replication
+
+Solution commerciale leader pour la sauvegarde d'environnements virtualises (VMware, Hyper-V) et physiques.
+
+**Fonctionnalites cles :**
+- Sauvegarde au niveau image (snapshot VM)
+- Restauration granulaire (fichier, objet Active Directory, email Exchange)
+- Replication de VM pour le PRA
+- Verification automatique de la restaurabilite (SureBackup)
+
+### 6.5 Windows Server Backup
+
+Outil integre a Windows Server, successeur de NTBackup.
+
+```powershell
+# Installer la fonctionnalite
+Install-WindowsFeature Windows-Server-Backup
+
+# Sauvegarde complete du serveur vers un volume dedie
+wbadmin start backup -backupTarget:E: -include:C: -allCritical -quiet
+
+# Planifier une sauvegarde quotidienne
+wbadmin enable backup -addtarget:E: -include:C: -schedule:02:00 -quiet
+
+# Restaurer l'etat systeme
+wbadmin start systemstaterecovery -version:02/18/2026-02:00
+```
+
+### 6.6 Script bash de sauvegarde automatisee
+
+```bash
+#!/bin/bash
+# sauvegarde.sh - Sauvegarde automatisee avec rotation et notification
+
+set -euo pipefail
+
+# Configuration
+SRC="/srv/data"
+DEST="/backup"
+RETENTION=30  # jours
+LOG="/var/log/sauvegarde.log"
+EMAIL="admin@entreprise.fr"
+DATE=$(date +%Y-%m-%d_%Hh%M)
+
+# Fonction de journalisation
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG"
+}
+
+# Verification de l'espace disponible
+ESPACE_DISPO=$(df -BG "$DEST" | awk 'NR==2 {print $4}' | tr -d 'G')
+if [ "$ESPACE_DISPO" -lt 50 ]; then
+    log "ERREUR : espace insuffisant ($ESPACE_DISPO Go)"
+    echo "Espace disque insuffisant pour la sauvegarde" | \
+        mail -s "[ALERTE] Sauvegarde echouee" "$EMAIL"
+    exit 1
+fi
+
+log "Debut de la sauvegarde"
+
+# Sauvegarde avec rsync
+if rsync -avz --delete "$SRC/" "$DEST/$DATE/" >> "$LOG" 2>&1; then
+    log "Sauvegarde reussie : $DEST/$DATE/"
+else
+    log "ERREUR : echec de la sauvegarde"
+    echo "La sauvegarde a echoue. Voir $LOG" | \
+        mail -s "[ALERTE] Sauvegarde echouee" "$EMAIL"
+    exit 1
+fi
+
+# Rotation : suppression des sauvegardes de plus de $RETENTION jours
+find "$DEST" -maxdepth 1 -type d -mtime +$RETENTION -exec rm -rf {} \;
+log "Rotation effectuee (retention : $RETENTION jours)"
+
+# Verification de l'integrite
+FICHIERS_SRC=$(find "$SRC" -type f | wc -l)
+FICHIERS_DST=$(find "$DEST/$DATE" -type f | wc -l)
+if [ "$FICHIERS_SRC" -eq "$FICHIERS_DST" ]; then
+    log "Verification OK : $FICHIERS_SRC fichiers"
+else
+    log "ATTENTION : difference de fichiers (source=$FICHIERS_SRC, dest=$FICHIERS_DST)"
+fi
+
+log "Fin de la sauvegarde"
+```
+
+**Planification via crontab :**
+
+```bash
+# Sauvegarde quotidienne a 2h du matin
+0 2 * * * /usr/local/bin/sauvegarde.sh
+```
+
+---
+
+## 7. Sauvegarde des bases de donnees
+
+### 7.1 MySQL / MariaDB avec mysqldump
+
+```bash
+# Sauvegarde de toutes les bases
+mysqldump -u root -p --all-databases --single-transaction \
+  --routines --triggers > /backup/mysql-all-$(date +%Y%m%d).sql
+
+# Sauvegarde d'une base specifique
+mysqldump -u root -p --single-transaction mabase > /backup/mabase.sql
+
+# Restauration
+mysql -u root -p mabase < /backup/mabase.sql
+
+# Options importantes :
+# --single-transaction : coherence sans verrouillage (InnoDB)
+# --routines : inclut les procedures stockees
+# --triggers : inclut les declencheurs
+# --flush-logs : force la rotation des logs binaires
+```
+
+**Sauvegarde a chaud avec les logs binaires :**
+
+```bash
+# Activer les logs binaires dans my.cnf
+# [mysqld]
+# log-bin = /var/log/mysql/mysql-bin
+# server-id = 1
+
+# Sauvegarde complete + position des logs
+mysqldump -u root -p --all-databases --single-transaction \
+  --master-data=2 > /backup/mysql-full.sql
+
+# Restauration point-in-time
+mysql -u root -p < /backup/mysql-full.sql
+mysqlbinlog /var/log/mysql/mysql-bin.000042 \
+  --stop-datetime="2026-02-18 10:30:00" | mysql -u root -p
+```
+
+### 7.2 PostgreSQL avec pg_dump
+
+```bash
+# Sauvegarde d'une base en format custom (compresse)
+pg_dump -U postgres -Fc mabase > /backup/mabase.dump
+
+# Sauvegarde de toutes les bases
+pg_dumpall -U postgres > /backup/pg-all.sql
+
+# Restauration
+pg_restore -U postgres -d mabase /backup/mabase.dump
+
+# Sauvegarde en format directory (parallelisable)
+pg_dump -U postgres -Fd -j 4 -f /backup/mabase_dir mabase
+```
+
+**Archivage continu (PITR - Point In Time Recovery) :**
+
+```
+# postgresql.conf
+wal_level = replica
+archive_mode = on
+archive_command = 'cp %p /backup/wal/%f'
+```
+
+Permet de restaurer la base a n'importe quel instant en rejouant les WAL (Write-Ahead Logs) jusqu'au point voulu.
+
+### 7.3 Strategies de sauvegarde BDD
+
+| Strategie | RPO | Complexite | Usage |
+|---|---|---|---|
+| mysqldump / pg_dump quotidien | 24 h | Faible | Petites bases, developpement |
+| Dump + logs binaires / WAL | Quelques minutes | Moyenne | Production standard |
+| Replication + dump sur le replica | Quasi nul | Elevee | Production critique |
+| Snapshot de volume (LVM, ZFS) | Instant du snapshot | Moyenne | Bases volumineuses |
+
+---
+
+## 8. Plan de Reprise d'Activite (PRA)
+
+### 8.1 Definition
+
+Le PRA definit l'ensemble des procedures permettant de reprendre l'activite informatique apres un sinistre majeur. Il fixe les objectifs de reprise et decrit les moyens techniques et organisationnels pour les atteindre.
+
+### 8.2 Indicateurs cles
+
+#### RPO -- Recovery Point Objective
+
+Quantite maximale de donnees que l'on accepte de perdre, exprimee en duree.
+
+- RPO = 0 : aucune perte de donnees acceptee (replication synchrone obligatoire)
+- RPO = 1 h : on accepte de perdre au maximum 1 heure de donnees
+- RPO = 24 h : sauvegarde quotidienne suffisante
+
+#### RTO -- Recovery Time Objective
+
+Duree maximale acceptable d'indisponibilite du systeme apres un sinistre.
+
+- RTO = 0 : aucune interruption toleree (basculement automatique)
+- RTO = 4 h : le systeme doit etre operationnel dans les 4 heures
+- RTO = 24 h : reprise dans la journee
+
+```
+         RPO                          RTO
+  <------|----->                <------|------>
+         |                            |
+  Derniere          Sinistre          Reprise
+  sauvegarde                          effective
+```
+
+### 8.3 Contenu d'un PRA
+
+Un PRA complet comprend :
+
+1. **Inventaire des actifs** : serveurs, applications, donnees, dependances
+2. **Classification par criticite** : attribution d'un RPO et RTO par service
+3. **Architecture de secours** : site de secours, infrastructure de reprise
+4. **Procedures de basculement** : etapes detaillees pour chaque scenario
+5. **Roles et responsabilites** : qui declenche le PRA, qui fait quoi
+6. **Procedures de restauration** : restauration des donnees, verification
+7. **Communication de crise** : alertes internes, communication externe
+8. **Procedures de retour a la normale** : re-basculement vers le site principal
+9. **Plan de test** : calendrier et modalites des tests
+
+### 8.4 Exemple de matrice de criticite
+
+| Service | RPO | RTO | Solution de reprise |
+|---|---|---|---|
+| Messagerie | 1 h | 4 h | Replication Exchange, sauvegarde Veeam |
+| ERP | 0 | 1 h | Cluster actif/passif, replication synchrone |
+| Site web public | 4 h | 2 h | Serveur de secours pre-configure |
+| Partage de fichiers | 24 h | 8 h | Sauvegarde quotidienne, restauration NAS |
+| Telephonie IP | 0 | 15 min | Redondance IPBX, basculement automatique |
+
+### 8.5 Tests du PRA
+
+Les tests sont indispensables. Un PRA non teste est un PRA qui ne fonctionne pas.
+
+**Types de tests :**
+
+| Type | Description | Frequence recommandee |
+|---|---|---|
+| Test sur table (tabletop) | Simulation orale des procedures avec les equipes | Trimestriel |
+| Test partiel | Restauration d'un service isole sur le site de secours | Semestriel |
+| Test complet | Basculement reel de tous les services sur le site de secours | Annuel |
+| Test de restauration | Verification qu'une sauvegarde est restaurable | Mensuel |
+
+Chaque test doit faire l'objet d'un compte-rendu documentant : la duree effective de reprise, les ecarts par rapport au RTO cible, les problemes rencontres et les actions correctives.
+
+---
+
+## 9. Plan de Continuite d'Activite (PCA)
+
+### 9.1 Difference entre PRA et PCA
+
+| Critere | PRA | PCA |
+|---|---|---|
+| Objectif | Reprendre l'activite apres un sinistre | Maintenir l'activite sans interruption |
+| Interruption | Acceptee (dans la limite du RTO) | Non acceptee ou minimale |
+| Declenchement | Apres le sinistre | Permanent (mesures preventives) |
+| Cout | Modere a eleve | Eleve a tres eleve |
+| Complexite | Moyenne | Elevee |
+
+Le PCA englobe le PRA : il inclut toutes les mesures de prevention et de redondance qui evitent le declenchement du PRA.
+
+### 9.2 Sites de secours
+
+#### Site froid (Cold Site)
+
+- Local vide avec alimentation electrique et connectivite reseau
+- Materiel non installe, a commander ou acheminer en cas de sinistre
+- Delai de mise en service : plusieurs jours a plusieurs semaines
+- Cout : faible
+
+#### Site tiede (Warm Site)
+
+- Infrastructure partiellement installee (serveurs presents mais non a jour)
+- Donnees restaurees a partir des sauvegardes
+- Delai de mise en service : quelques heures a quelques jours
+- Cout : modere
+
+#### Site chaud (Hot Site)
+
+- Replique quasi identique du site principal
+- Donnees synchronisees en temps reel ou quasi reel
+- Basculement en quelques minutes
+- Cout : eleve
+
+| Critere | Froid | Tiede | Chaud |
+|---|---|---|---|
+| Delai de reprise | Jours/semaines | Heures/jours | Minutes |
+| Cout | Faible | Modere | Eleve |
+| RPO atteignable | 24 h+ | 4-24 h | 0-1 h |
+| Maintenance | Minimale | Reguliere | Continue |
+
+### 9.3 Composantes du PCA
+
+- Redondance des infrastructures (alimentation, reseau, stockage)
+- Haute disponibilite applicative (clustering)
+- Replication des donnees en temps reel
+- Procedures de basculement automatique
+- Formation du personnel
+- Tests reguliers
+
+---
+
+## 10. Haute disponibilite
+
+### 10.1 Clustering
+
+#### Cluster actif/passif (failover)
+
+Un noeud principal traite les requetes. Un noeud secondaire attend en veille. En cas de defaillance du noeud principal, le secondaire prend le relais automatiquement.
+
+```
+                 +------------------+
+Clients -------> | Noeud actif      |
+                 | (traite les      |
+                 | requetes)        |
+                 +--------+---------+
+                          |
+                    Heartbeat (verification)
+                          |
+                 +--------+---------+
+                 | Noeud passif     |
+                 | (en veille)      |
+                 +------------------+
+```
+
+- Avantage : basculement transparent pour les utilisateurs
+- Inconvenient : le noeud passif est sous-utilise
+
+#### Cluster actif/actif (load sharing)
+
+Les deux noeuds traitent les requetes simultanement. La charge est repartie entre eux. Si un noeud tombe, l'autre absorbe l'integralite de la charge.
+
+```
+                 +------------------+
+                 | Noeud 1 (actif)  |
+Clients -------> | Repartiteur      |
+                 | de charge        |
+                 | Noeud 2 (actif)  |
+                 +------------------+
+```
+
+- Avantage : meilleure utilisation des ressources
+- Inconvenient : complexite accrue, chaque noeud doit etre dimensionne pour supporter la charge totale
+
+### 10.2 Heartbeat / Keepalived
+
+Mecanisme de surveillance mutuelle entre les noeuds d'un cluster. Chaque noeud envoie periodiquement un signal (heartbeat) pour confirmer qu'il est operationnel.
+
+```bash
+# Exemple de configuration Keepalived (/etc/keepalived/keepalived.conf)
+vrrp_instance VI_1 {
+    state MASTER
+    interface eth0
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+
+    authentication {
+        auth_type PASS
+        auth_pass motdepasse
+    }
+
+    virtual_ipaddress {
+        192.168.1.100/24
+    }
+}
+```
+
+Le protocole VRRP (Virtual Router Redundancy Protocol) attribue une adresse IP virtuelle au noeud maitre. Si le maitre cesse d'emettre ses annonces, le noeud de priorite suivante prend la VIP.
+
+### 10.3 Repartition de charge (Load Balancing)
+
+Distribution du trafic entre plusieurs serveurs pour ameliorer la performance et la disponibilite.
+
+**Algorithmes courants :**
+
+| Algorithme | Principe |
+|---|---|
+| Round Robin | Distribution cyclique |
+| Least Connections | Envoi vers le serveur ayant le moins de connexions actives |
+| Weighted Round Robin | Distribution ponderee selon la capacite des serveurs |
+| IP Hash | Meme client toujours dirige vers le meme serveur |
+
+**Outils :** HAProxy, Nginx, F5 BIG-IP, Azure Load Balancer.
+
+---
+
+## 11. Replication
+
+### 11.1 Replication de bases de donnees
+
+#### MySQL : replication maitre-esclave
+
+```
+Maitre (ecriture) -----> Esclave (lecture)
+         |                      |
+    Log binaire          Relay log
+    (bin-log)            (copie du bin-log)
+```
+
+```bash
+# Sur le maitre (my.cnf)
+[mysqld]
+server-id = 1
+log-bin = /var/log/mysql/mysql-bin
+
+# Sur l'esclave (my.cnf)
+[mysqld]
+server-id = 2
+relay-log = /var/log/mysql/relay-bin
+
+# Configuration de la replication sur l'esclave
+CHANGE MASTER TO
+  MASTER_HOST='192.168.1.10',
+  MASTER_USER='replicateur',
+  MASTER_PASSWORD='motdepasse',
+  MASTER_LOG_FILE='mysql-bin.000001',
+  MASTER_LOG_POS=154;
+
+START SLAVE;
+SHOW SLAVE STATUS\G
+```
+
+#### PostgreSQL : replication en streaming
+
+```bash
+# postgresql.conf (primaire)
+wal_level = replica
+max_wal_senders = 3
+
+# pg_hba.conf (primaire)
+host replication replicateur 192.168.1.0/24 md5
+
+# Initialisation du standby
+pg_basebackup -h 192.168.1.10 -U replicateur -D /var/lib/postgresql/data -P
+
+# postgresql.conf (standby)
+primary_conninfo = 'host=192.168.1.10 user=replicateur password=motdepasse'
+```
+
+### 11.2 Replication de stockage
+
+- **DRBD (Distributed Replicated Block Device)** : replication au niveau bloc entre deux serveurs Linux, equivalent d'un RAID 1 reseau.
+- **ZFS Send/Receive** : envoi incrementiel de snapshots ZFS vers un serveur distant.
+- **Replication SAN** : mecanisme natif des baies de stockage (NetApp SnapMirror, Dell SRDF).
+
+### 11.3 Replication de machines virtuelles
+
+- **VMware vSphere Replication** : replication asynchrone de VM entre sites, integration avec Site Recovery Manager pour le PRA.
+- **Hyper-V Replica** : replication asynchrone integree a Windows Server, intervalles de 30 secondes a 15 minutes.
+- **Veeam Replication** : replication au niveau image avec points de restauration multiples.
+
+---
+
+## 12. NAS vs SAN
+
+### 12.1 Architecture comparee
+
+```
+NAS (Network Attached Storage)
++----------+       Reseau IP (Ethernet)       +--------+
+| Client   | -------- NFS / SMB ----------->  | NAS    |
+| (OS)     |                                   | (OS    |
+|          |                                   | dedie) |
++----------+                                   +--------+
+Acces au niveau FICHIER
+
+SAN (Storage Area Network)
++----------+    Reseau dedie (FC / iSCSI)     +--------+
+| Serveur  | -------- Blocs bruts ----------> | Baie   |
+| (OS)     |                                   | SAN    |
+|          |                                   |        |
++----------+                                   +--------+
+Acces au niveau BLOC
+```
+
+### 12.2 Comparaison detaillee
+
+| Critere | NAS | SAN |
+|---|---|---|
+| Niveau d'acces | Fichier | Bloc |
+| Protocoles | NFS, SMB/CIFS, FTP | iSCSI, Fibre Channel, FCoE |
+| Reseau | Ethernet existant | Reseau dedie (souvent FC) |
+| Performance | Bonne | Excellente |
+| Cout | Modere | Eleve |
+| Complexite | Faible | Elevee |
+| Cas d'usage | Partage de fichiers, sauvegarde | Virtualisation, BDD, applications critiques |
+| Scalabilite | Limitee | Elevee |
+
+### 12.3 Protocoles
+
+**NFS (Network File System)** : protocole de partage de fichiers Unix/Linux. Version 4 supporte l'authentification Kerberos et le chiffrement.
+
+**SMB/CIFS (Server Message Block)** : protocole de partage Windows. SMB3 supporte le chiffrement et le multicanal.
+
+**iSCSI (Internet Small Computer System Interface)** : transport de commandes SCSI sur TCP/IP. Permet de creer un SAN sur un reseau Ethernet standard. Composants : initiateur (client) et cible (target).
+
+**Fibre Channel** : protocole de transport haute performance dedie au stockage. Debits de 8, 16, 32 ou 64 Gbit/s. Necessite des HBA (Host Bus Adapter) et des commutateurs FC dedies.
+
+---
+
+## 13. Tests de restauration
+
+### 13.1 Pourquoi tester
+
+Une sauvegarde non testee est potentiellement inutile. Les causes d'echec de restauration sont nombreuses :
+
+- Support de sauvegarde defectueux
+- Sauvegarde incomplete ou corrompue
+- Procedure de restauration incorrecte ou obsolete
+- Incompatibilite materielle ou logicielle
+- Mot de passe de chiffrement perdu
+
+### 13.2 Procedure de test
+
+1. **Selectionner** les sauvegardes a tester (rotation : chaque systeme au moins une fois par trimestre)
+2. **Preparer** un environnement de restauration isole (machine virtuelle, reseau separe)
+3. **Restaurer** les donnees en suivant la procedure documentee
+4. **Verifier** l'integrite : nombre de fichiers, checksums, lancement des applications, coherence des bases de donnees
+5. **Mesurer** le temps de restauration (comparaison avec le RTO)
+6. **Documenter** les resultats dans un rapport de test
+
+### 13.3 Modele de rapport de test
+
+```
+RAPPORT DE TEST DE RESTAURATION
+================================
+Date du test        : 2026-02-18
+Testeur             : [Nom]
+Systeme concerne    : Serveur ERP (srv-erp01)
+Type de sauvegarde  : Complete du 2026-02-17
+Support             : NAS (\\nas01\backup\erp)
+Outil               : Veeam Backup 12
+
+Deroulement :
+- Debut de restauration    : 09:00
+- Fin de restauration      : 09:47
+- Duree totale             : 47 minutes
+- RTO cible                : 1 heure
+- Resultat                 : CONFORME
+
+Verifications effectuees :
+- [OK] Demarrage du systeme d'exploitation
+- [OK] Lancement de l'application ERP
+- [OK] Acces a la base de donnees
+- [OK] Coherence des donnees (dernier enregistrement : 2026-02-17 23:45)
+- [OK] Nombre de fichiers conforme
+
+Problemes rencontres : Aucun
+Actions correctives  : Aucune
+
+Signature : _______________
+```
+
+---
+
+## 14. Exercices corriges
+
+### Exercice 1 -- Calcul de capacite RAID
+
+**Enonce :** Une entreprise dispose de 5 disques de 4 To. Calculer la capacite utile et la tolerance de pannes pour les configurations RAID 0, RAID 5, RAID 6 et RAID 10.
+
+**Correction :**
+
+| RAID | Capacite utile | Tolerance | Calcul |
+|---|---|---|---|
+| RAID 0 | 20 To | 0 disque | 5 x 4 = 20 |
+| RAID 5 | 16 To | 1 disque | (5 - 1) x 4 = 16 |
+| RAID 6 | 12 To | 2 disques | (5 - 2) x 4 = 12 |
+| RAID 10 | Impossible | -- | RAID 10 necessite un nombre pair de disques |
+
+Pour le RAID 10, il faudrait 4 ou 6 disques. Avec 4 disques de 4 To : capacite = 4/2 x 4 = 8 To, tolerance = 1 disque par paire.
+
+---
+
+### Exercice 2 -- Choix du type de sauvegarde
+
+**Enonce :** Un serveur de fichiers contient 500 Go de donnees. Environ 10 Go sont modifies quotidiennement. L'entreprise dispose d'un espace de sauvegarde de 2 To. Proposer une strategie de sauvegarde sur 2 semaines.
+
+**Correction :**
+
+Strategie recommandee : une complete hebdomadaire + des incrementielles quotidiennes.
+
+Semaine 1 :
+- Dimanche : Complete = 500 Go
+- Lundi a samedi : 6 incrementielles x 10 Go = 60 Go
+
+Semaine 2 :
+- Dimanche : Complete = 500 Go
+- Lundi a samedi : 6 incrementielles x 10 Go = 60 Go
+
+Total sur 2 semaines : 500 + 60 + 500 + 60 = 1 120 Go, soit environ 1,1 To.
+
+L'espace de 2 To est suffisant. Il reste une marge de 900 Go pour conserver une generation supplementaire en cas de besoin.
+
+Alternative avec des differentielles quotidiennes :
+- Semaine 1 : 500 + (10 + 20 + 30 + 40 + 50 + 60) = 500 + 210 = 710 Go
+- Semaine 2 : idem = 710 Go
+- Total : 1 420 Go, toujours dans les 2 To.
+
+---
+
+### Exercice 3 -- Determination du RPO et du RTO
+
+**Enonce :** Une entreprise de commerce en ligne subit en moyenne 200 commandes par heure, avec un panier moyen de 50 EUR. Le cout de remise en service apres sinistre est estime a 5 000 EUR. La direction accepte une perte maximale de 10 000 EUR. Determiner le RPO et le RTO.
+
+**Correction :**
+
+Chiffre d'affaires horaire : 200 x 50 = 10 000 EUR/h.
+
+**RPO :** La perte de donnees maximale acceptable depend du cout de ressaisie et de la perte de commandes. Si on considere que les commandes perdues ne peuvent pas etre recuperees :
+- Perte maximale acceptee = 10 000 EUR
+- CA horaire = 10 000 EUR
+- RPO = 10 000 / 10 000 = 1 heure maximum
+
+Les sauvegardes doivent avoir lieu au moins toutes les heures.
+
+**RTO :** Chaque heure d'arret coute 10 000 EUR de manque a gagner + le cout de reputation.
+- Perte acceptable = 10 000 EUR
+- Cout fixe de remise en service = 5 000 EUR
+- Budget restant pour l'interruption = 10 000 - 5 000 = 5 000 EUR
+- RTO = 5 000 / 10 000 = 30 minutes maximum
+
+---
+
+### Exercice 4 -- Planification d'une strategie 3-2-1
+
+**Enonce :** Une PME de 50 postes possede un serveur de fichiers (2 To), un serveur de messagerie (500 Go) et un ERP (base de donnees de 100 Go). Proposer une strategie 3-2-1 complete.
+
+**Correction :**
+
+| Copie | Support | Localisation | Outil | Frequence |
+|---|---|---|---|---|
+| Production | Serveur RAID 5 (4x2To, 6To utiles) | Salle serveur | -- | Temps reel |
+| Sauvegarde locale | NAS 8 To RAID 1 | Local technique (batiment) | Veeam / rsync | Quotidienne a 2h |
+| Sauvegarde distante | Cloud S3 chiffre (AES-256) | Datacenter distant | Rclone / Veeam Cloud | Quotidienne a 4h |
+
+Detail par service :
+- **Serveur de fichiers** : sauvegarde incrementielle quotidienne, complete hebdomadaire
+- **Messagerie** : sauvegarde differentielle quotidienne, complete hebdomadaire
+- **ERP (BDD)** : mysqldump toutes les heures, sauvegarde complete quotidienne, logs binaires en continu (RPO < 1 h)
+
+Retention : 30 jours sur NAS, 90 jours sur cloud. Tests de restauration mensuels.
+
+---
+
+### Exercice 5 -- Configuration RAID 5 et reconstruction
+
+**Enonce :** Un serveur utilise 4 disques de 2 To en RAID 5. Un disque tombe en panne. (a) Quelle est la capacite utile ? (b) Le serveur continue-t-il a fonctionner ? (c) Quel est le risque pendant la reconstruction ? (d) Combien de temps estime-t-on pour la reconstruction d'un disque de 2 To ?
+
+**Correction :**
+
+(a) Capacite utile = (4 - 1) x 2 = 6 To.
+
+(b) Oui, le serveur continue a fonctionner en mode degrade. Les donnees du disque manquant sont recalculees a la volee par XOR a partir des donnees et de la parite des disques restants. Les performances sont degradees.
+
+(c) Pendant la reconstruction, la grappe est vulnerable : si un deuxieme disque tombe en panne, toutes les donnees sont perdues. C'est la raison pour laquelle le RAID 6 (double parite) est recommande pour les gros volumes.
+
+(d) La reconstruction d'un disque de 2 To prend generalement entre 4 et 12 heures selon la charge du serveur et la vitesse des disques. Pendant cette periode, les performances sont fortement degradees car le controleur doit lire tous les disques restants pour recalculer les donnees.
+
+---
+
+### Exercice 6 -- Script de sauvegarde MySQL
+
+**Enonce :** Ecrire un script bash qui sauvegarde la base de donnees "gestion" sur un serveur MySQL local, compresse le fichier, le copie sur un NAS distant et supprime les sauvegardes de plus de 7 jours.
+
+**Correction :**
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+DB="gestion"
+USER="backup_user"
+PASS="motdepasse_securise"
+LOCAL="/backup/mysql"
+REMOTE="nas01:/backup/mysql"
+RETENTION=7
+DATE=$(date +%Y-%m-%d_%Hh%M)
+FICHIER="${DB}_${DATE}.sql.gz"
+
+# Sauvegarde et compression
+mysqldump -u "$USER" -p"$PASS" --single-transaction \
+  --routines --triggers "$DB" | gzip > "${LOCAL}/${FICHIER}"
+
+# Verification de la taille (fichier non vide)
+TAILLE=$(stat -c%s "${LOCAL}/${FICHIER}")
+if [ "$TAILLE" -lt 1000 ]; then
+    echo "ERREUR : fichier de sauvegarde anormalement petit ($TAILLE octets)"
+    exit 1
+fi
+
+# Copie vers le NAS
+rsync -az "${LOCAL}/${FICHIER}" "${REMOTE}/"
+
+# Rotation locale
+find "$LOCAL" -name "${DB}_*.sql.gz" -mtime +$RETENTION -delete
+
+# Rotation distante
+ssh nas01 "find /backup/mysql -name '${DB}_*.sql.gz' -mtime +$RETENTION -delete"
+
+echo "Sauvegarde reussie : ${FICHIER} ($TAILLE octets)"
+```
+
+---
+
+### Exercice 7 -- Comparaison NAS et SAN
+
+**Enonce :** Une entreprise hesite entre un NAS et un SAN pour stocker les machines virtuelles de son hyperviseur VMware ESXi (10 VM, 5 To total). Argumenter le choix.
+
+**Correction :**
+
+Pour l'hebergement de machines virtuelles sur VMware ESXi, le **SAN** est le choix recommande :
+
+1. **Acces bloc** : ESXi necessite un datastore VMFS ou vSAN, qui fonctionne sur des LUN (acces bloc). Le SAN fournit nativement cet acces (iSCSI ou Fibre Channel). Un NAS ne peut fournir qu'un datastore NFS, qui est supporte mais offre des performances inferieures pour les E/S aleatoires typiques des VM.
+
+2. **Performance** : les VM generent des E/S aleatoires intensives. Le SAN, via Fibre Channel (16-32 Gbit/s) ou iSCSI sur 10 GbE, offre une latence plus faible et un debit superieur.
+
+3. **Fonctionnalites avancees** : le SAN permet vMotion (migration a chaud), HA (High Availability) et DRS (Distributed Resource Scheduler) de maniere optimale.
+
+4. **Scalabilite** : une baie SAN peut facilement evoluer en ajoutant des tiroirs de disques.
+
+**Cependant**, si le budget est contraint, un NAS haut de gamme avec NFS v4.1 sur 10 GbE peut convenir pour un nombre limite de VM peu exigeantes en E/S.
+
+| Critere | NAS (NFS) | SAN (iSCSI/FC) |
+|---|---|---|
+| Cout | 5 000 - 15 000 EUR | 20 000 - 100 000+ EUR |
+| Performance VM | Correcte | Excellente |
+| Complexite | Faible | Elevee |
+| Recommandation | Petite infra, budget serre | Infrastructure VMware standard |
+
+---
+
+### Exercice 8 -- Redaction d'un PRA simplifie
+
+**Enonce :** Rediger les grandes lignes d'un PRA pour une entreprise dont le systeme critique est un serveur ERP (RPO = 1 h, RTO = 4 h), heberge sur un serveur physique dans la salle serveur principale.
+
+**Correction :**
+
+**1. Perimetre et objectifs**
+- Systeme concerne : serveur ERP (srv-erp01)
+- RPO : 1 heure | RTO : 4 heures
+- Scenarios couverts : panne serveur, panne stockage, sinistre salle serveur
+
+**2. Architecture de reprise**
+- Site de secours : site tiede chez le prestataire X (serveur pre-installe)
+- Sauvegarde : Veeam, complete quotidienne a 1h + incrementielle toutes les heures
+- Stockage des sauvegardes : NAS local + replication vers le site de secours
+
+**3. Procedure de declenchement**
+- Responsable : DSI ou administrateur systeme d'astreinte
+- Critere : indisponibilite du serveur ERP superieure a 30 minutes sans perspective de resolution rapide
+- Notification : appel telephonique de la chaine d'alerte (DSI > DG > responsables metier)
+
+**4. Procedure de reprise**
+- Etape 1 (T+0 a T+30 min) : diagnostic, decision de declenchement du PRA
+- Etape 2 (T+30 min a T+1h30) : demarrage du serveur de secours, restauration de la derniere sauvegarde
+- Etape 3 (T+1h30 a T+2h30) : restauration des logs binaires BDD pour atteindre le RPO
+- Etape 4 (T+2h30 a T+3h) : verification fonctionnelle de l'ERP
+- Etape 5 (T+3h a T+3h30) : basculement DNS / reconfiguration reseau
+- Etape 6 (T+3h30 a T+4h) : validation avec les utilisateurs cles, reprise officielle
+
+**5. Retour a la normale**
+- Reparation ou remplacement du serveur principal
+- Re-synchronisation des donnees depuis le site de secours
+- Re-basculement planifie en heures non ouvrees
+- Verification complete post-basculement
+
+**6. Tests**
+- Test de restauration : mensuel
+- Test de basculement complet : annuel
+
+---
+
+### Exercice 9 -- Haute disponibilite avec Keepalived
+
+**Enonce :** Deux serveurs web (srv-web01 : 192.168.1.11, srv-web02 : 192.168.1.12) doivent partager une IP virtuelle 192.168.1.100 avec basculement automatique. Ecrire les fichiers de configuration Keepalived pour les deux serveurs.
+
+**Correction :**
+
+**srv-web01 (MASTER) -- /etc/keepalived/keepalived.conf :**
+
+```
+vrrp_script chk_http {
+    script "/usr/bin/curl -sf http://localhost/ > /dev/null"
+    interval 2
+    weight -20
+    fall 3
+    rise 2
+}
+
+vrrp_instance VI_WEB {
+    state MASTER
+    interface eth0
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+
+    authentication {
+        auth_type PASS
+        auth_pass s3cr3t
+    }
+
+    virtual_ipaddress {
+        192.168.1.100/24
+    }
+
+    track_script {
+        chk_http
+    }
+}
+```
+
+**srv-web02 (BACKUP) -- /etc/keepalived/keepalived.conf :**
+
+```
+vrrp_script chk_http {
+    script "/usr/bin/curl -sf http://localhost/ > /dev/null"
+    interval 2
+    weight -20
+    fall 3
+    rise 2
+}
+
+vrrp_instance VI_WEB {
+    state BACKUP
+    interface eth0
+    virtual_router_id 51
+    priority 90
+    advert_int 1
+
+    authentication {
+        auth_type PASS
+        auth_pass s3cr3t
+    }
+
+    virtual_ipaddress {
+        192.168.1.100/24
+    }
+
+    track_script {
+        chk_http
+    }
+}
+```
+
+**Fonctionnement :** srv-web01 (priorite 100) detient la VIP en fonctionnement normal. Si le script de verification HTTP echoue 3 fois consecutives, sa priorite tombe a 80, donc inferieure a celle de srv-web02 (90). La VIP bascule automatiquement sur srv-web02.
+
+---
+
+### Exercice 10 -- Calcul d'espace pour une strategie de sauvegarde
+
+**Enonce :** Une base de donnees de 200 Go subit 5 % de modifications quotidiennes. On applique une complete hebdomadaire et des differentielles quotidiennes. Calculer l'espace necessaire pour une retention de 4 semaines.
+
+**Correction :**
+
+Modifications quotidiennes : 200 x 0,05 = 10 Go.
+
+Une differentielle cumule les modifications depuis la derniere complete :
+- Jour 1 (lundi) : 10 Go
+- Jour 2 (mardi) : 20 Go
+- Jour 3 (mercredi) : 30 Go
+- Jour 4 (jeudi) : 40 Go
+- Jour 5 (vendredi) : 50 Go
+- Jour 6 (samedi) : 60 Go
+
+Volume d'une semaine :
+- 1 complete : 200 Go
+- 6 differentielles : 10 + 20 + 30 + 40 + 50 + 60 = 210 Go
+- Total semaine : 410 Go
+
+Retention de 4 semaines : 4 x 410 = **1 640 Go**, soit environ **1,6 To**.
+
+Il convient de prevoir une marge de 20 % : 1,6 x 1,2 = **1,92 To**, donc un espace de stockage de **2 To** minimum.
+
+---
+
+### Exercice 11 -- Replication MySQL maitre-esclave
+
+**Enonce :** Decrire les etapes pour mettre en place une replication maitre-esclave entre deux serveurs MySQL. Le maitre est 192.168.1.10, l'esclave est 192.168.1.20. Expliquer comment verifier que la replication fonctionne.
+
+**Correction :**
+
+**Etape 1 -- Configuration du maitre (192.168.1.10)**
+
+Editer /etc/mysql/my.cnf :
+```
+[mysqld]
+server-id = 1
+log-bin = /var/log/mysql/mysql-bin
+binlog-do-db = gestion
+```
+
+Redemarrer MySQL. Creer l'utilisateur de replication :
+```sql
+CREATE USER 'replicateur'@'192.168.1.20' IDENTIFIED BY 'motdepasse';
+GRANT REPLICATION SLAVE ON *.* TO 'replicateur'@'192.168.1.20';
+FLUSH PRIVILEGES;
+```
+
+Noter la position du log binaire :
+```sql
+SHOW MASTER STATUS;
+-- Resultat : File = mysql-bin.000003, Position = 785
+```
+
+**Etape 2 -- Sauvegarde initiale**
+
+```bash
+mysqldump -u root -p --single-transaction --master-data=2 gestion > /tmp/gestion.sql
+scp /tmp/gestion.sql 192.168.1.20:/tmp/
+```
+
+**Etape 3 -- Configuration de l'esclave (192.168.1.20)**
+
+Editer /etc/mysql/my.cnf :
+```
+[mysqld]
+server-id = 2
+relay-log = /var/log/mysql/relay-bin
+read-only = 1
+```
+
+Restaurer la base et configurer la replication :
+```bash
+mysql -u root -p gestion < /tmp/gestion.sql
+```
+
+```sql
+CHANGE MASTER TO
+  MASTER_HOST = '192.168.1.10',
+  MASTER_USER = 'replicateur',
+  MASTER_PASSWORD = 'motdepasse',
+  MASTER_LOG_FILE = 'mysql-bin.000003',
+  MASTER_LOG_POS = 785;
+
+START SLAVE;
+```
+
+**Etape 4 -- Verification**
+
+```sql
+SHOW SLAVE STATUS\G
+```
+
+Verifier que :
+- `Slave_IO_Running: Yes` (connexion au maitre active)
+- `Slave_SQL_Running: Yes` (application des evenements active)
+- `Seconds_Behind_Master: 0` (pas de retard)
+- `Last_Error:` (vide, aucune erreur)
+
+---
+
+### Exercice 12 -- Site de secours : choix et justification
+
+**Enonce :** Une clinique medicale doit garantir l'acces permanent aux dossiers patients (application critique, RPO = 0, RTO = 15 min). Quel type de site de secours recommander ? Detailler l'architecture.
+
+**Correction :**
+
+Avec un RPO de 0 et un RTO de 15 minutes, seul un **site chaud (hot site)** convient.
+
+**Architecture recommandee :**
+
+```
+Site principal                        Site de secours (chaud)
++------------------+                  +------------------+
+| Cluster actif    |  Replication     | Cluster passif   |
+| (2 noeuds)       |  synchrone      | (2 noeuds)       |
+| Base patients    | <=============> | Base patients    |
+| Application      |  Lien dedie     | Application      |
++------------------+  (fibre optique)+------------------+
+        |                                     |
+   IP virtuelle                          IP virtuelle
+   (Keepalived)                          (Keepalived)
+        |                                     |
+   Utilisateurs                     Basculement DNS
+   (fonctionnement normal)          (en cas de sinistre)
+```
+
+**Composantes :**
+
+1. **Replication synchrone** de la base de donnees entre les deux sites (RPO = 0). Chaque ecriture est confirmee sur les deux sites avant validation.
+
+2. **Cluster actif/passif** sur chaque site avec Keepalived pour la haute disponibilite locale.
+
+3. **Basculement inter-sites** : DNS avec TTL court (60 s) ou Global Server Load Balancing (GSLB) pour rediriger le trafic vers le site de secours en moins de 5 minutes.
+
+4. **Lien reseau dedie** entre les sites : fibre optique louee ou VPN haute disponibilite avec latence inferieure a 5 ms (necessaire pour la replication synchrone).
+
+5. **Tests** : basculement complet trimestriel, test de restauration mensuel.
+
+**Cout estime** : le site chaud represente un investissement important (doublement de l'infrastructure), justifie par la criticite vitale des donnees medicales et les obligations reglementaires (hebergement de donnees de sante certifie HDS).
+
+---
+
+### Exercice 13 -- Analyse de risques et strategie globale
+
+**Enonce :** Une entreprise industrielle possede les systemes suivants. Pour chacun, proposer le RPO, le RTO, le type de sauvegarde et la solution de haute disponibilite adaptee.
+
+- Systeme SCADA (pilotage de la chaine de production)
+- Serveur de messagerie (Exchange)
+- Serveur de fichiers bureautiques
+- Site web vitrine
+
+**Correction :**
+
+| Systeme | RPO | RTO | Sauvegarde | Haute disponibilite |
+|---|---|---|---|---|
+| SCADA | 0 | 5 min | Image systeme quotidienne + config en temps reel | Cluster actif/passif, automate redondant |
+| Messagerie Exchange | 1 h | 2 h | Veeam incrementielle toutes les heures | DAG Exchange (Database Availability Group) |
+| Fichiers bureautiques | 24 h | 8 h | Incrementielle quotidienne, complete hebdo | NAS RAID 5, pas de cluster |
+| Site web vitrine | 4 h | 1 h | Sauvegarde quotidienne, code en depot Git | 2 serveurs + load balancer, CDN |
+
+**Justifications :**
+
+- **SCADA** : un arret de la chaine de production coute plusieurs milliers d'euros par minute. La redondance materielle est indispensable.
+- **Messagerie** : critique pour la communication mais une interruption de 2 h est tolerable. Le DAG Exchange assure la replication native entre serveurs.
+- **Fichiers bureautiques** : criticite moindre, les utilisateurs peuvent travailler temporairement hors ligne. Un RPO de 24 h est acceptable.
+- **Site web vitrine** : impact commercial modere (pas de e-commerce). Un RTO d'1 h est raisonnable, assure par un serveur de secours pre-configure.
+
+---
+
+### Exercice 14 -- Verification XOR en RAID 5
+
+**Enonce :** Un RAID 5 de 4 disques contient les donnees suivantes (en binaire) sur un stripe :
+- Disque 0 : 1010
+- Disque 1 : 1100
+- Disque 2 : 0110
+- Disque 3 : parite
+
+(a) Calculer la valeur du bloc de parite.
+(b) Le disque 1 tombe en panne. Recalculer son contenu.
+
+**Correction :**
+
+(a) Parite = Disque 0 XOR Disque 1 XOR Disque 2
+
+```
+  1010
+  1100
+  0110
+  ----
+Etape 1 : 1010 XOR 1100
+  1 XOR 1 = 0
+  0 XOR 1 = 1
+  1 XOR 0 = 1
+  0 XOR 0 = 0
+  Resultat : 0110
+
+Etape 2 : 0110 XOR 0110
+  0 XOR 0 = 0
+  1 XOR 1 = 0
+  1 XOR 1 = 0
+  0 XOR 0 = 0
+  Resultat : 0000
+```
+
+Disque 3 (parite) = **0000**
+
+(b) Reconstruction du disque 1 : Disque 1 = Disque 0 XOR Disque 2 XOR Parite
+
+```
+  1010  (Disque 0)
+  0110  (Disque 2)
+  0000  (Parite)
+  ----
+Etape 1 : 1010 XOR 0110 = 1100
+Etape 2 : 1100 XOR 0000 = 1100
+```
+
+Disque 1 reconstruit = **1100** (valeur correcte retrouvee).
+
+---
+
+## 15. Points cles a retenir pour l'examen
+
+1. Le RAID n'est pas une sauvegarde. Il protege contre la panne materielle d'un disque, pas contre la suppression ou le chiffrement des donnees.
+
+2. La regle 3-2-1 est le minimum requis pour une strategie de sauvegarde fiable.
+
+3. Le RPO determine la frequence des sauvegardes ; le RTO determine le type d'infrastructure de reprise.
+
+4. Un PRA non teste est un PRA qui ne fonctionne pas. Les tests de restauration sont obligatoires.
+
+5. Le PCA est plus ambitieux que le PRA : il vise a eviter toute interruption, la ou le PRA accepte une interruption dans la limite du RTO.
+
+6. Connaitre les formules de capacite RAID : RAID 5 = (N-1)xD, RAID 6 = (N-2)xD, RAID 10 = (N/2)xD.
+
+7. Savoir differencier NAS (acces fichier, NFS/SMB) et SAN (acces bloc, iSCSI/FC).
+
+8. La sauvegarde incrementielle est la plus rapide a executer mais la plus complexe a restaurer. La differentielle est un compromis.
+
+9. Pour les bases de donnees, combiner dump periodique + journalisation continue (bin-log MySQL, WAL PostgreSQL) pour atteindre un RPO proche de zero.
+
+10. Un site de secours chaud est la seule solution pour un RTO inferieur a 30 minutes.

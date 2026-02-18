@@ -69,8 +69,10 @@ const CATEGORY_MAP: Record<string, string> = {
 };
 
 function inferCategory(slug: string, frontmatter: Partial<GuideFrontmatter>): string {
+  // Prefer CATEGORY_MAP (accent-free) over frontmatter to avoid mismatches
+  if (CATEGORY_MAP[slug]) return CATEGORY_MAP[slug];
   if (frontmatter.category) return frontmatter.category;
-  return CATEGORY_MAP[slug] || 'Fondamentaux';
+  return 'Fondamentaux';
 }
 
 export function getGuideBySlug(slug: string): Guide {

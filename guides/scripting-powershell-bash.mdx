@@ -1,0 +1,3196 @@
+---
+title: "Scripting — PowerShell et Bash"
+description: "Automatisation d'administration : scripts PowerShell et Bash, gestion utilisateurs, deploiement, taches planifiees"
+category: "Exploitation"
+tags: ["powershell", "bash", "scripting", "automatisation", "administration"]
+difficulty: "Intermediaire"
+---
+
+# Scripting — PowerShell et Bash
+
+---
+
+## Partie 1 — Bash
+
+### 1.1 Fondamentaux du shell Bash
+
+#### Variables
+
+```bash
+# Declaration (pas d'espace autour du =)
+nom="Alice"
+age=25
+
+# Lecture
+echo $nom
+echo "Bonjour $nom, vous avez $age ans"
+
+# Variable en lecture seule
+readonly SERVEUR="srv-prod-01"
+
+# Supprimer une variable
+unset age
+
+# Variables d'environnement
+export JAVA_HOME="/usr/lib/jvm/java-17"
+```
+
+Types de variables :
+
+| Type | Exemple | Description |
+|------|---------|-------------|
+| Chaine | `nom="texte"` | Par defaut, tout est chaine |
+| Entier | `declare -i x=10` | Force le type entier |
+| Tableau | `tab=(a b c)` | Tableau indexe |
+| Tableau associatif | `declare -A h` | Tableau cle-valeur (Bash 4+) |
+
+#### Guillemets et echappement
+
+```bash
+nom="monde"
+echo "Bonjour $nom"      # Bonjour monde (interpolation)
+echo 'Bonjour $nom'      # Bonjour $nom (litteral)
+echo "Chemin: \$HOME"    # Chemin: $HOME (echappement)
+resultat=$(date +%Y-%m-%d)  # Substitution de commande
+resultat_ancien=`date`       # Syntaxe ancienne (deconseille)
+```
+
+#### Tableaux
+
+```bash
+# Declaration
+fruits=("pomme" "banane" "cerise")
+
+# Acces
+echo ${fruits[0]}       # pomme
+echo ${fruits[@]}       # tous les elements
+echo ${#fruits[@]}      # nombre d'elements (3)
+
+# Ajout
+fruits+=("fraise")
+
+# Boucle sur un tableau
+for f in "${fruits[@]}"; do
+    echo "Fruit : $f"
+done
+
+# Tableau associatif
+declare -A serveurs
+serveurs[web]="192.168.1.10"
+serveurs[bdd]="192.168.1.20"
+serveurs[mail]="192.168.1.30"
+
+echo ${serveurs[web]}         # 192.168.1.10
+echo ${!serveurs[@]}          # web bdd mail (les cles)
+```
+
+### 1.2 Arguments et parametres speciaux
+
+| Variable | Description |
+|----------|-------------|
+| `$0` | Nom du script |
+| `$1`, `$2`, ... | Arguments positionnels |
+| `$#` | Nombre d'arguments |
+| `$@` | Tous les arguments (chacun entre guillemets) |
+| `$*` | Tous les arguments (en une seule chaine) |
+| `$?` | Code de retour de la derniere commande (0 = succes) |
+| `$$` | PID du processus courant |
+| `$!` | PID du dernier processus en arriere-plan |
+
+```bash
+#!/bin/bash
+# script_args.sh - Demonstration des arguments
+
+echo "Nom du script : $0"
+echo "Premier argument : $1"
+echo "Deuxieme argument : $2"
+echo "Nombre d'arguments : $#"
+echo "Tous les arguments : $@"
+
+# Verification du nombre d'arguments
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <nom> <prenom>"
+    exit 1
+fi
+```
+
+Difference entre `$@` et `$*` :
+
+```bash
+# Avec les arguments : "Jean Pierre" "Marie"
+for arg in "$@"; do
+    echo "-> $arg"
+done
+# -> Jean Pierre
+# -> Marie
+
+for arg in "$*"; do
+    echo "-> $arg"
+done
+# -> Jean Pierre Marie
+```
+
+### 1.3 Conditions
+
+#### Test avec crochets
+
+```bash
+# Syntaxe [ ] (commande test)
+if [ "$nom" = "Alice" ]; then
+    echo "Bonjour Alice"
+fi
+
+# Syntaxe [[ ]] (Bash etendu, recommande)
+if [[ "$nom" == "Alice" ]]; then
+    echo "Bonjour Alice"
+fi
+```
+
+#### Operateurs de comparaison
+
+**Chaines :**
+
+| Operateur | Signification |
+|-----------|---------------|
+| `=` ou `==` | Egal |
+| `!=` | Different |
+| `-z "$var"` | Chaine vide |
+| `-n "$var"` | Chaine non vide |
+
+**Entiers :**
+
+| Operateur | Signification |
+|-----------|---------------|
+| `-eq` | Egal |
+| `-ne` | Different |
+| `-gt` | Superieur |
+| `-ge` | Superieur ou egal |
+| `-lt` | Inferieur |
+| `-le` | Inferieur ou egal |
+
+**Fichiers :**
+
+| Operateur | Signification |
+|-----------|---------------|
+| `-f` | Fichier regulier existe |
+| `-d` | Repertoire existe |
+| `-e` | Existe (fichier ou repertoire) |
+| `-r` | Lisible |
+| `-w` | Accessible en ecriture |
+| `-x` | Executable |
+| `-s` | Taille superieure a 0 |
+| `-L` | Lien symbolique |
+
+```bash
+#!/bin/bash
+# Conditions combinees
+fichier="/etc/passwd"
+
+if [[ -f "$fichier" && -r "$fichier" ]]; then
+    echo "Le fichier existe et est lisible"
+elif [[ -f "$fichier" ]]; then
+    echo "Le fichier existe mais n'est pas lisible"
+else
+    echo "Le fichier n'existe pas"
+fi
+
+# Operateurs logiques
+# [[ ]] : && et ||
+# [ ] : -a et -o
+```
+
+#### Structure case
+
+```bash
+read -p "Entrez un choix (o/n/q) : " choix
+case "$choix" in
+    o|O|oui)
+        echo "Vous avez dit oui"
+        ;;
+    n|N|non)
+        echo "Vous avez dit non"
+        ;;
+    q|Q|quitter)
+        echo "Au revoir"
+        exit 0
+        ;;
+    *)
+        echo "Choix invalide"
+        ;;
+esac
+```
+
+### 1.4 Boucles
+
+```bash
+# for classique
+for i in 1 2 3 4 5; do
+    echo "Iteration $i"
+done
+
+# for avec sequence
+for i in $(seq 1 10); do
+    echo "Numero $i"
+done
+
+# for de style C
+for ((i=0; i<10; i++)); do
+    echo "Index $i"
+done
+
+# for sur des fichiers
+for fichier in /var/log/*.log; do
+    echo "Taille de $fichier : $(du -h "$fichier" | cut -f1)"
+done
+
+# while
+compteur=0
+while [ $compteur -lt 5 ]; do
+    echo "Compteur : $compteur"
+    ((compteur++))
+done
+
+# until (inverse de while)
+until [ $compteur -eq 0 ]; do
+    ((compteur--))
+    echo "Decompte : $compteur"
+done
+
+# Lecture ligne par ligne d'un fichier
+while IFS= read -r ligne; do
+    echo "Ligne : $ligne"
+done < /etc/passwd
+
+# Boucle infinie avec break
+while true; do
+    read -p "Commande (quit pour sortir) : " cmd
+    if [[ "$cmd" == "quit" ]]; then
+        break
+    fi
+    echo "Vous avez tape : $cmd"
+done
+```
+
+### 1.5 Fonctions
+
+```bash
+# Declaration
+ma_fonction() {
+    echo "Bonjour depuis la fonction"
+}
+
+# Avec arguments
+saluer() {
+    local nom="$1"    # Variable locale
+    local prenom="$2"
+    echo "Bonjour $prenom $nom"
+}
+
+# Appel
+saluer "Dupont" "Jean"
+
+# Retour de valeur
+# Les fonctions retournent un code (0-255) via return
+# Pour retourner une chaine, utiliser echo + substitution
+obtenir_date() {
+    echo $(date +%Y-%m-%d)
+}
+aujourd_hui=$(obtenir_date)
+echo "Date : $aujourd_hui"
+
+# Verification avec code de retour
+fichier_existe() {
+    if [[ -f "$1" ]]; then
+        return 0  # succes
+    else
+        return 1  # echec
+    fi
+}
+
+if fichier_existe "/etc/hosts"; then
+    echo "Le fichier existe"
+fi
+```
+
+### 1.6 Manipulation de fichiers et texte
+
+#### grep — Recherche de motifs
+
+```bash
+# Recherche simple
+grep "root" /etc/passwd
+
+# Ignorer la casse
+grep -i "error" /var/log/syslog
+
+# Inverser la recherche
+grep -v "commentaire" fichier.conf
+
+# Afficher les numeros de ligne
+grep -n "pattern" fichier.txt
+
+# Compter les occurrences
+grep -c "404" access.log
+
+# Recherche recursive dans un repertoire
+grep -r "mot_de_passe" /etc/
+
+# Expression reguliere etendue
+grep -E "^(root|admin):" /etc/passwd
+
+# Afficher le contexte (3 lignes avant/apres)
+grep -B3 -A3 "CRITICAL" /var/log/syslog
+```
+
+#### sed — Editeur de flux
+
+```bash
+# Substitution (premiere occurrence par ligne)
+sed 's/ancien/nouveau/' fichier.txt
+
+# Substitution globale (toutes les occurrences)
+sed 's/ancien/nouveau/g' fichier.txt
+
+# Modification en place
+sed -i 's/ancien/nouveau/g' fichier.txt
+
+# Supprimer des lignes
+sed '/^#/d' fichier.conf          # lignes commencant par #
+sed '/^$/d' fichier.txt           # lignes vides
+sed '5d' fichier.txt              # ligne 5
+sed '3,7d' fichier.txt            # lignes 3 a 7
+
+# Inserer/ajouter
+sed '2i\Nouvelle ligne' fichier.txt    # inserer avant ligne 2
+sed '2a\Nouvelle ligne' fichier.txt    # ajouter apres ligne 2
+
+# Afficher uniquement certaines lignes
+sed -n '10,20p' fichier.txt       # lignes 10 a 20
+
+# Combinaison de commandes
+sed -e 's/foo/bar/g' -e '/^$/d' fichier.txt
+```
+
+#### awk — Traitement de colonnes
+
+```bash
+# Afficher une colonne
+awk '{print $1}' fichier.txt              # premiere colonne
+awk '{print $1, $3}' fichier.txt          # colonnes 1 et 3
+
+# Separateur personnalise
+awk -F':' '{print $1, $3}' /etc/passwd    # login et UID
+
+# Condition
+awk -F':' '$3 >= 1000 {print $1}' /etc/passwd  # utilisateurs UID >= 1000
+
+# Variables speciales
+# NR : numero de ligne
+# NF : nombre de champs
+# $0 : ligne complete
+awk '{print NR": "$0}' fichier.txt        # numerotation des lignes
+
+# Calculs
+awk '{somme += $1} END {print "Total:", somme}' nombres.txt
+
+# Formatage
+awk -F':' '{printf "%-15s UID=%-5s GID=%s\n", $1, $3, $4}' /etc/passwd
+
+# BEGIN et END
+awk 'BEGIN {print "=== RAPPORT ==="} {print $0} END {print "=== FIN ==="}' fichier.txt
+```
+
+#### cut, sort, uniq, tr, wc
+
+```bash
+# cut — extraire des colonnes
+cut -d':' -f1 /etc/passwd           # champ 1, delimiteur :
+cut -d',' -f1,3 fichier.csv         # champs 1 et 3
+cut -c1-10 fichier.txt              # caracteres 1 a 10
+
+# sort — trier
+sort fichier.txt                    # tri alphabetique
+sort -n fichier.txt                 # tri numerique
+sort -r fichier.txt                 # tri inverse
+sort -t':' -k3 -n /etc/passwd      # tri par 3e champ numerique
+sort -u fichier.txt                 # tri + suppression doublons
+
+# uniq — supprimer les doublons consecutifs
+sort fichier.txt | uniq             # doublons supprimes
+sort fichier.txt | uniq -c          # compter les occurrences
+sort fichier.txt | uniq -d          # afficher uniquement les doublons
+
+# tr — transformer des caracteres
+echo "HELLO" | tr 'A-Z' 'a-z'      # minuscules
+echo "abc" | tr 'a-z' 'A-Z'        # majuscules
+cat fichier.txt | tr -d '\r'        # supprimer les retours chariot Windows
+echo "a::b:::c" | tr -s ':'        # comprimer les repetitions -> a:b:c
+
+# wc — compter
+wc -l fichier.txt                   # nombre de lignes
+wc -w fichier.txt                   # nombre de mots
+wc -c fichier.txt                   # nombre d'octets
+```
+
+#### Redirections et tubes
+
+```bash
+# Redirections
+commande > fichier          # stdout vers fichier (ecrase)
+commande >> fichier         # stdout vers fichier (ajoute)
+commande 2> erreurs.log     # stderr vers fichier
+commande &> tout.log        # stdout + stderr vers fichier
+commande 2>&1               # stderr vers stdout
+commande < entree.txt       # stdin depuis fichier
+
+# Here document
+cat <<EOF > /etc/motd
+Bienvenue sur le serveur
+Maintenance prevue le dimanche
+EOF
+
+# Here string
+grep "motif" <<< "chaine a chercher"
+
+# Tubes (pipeline)
+cat /var/log/syslog | grep "error" | sort | uniq -c | sort -rn | head -10
+
+# tee — ecrire dans un fichier ET afficher
+commande | tee fichier.log
+commande | tee -a fichier.log    # ajouter au lieu d'ecraser
+
+# xargs — construire des commandes
+find /tmp -name "*.tmp" -print0 | xargs -0 rm -f
+cat liste_serveurs.txt | xargs -I{} ssh {} "uptime"
+```
+
+### 1.7 Scripts d'administration Bash
+
+#### Creation d'utilisateurs en masse
+
+```bash
+#!/bin/bash
+# creation_utilisateurs.sh
+# Cree des utilisateurs a partir d'un fichier CSV
+# Format CSV : login,prenom,nom,groupe
+
+FICHIER_CSV="$1"
+LOG="/var/log/creation_users.log"
+
+if [[ ! -f "$FICHIER_CSV" ]]; then
+    echo "Erreur : fichier $FICHIER_CSV introuvable"
+    exit 1
+fi
+
+echo "=== Creation d'utilisateurs - $(date) ===" >> "$LOG"
+
+while IFS=',' read -r login prenom nom groupe; do
+    # Ignorer l'en-tete
+    [[ "$login" == "login" ]] && continue
+    # Ignorer les lignes vides
+    [[ -z "$login" ]] && continue
+
+    # Verifier si l'utilisateur existe deja
+    if id "$login" &>/dev/null; then
+        echo "[SKIP] $login existe deja" | tee -a "$LOG"
+        continue
+    fi
+
+    # Creer le groupe si necessaire
+    if ! getent group "$groupe" &>/dev/null; then
+        groupadd "$groupe"
+        echo "[INFO] Groupe $groupe cree" >> "$LOG"
+    fi
+
+    # Creer l'utilisateur
+    useradd -m -g "$groupe" -c "$prenom $nom" -s /bin/bash "$login"
+    if [[ $? -eq 0 ]]; then
+        # Generer un mot de passe temporaire
+        mdp=$(openssl rand -base64 12)
+        echo "$login:$mdp" | chpasswd
+        # Forcer le changement au prochain login
+        chage -d 0 "$login"
+        echo "[OK] $login cree (mdp: $mdp)" | tee -a "$LOG"
+    else
+        echo "[ERREUR] Echec creation de $login" | tee -a "$LOG"
+    fi
+done < "$FICHIER_CSV"
+
+echo "=== Fin - $(date) ===" >> "$LOG"
+```
+
+#### Sauvegarde automatisee
+
+```bash
+#!/bin/bash
+# sauvegarde.sh
+# Sauvegarde incrementielle avec rotation
+
+# Configuration
+SRC="/home /etc /var/www"
+DEST="/backup"
+RETENTION=7                    # jours de retention
+DATE=$(date +%Y-%m-%d_%H%M)
+ARCHIVE="$DEST/backup_$DATE.tar.gz"
+LOG="$DEST/backup_$DATE.log"
+
+# Verification de l'espace disque
+espace_libre=$(df -BG "$DEST" | tail -1 | awk '{print $4}' | tr -d 'G')
+if [[ "$espace_libre" -lt 10 ]]; then
+    echo "ALERTE : Espace disque insuffisant (${espace_libre}G libre)" | \
+        mail -s "[BACKUP] Espace insuffisant" admin@exemple.fr
+    exit 1
+fi
+
+# Creation de la sauvegarde
+echo "Debut sauvegarde : $(date)" > "$LOG"
+tar -czf "$ARCHIVE" $SRC 2>> "$LOG"
+
+if [[ $? -eq 0 ]]; then
+    taille=$(du -h "$ARCHIVE" | cut -f1)
+    echo "Sauvegarde reussie : $ARCHIVE ($taille)" >> "$LOG"
+else
+    echo "ERREUR lors de la sauvegarde" >> "$LOG"
+    mail -s "[BACKUP] ECHEC" admin@exemple.fr < "$LOG"
+    exit 1
+fi
+
+# Rotation : supprimer les sauvegardes de plus de $RETENTION jours
+find "$DEST" -name "backup_*.tar.gz" -mtime +$RETENTION -delete
+echo "Rotation effectuee (retention : ${RETENTION} jours)" >> "$LOG"
+
+# Verification d'integrite
+tar -tzf "$ARCHIVE" > /dev/null 2>&1
+if [[ $? -eq 0 ]]; then
+    echo "Verification d'integrite OK" >> "$LOG"
+else
+    echo "ERREUR : archive corrompue" >> "$LOG"
+fi
+
+echo "Fin sauvegarde : $(date)" >> "$LOG"
+```
+
+#### Rotation de logs
+
+```bash
+#!/bin/bash
+# rotation_logs.sh
+
+REPERTOIRE_LOGS="/var/log/application"
+RETENTION=30
+DATE=$(date +%Y%m%d)
+
+for log in "$REPERTOIRE_LOGS"/*.log; do
+    [[ ! -f "$log" ]] && continue
+
+    # Compresser le log courant
+    cp "$log" "${log}.${DATE}"
+    gzip "${log}.${DATE}"
+    # Vider le fichier original (sans supprimer pour les processus qui ecrivent dedans)
+    > "$log"
+
+    echo "Rotation effectuee : $log"
+done
+
+# Supprimer les anciens logs compresses
+find "$REPERTOIRE_LOGS" -name "*.gz" -mtime +$RETENTION -delete
+echo "Nettoyage : fichiers de plus de $RETENTION jours supprimes"
+```
+
+#### Surveillance de l'espace disque
+
+```bash
+#!/bin/bash
+# surveillance_disque.sh
+
+SEUIL=80
+ADMIN="admin@exemple.fr"
+
+df -h --output=pcent,target | tail -n +2 | while read -r utilisation montage; do
+    # Extraire le pourcentage (supprimer le %)
+    pourcent=${utilisation%\%}
+
+    if [[ "$pourcent" -gt "$SEUIL" ]]; then
+        echo "ALERTE : $montage utilise a ${pourcent}% (seuil : ${SEUIL}%)"
+        echo "Partition $montage a ${pourcent}% sur $(hostname) le $(date)" | \
+            mail -s "[DISQUE] Alerte $montage" "$ADMIN"
+    fi
+done
+```
+
+#### Rapport systeme
+
+```bash
+#!/bin/bash
+# rapport_systeme.sh
+
+RAPPORT="/tmp/rapport_$(hostname)_$(date +%Y%m%d).txt"
+
+{
+    echo "=========================================="
+    echo " RAPPORT SYSTEME - $(hostname)"
+    echo " Date : $(date)"
+    echo "=========================================="
+
+    echo ""
+    echo "--- INFORMATIONS GENERALES ---"
+    echo "Hostname    : $(hostname)"
+    echo "OS          : $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
+    echo "Kernel      : $(uname -r)"
+    echo "Uptime      : $(uptime -p)"
+    echo "Utilisateurs: $(who | wc -l) connecte(s)"
+
+    echo ""
+    echo "--- PROCESSEUR ---"
+    echo "Modele      : $(grep 'model name' /proc/cpuinfo | head -1 | cut -d':' -f2 | xargs)"
+    echo "Coeurs      : $(nproc)"
+    echo "Charge      : $(cat /proc/loadavg | cut -d' ' -f1-3)"
+
+    echo ""
+    echo "--- MEMOIRE ---"
+    free -h | awk 'NR==2{printf "Total: %s | Utilisee: %s | Libre: %s\n", $2, $3, $4}'
+
+    echo ""
+    echo "--- ESPACE DISQUE ---"
+    df -h --output=source,size,used,avail,pcent,target | head -20
+
+    echo ""
+    echo "--- RESEAU ---"
+    ip -4 addr show | grep inet | awk '{print $NF": "$2}'
+
+    echo ""
+    echo "--- TOP 10 PROCESSUS (CPU) ---"
+    ps aux --sort=-%cpu | head -11
+
+    echo ""
+    echo "--- SERVICES EN ECHEC ---"
+    systemctl --failed --no-pager 2>/dev/null
+
+    echo ""
+    echo "=========================================="
+    echo " FIN DU RAPPORT"
+    echo "=========================================="
+} > "$RAPPORT"
+
+echo "Rapport genere : $RAPPORT"
+```
+
+### 1.8 Cron — Automatisation des scripts
+
+#### Syntaxe crontab
+
+```
+# Minute  Heure  Jour  Mois  JourSemaine  Commande
+#  0-59   0-23   1-31  1-12     0-7
+#                                (0 et 7 = dimanche)
+
+# Exemples
+* * * * *           # toutes les minutes
+0 * * * *           # toutes les heures (a HH:00)
+0 2 * * *           # tous les jours a 2h00
+0 2 * * 1           # tous les lundis a 2h00
+0 0 1 * *           # le 1er de chaque mois a minuit
+*/5 * * * *         # toutes les 5 minutes
+0 8-18 * * 1-5      # toutes les heures de 8h a 18h en semaine
+```
+
+#### Gestion de crontab
+
+```bash
+# Editer la crontab de l'utilisateur courant
+crontab -e
+
+# Afficher la crontab courante
+crontab -l
+
+# Supprimer la crontab
+crontab -r
+
+# Editer la crontab d'un autre utilisateur (root)
+crontab -u www-data -e
+```
+
+#### Exemples concrets
+
+```bash
+# Sauvegarde quotidienne a 2h00
+0 2 * * * /opt/scripts/sauvegarde.sh >> /var/log/sauvegarde.log 2>&1
+
+# Surveillance disque toutes les 15 minutes
+*/15 * * * * /opt/scripts/surveillance_disque.sh
+
+# Rapport systeme chaque lundi a 8h00
+0 8 * * 1 /opt/scripts/rapport_systeme.sh
+
+# Rotation des logs le 1er de chaque mois
+0 0 1 * * /opt/scripts/rotation_logs.sh
+
+# Nettoyage /tmp tous les jours a 3h00
+0 3 * * * find /tmp -type f -mtime +7 -delete
+```
+
+#### Fichiers cron systeme
+
+```
+/etc/crontab             # crontab systeme (avec champ utilisateur)
+/etc/cron.d/             # fichiers cron supplementaires
+/etc/cron.daily/         # scripts executes quotidiennement
+/etc/cron.weekly/        # scripts executes hebdomadairement
+/etc/cron.monthly/       # scripts executes mensuellement
+/etc/cron.hourly/        # scripts executes chaque heure
+/var/spool/cron/crontabs/  # crontabs des utilisateurs
+```
+
+---
+
+## Partie 2 — PowerShell
+
+### 2.1 Introduction
+
+#### Pourquoi PowerShell
+
+PowerShell est le shell moderne de Microsoft, concu pour l'administration systeme Windows et, depuis PowerShell Core (6+), multiplateforme. Contrairement a `cmd.exe` qui manipule du texte brut, PowerShell manipule des **objets .NET**, ce qui permet un traitement structure et puissant des donnees.
+
+#### Comparaison
+
+| Critere | cmd.exe | Bash | PowerShell |
+|---------|---------|------|------------|
+| Type de donnees | Texte | Texte | Objets .NET |
+| Plateforme | Windows | Linux/macOS | Multiplateforme (Core 6+) |
+| Syntaxe | Commandes DOS | Commandes UNIX | Cmdlets (Verb-Noun) |
+| Pipeline | Texte brut | Texte brut | Objets structures |
+| Integration AD | Non | Non nativement | Module ActiveDirectory |
+| Scripting avance | Limite | Complet | Complet + acces .NET |
+
+#### Versions
+
+| Version | Annee | Remarques |
+|---------|-------|-----------|
+| PowerShell 1.0 | 2006 | Version initiale |
+| PowerShell 2.0 | 2009 | Remoting, modules |
+| PowerShell 3.0 | 2012 | Workflows, ISE ameliore |
+| PowerShell 4.0 | 2013 | DSC (Desired State Configuration) |
+| PowerShell 5.1 | 2016 | Derniere version "Windows PowerShell" |
+| PowerShell 6.0 (Core) | 2018 | Multiplateforme, open source |
+| PowerShell 7.x | 2020+ | Version actuelle recommandee |
+
+Important : Windows PowerShell 5.1 (`powershell.exe`) et PowerShell 7 (`pwsh.exe`) coexistent. Le BTS utilise principalement Windows PowerShell 5.1.
+
+### 2.2 Bases
+
+#### Cmdlets
+
+Toutes les commandes PowerShell suivent la convention **Verbe-Nom** :
+
+```powershell
+Get-Process          # Obtenir les processus
+Stop-Service         # Arreter un service
+New-Item             # Creer un element
+Remove-Item          # Supprimer un element
+Set-Location         # Changer de repertoire (equivalent cd)
+Get-Content          # Lire le contenu d'un fichier (equivalent cat)
+```
+
+Verbes courants : `Get`, `Set`, `New`, `Remove`, `Start`, `Stop`, `Restart`, `Test`, `Import`, `Export`, `Invoke`, `Add`, `Copy`, `Move`.
+
+#### Aide integree
+
+```powershell
+# Aide sur une cmdlet
+Get-Help Get-Process
+Get-Help Get-Process -Detailed
+Get-Help Get-Process -Examples
+Get-Help Get-Process -Full
+
+# Mettre a jour l'aide
+Update-Help
+
+# Rechercher une cmdlet
+Get-Command -Verb Get
+Get-Command -Noun Process
+Get-Command *service*
+Get-Command -Module ActiveDirectory
+```
+
+#### Pipeline
+
+Le pipeline (`|`) transmet des **objets** d'une cmdlet a la suivante :
+
+```powershell
+# Lister les processus tries par memoire
+Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 10 Name, @{N='RAM_MB';E={[math]::Round($_.WorkingSet64/1MB,2)}}
+
+# Lister les services arretes
+Get-Service | Where-Object {$_.Status -eq 'Stopped'}
+
+# Exporter vers CSV
+Get-Process | Select-Object Name, Id, CPU | Export-Csv -Path "processus.csv" -NoTypeInformation
+```
+
+#### Alias
+
+```powershell
+# Alias integres courants
+# ls    -> Get-ChildItem
+# cd    -> Set-Location
+# cp    -> Copy-Item
+# mv    -> Move-Item
+# rm    -> Remove-Item
+# cat   -> Get-Content
+# echo  -> Write-Output
+# cls   -> Clear-Host
+# man   -> Get-Help
+# where -> Where-Object
+# select -> Select-Object
+# sort  -> Sort-Object
+# ft    -> Format-Table
+# fl    -> Format-List
+
+# Voir tous les alias
+Get-Alias
+
+# Creer un alias
+Set-Alias -Name np -Value notepad.exe
+```
+
+### 2.3 Variables
+
+```powershell
+# Declaration et affectation
+$nom = "Serveur-01"
+$port = 443
+$actif = $true
+
+# Types
+$entier = [int]42
+$decimal = [double]3.14
+$chaine = [string]"texte"
+$date = [datetime]"2025-01-15"
+$booleen = [bool]$true
+
+# Verifier le type
+$nom.GetType()
+$nom.GetType().Name      # String
+
+# Conversion
+$nombre = [int]"42"
+$texte = [string]42
+```
+
+#### Tableaux
+
+```powershell
+# Declaration
+$serveurs = @("SRV-01", "SRV-02", "SRV-03")
+$nombres = 1, 2, 3, 4, 5
+
+# Acces
+$serveurs[0]              # SRV-01
+$serveurs[-1]             # SRV-03 (dernier)
+$serveurs[0..1]           # SRV-01, SRV-02
+
+# Proprietes
+$serveurs.Count           # 3
+$serveurs.Length           # 3
+
+# Ajout (cree un nouveau tableau)
+$serveurs += "SRV-04"
+
+# Tableau vide
+$liste = @()
+
+# Parcours
+foreach ($srv in $serveurs) {
+    Write-Host "Serveur : $srv"
+}
+
+# Plage
+$plage = 1..100           # 1 a 100
+
+# Verifier la presence
+$serveurs -contains "SRV-01"    # True
+"SRV-01" -in $serveurs          # True
+```
+
+#### Hashtables (dictionnaires)
+
+```powershell
+# Declaration
+$serveur = @{
+    Nom     = "SRV-WEB-01"
+    IP      = "192.168.1.10"
+    Role    = "Serveur Web"
+    OS      = "Windows Server 2022"
+    RAM_GB  = 16
+}
+
+# Acces
+$serveur["Nom"]           # SRV-WEB-01
+$serveur.Nom              # SRV-WEB-01
+
+# Modification
+$serveur["RAM_GB"] = 32
+$serveur.RAM_GB = 32
+
+# Ajout d'une cle
+$serveur["Datacenter"] = "Paris"
+
+# Suppression d'une cle
+$serveur.Remove("Datacenter")
+
+# Parcours
+foreach ($cle in $serveur.Keys) {
+    Write-Host "$cle : $($serveur[$cle])"
+}
+
+# Hashtable ordonnee
+$config = [ordered]@{
+    Etape1 = "Sauvegarde"
+    Etape2 = "Mise a jour"
+    Etape3 = "Redemarrage"
+}
+```
+
+### 2.4 Operateurs
+
+#### Comparaison
+
+| Operateur | Signification | Exemple |
+|-----------|---------------|---------|
+| `-eq` | Egal | `5 -eq 5` -> True |
+| `-ne` | Different | `5 -ne 3` -> True |
+| `-gt` | Superieur | `5 -gt 3` -> True |
+| `-ge` | Superieur ou egal | `5 -ge 5` -> True |
+| `-lt` | Inferieur | `3 -lt 5` -> True |
+| `-le` | Inferieur ou egal | `3 -le 5` -> True |
+| `-like` | Correspondance joker | `"Hello" -like "He*"` -> True |
+| `-notlike` | Non-correspondance joker | `"Hello" -notlike "Wo*"` -> True |
+| `-match` | Regex | `"abc123" -match "\d+"` -> True |
+| `-notmatch` | Non-correspondance regex | `"abc" -notmatch "\d+"` -> True |
+| `-contains` | Contient (tableau) | `@(1,2,3) -contains 2` -> True |
+| `-in` | Present dans (tableau) | `2 -in @(1,2,3)` -> True |
+| `-is` | Type | `42 -is [int]` -> True |
+
+Les operateurs sont insensibles a la casse par defaut. Prefixer avec `c` pour sensibilite : `-ceq`, `-clike`, `-cmatch`.
+
+#### Logiques
+
+| Operateur | Signification |
+|-----------|---------------|
+| `-and` | ET logique |
+| `-or` | OU logique |
+| `-not` ou `!` | NON logique |
+| `-xor` | OU exclusif |
+
+```powershell
+if (($age -ge 18) -and ($pays -eq "France")) {
+    Write-Host "Majeur en France"
+}
+```
+
+#### Arithmetiques et affectation
+
+```powershell
+$a = 10 + 5      # 15
+$a = 10 - 3      # 7
+$a = 10 * 2      # 20
+$a = 10 / 3      # 3.33...
+$a = 10 % 3      # 1 (modulo)
+
+$a += 5           # $a = $a + 5
+$a -= 3           # $a = $a - 3
+$a++              # increment
+$a--              # decrement
+```
+
+### 2.5 Structures de controle
+
+#### if / elseif / else
+
+```powershell
+$espace = (Get-PSDrive C).Free / 1GB
+
+if ($espace -lt 5) {
+    Write-Host "CRITIQUE : moins de 5 Go disponibles"
+} elseif ($espace -lt 20) {
+    Write-Host "ATTENTION : moins de 20 Go disponibles"
+} else {
+    Write-Host "OK : $([math]::Round($espace, 2)) Go disponibles"
+}
+```
+
+#### switch
+
+```powershell
+$jour = (Get-Date).DayOfWeek
+
+switch ($jour) {
+    "Monday"    { Write-Host "Lundi : sauvegarde complete" }
+    "Wednesday" { Write-Host "Mercredi : sauvegarde incrementielle" }
+    "Friday"    { Write-Host "Vendredi : rapport hebdomadaire" }
+    default     { Write-Host "Pas de tache planifiee" }
+}
+
+# Switch avec regex
+$code = "ERR-404"
+switch -Regex ($code) {
+    "^ERR"  { Write-Host "Erreur detectee" }
+    "404"   { Write-Host "Ressource introuvable" }
+    "^OK"   { Write-Host "Pas d'erreur" }
+}
+
+# Switch avec fichier
+switch -File "C:\logs\codes.txt" {
+    "200" { "Succes" }
+    "404" { "Non trouve" }
+    "500" { "Erreur serveur" }
+}
+```
+
+#### Boucles
+
+```powershell
+# for
+for ($i = 0; $i -lt 10; $i++) {
+    Write-Host "Iteration $i"
+}
+
+# foreach
+$services = @("wuauserv", "Spooler", "W32Time")
+foreach ($svc in $services) {
+    $etat = (Get-Service $svc).Status
+    Write-Host "$svc : $etat"
+}
+
+# ForEach-Object (pipeline)
+Get-Service | ForEach-Object {
+    Write-Host "$($_.Name) -> $($_.Status)"
+}
+
+# while
+$tentatives = 0
+while ($tentatives -lt 3) {
+    $tentatives++
+    Write-Host "Tentative $tentatives"
+}
+
+# do-while (execute au moins une fois)
+do {
+    $reponse = Read-Host "Continuer ? (o/n)"
+} while ($reponse -ne "n")
+
+# do-until
+do {
+    $ping = Test-NetConnection -ComputerName "srv-01" -InformationLevel Quiet
+    Start-Sleep -Seconds 5
+} until ($ping -eq $true)
+
+# break et continue
+foreach ($num in 1..20) {
+    if ($num -eq 15) { break }      # sort de la boucle
+    if ($num % 2 -eq 0) { continue } # passe a l'iteration suivante
+    Write-Host $num
+}
+```
+
+### 2.6 Fonctions
+
+```powershell
+# Fonction simple
+function Dire-Bonjour {
+    Write-Host "Bonjour"
+}
+
+# Avec parametres
+function Dire-Bonjour {
+    param(
+        [string]$Nom,
+        [string]$Prenom = "Utilisateur"   # valeur par defaut
+    )
+    Write-Host "Bonjour $Prenom $Nom"
+}
+
+Dire-Bonjour -Nom "Dupont" -Prenom "Jean"
+Dire-Bonjour -Nom "Dupont"                # utilise la valeur par defaut
+
+# Parametres obligatoires et validation
+function New-CompteUtilisateur {
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Login,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateLength(8, 64)]
+        [string]$MotDePasse,
+
+        [ValidateSet("Standard", "Admin", "Service")]
+        [string]$Type = "Standard",
+
+        [ValidateRange(1, 999)]
+        [int]$Quota = 100
+    )
+
+    Write-Host "Creation du compte $Login de type $Type avec quota ${Quota}Mo"
+    # ... logique de creation
+}
+
+# Retour de valeur
+function Get-EspaceDisque {
+    param([string]$Lecteur = "C")
+
+    $disque = Get-PSDrive $Lecteur
+    $libre = [math]::Round($disque.Free / 1GB, 2)
+    $total = [math]::Round(($disque.Used + $disque.Free) / 1GB, 2)
+
+    return @{
+        Lecteur = $Lecteur
+        LibreGB = $libre
+        TotalGB = $total
+        PourcentUtilise = [math]::Round(($disque.Used / ($disque.Used + $disque.Free)) * 100, 1)
+    }
+}
+
+$info = Get-EspaceDisque -Lecteur "C"
+Write-Host "Disque $($info.Lecteur): $($info.LibreGB) Go libres sur $($info.TotalGB) Go"
+```
+
+#### Pipeline dans les fonctions
+
+```powershell
+function Get-TailleFichier {
+    param(
+        [Parameter(ValueFromPipeline=$true)]
+        [System.IO.FileInfo]$Fichier
+    )
+
+    process {
+        [PSCustomObject]@{
+            Nom    = $Fichier.Name
+            Taille = "{0:N2} Ko" -f ($Fichier.Length / 1KB)
+            Date   = $Fichier.LastWriteTime
+        }
+    }
+}
+
+Get-ChildItem C:\Logs -File | Get-TailleFichier | Format-Table
+```
+
+### 2.7 Objets et pipeline
+
+#### Manipulation d'objets
+
+```powershell
+# Decouvrir les proprietes et methodes d'un objet
+Get-Process | Get-Member
+Get-Service | Get-Member -MemberType Property
+
+# Select-Object : choisir les proprietes
+Get-Process | Select-Object Name, Id, CPU, WorkingSet64
+Get-Process | Select-Object -First 5 Name
+Get-Process | Select-Object -Last 3 Name
+Get-Process | Select-Object -Property Name, @{Name='RAM_MB'; Expression={[math]::Round($_.WorkingSet64/1MB,2)}}
+
+# Where-Object : filtrer
+Get-Service | Where-Object { $_.Status -eq "Running" }
+Get-Process | Where-Object { $_.CPU -gt 100 }
+Get-EventLog -LogName System -Newest 100 | Where-Object { $_.EntryType -eq "Error" }
+
+# Sort-Object : trier
+Get-Process | Sort-Object CPU -Descending
+Get-ChildItem | Sort-Object Length -Descending
+Get-Service | Sort-Object Status, Name
+
+# Group-Object : regrouper
+Get-Service | Group-Object Status
+Get-EventLog -LogName System -Newest 1000 | Group-Object EntryType
+
+# Measure-Object : statistiques
+Get-ChildItem C:\Windows -File | Measure-Object Length -Sum -Average -Maximum -Minimum
+```
+
+#### Formatage de sortie
+
+```powershell
+# Format-Table : tableau (par defaut pour peu de proprietes)
+Get-Service | Format-Table Name, Status, StartType -AutoSize
+
+# Format-List : liste (par defaut pour beaucoup de proprietes)
+Get-Service wuauserv | Format-List *
+
+# Format-Wide : une seule propriete en colonnes
+Get-Service | Format-Wide Name -Column 4
+
+# Out-GridView : interface graphique (Windows)
+Get-Process | Out-GridView
+```
+
+#### Import et export
+
+```powershell
+# CSV
+Get-Process | Select-Object Name, Id, CPU | Export-Csv "processus.csv" -NoTypeInformation -Delimiter ";"
+$donnees = Import-Csv "processus.csv" -Delimiter ";"
+
+# JSON
+Get-Service | ConvertTo-Json | Out-File "services.json"
+$services = Get-Content "services.json" | ConvertFrom-Json
+
+# XML
+Get-Process | Export-Clixml "processus.xml"
+$proc = Import-Clixml "processus.xml"
+
+# HTML
+Get-Service | ConvertTo-Html -Title "Services" | Out-File "services.html"
+
+# Fichier texte
+Get-Content "fichier.txt"
+Set-Content "fichier.txt" -Value "Contenu"
+Add-Content "fichier.txt" -Value "Ligne ajoutee"
+```
+
+### 2.8 Gestion Active Directory
+
+Le module `ActiveDirectory` doit etre installe (RSAT ou Windows Server avec le role AD DS).
+
+```powershell
+# Importer le module
+Import-Module ActiveDirectory
+```
+
+#### Gestion des utilisateurs
+
+```powershell
+# Lister tous les utilisateurs
+Get-ADUser -Filter *
+Get-ADUser -Filter * -Properties DisplayName, EmailAddress, Enabled | Select-Object SamAccountName, DisplayName, Enabled
+
+# Rechercher un utilisateur
+Get-ADUser -Identity "jdupont"
+Get-ADUser -Filter {Name -like "Dupont*"}
+Get-ADUser -Filter {Enabled -eq $false}    # comptes desactives
+
+# Recherche dans une OU specifique
+Get-ADUser -SearchBase "OU=Comptabilite,DC=entreprise,DC=local" -Filter *
+
+# Creer un utilisateur
+New-ADUser -Name "Jean Dupont" `
+    -SamAccountName "jdupont" `
+    -UserPrincipalName "jdupont@entreprise.local" `
+    -GivenName "Jean" `
+    -Surname "Dupont" `
+    -DisplayName "Jean Dupont" `
+    -Path "OU=Comptabilite,DC=entreprise,DC=local" `
+    -AccountPassword (ConvertTo-SecureString "P@ssw0rd2025!" -AsPlainText -Force) `
+    -Enabled $true `
+    -ChangePasswordAtLogon $true
+
+# Modifier un utilisateur
+Set-ADUser -Identity "jdupont" -Title "Comptable" -Department "Finance" -Office "Paris"
+Set-ADUser -Identity "jdupont" -Enabled $false    # desactiver
+
+# Reinitialiser le mot de passe
+Set-ADAccountPassword -Identity "jdupont" `
+    -NewPassword (ConvertTo-SecureString "NouveauMdp2025!" -AsPlainText -Force) `
+    -Reset
+Set-ADUser -Identity "jdupont" -ChangePasswordAtLogon $true
+
+# Supprimer un utilisateur
+Remove-ADUser -Identity "jdupont" -Confirm:$false
+
+# Deverrouiller un compte
+Unlock-ADAccount -Identity "jdupont"
+```
+
+#### Gestion des groupes
+
+```powershell
+# Lister les groupes
+Get-ADGroup -Filter *
+Get-ADGroup -Filter {Name -like "GRP_*"}
+
+# Creer un groupe
+New-ADGroup -Name "GRP_Comptabilite" `
+    -GroupCategory Security `
+    -GroupScope Global `
+    -Path "OU=Groupes,DC=entreprise,DC=local" `
+    -Description "Groupe du service Comptabilite"
+
+# Ajouter un membre
+Add-ADGroupMember -Identity "GRP_Comptabilite" -Members "jdupont", "mmartin"
+
+# Lister les membres d'un groupe
+Get-ADGroupMember -Identity "GRP_Comptabilite" | Select-Object Name, SamAccountName
+
+# Retirer un membre
+Remove-ADGroupMember -Identity "GRP_Comptabilite" -Members "jdupont" -Confirm:$false
+
+# Groupes d'un utilisateur
+Get-ADPrincipalGroupMembership -Identity "jdupont" | Select-Object Name
+```
+
+#### Gestion des ordinateurs
+
+```powershell
+# Lister les ordinateurs
+Get-ADComputer -Filter * -Properties OperatingSystem, LastLogonDate | Select-Object Name, OperatingSystem, LastLogonDate
+
+# Ordinateurs inactifs depuis 90 jours
+$date = (Get-Date).AddDays(-90)
+Get-ADComputer -Filter {LastLogonDate -lt $date} -Properties LastLogonDate
+```
+
+### 2.9 Gestion des fichiers et dossiers
+
+```powershell
+# Lister le contenu
+Get-ChildItem C:\Users                          # ls
+Get-ChildItem C:\Logs -Recurse -Filter "*.log"  # recursif + filtre
+Get-ChildItem C:\Logs -File                      # fichiers uniquement
+Get-ChildItem C:\Logs -Directory                 # dossiers uniquement
+
+# Creer
+New-Item -Path "C:\Scripts" -ItemType Directory
+New-Item -Path "C:\Scripts\test.ps1" -ItemType File -Value "Write-Host 'Test'"
+
+# Copier
+Copy-Item "C:\source\fichier.txt" -Destination "C:\dest\"
+Copy-Item "C:\source\*" -Destination "C:\dest\" -Recurse
+
+# Deplacer
+Move-Item "C:\temp\rapport.txt" -Destination "C:\archive\"
+
+# Renommer
+Rename-Item "C:\fichier.txt" -NewName "fichier_old.txt"
+
+# Supprimer
+Remove-Item "C:\temp\*.tmp" -Force
+Remove-Item "C:\ancien_dossier" -Recurse -Force
+
+# Verifier l'existence
+Test-Path "C:\Scripts\test.ps1"        # True ou False
+Test-Path "C:\Scripts" -PathType Container
+
+# Contenu de fichiers
+Get-Content "C:\logs\app.log"
+Get-Content "C:\logs\app.log" -Tail 20               # 20 dernieres lignes
+Get-Content "C:\logs\app.log" -Wait                   # equivalent tail -f
+Set-Content "C:\config.txt" -Value "parametre=valeur"
+Add-Content "C:\config.txt" -Value "nouveau_parametre=42"
+```
+
+### 2.10 Gestion des services
+
+```powershell
+# Lister les services
+Get-Service
+Get-Service | Where-Object { $_.Status -eq "Running" }
+Get-Service -Name "wuauserv"
+Get-Service -DisplayName "*Windows Update*"
+
+# Demarrer / Arreter / Redemarrer
+Start-Service -Name "Spooler"
+Stop-Service -Name "Spooler" -Force
+Restart-Service -Name "Spooler"
+
+# Changer le type de demarrage
+Set-Service -Name "Spooler" -StartupType Automatic
+Set-Service -Name "Spooler" -StartupType Disabled
+Set-Service -Name "Spooler" -StartupType Manual
+
+# Verifier un service sur une machine distante
+Get-Service -Name "wuauserv" -ComputerName "SRV-01"
+
+# Script de verification de services critiques
+$servicesCritiques = @("DNS", "DHCP", "W32Time", "Netlogon")
+foreach ($svc in $servicesCritiques) {
+    $etat = Get-Service -Name $svc -ErrorAction SilentlyContinue
+    if ($null -eq $etat) {
+        Write-Host "[ABSENT] $svc n'existe pas sur cette machine"
+    } elseif ($etat.Status -ne "Running") {
+        Write-Host "[ARRETE] $svc est arrete, tentative de redemarrage..."
+        Start-Service -Name $svc
+    } else {
+        Write-Host "[OK] $svc est en cours d'execution"
+    }
+}
+```
+
+### 2.11 Gestion reseau
+
+```powershell
+# Test de connectivite
+Test-NetConnection -ComputerName "192.168.1.1"
+Test-NetConnection -ComputerName "srv-01" -Port 3389
+Test-NetConnection -ComputerName "google.com" -InformationLevel Detailed
+
+# Test ping simple (retourne booleen)
+Test-NetConnection -ComputerName "srv-01" -InformationLevel Quiet
+
+# Configuration IP
+Get-NetIPAddress
+Get-NetIPAddress -InterfaceAlias "Ethernet" -AddressFamily IPv4
+Get-NetIPConfiguration
+
+# DNS
+Resolve-DnsName "google.com"
+Resolve-DnsName "google.com" -Type MX
+Resolve-DnsName "192.168.1.1"    # reverse lookup
+
+# Adaptateurs reseau
+Get-NetAdapter
+Get-NetAdapter | Where-Object { $_.Status -eq "Up" }
+
+# Table de routage
+Get-NetRoute
+
+# Ports en ecoute
+Get-NetTCPConnection -State Listen
+Get-NetTCPConnection -LocalPort 80
+
+# Scanner de ports simple
+function Test-PortRange {
+    param(
+        [string]$Cible,
+        [int]$PortDebut = 1,
+        [int]$PortFin = 1024
+    )
+    $PortDebut..$PortFin | ForEach-Object {
+        $result = Test-NetConnection -ComputerName $Cible -Port $_ -WarningAction SilentlyContinue -InformationLevel Quiet
+        if ($result) {
+            Write-Host "Port $_ : OUVERT"
+        }
+    }
+}
+```
+
+### 2.12 Scripts concrets PowerShell
+
+#### Creation d'utilisateurs AD en masse depuis un CSV
+
+Fichier `utilisateurs.csv` :
+
+```
+Login;Prenom;Nom;Service;Fonction;Mail
+jdupont;Jean;Dupont;Comptabilite;Comptable;jdupont@entreprise.local
+mmartin;Marie;Martin;RH;Gestionnaire RH;mmartin@entreprise.local
+pdurand;Pierre;Durand;Informatique;Technicien;pdurand@entreprise.local
+```
+
+Script :
+
+```powershell
+# Creation_Utilisateurs_AD.ps1
+# Creation en masse d'utilisateurs Active Directory depuis un fichier CSV
+
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$FichierCSV,
+
+    [string]$OUBase = "OU=Utilisateurs,DC=entreprise,DC=local",
+    [string]$Domaine = "entreprise.local",
+    [string]$FichierLog = "C:\Logs\creation_ad_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
+)
+
+Import-Module ActiveDirectory
+
+# Fonction de journalisation
+function Write-Log {
+    param([string]$Message, [string]$Niveau = "INFO")
+    $horodatage = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $ligne = "[$horodatage] [$Niveau] $Message"
+    Add-Content -Path $FichierLog -Value $ligne
+    switch ($Niveau) {
+        "ERREUR"  { Write-Host $ligne -ForegroundColor Red }
+        "OK"      { Write-Host $ligne -ForegroundColor Green }
+        "SKIP"    { Write-Host $ligne -ForegroundColor Yellow }
+        default   { Write-Host $ligne }
+    }
+}
+
+# Verification du fichier CSV
+if (-not (Test-Path $FichierCSV)) {
+    Write-Log "Fichier $FichierCSV introuvable" "ERREUR"
+    exit 1
+}
+
+$utilisateurs = Import-Csv -Path $FichierCSV -Delimiter ";"
+$compteurOK = 0
+$compteurErreur = 0
+$compteurSkip = 0
+
+Write-Log "Debut du traitement de $($utilisateurs.Count) utilisateurs"
+
+foreach ($u in $utilisateurs) {
+    $login = $u.Login
+    $prenom = $u.Prenom
+    $nom = $u.Nom
+    $service = $u.Service
+    $fonction = $u.Fonction
+    $mail = $u.Mail
+
+    # Verifier si l'utilisateur existe deja
+    try {
+        $existant = Get-ADUser -Identity $login -ErrorAction Stop
+        Write-Log "L'utilisateur $login existe deja" "SKIP"
+        $compteurSkip++
+        continue
+    } catch {
+        # L'utilisateur n'existe pas, on peut le creer
+    }
+
+    # Creer l'OU du service si elle n'existe pas
+    $ouService = "OU=$service,$OUBase"
+    if (-not ([adsi]::Exists("LDAP://$ouService"))) {
+        try {
+            New-ADOrganizationalUnit -Name $service -Path $OUBase
+            Write-Log "OU $service creee"
+        } catch {
+            Write-Log "Erreur creation OU $service : $_" "ERREUR"
+        }
+    }
+
+    # Generer un mot de passe temporaire
+    $mdpClair = "Tmp-" + (Get-Random -Minimum 100000 -Maximum 999999) + "!"
+    $mdpSecure = ConvertTo-SecureString $mdpClair -AsPlainText -Force
+
+    # Creer l'utilisateur
+    try {
+        New-ADUser `
+            -SamAccountName $login `
+            -UserPrincipalName "$login@$Domaine" `
+            -Name "$prenom $nom" `
+            -GivenName $prenom `
+            -Surname $nom `
+            -DisplayName "$prenom $nom" `
+            -EmailAddress $mail `
+            -Title $fonction `
+            -Department $service `
+            -Path $ouService `
+            -AccountPassword $mdpSecure `
+            -Enabled $true `
+            -ChangePasswordAtLogon $true
+
+        # Ajouter au groupe du service
+        $groupe = "GRP_$service"
+        try {
+            Add-ADGroupMember -Identity $groupe -Members $login
+        } catch {
+            Write-Log "Groupe $groupe introuvable pour $login" "ERREUR"
+        }
+
+        Write-Log "Utilisateur $login cree (mdp temporaire : $mdpClair)" "OK"
+        $compteurOK++
+    } catch {
+        Write-Log "Erreur creation $login : $_" "ERREUR"
+        $compteurErreur++
+    }
+}
+
+Write-Log "Traitement termine : $compteurOK crees, $compteurSkip ignores, $compteurErreur erreurs"
+```
+
+#### Inventaire des machines
+
+```powershell
+# Inventaire_Machines.ps1
+# Collecte des informations materielles et logicielles des machines du domaine
+
+param(
+    [string]$FichierSortie = "C:\Rapports\inventaire_$(Get-Date -Format 'yyyyMMdd').csv"
+)
+
+$ordinateurs = Get-ADComputer -Filter {Enabled -eq $true} -Properties OperatingSystem | Select-Object -ExpandProperty Name
+
+$resultats = @()
+
+foreach ($pc in $ordinateurs) {
+    Write-Host "Interrogation de $pc..."
+
+    if (-not (Test-NetConnection -ComputerName $pc -InformationLevel Quiet -WarningAction SilentlyContinue)) {
+        Write-Host "  $pc injoignable" -ForegroundColor Yellow
+        $resultats += [PSCustomObject]@{
+            Nom = $pc
+            Statut = "Injoignable"
+            OS = ""
+            RAM_GB = ""
+            CPU = ""
+            DisqueC_GB = ""
+            IP = ""
+            DernierDemarrage = ""
+        }
+        continue
+    }
+
+    try {
+        $os = Get-CimInstance -ClassName Win32_OperatingSystem -ComputerName $pc
+        $cpu = Get-CimInstance -ClassName Win32_Processor -ComputerName $pc | Select-Object -First 1
+        $disque = Get-CimInstance -ClassName Win32_LogicalDisk -ComputerName $pc | Where-Object { $_.DeviceID -eq "C:" }
+        $reseau = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration -ComputerName $pc | Where-Object { $_.IPEnabled -eq $true } | Select-Object -First 1
+
+        $resultats += [PSCustomObject]@{
+            Nom = $pc
+            Statut = "OK"
+            OS = $os.Caption
+            RAM_GB = [math]::Round($os.TotalVisibleMemorySize / 1MB, 2)
+            CPU = $cpu.Name
+            DisqueC_GB = [math]::Round($disque.FreeSpace / 1GB, 2)
+            IP = ($reseau.IPAddress | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+$' }) -join ", "
+            DernierDemarrage = $os.LastBootUpTime
+        }
+    } catch {
+        Write-Host "  Erreur sur $pc : $_" -ForegroundColor Red
+        $resultats += [PSCustomObject]@{
+            Nom = $pc
+            Statut = "Erreur"
+            OS = ""
+            RAM_GB = ""
+            CPU = ""
+            DisqueC_GB = ""
+            IP = ""
+            DernierDemarrage = ""
+        }
+    }
+}
+
+$resultats | Export-Csv -Path $FichierSortie -NoTypeInformation -Delimiter ";" -Encoding UTF8
+Write-Host "Inventaire exporte vers $FichierSortie ($($resultats.Count) machines)"
+```
+
+#### Rapport espace disque
+
+```powershell
+# Rapport_Disque.ps1
+
+param(
+    [string[]]$Serveurs = @("SRV-01", "SRV-02", "SRV-03"),
+    [int]$SeuilAlerte = 80,
+    [string]$Rapport = "C:\Rapports\disque_$(Get-Date -Format 'yyyyMMdd').html"
+)
+
+$resultats = @()
+
+foreach ($srv in $Serveurs) {
+    if (-not (Test-NetConnection -ComputerName $srv -InformationLevel Quiet -WarningAction SilentlyContinue)) {
+        continue
+    }
+
+    $disques = Get-CimInstance -ClassName Win32_LogicalDisk -ComputerName $srv -Filter "DriveType=3"
+
+    foreach ($d in $disques) {
+        $totalGB = [math]::Round($d.Size / 1GB, 2)
+        $libreGB = [math]::Round($d.FreeSpace / 1GB, 2)
+        $utilisePC = [math]::Round(100 - ($d.FreeSpace / $d.Size * 100), 1)
+
+        $resultats += [PSCustomObject]@{
+            Serveur = $srv
+            Lecteur = $d.DeviceID
+            TotalGB = $totalGB
+            LibreGB = $libreGB
+            UtilisePourcent = $utilisePC
+            Alerte = if ($utilisePC -ge $SeuilAlerte) { "OUI" } else { "NON" }
+        }
+    }
+}
+
+# Generation du rapport HTML
+$css = @"
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #4472C4; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+    .alerte { background-color: #ff6b6b; color: white; font-weight: bold; }
+</style>
+"@
+
+$html = $resultats | ConvertTo-Html -Title "Rapport Espace Disque" -Head $css -PreContent "<h1>Rapport Espace Disque - $(Get-Date -Format 'dd/MM/yyyy HH:mm')</h1>"
+$html | Out-File $Rapport -Encoding UTF8
+
+Write-Host "Rapport genere : $Rapport"
+
+# Alertes par mail
+$alertes = $resultats | Where-Object { $_.Alerte -eq "OUI" }
+if ($alertes.Count -gt 0) {
+    $corps = $alertes | Format-Table -AutoSize | Out-String
+    # Send-MailMessage -To "admin@entreprise.local" -From "monitoring@entreprise.local" -Subject "[DISQUE] Alerte espace disque" -Body $corps -SmtpServer "smtp.entreprise.local"
+}
+```
+
+#### Verification de services
+
+```powershell
+# Verification_Services.ps1
+
+param(
+    [string]$FichierConfig = "C:\Scripts\services_critiques.json"
+)
+
+# Contenu attendu du JSON :
+# [
+#   { "Serveur": "SRV-DC01", "Services": ["NTDS", "DNS", "Netlogon", "W32Time"] },
+#   { "Serveur": "SRV-WEB01", "Services": ["W3SVC", "WAS"] },
+#   { "Serveur": "SRV-BDD01", "Services": ["MSSQLSERVER", "SQLSERVERAGENT"] }
+# ]
+
+$config = Get-Content $FichierConfig | ConvertFrom-Json
+$problemes = @()
+
+foreach ($item in $config) {
+    $serveur = $item.Serveur
+
+    if (-not (Test-NetConnection -ComputerName $serveur -InformationLevel Quiet -WarningAction SilentlyContinue)) {
+        $problemes += [PSCustomObject]@{
+            Serveur = $serveur
+            Service = "N/A"
+            Probleme = "Serveur injoignable"
+            Action = "Aucune"
+        }
+        continue
+    }
+
+    foreach ($svc in $item.Services) {
+        try {
+            $etat = Get-Service -Name $svc -ComputerName $serveur -ErrorAction Stop
+
+            if ($etat.Status -ne "Running") {
+                Write-Host "[ARRETE] $serveur/$svc - Tentative de redemarrage..." -ForegroundColor Yellow
+
+                try {
+                    Get-Service -Name $svc -ComputerName $serveur | Start-Service -ErrorAction Stop
+                    Write-Host "  Redemarrage reussi" -ForegroundColor Green
+                    $problemes += [PSCustomObject]@{
+                        Serveur = $serveur
+                        Service = $svc
+                        Probleme = "Etait arrete"
+                        Action = "Redemarrage reussi"
+                    }
+                } catch {
+                    Write-Host "  Echec du redemarrage" -ForegroundColor Red
+                    $problemes += [PSCustomObject]@{
+                        Serveur = $serveur
+                        Service = $svc
+                        Probleme = "Etait arrete"
+                        Action = "Echec du redemarrage : $_"
+                    }
+                }
+            } else {
+                Write-Host "[OK] $serveur/$svc" -ForegroundColor Green
+            }
+        } catch {
+            $problemes += [PSCustomObject]@{
+                Serveur = $serveur
+                Service = $svc
+                Probleme = "Service introuvable"
+                Action = "Verification manuelle requise"
+            }
+        }
+    }
+}
+
+if ($problemes.Count -gt 0) {
+    Write-Host "`nResume des problemes :" -ForegroundColor Cyan
+    $problemes | Format-Table -AutoSize
+}
+```
+
+#### Deploiement logiciel a distance
+
+```powershell
+# Deploiement_Logiciel.ps1
+
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$Installeur,
+
+    [string]$Arguments = "/S /quiet /norestart",
+    [string[]]$Machines,
+    [string]$FichierMachines
+)
+
+if ($FichierMachines -and (Test-Path $FichierMachines)) {
+    $Machines = Get-Content $FichierMachines
+}
+
+if (-not $Machines -or $Machines.Count -eq 0) {
+    Write-Host "Aucune machine cible specifiee"
+    exit 1
+}
+
+$nomInstalleur = Split-Path $Installeur -Leaf
+$partageTemp = "\\$env:COMPUTERNAME\DeploiementTemp"
+
+# Copier l'installeur sur un partage accessible
+if (-not (Test-Path "C:\DeploiementTemp")) {
+    New-Item -Path "C:\DeploiementTemp" -ItemType Directory | Out-Null
+    New-SmbShare -Name "DeploiementTemp" -Path "C:\DeploiementTemp" -ReadAccess "Tout le monde" | Out-Null
+}
+Copy-Item $Installeur -Destination "C:\DeploiementTemp\"
+
+$resultats = @()
+
+foreach ($machine in $Machines) {
+    Write-Host "Deploiement sur $machine..."
+
+    if (-not (Test-NetConnection -ComputerName $machine -InformationLevel Quiet -WarningAction SilentlyContinue)) {
+        $resultats += [PSCustomObject]@{ Machine = $machine; Resultat = "Injoignable" }
+        continue
+    }
+
+    try {
+        $retour = Invoke-Command -ComputerName $machine -ScriptBlock {
+            param($Partage, $Nom, $Args)
+            $local = "C:\Temp\$Nom"
+
+            if (-not (Test-Path "C:\Temp")) { New-Item -Path "C:\Temp" -ItemType Directory | Out-Null }
+            Copy-Item "$Partage\$Nom" -Destination $local -Force
+
+            $process = Start-Process -FilePath $local -ArgumentList $Args -Wait -PassThru
+            Remove-Item $local -Force
+
+            return $process.ExitCode
+        } -ArgumentList $partageTemp, $nomInstalleur, $Arguments
+
+        $status = if ($retour -eq 0) { "Succes" } else { "Echec (code $retour)" }
+        $resultats += [PSCustomObject]@{ Machine = $machine; Resultat = $status }
+        Write-Host "  $status" -ForegroundColor $(if ($retour -eq 0) { "Green" } else { "Red" })
+    } catch {
+        $resultats += [PSCustomObject]@{ Machine = $machine; Resultat = "Erreur : $_" }
+    }
+}
+
+$resultats | Format-Table -AutoSize
+```
+
+### 2.13 Execution de scripts
+
+#### Politique d'execution
+
+```powershell
+# Verifier la politique actuelle
+Get-ExecutionPolicy
+Get-ExecutionPolicy -List     # toutes les portees
+
+# Modifier la politique
+Set-ExecutionPolicy RemoteSigned        # scripts locaux OK, distants signes
+Set-ExecutionPolicy Unrestricted        # tout autorise (deconseille en production)
+Set-ExecutionPolicy Restricted          # aucun script (par defaut)
+Set-ExecutionPolicy Bypass              # aucune restriction
+Set-ExecutionPolicy AllSigned           # tous les scripts doivent etre signes
+
+# Portees (Scope)
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+Set-ExecutionPolicy RemoteSigned -Scope LocalMachine
+
+# Contourner ponctuellement
+powershell.exe -ExecutionPolicy Bypass -File "C:\Scripts\monscript.ps1"
+```
+
+| Politique | Description |
+|-----------|-------------|
+| Restricted | Aucun script autorise (defaut Windows client) |
+| AllSigned | Scripts signes uniquement |
+| RemoteSigned | Scripts locaux OK, distants doivent etre signes |
+| Unrestricted | Tout autorise, avertissement pour scripts distants |
+| Bypass | Aucune restriction, aucun avertissement |
+
+#### Executer un script
+
+```powershell
+# Depuis PowerShell
+.\monscript.ps1
+C:\Scripts\monscript.ps1
+& "C:\Scripts\mon script avec espaces.ps1"
+
+# Avec des parametres
+.\monscript.ps1 -Parametre1 "valeur" -Parametre2 42
+
+# Depuis cmd.exe
+powershell.exe -File "C:\Scripts\monscript.ps1"
+
+# Editeurs
+# ISE : Windows PowerShell ISE (integre a Windows, pour PS 5.1)
+# VS Code : editeur recommande avec extension PowerShell
+```
+
+### 2.14 Taches planifiees Windows
+
+#### Avec schtasks (ligne de commande)
+
+```cmd
+REM Creer une tache quotidienne
+schtasks /Create /TN "Sauvegarde" /TR "powershell.exe -File C:\Scripts\sauvegarde.ps1" /SC DAILY /ST 02:00 /RU SYSTEM
+
+REM Creer une tache hebdomadaire (lundi)
+schtasks /Create /TN "Rapport" /TR "powershell.exe -File C:\Scripts\rapport.ps1" /SC WEEKLY /D MON /ST 08:00
+
+REM Lister les taches
+schtasks /Query /TN "Sauvegarde" /V /FO LIST
+
+REM Executer manuellement
+schtasks /Run /TN "Sauvegarde"
+
+REM Supprimer une tache
+schtasks /Delete /TN "Sauvegarde" /F
+
+REM Modifier une tache
+schtasks /Change /TN "Sauvegarde" /ST 03:00
+```
+
+#### Avec PowerShell (Register-ScheduledTask)
+
+```powershell
+# Creer une tache planifiee complete
+$action = New-ScheduledTaskAction `
+    -Execute "powershell.exe" `
+    -Argument "-ExecutionPolicy Bypass -File C:\Scripts\sauvegarde.ps1" `
+    -WorkingDirectory "C:\Scripts"
+
+$declencheur = New-ScheduledTaskTrigger `
+    -Daily `
+    -At "02:00"
+
+$parametres = New-ScheduledTaskSettingsSet `
+    -StartWhenAvailable `
+    -DontStopOnIdleEnd `
+    -RestartCount 3 `
+    -RestartInterval (New-TimeSpan -Minutes 5)
+
+$principal = New-ScheduledTaskPrincipal `
+    -UserId "SYSTEM" `
+    -RunLevel Highest
+
+Register-ScheduledTask `
+    -TaskName "Sauvegarde_Quotidienne" `
+    -Action $action `
+    -Trigger $declencheur `
+    -Settings $parametres `
+    -Principal $principal `
+    -Description "Sauvegarde quotidienne automatique"
+
+# Declencheur hebdomadaire
+$declencheurHebdo = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At "08:00"
+
+# Declencheur au demarrage
+$declencheurBoot = New-ScheduledTaskTrigger -AtStartup
+
+# Declencheur a l'ouverture de session
+$declencheurLogon = New-ScheduledTaskTrigger -AtLogOn
+
+# Gerer les taches
+Get-ScheduledTask -TaskName "Sauvegarde*"
+Start-ScheduledTask -TaskName "Sauvegarde_Quotidienne"
+Stop-ScheduledTask -TaskName "Sauvegarde_Quotidienne"
+Disable-ScheduledTask -TaskName "Sauvegarde_Quotidienne"
+Enable-ScheduledTask -TaskName "Sauvegarde_Quotidienne"
+Unregister-ScheduledTask -TaskName "Sauvegarde_Quotidienne" -Confirm:$false
+
+# Historique d'execution
+Get-ScheduledTaskInfo -TaskName "Sauvegarde_Quotidienne"
+```
+
+### 2.15 Gestion a distance
+
+#### WinRM (Windows Remote Management)
+
+```powershell
+# Activer WinRM sur la machine cible
+Enable-PSRemoting -Force
+
+# Verifier la configuration WinRM
+winrm get winrm/config
+winrm quickconfig
+
+# Ajouter des hotes de confiance (si hors domaine)
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value "192.168.1.10,SRV-01"
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value "*"   # tous (deconseille)
+
+# Tester la connexion
+Test-WSMan -ComputerName "SRV-01"
+```
+
+#### Session interactive (Enter-PSSession)
+
+```powershell
+# Ouvrir une session interactive
+Enter-PSSession -ComputerName "SRV-01"
+# Le prompt change : [SRV-01]: PS C:\Users\admin>
+# Toutes les commandes s'executent sur la machine distante
+
+# Quitter
+Exit-PSSession
+
+# Avec des identifiants specifiques
+$cred = Get-Credential
+Enter-PSSession -ComputerName "SRV-01" -Credential $cred
+```
+
+#### Execution a distance (Invoke-Command)
+
+```powershell
+# Commande unique sur une machine
+Invoke-Command -ComputerName "SRV-01" -ScriptBlock {
+    Get-Service | Where-Object { $_.Status -eq "Running" } | Select-Object Name, Status
+}
+
+# Commande sur plusieurs machines en parallele
+Invoke-Command -ComputerName "SRV-01", "SRV-02", "SRV-03" -ScriptBlock {
+    [PSCustomObject]@{
+        Machine = $env:COMPUTERNAME
+        Uptime = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime
+        RAM_Libre = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 2)
+    }
+}
+
+# Avec passage de variables locales
+$nomService = "wuauserv"
+Invoke-Command -ComputerName "SRV-01" -ScriptBlock {
+    param($svc)
+    Restart-Service -Name $svc
+} -ArgumentList $nomService
+
+# Avec $using: (alternative)
+Invoke-Command -ComputerName "SRV-01" -ScriptBlock {
+    Restart-Service -Name $using:nomService
+}
+
+# Executer un script local sur une machine distante
+Invoke-Command -ComputerName "SRV-01" -FilePath "C:\Scripts\maintenance.ps1"
+
+# Sessions persistantes (reutilisables)
+$session = New-PSSession -ComputerName "SRV-01"
+Invoke-Command -Session $session -ScriptBlock { Get-Process }
+Invoke-Command -Session $session -ScriptBlock { Get-Service }
+Remove-PSSession $session
+
+# Copier des fichiers via session
+$session = New-PSSession -ComputerName "SRV-01"
+Copy-Item -Path "C:\local\fichier.txt" -Destination "C:\distant\" -ToSession $session
+Copy-Item -Path "C:\distant\rapport.txt" -Destination "C:\local\" -FromSession $session
+Remove-PSSession $session
+```
+
+### 2.16 Gestion des erreurs
+
+```powershell
+# Try/Catch/Finally
+try {
+    $contenu = Get-Content "C:\fichier_inexistant.txt" -ErrorAction Stop
+    Write-Host "Fichier lu avec succes"
+} catch [System.IO.FileNotFoundException] {
+    Write-Host "Fichier non trouve : $($_.Exception.Message)"
+} catch {
+    Write-Host "Erreur inattendue : $($_.Exception.Message)"
+} finally {
+    Write-Host "Bloc finally execute dans tous les cas"
+}
+
+# ErrorAction : controle du comportement en cas d'erreur
+Get-Service "ServiceInexistant" -ErrorAction SilentlyContinue  # pas d'erreur affichee
+Get-Service "ServiceInexistant" -ErrorAction Stop               # leve une exception
+Get-Service "ServiceInexistant" -ErrorAction Continue           # affiche l'erreur et continue
+
+# Variable $Error
+$Error[0]                # derniere erreur
+$Error.Count             # nombre d'erreurs dans la session
+$Error.Clear()           # vider le journal d'erreurs
+
+# Preference globale
+$ErrorActionPreference = "Stop"    # toute erreur devient exception
+```
+
+---
+
+## Partie 3 — Exercices corriges
+
+### Exercice 1 — Bash : Arguments et conditions
+
+Ecrire un script `verifier_fichier.sh` qui prend un chemin en argument et affiche si c'est un fichier, un repertoire, ou s'il n'existe pas. Afficher egalement ses permissions.
+
+**Correction :**
+
+```bash
+#!/bin/bash
+# verifier_fichier.sh
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <chemin>"
+    exit 1
+fi
+
+CHEMIN="$1"
+
+if [ ! -e "$CHEMIN" ]; then
+    echo "Le chemin '$CHEMIN' n'existe pas"
+    exit 1
+fi
+
+if [ -f "$CHEMIN" ]; then
+    echo "'$CHEMIN' est un fichier regulier"
+    echo "Taille : $(du -h "$CHEMIN" | cut -f1)"
+elif [ -d "$CHEMIN" ]; then
+    echo "'$CHEMIN' est un repertoire"
+    echo "Contenu : $(ls -1 "$CHEMIN" | wc -l) elements"
+elif [ -L "$CHEMIN" ]; then
+    echo "'$CHEMIN' est un lien symbolique vers $(readlink "$CHEMIN")"
+fi
+
+echo "Permissions : $(ls -ld "$CHEMIN" | awk '{print $1}')"
+echo "Proprietaire : $(ls -ld "$CHEMIN" | awk '{print $3":"$4}')"
+
+[ -r "$CHEMIN" ] && echo "  Lisible : oui" || echo "  Lisible : non"
+[ -w "$CHEMIN" ] && echo "  Ecriture : oui" || echo "  Ecriture : non"
+[ -x "$CHEMIN" ] && echo "  Executable : oui" || echo "  Executable : non"
+```
+
+---
+
+### Exercice 2 — Bash : Boucle et traitement de texte
+
+Ecrire un script qui lit `/etc/passwd` et affiche les utilisateurs ayant un UID superieur ou egal a 1000 avec leur shell.
+
+**Correction :**
+
+```bash
+#!/bin/bash
+# utilisateurs_systeme.sh
+
+echo "=== Utilisateurs avec UID >= 1000 ==="
+printf "%-20s %-8s %s\n" "LOGIN" "UID" "SHELL"
+echo "----------------------------------------"
+
+while IFS=':' read -r login _ uid _ _ _ shell; do
+    if [ "$uid" -ge 1000 ] 2>/dev/null; then
+        printf "%-20s %-8s %s\n" "$login" "$uid" "$shell"
+    fi
+done < /etc/passwd
+
+echo ""
+echo "Total : $(awk -F: '$3 >= 1000 {count++} END {print count}' /etc/passwd) utilisateur(s)"
+```
+
+---
+
+### Exercice 3 — Bash : Sauvegarde conditionnelle
+
+Ecrire un script de sauvegarde qui verifie l'espace disque avant de proceder. Si l'espace libre est inferieur a 1 Go, la sauvegarde est annulee.
+
+**Correction :**
+
+```bash
+#!/bin/bash
+# sauvegarde_conditionnelle.sh
+
+SOURCE="${1:-/home}"
+DESTINATION="${2:-/backup}"
+SEUIL_GO=1
+DATE=$(date +%Y%m%d_%H%M%S)
+ARCHIVE="$DESTINATION/backup_${DATE}.tar.gz"
+
+# Verifier que la source existe
+if [ ! -d "$SOURCE" ]; then
+    echo "ERREUR : le repertoire source '$SOURCE' n'existe pas"
+    exit 1
+fi
+
+# Creer le repertoire de destination si necessaire
+mkdir -p "$DESTINATION"
+
+# Verifier l'espace disque disponible (en Ko)
+espace_ko=$(df -k "$DESTINATION" | tail -1 | awk '{print $4}')
+espace_go=$((espace_ko / 1048576))
+
+if [ "$espace_go" -lt "$SEUIL_GO" ]; then
+    echo "ERREUR : espace insuffisant (${espace_go} Go libre, minimum ${SEUIL_GO} Go)"
+    exit 1
+fi
+
+echo "Espace disponible : ${espace_go} Go - Sauvegarde en cours..."
+
+# Calculer la taille de la source
+taille_source=$(du -sh "$SOURCE" | cut -f1)
+echo "Taille de la source : $taille_source"
+
+# Effectuer la sauvegarde
+if tar -czf "$ARCHIVE" "$SOURCE" 2>/dev/null; then
+    taille_archive=$(du -h "$ARCHIVE" | cut -f1)
+    echo "Sauvegarde reussie : $ARCHIVE ($taille_archive)"
+else
+    echo "ERREUR : la sauvegarde a echoue"
+    [ -f "$ARCHIVE" ] && rm -f "$ARCHIVE"
+    exit 1
+fi
+```
+
+---
+
+### Exercice 4 — Bash : Analyse de logs avec grep, awk, sort
+
+Analyser un fichier de log Apache pour trouver les 10 adresses IP les plus frequentes et les codes HTTP les plus courants.
+
+**Correction :**
+
+```bash
+#!/bin/bash
+# analyse_logs.sh
+
+LOG="${1:-/var/log/apache2/access.log}"
+
+if [ ! -f "$LOG" ]; then
+    echo "ERREUR : fichier $LOG introuvable"
+    exit 1
+fi
+
+total=$(wc -l < "$LOG")
+echo "=== Analyse de $LOG ($total requetes) ==="
+
+echo ""
+echo "--- Top 10 adresses IP ---"
+awk '{print $1}' "$LOG" | sort | uniq -c | sort -rn | head -10 | \
+    awk '{printf "  %6d requetes - %s\n", $1, $2}'
+
+echo ""
+echo "--- Repartition des codes HTTP ---"
+awk '{print $9}' "$LOG" | grep -E '^[0-9]{3}$' | sort | uniq -c | sort -rn | \
+    awk -v total="$total" '{printf "  Code %s : %6d (%5.1f%%)\n", $2, $1, ($1/total)*100}'
+
+echo ""
+echo "--- Top 10 pages demandees ---"
+awk '{print $7}' "$LOG" | sort | uniq -c | sort -rn | head -10 | \
+    awk '{printf "  %6d - %s\n", $1, $2}'
+
+echo ""
+echo "--- Requetes par heure ---"
+awk -F'[\\[/: ]' '{print $5}' "$LOG" | sort | uniq -c | \
+    awk '{printf "  %sh : %6d requetes\n", $2, $1}'
+```
+
+---
+
+### Exercice 5 — Bash : Fonction et menu interactif
+
+Ecrire un script avec un menu interactif pour gerer des utilisateurs (ajouter, supprimer, lister, verrouiller).
+
+**Correction :**
+
+```bash
+#!/bin/bash
+# gestion_utilisateurs.sh
+# Necessite les droits root
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Ce script doit etre execute en tant que root"
+    exit 1
+fi
+
+ajouter_utilisateur() {
+    read -p "Login : " login
+    read -p "Nom complet : " nom
+    read -p "Groupe principal : " groupe
+
+    if id "$login" &>/dev/null; then
+        echo "L'utilisateur $login existe deja"
+        return 1
+    fi
+
+    if ! getent group "$groupe" &>/dev/null; then
+        groupadd "$groupe"
+        echo "Groupe $groupe cree"
+    fi
+
+    useradd -m -g "$groupe" -c "$nom" -s /bin/bash "$login"
+    if [ $? -eq 0 ]; then
+        passwd "$login"
+        echo "Utilisateur $login cree avec succes"
+    else
+        echo "Erreur lors de la creation"
+    fi
+}
+
+supprimer_utilisateur() {
+    read -p "Login a supprimer : " login
+    if ! id "$login" &>/dev/null; then
+        echo "L'utilisateur $login n'existe pas"
+        return 1
+    fi
+
+    read -p "Supprimer le repertoire personnel ? (o/n) : " choix
+    if [ "$choix" = "o" ]; then
+        userdel -r "$login"
+    else
+        userdel "$login"
+    fi
+    echo "Utilisateur $login supprime"
+}
+
+lister_utilisateurs() {
+    echo ""
+    printf "%-15s %-6s %-15s %s\n" "LOGIN" "UID" "GROUPE" "NOM"
+    echo "---------------------------------------------------"
+    awk -F: '$3 >= 1000 && $3 < 65534 {
+        cmd = "id -gn "$1
+        cmd | getline grp
+        close(cmd)
+        printf "%-15s %-6s %-15s %s\n", $1, $3, grp, $5
+    }' /etc/passwd
+}
+
+verrouiller_utilisateur() {
+    read -p "Login a verrouiller/deverrouiller : " login
+    if ! id "$login" &>/dev/null; then
+        echo "L'utilisateur $login n'existe pas"
+        return 1
+    fi
+
+    statut=$(passwd -S "$login" | awk '{print $2}')
+    if [ "$statut" = "L" ]; then
+        read -p "$login est verrouille. Deverrouiller ? (o/n) : " choix
+        [ "$choix" = "o" ] && usermod -U "$login" && echo "Compte deverrouille"
+    else
+        usermod -L "$login"
+        echo "Compte $login verrouille"
+    fi
+}
+
+while true; do
+    echo ""
+    echo "========================================="
+    echo "   GESTION DES UTILISATEURS"
+    echo "========================================="
+    echo "  1. Ajouter un utilisateur"
+    echo "  2. Supprimer un utilisateur"
+    echo "  3. Lister les utilisateurs"
+    echo "  4. Verrouiller/Deverrouiller un compte"
+    echo "  5. Quitter"
+    echo "========================================="
+    read -p "Choix : " choix
+
+    case "$choix" in
+        1) ajouter_utilisateur ;;
+        2) supprimer_utilisateur ;;
+        3) lister_utilisateurs ;;
+        4) verrouiller_utilisateur ;;
+        5) echo "Au revoir"; exit 0 ;;
+        *) echo "Choix invalide" ;;
+    esac
+done
+```
+
+---
+
+### Exercice 6 — PowerShell : Variables et operateurs
+
+Ecrire un script qui demande le nom et l'age de l'utilisateur, puis affiche un message personnalise selon la tranche d'age.
+
+**Correction :**
+
+```powershell
+# Exercice6_Age.ps1
+
+$nom = Read-Host "Entrez votre nom"
+[int]$age = Read-Host "Entrez votre age"
+
+$anneeNaissance = (Get-Date).Year - $age
+
+$message = switch ($true) {
+    ($age -lt 0)   { "Age invalide" }
+    ($age -lt 18)  { "Mineur" }
+    ($age -lt 30)  { "Jeune actif" }
+    ($age -lt 50)  { "Actif" }
+    ($age -lt 65)  { "Senior" }
+    default        { "Retraite" }
+}
+
+Write-Host ""
+Write-Host "Nom             : $nom"
+Write-Host "Age             : $age ans"
+Write-Host "Annee naissance : ~$anneeNaissance"
+Write-Host "Categorie       : $message"
+
+# Verification supplementaire
+if ($age -ge 18) {
+    Write-Host "Statut          : Majeur"
+} else {
+    Write-Host "Statut          : Mineur"
+    Write-Host "Majorite dans   : $(18 - $age) an(s)"
+}
+```
+
+---
+
+### Exercice 7 — PowerShell : Boucles et tableaux
+
+Ecrire un script qui verifie la connectivite reseau d'une liste de serveurs et genere un rapport.
+
+**Correction :**
+
+```powershell
+# Exercice7_Ping.ps1
+
+$serveurs = @(
+    @{ Nom = "SRV-DC01";   IP = "192.168.1.10" },
+    @{ Nom = "SRV-WEB01";  IP = "192.168.1.20" },
+    @{ Nom = "SRV-BDD01";  IP = "192.168.1.30" },
+    @{ Nom = "SRV-MAIL01"; IP = "192.168.1.40" },
+    @{ Nom = "Google DNS";  IP = "8.8.8.8" }
+)
+
+$resultats = @()
+
+foreach ($srv in $serveurs) {
+    Write-Host "Test de $($srv.Nom) ($($srv.IP))..." -NoNewline
+
+    $ping = Test-NetConnection -ComputerName $srv.IP -WarningAction SilentlyContinue
+
+    $etat = if ($ping.PingSucceeded) { "Joignable" } else { "Injoignable" }
+    $couleur = if ($ping.PingSucceeded) { "Green" } else { "Red" }
+
+    Write-Host " $etat" -ForegroundColor $couleur
+
+    $resultats += [PSCustomObject]@{
+        Nom     = $srv.Nom
+        IP      = $srv.IP
+        Statut  = $etat
+        Latence = if ($ping.PingSucceeded) { "$($ping.PingReplyDetails.RoundtripTime) ms" } else { "N/A" }
+    }
+}
+
+Write-Host ""
+Write-Host "=== Rapport de connectivite ===" -ForegroundColor Cyan
+$resultats | Format-Table -AutoSize
+
+$joignables = ($resultats | Where-Object { $_.Statut -eq "Joignable" }).Count
+$total = $resultats.Count
+Write-Host "Resultat : $joignables/$total serveurs joignables"
+```
+
+---
+
+### Exercice 8 — PowerShell : Fonctions et gestion de fichiers
+
+Ecrire une fonction qui recherche les fichiers volumineux (> seuil parametrable) dans un repertoire et propose leur suppression.
+
+**Correction :**
+
+```powershell
+# Exercice8_FichiersVolumineux.ps1
+
+function Find-LargeFiles {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Chemin,
+
+        [int]$SeuilMB = 100,
+
+        [switch]$Supprimer
+    )
+
+    if (-not (Test-Path $Chemin)) {
+        Write-Host "Le chemin $Chemin n'existe pas" -ForegroundColor Red
+        return
+    }
+
+    Write-Host "Recherche des fichiers > ${SeuilMB} Mo dans $Chemin..."
+
+    $fichiers = Get-ChildItem -Path $Chemin -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Length -gt ($SeuilMB * 1MB) } |
+        Sort-Object Length -Descending
+
+    if ($fichiers.Count -eq 0) {
+        Write-Host "Aucun fichier superieur a ${SeuilMB} Mo trouve"
+        return
+    }
+
+    $espaceTotal = ($fichiers | Measure-Object Length -Sum).Sum
+
+    Write-Host "$($fichiers.Count) fichier(s) trouve(s), espace total : $([math]::Round($espaceTotal / 1MB, 2)) Mo"
+    Write-Host ""
+
+    $resultats = $fichiers | ForEach-Object {
+        [PSCustomObject]@{
+            Nom     = $_.Name
+            Chemin  = $_.DirectoryName
+            TailleMB = [math]::Round($_.Length / 1MB, 2)
+            Modifie = $_.LastWriteTime.ToString("dd/MM/yyyy HH:mm")
+        }
+    }
+
+    $resultats | Format-Table -AutoSize
+
+    if ($Supprimer) {
+        foreach ($f in $fichiers) {
+            $reponse = Read-Host "Supprimer $($f.FullName) ($([math]::Round($f.Length / 1MB, 2)) Mo) ? (o/n)"
+            if ($reponse -eq "o") {
+                Remove-Item $f.FullName -Force
+                Write-Host "  Supprime" -ForegroundColor Green
+            } else {
+                Write-Host "  Ignore" -ForegroundColor Yellow
+            }
+        }
+    }
+}
+
+# Utilisation
+Find-LargeFiles -Chemin "C:\Users" -SeuilMB 50
+# Find-LargeFiles -Chemin "C:\Temp" -SeuilMB 10 -Supprimer
+```
+
+---
+
+### Exercice 9 — PowerShell : Pipeline et objets
+
+Ecrire un script qui genere un rapport HTML des processus consommant le plus de memoire et de CPU.
+
+**Correction :**
+
+```powershell
+# Exercice9_RapportProcessus.ps1
+
+param(
+    [int]$Top = 15,
+    [string]$Sortie = "C:\Rapports\processus_$(Get-Date -Format 'yyyyMMdd_HHmm').html"
+)
+
+$css = @"
+<style>
+    body { font-family: Segoe UI, Arial; margin: 20px; background: #f5f5f5; }
+    h1 { color: #2c3e50; }
+    h2 { color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 30px; background: white; }
+    th { background: #3498db; color: white; padding: 10px; }
+    td { border: 1px solid #ddd; padding: 8px; }
+    tr:nth-child(even) { background: #ecf0f1; }
+    .info { color: #7f8c8d; }
+</style>
+"@
+
+# Top processus par RAM
+$topRAM = Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First $Top |
+    Select-Object Name, Id,
+        @{N='RAM_MB'; E={[math]::Round($_.WorkingSet64 / 1MB, 2)}},
+        @{N='CPU_Sec'; E={[math]::Round($_.CPU, 2)}},
+        StartTime
+
+# Top processus par CPU
+$topCPU = Get-Process | Where-Object { $_.CPU -gt 0 } | Sort-Object CPU -Descending | Select-Object -First $Top |
+    Select-Object Name, Id,
+        @{N='CPU_Sec'; E={[math]::Round($_.CPU, 2)}},
+        @{N='RAM_MB'; E={[math]::Round($_.WorkingSet64 / 1MB, 2)}},
+        StartTime
+
+# Statistiques generales
+$totalProcessus = (Get-Process).Count
+$ramTotale = [math]::Round((Get-CimInstance Win32_OperatingSystem).TotalVisibleMemorySize / 1MB, 2)
+$ramLibre = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 2)
+
+$preContenu = @"
+<h1>Rapport des processus - $env:COMPUTERNAME</h1>
+<p class='info'>Genere le $(Get-Date -Format 'dd/MM/yyyy a HH:mm:ss')</p>
+<p>Processus actifs : $totalProcessus | RAM totale : ${ramTotale} Go | RAM libre : ${ramLibre} Go</p>
+<h2>Top $Top processus par memoire (RAM)</h2>
+"@
+
+$htmlRAM = $topRAM | ConvertTo-Html -Fragment
+$htmlCPU = $topCPU | ConvertTo-Html -Fragment
+
+$htmlComplet = ConvertTo-Html -Title "Rapport Processus" -Head $css `
+    -Body "$preContenu $htmlRAM <h2>Top $Top processus par CPU</h2> $htmlCPU"
+
+# Creer le dossier si necessaire
+$dossier = Split-Path $Sortie -Parent
+if (-not (Test-Path $dossier)) { New-Item -Path $dossier -ItemType Directory | Out-Null }
+
+$htmlComplet | Out-File $Sortie -Encoding UTF8
+Write-Host "Rapport genere : $Sortie"
+```
+
+---
+
+### Exercice 10 — PowerShell : Active Directory en masse
+
+Ecrire un script qui desactive tous les comptes AD inactifs depuis plus de 90 jours et genere un rapport CSV.
+
+**Correction :**
+
+```powershell
+# Exercice10_ComptesInactifs.ps1
+
+param(
+    [int]$JoursInactivite = 90,
+    [string]$RapportCSV = "C:\Rapports\comptes_inactifs_$(Get-Date -Format 'yyyyMMdd').csv",
+    [switch]$Desactiver
+)
+
+Import-Module ActiveDirectory
+
+$dateLimite = (Get-Date).AddDays(-$JoursInactivite)
+
+# Rechercher les comptes inactifs
+$comptesInactifs = Get-ADUser -Filter {
+    Enabled -eq $true -and LastLogonDate -lt $dateLimite
+} -Properties LastLogonDate, Department, Title, Manager, WhenCreated |
+    Select-Object SamAccountName, Name, Department, Title,
+        @{N='DernierLogin'; E={$_.LastLogonDate}},
+        @{N='JoursInactif'; E={(New-TimeSpan -Start $_.LastLogonDate -End (Get-Date)).Days}},
+        @{N='CreeLe'; E={$_.WhenCreated}},
+        Enabled
+
+Write-Host "Comptes inactifs depuis plus de $JoursInactivite jours : $($comptesInactifs.Count)"
+
+if ($comptesInactifs.Count -eq 0) {
+    Write-Host "Aucun compte inactif trouve"
+    exit 0
+}
+
+# Afficher le resume
+$comptesInactifs | Sort-Object JoursInactif -Descending | Format-Table SamAccountName, Name, Department, DernierLogin, JoursInactif -AutoSize
+
+# Desactiver si demande
+if ($Desactiver) {
+    Write-Host ""
+    Write-Host "Desactivation des comptes..." -ForegroundColor Yellow
+
+    foreach ($compte in $comptesInactifs) {
+        try {
+            Disable-ADAccount -Identity $compte.SamAccountName
+            Set-ADUser -Identity $compte.SamAccountName -Description "Desactive le $(Get-Date -Format 'dd/MM/yyyy') - Inactivite $($compte.JoursInactif) jours"
+            Write-Host "  [OK] $($compte.SamAccountName) desactive" -ForegroundColor Green
+        } catch {
+            Write-Host "  [ERREUR] $($compte.SamAccountName) : $_" -ForegroundColor Red
+        }
+    }
+}
+
+# Export CSV
+$comptesInactifs | Export-Csv -Path $RapportCSV -NoTypeInformation -Delimiter ";" -Encoding UTF8
+Write-Host "Rapport exporte : $RapportCSV"
+```
+
+---
+
+### Exercice 11 — PowerShell : Gestion a distance
+
+Ecrire un script qui collecte les informations systeme de plusieurs serveurs distants en parallele.
+
+**Correction :**
+
+```powershell
+# Exercice11_InfoDistantes.ps1
+
+param(
+    [string[]]$Serveurs = @("SRV-01", "SRV-02", "SRV-03")
+)
+
+$resultats = Invoke-Command -ComputerName $Serveurs -ScriptBlock {
+    $os = Get-CimInstance Win32_OperatingSystem
+    $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+    $disques = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3"
+    $reseau = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled }
+    $services = Get-Service | Where-Object { $_.StartType -eq "Automatic" -and $_.Status -ne "Running" }
+
+    [PSCustomObject]@{
+        Hostname          = $env:COMPUTERNAME
+        OS                = $os.Caption
+        Version           = $os.Version
+        Uptime            = (New-TimeSpan -Start $os.LastBootUpTime -End (Get-Date)).ToString("dd\.hh\:mm\:ss")
+        CPU               = $cpu.Name.Trim()
+        RAM_Total_GB      = [math]::Round($os.TotalVisibleMemorySize / 1MB, 2)
+        RAM_Libre_GB      = [math]::Round($os.FreePhysicalMemory / 1MB, 2)
+        Disques           = ($disques | ForEach-Object {
+            "$($_.DeviceID) $([math]::Round($_.FreeSpace/1GB,1))/$([math]::Round($_.Size/1GB,1)) Go"
+        }) -join " | "
+        IP                = ($reseau | ForEach-Object { ($_.IPAddress | Where-Object { $_ -match '^\d+\.' }) }) -join ", "
+        ServicesArretes   = ($services | ForEach-Object { $_.Name }) -join ", "
+    }
+} -ErrorAction SilentlyContinue -ErrorVariable erreurs
+
+# Afficher les resultats
+$resultats | Select-Object Hostname, OS, Uptime, RAM_Total_GB, RAM_Libre_GB, Disques | Format-Table -AutoSize
+
+# Afficher les services arretes qui devraient tourner
+Write-Host "--- Services automatiques arretes ---"
+$resultats | Where-Object { $_.ServicesArretes -ne "" } | ForEach-Object {
+    Write-Host "$($_.Hostname) : $($_.ServicesArretes)" -ForegroundColor Yellow
+}
+
+# Afficher les erreurs de connexion
+foreach ($err in $erreurs) {
+    Write-Host "Erreur : $($err.TargetObject) - $($err.Exception.Message)" -ForegroundColor Red
+}
+```
+
+---
+
+### Exercice 12 — PowerShell : Taches planifiees
+
+Ecrire un script qui cree un ensemble de taches planifiees pour la maintenance automatique d'un serveur.
+
+**Correction :**
+
+```powershell
+# Exercice12_TachesPlanifiees.ps1
+
+param(
+    [string]$CheminScripts = "C:\Scripts\Maintenance"
+)
+
+# Creer le repertoire de scripts
+if (-not (Test-Path $CheminScripts)) {
+    New-Item -Path $CheminScripts -ItemType Directory | Out-Null
+}
+
+# Liste des taches a creer
+$taches = @(
+    @{
+        Nom          = "Maintenance_Sauvegarde_Quotidienne"
+        Description  = "Sauvegarde quotidienne des donnees"
+        Script       = "sauvegarde.ps1"
+        Declencheur  = "Daily"
+        Heure        = "02:00"
+    },
+    @{
+        Nom          = "Maintenance_Nettoyage_Temp"
+        Description  = "Nettoyage des fichiers temporaires"
+        Script       = "nettoyage_temp.ps1"
+        Declencheur  = "Daily"
+        Heure        = "03:00"
+    },
+    @{
+        Nom          = "Maintenance_Rapport_Hebdo"
+        Description  = "Rapport hebdomadaire du systeme"
+        Script       = "rapport_hebdo.ps1"
+        Declencheur  = "Weekly"
+        Heure        = "08:00"
+        Jour         = "Monday"
+    },
+    @{
+        Nom          = "Maintenance_Verification_Services"
+        Description  = "Verification des services critiques toutes les 15 minutes"
+        Script       = "verif_services.ps1"
+        Declencheur  = "Repetition"
+        Intervalle   = 15
+    }
+)
+
+foreach ($t in $taches) {
+    # Verifier si la tache existe deja
+    $existante = Get-ScheduledTask -TaskName $t.Nom -ErrorAction SilentlyContinue
+    if ($existante) {
+        Write-Host "[SKIP] $($t.Nom) existe deja" -ForegroundColor Yellow
+        continue
+    }
+
+    # Action
+    $action = New-ScheduledTaskAction `
+        -Execute "powershell.exe" `
+        -Argument "-ExecutionPolicy Bypass -File `"$CheminScripts\$($t.Script)`"" `
+        -WorkingDirectory $CheminScripts
+
+    # Declencheur
+    switch ($t.Declencheur) {
+        "Daily" {
+            $trigger = New-ScheduledTaskTrigger -Daily -At $t.Heure
+        }
+        "Weekly" {
+            $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek $t.Jour -At $t.Heure
+        }
+        "Repetition" {
+            $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) `
+                -RepetitionInterval (New-TimeSpan -Minutes $t.Intervalle) `
+                -RepetitionDuration (New-TimeSpan -Days 365)
+        }
+    }
+
+    # Parametres
+    $settings = New-ScheduledTaskSettingsSet `
+        -StartWhenAvailable `
+        -DontStopOnIdleEnd `
+        -RestartCount 3 `
+        -RestartInterval (New-TimeSpan -Minutes 1)
+
+    # Enregistrer la tache
+    try {
+        Register-ScheduledTask `
+            -TaskName $t.Nom `
+            -Action $action `
+            -Trigger $trigger `
+            -Settings $settings `
+            -User "SYSTEM" `
+            -RunLevel Highest `
+            -Description $t.Description
+
+        Write-Host "[OK] $($t.Nom) creee" -ForegroundColor Green
+    } catch {
+        Write-Host "[ERREUR] $($t.Nom) : $_" -ForegroundColor Red
+    }
+}
+
+# Lister les taches creees
+Write-Host ""
+Write-Host "=== Taches de maintenance planifiees ==="
+Get-ScheduledTask -TaskName "Maintenance_*" | Format-Table TaskName, State, @{N='Prochain';E={(Get-ScheduledTaskInfo -InputObject $_).NextRunTime}} -AutoSize
+```
+
+---
+
+### Exercice 13 — Bash : Surveillance avec alerte par mail
+
+Ecrire un script Bash qui surveille les connexions SSH echouees et envoie une alerte si un seuil est depasse.
+
+**Correction :**
+
+```bash
+#!/bin/bash
+# surveillance_ssh.sh
+
+SEUIL=5
+PERIODE=60   # minutes
+LOG="/var/log/auth.log"
+ADMIN="admin@exemple.fr"
+FICHIER_ETAT="/tmp/ssh_surveillance.state"
+
+# Extraire les tentatives echouees dans la derniere heure
+depuis=$(date -d "-${PERIODE} minutes" '+%b %d %H:%M')
+
+# Compter les echecs par IP
+declare -A echecs
+
+while read -r ligne; do
+    ip=$(echo "$ligne" | grep -oP 'from \K[\d.]+')
+    if [[ -n "$ip" ]]; then
+        ((echecs[$ip]++))
+    fi
+done < <(grep "Failed password" "$LOG" | awk -v date="$depuis" '$0 >= date')
+
+# Verifier les seuils
+alerte=0
+rapport=""
+
+for ip in "${!echecs[@]}"; do
+    if [[ ${echecs[$ip]} -ge $SEUIL ]]; then
+        rapport+="  $ip : ${echecs[$ip]} tentatives echouees\n"
+        alerte=1
+    fi
+done
+
+if [[ $alerte -eq 1 ]]; then
+    message="ALERTE SSH sur $(hostname) le $(date)\n\n"
+    message+="Les adresses IP suivantes ont depasse le seuil de $SEUIL tentatives :\n\n"
+    message+="$rapport\n"
+    message+="Action recommandee : verifier et eventuellement bloquer ces adresses.\n"
+
+    echo -e "$message" | mail -s "[SECURITE] Tentatives SSH suspectes sur $(hostname)" "$ADMIN"
+    echo "$(date) - Alerte envoyee" >> "$FICHIER_ETAT"
+fi
+
+# Afficher le resume
+echo "=== Surveillance SSH - $(date) ==="
+echo "Periode analysee : dernieres $PERIODE minutes"
+for ip in "${!echecs[@]}"; do
+    indicateur=""
+    [[ ${echecs[$ip]} -ge $SEUIL ]] && indicateur=" [ALERTE]"
+    echo "  $ip : ${echecs[$ip]} echec(s)$indicateur"
+done | sort -t: -k2 -rn
+```
+
+---
+
+### Exercice 14 — Mixte : Script de deploiement complet
+
+Ecrire un script Bash qui deploie une application web (copie des fichiers, configuration Apache, redemarrage du service, verification).
+
+**Correction :**
+
+```bash
+#!/bin/bash
+# deploiement_web.sh
+
+set -euo pipefail
+
+# Configuration
+APP_NOM="monapp"
+APP_SRC="/opt/releases/${APP_NOM}"
+APP_DEST="/var/www/${APP_NOM}"
+VHOST_CONF="/etc/apache2/sites-available/${APP_NOM}.conf"
+DOMAINE="${APP_NOM}.entreprise.local"
+PORT=80
+LOG="/var/log/deploiement_${APP_NOM}_$(date +%Y%m%d_%H%M%S).log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG"
+}
+
+erreur() {
+    log "ERREUR : $1"
+    exit 1
+}
+
+verifier_prerequis() {
+    log "Verification des prerequis..."
+
+    [ "$(id -u)" -ne 0 ] && erreur "Ce script doit etre execute en tant que root"
+    [ ! -d "$APP_SRC" ] && erreur "Sources introuvables : $APP_SRC"
+
+    if ! command -v apache2 &>/dev/null; then
+        erreur "Apache2 n'est pas installe"
+    fi
+
+    log "Prerequis OK"
+}
+
+sauvegarder_ancienne_version() {
+    if [ -d "$APP_DEST" ]; then
+        local backup="${APP_DEST}_backup_$(date +%Y%m%d_%H%M%S)"
+        log "Sauvegarde de l'ancienne version vers $backup"
+        cp -a "$APP_DEST" "$backup"
+    fi
+}
+
+deployer_fichiers() {
+    log "Deploiement des fichiers..."
+
+    mkdir -p "$APP_DEST"
+    rsync -av --delete "$APP_SRC/" "$APP_DEST/" >> "$LOG" 2>&1
+
+    chown -R www-data:www-data "$APP_DEST"
+    chmod -R 755 "$APP_DEST"
+
+    log "Fichiers deployes"
+}
+
+configurer_vhost() {
+    log "Configuration du VirtualHost..."
+
+    cat > "$VHOST_CONF" <<VHOST
+<VirtualHost *:${PORT}>
+    ServerName ${DOMAINE}
+    DocumentRoot ${APP_DEST}
+
+    <Directory ${APP_DEST}>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog \${APACHE_LOG_DIR}/${APP_NOM}_error.log
+    CustomLog \${APACHE_LOG_DIR}/${APP_NOM}_access.log combined
+</VirtualHost>
+VHOST
+
+    a2ensite "${APP_NOM}.conf" >> "$LOG" 2>&1
+    log "VirtualHost configure"
+}
+
+redemarrer_apache() {
+    log "Verification de la configuration Apache..."
+    if ! apache2ctl configtest >> "$LOG" 2>&1; then
+        erreur "Configuration Apache invalide"
+    fi
+
+    log "Redemarrage d'Apache..."
+    systemctl restart apache2
+
+    if systemctl is-active --quiet apache2; then
+        log "Apache redemarre avec succes"
+    else
+        erreur "Apache n'a pas redemarre correctement"
+    fi
+}
+
+verifier_deploiement() {
+    log "Verification du deploiement..."
+
+    sleep 2
+
+    code_http=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${PORT}/" -H "Host: ${DOMAINE}")
+
+    if [ "$code_http" -eq 200 ] || [ "$code_http" -eq 301 ] || [ "$code_http" -eq 302 ]; then
+        log "Verification OK (HTTP $code_http)"
+    else
+        log "ATTENTION : code HTTP $code_http (attendu : 200)"
+    fi
+}
+
+# Execution
+log "=== Debut du deploiement de $APP_NOM ==="
+verifier_prerequis
+sauvegarder_ancienne_version
+deployer_fichiers
+configurer_vhost
+redemarrer_apache
+verifier_deploiement
+log "=== Deploiement termine avec succes ==="
+```
+
+---
+
+### Exercice 15 — Mixte : Correspondance Bash / PowerShell
+
+Pour chaque tache ci-dessous, ecrire la commande equivalente en Bash et en PowerShell.
+
+**Correction :**
+
+**1. Lister les fichiers de plus de 100 Mo dans un repertoire :**
+
+```bash
+# Bash
+find /var/log -type f -size +100M -exec ls -lh {} \;
+```
+
+```powershell
+# PowerShell
+Get-ChildItem C:\Logs -Recurse -File | Where-Object { $_.Length -gt 100MB } | Select-Object FullName, @{N='TailleMB';E={[math]::Round($_.Length/1MB,2)}}
+```
+
+**2. Compter les lignes contenant "error" dans un fichier :**
+
+```bash
+# Bash
+grep -ci "error" /var/log/syslog
+```
+
+```powershell
+# PowerShell
+(Get-Content C:\Logs\app.log | Select-String -Pattern "error").Count
+```
+
+**3. Obtenir l'espace disque libre :**
+
+```bash
+# Bash
+df -h / | awk 'NR==2 {print $4}'
+```
+
+```powershell
+# PowerShell
+[math]::Round((Get-PSDrive C).Free / 1GB, 2)
+# ou
+Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'" | Select-Object @{N='LibreGB';E={[math]::Round($_.FreeSpace/1GB,2)}}
+```
+
+**4. Creer 10 fichiers numerotes :**
+
+```bash
+# Bash
+for i in $(seq 1 10); do
+    touch "fichier_${i}.txt"
+done
+```
+
+```powershell
+# PowerShell
+1..10 | ForEach-Object { New-Item -Path "fichier_$_.txt" -ItemType File }
+```
+
+**5. Lister les 5 processus consommant le plus de memoire :**
+
+```bash
+# Bash
+ps aux --sort=-%mem | head -6
+```
+
+```powershell
+# PowerShell
+Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 5 Name, @{N='RAM_MB';E={[math]::Round($_.WorkingSet64/1MB,2)}}
+```
+
+**6. Rechercher un utilisateur :**
+
+```bash
+# Bash
+grep "^jdupont:" /etc/passwd
+# ou
+getent passwd jdupont
+```
+
+```powershell
+# PowerShell
+Get-ADUser -Identity "jdupont" -Properties *
+# ou (local)
+Get-LocalUser -Name "jdupont"
+```
+
+**7. Redemarrer un service :**
+
+```bash
+# Bash
+sudo systemctl restart apache2
+systemctl status apache2
+```
+
+```powershell
+# PowerShell
+Restart-Service -Name "W3SVC"
+Get-Service -Name "W3SVC"
+```
+
+**8. Planifier une tache :**
+
+```bash
+# Bash (crontab -e)
+0 2 * * * /opt/scripts/sauvegarde.sh
+```
+
+```powershell
+# PowerShell
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-File C:\Scripts\sauvegarde.ps1"
+$trigger = New-ScheduledTaskTrigger -Daily -At "02:00"
+Register-ScheduledTask -TaskName "Sauvegarde" -Action $action -Trigger $trigger -User "SYSTEM"
+```
+
+---
+
+### Exercice 16 — PowerShell : Gestion des erreurs et journalisation
+
+Ecrire un script robuste qui effectue une serie d'operations d'administration avec gestion complete des erreurs et journalisation.
+
+**Correction :**
+
+```powershell
+# Exercice16_MaintenanceRobuste.ps1
+
+param(
+    [string]$FichierLog = "C:\Logs\maintenance_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
+)
+
+$ErrorActionPreference = "Stop"
+
+# Fonction de log
+function Write-Log {
+    param(
+        [string]$Message,
+        [ValidateSet("INFO","OK","WARN","ERROR")]
+        [string]$Niveau = "INFO"
+    )
+    $horodatage = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $ligne = "[$horodatage] [$Niveau] $Message"
+    Add-Content -Path $FichierLog -Value $ligne
+
+    $couleur = switch ($Niveau) {
+        "OK"    { "Green" }
+        "WARN"  { "Yellow" }
+        "ERROR" { "Red" }
+        default { "White" }
+    }
+    Write-Host $ligne -ForegroundColor $couleur
+}
+
+# Creer le dossier de logs
+$dossierLog = Split-Path $FichierLog -Parent
+if (-not (Test-Path $dossierLog)) {
+    New-Item -Path $dossierLog -ItemType Directory -Force | Out-Null
+}
+
+Write-Log "=== Debut de la maintenance ==="
+
+# Etape 1 : Nettoyage des fichiers temporaires
+Write-Log "Etape 1 : Nettoyage des fichiers temporaires"
+try {
+    $fichiersTemp = Get-ChildItem -Path $env:TEMP -Recurse -File -ErrorAction SilentlyContinue
+    $totalAvant = ($fichiersTemp | Measure-Object Length -Sum).Sum
+    $compteur = 0
+
+    foreach ($f in $fichiersTemp) {
+        try {
+            Remove
