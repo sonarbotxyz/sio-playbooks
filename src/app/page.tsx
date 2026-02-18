@@ -5,6 +5,8 @@ import { GuideCard } from '@/components/GuideCard'
 
 export default function HomePage() {
   const guides = getAllGuides()
+  const totalMinutes = guides.reduce((sum, g) => sum + parseInt(g.readTime), 0)
+  const totalHours = Math.round(totalMinutes / 60)
   const categories = getAllCategories().sort((a, b) => {
     const ai = CATEGORY_ORDER.indexOf(a)
     const bi = CATEGORY_ORDER.indexOf(b)
@@ -33,15 +35,15 @@ export default function HomePage() {
 
         <div className="relative z-10 text-center px-4 sm:px-6 py-24 max-w-3xl mx-auto">
           <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white tracking-tight leading-[1.05] mb-6 animate-fade-up" style={{ animationDelay: '0.2s', opacity: 0 }}>
-            BTS SIO
+            <span className="gradient-text">{totalHours} heures</span>
             <br />
-            <span className="gradient-text">Ton arme secrete pour l&apos;examen.</span>
+            pour maitriser ton BTS SIO.
           </h1>
 
           <p className="text-lg sm:text-xl text-dark-200 max-w-xl mx-auto leading-relaxed mb-10 animate-fade-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
-            SLAM. SISR. Maths. Droit. Tout le programme BTS SIO
+            {guides.length} playbooks. SLAM, SISR, maths, droit.
             <br className="hidden sm:block" />
-            en playbooks ultra-detailles, avec exercices corriges.
+            Chaque concept explique, chaque exercice corrige.
           </p>
 
           {/* CTA */}
@@ -73,11 +75,6 @@ export default function HomePage() {
             <div className="text-center">
               <div className="font-display font-extrabold text-2xl sm:text-3xl text-white">{categories.length}</div>
               <div className="text-xs text-dark-300 font-medium uppercase tracking-wider mt-1">Categories</div>
-            </div>
-            <div className="w-px h-10 bg-dark-600" />
-            <div className="text-center">
-              <div className="font-display font-extrabold text-2xl sm:text-3xl text-white">Gratuit</div>
-              <div className="text-xs text-dark-300 font-medium uppercase tracking-wider mt-1">Pour toujours</div>
             </div>
           </div>
         </div>
