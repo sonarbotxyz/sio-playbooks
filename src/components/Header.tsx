@@ -19,7 +19,7 @@ export function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
             <span className="font-display font-bold text-lg text-dark-100 tracking-tight">
-              BTS SIO <span className="text-base-blue">SLAM</span>
+              BTS SIO <span className="text-base-blue">Playbooks</span>
             </span>
           </Link>
 

@@ -37,7 +37,7 @@ export function GuideCard({ guide }: { guide: Guide }) {
 
         {/* Read arrow */}
         <div className="flex items-center gap-2 text-xs font-medium text-base-blue group-hover:text-base-blue-light transition-colors pt-1">
-          Read guide
+          Lire le playbook
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" className="transform group-hover:translate-x-1 transition-transform">
             <path d="M1 7h12M8 2l5 5-5 5" />
           </svg>

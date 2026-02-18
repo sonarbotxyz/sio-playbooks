@@ -1,0 +1,1939 @@
+---
+title: "Réseaux — Services réseau"
+description: "DNS avancé, DHCP, HTTP/HTTPS, FTP, SMTP/IMAP, NTP, SNMP — configuration et dépannage"
+category: "Reseaux"
+tags: ["dns", "dhcp", "http", "ftp", "smtp", "snmp", "services"]
+difficulty: "Intermédiaire"
+---
+
+# Services réseau
+
+Ce playbook couvre l'ensemble des services réseau au programme du BTS SIO option SISR : DNS, DHCP, HTTP/HTTPS, FTP, messagerie, NTP, SNMP et Syslog. Chaque section détaille le protocole, son installation sous Linux et/ou Windows Server, sa configuration et son dépannage.
+
+---
+
+## 1. DNS avancé
+
+### 1.1 Principes fondamentaux
+
+Le DNS (Domain Name System) assure la résolution de noms de domaine en adresses IP et inversement. Il repose sur une architecture hiérarchique et distribuée.
+
+**Hierarchie DNS :**
+
+```
+.                        (racine)
+|-- com                  (TLD générique)
+|   |-- example          (domaine de second niveau)
+|   |   |-- www          (sous-domaine / hôte)
+|   |   |-- mail
+|-- fr                   (TLD pays)
+|   |-- entreprise
+|       |-- intranet
+```
+
+**Types de serveurs DNS :**
+
+| Type | Role |
+|---|---|
+| Serveur faisant autorité | Détient les enregistrements d'une zone donnée |
+| Serveur récursif (resolver) | Interroge d'autres serveurs pour le compte du client |
+| Serveur cache | Stocke temporairement les réponses pour accélérer les résolutions |
+| Redirecteur (forwarder) | Transmet les requêtes non résolues à un serveur externe |
+
+**Ports utilisés :**
+
+- UDP 53 : requêtes et réponses standard
+- TCP 53 : transferts de zone et réponses dépassant 512 octets
+
+### 1.2 Types d'enregistrements DNS
+
+| Enregistrement | Fonction | Exemple |
+|---|---|---|
+| SOA | Start of Authority, paramètres de la zone | `@ IN SOA ns1.exemple.fr. admin.exemple.fr. (2024010101 3600 900 604800 86400)` |
+| NS | Serveur de noms faisant autorité pour la zone | `@ IN NS ns1.exemple.fr.` |
+| A | Correspondance nom vers IPv4 | `www IN A 192.168.1.10` |
+| AAAA | Correspondance nom vers IPv6 | `www IN AAAA 2001:db8::10` |
+| CNAME | Alias vers un autre nom canonique | `ftp IN CNAME www.exemple.fr.` |
+| MX | Serveur de messagerie pour le domaine (avec priorité) | `@ IN MX 10 mail.exemple.fr.` |
+| PTR | Résolution inverse (IP vers nom) | `10 IN PTR www.exemple.fr.` |
+| TXT | Texte libre (SPF, DKIM, vérification) | `@ IN TXT "v=spf1 mx -all"` |
+| SRV | Localisation de service (protocole, port, priorité, poids) | `_sip._tcp IN SRV 10 60 5060 sip.exemple.fr.` |
+
+**Détail de l'enregistrement SOA :**
+
+```
+@   IN  SOA  ns1.exemple.fr.  admin.exemple.fr. (
+    2024010101  ; Serial (format YYYYMMDDNN)
+    3600        ; Refresh (secondes)
+    900         ; Retry (secondes)
+    604800      ; Expire (secondes)
+    86400       ; Negative TTL (secondes)
+)
+```
+
+- **Serial** : numéro de version de la zone, incrémenté à chaque modification
+- **Refresh** : intervalle auquel le serveur secondaire vérifie les mises à jour
+- **Retry** : délai avant nouvelle tentative si le refresh échoue
+- **Expire** : durée maximale pendant laquelle le secondaire utilise ses données sans contacter le primaire
+- **Negative TTL** : durée de mise en cache d'une réponse négative (NXDOMAIN)
+
+### 1.3 Installation et configuration de Bind9 (Linux Debian/Ubuntu)
+
+**Installation :**
+
+```bash
+sudo apt update
+sudo apt install bind9 bind9utils bind9-doc
+```
+
+**Fichiers de configuration principaux :**
+
+| Fichier | Role |
+|---|---|
+| `/etc/bind/named.conf` | Configuration principale (inclut les autres fichiers) |
+| `/etc/bind/named.conf.options` | Options globales (forwarders, récursion, ACL) |
+| `/etc/bind/named.conf.local` | Déclaration des zones locales |
+| `/var/cache/bind/` ou `/etc/bind/zones/` | Fichiers de zone |
+
+**Configuration des options (`named.conf.options`) :**
+
+```
+options {
+    directory "/var/cache/bind";
+
+    // Redirecteurs (serveurs DNS externes)
+    forwarders {
+        8.8.8.8;
+        1.1.1.1;
+    };
+
+    // Autoriser la récursion uniquement pour le réseau local
+    allow-recursion { 192.168.1.0/24; 127.0.0.1; };
+
+    // Écouter sur toutes les interfaces
+    listen-on { any; };
+    listen-on-v6 { any; };
+
+    // Désactiver le transfert de zone par défaut
+    allow-transfer { none; };
+
+    dnssec-validation auto;
+};
+```
+
+**Déclaration des zones (`named.conf.local`) :**
+
+```
+// Zone directe
+zone "exemple.fr" {
+    type master;
+    file "/etc/bind/zones/db.exemple.fr";
+    allow-transfer { 192.168.1.3; };  // IP du serveur secondaire
+    notify yes;
+};
+
+// Zone inverse pour 192.168.1.0/24
+zone "1.168.192.in-addr.arpa" {
+    type master;
+    file "/etc/bind/zones/db.192.168.1";
+    allow-transfer { 192.168.1.3; };
+    notify yes;
+};
+```
+
+**Fichier de zone directe (`/etc/bind/zones/db.exemple.fr`) :**
+
+```
+$TTL    86400
+@       IN      SOA     ns1.exemple.fr. admin.exemple.fr. (
+                        2024010101      ; Serial
+                        3600            ; Refresh
+                        900             ; Retry
+                        604800          ; Expire
+                        86400 )         ; Negative TTL
+
+; Serveurs de noms
+@       IN      NS      ns1.exemple.fr.
+@       IN      NS      ns2.exemple.fr.
+
+; Enregistrements A
+ns1     IN      A       192.168.1.2
+ns2     IN      A       192.168.1.3
+www     IN      A       192.168.1.10
+mail    IN      A       192.168.1.20
+ftp     IN      A       192.168.1.30
+
+; Alias
+intranet IN     CNAME   www.exemple.fr.
+
+; Messagerie
+@       IN      MX      10 mail.exemple.fr.
+@       IN      MX      20 mail-backup.exemple.fr.
+mail-backup IN  A       192.168.1.21
+
+; Enregistrement TXT (SPF)
+@       IN      TXT     "v=spf1 mx -all"
+
+; Enregistrement SRV
+_ldap._tcp IN   SRV     10 0 389 ldap.exemple.fr.
+ldap    IN      A       192.168.1.40
+```
+
+**Fichier de zone inverse (`/etc/bind/zones/db.192.168.1`) :**
+
+```
+$TTL    86400
+@       IN      SOA     ns1.exemple.fr. admin.exemple.fr. (
+                        2024010101      ; Serial
+                        3600            ; Refresh
+                        900             ; Retry
+                        604800          ; Expire
+                        86400 )         ; Negative TTL
+
+@       IN      NS      ns1.exemple.fr.
+@       IN      NS      ns2.exemple.fr.
+
+2       IN      PTR     ns1.exemple.fr.
+3       IN      PTR     ns2.exemple.fr.
+10      IN      PTR     www.exemple.fr.
+20      IN      PTR     mail.exemple.fr.
+30      IN      PTR     ftp.exemple.fr.
+```
+
+**Vérification et redémarrage :**
+
+```bash
+# Vérifier la syntaxe de la configuration
+sudo named-checkconf
+
+# Vérifier un fichier de zone
+sudo named-checkzone exemple.fr /etc/bind/zones/db.exemple.fr
+sudo named-checkzone 1.168.192.in-addr.arpa /etc/bind/zones/db.192.168.1
+
+# Redémarrer le service
+sudo systemctl restart bind9
+sudo systemctl enable bind9
+
+# Vérifier le statut
+sudo systemctl status bind9
+```
+
+**Configuration d'un serveur secondaire :**
+
+Dans `named.conf.local` du serveur secondaire :
+
+```
+zone "exemple.fr" {
+    type slave;
+    file "/var/cache/bind/db.exemple.fr";
+    masters { 192.168.1.2; };  // IP du serveur primaire
+};
+
+zone "1.168.192.in-addr.arpa" {
+    type slave;
+    file "/var/cache/bind/db.192.168.1";
+    masters { 192.168.1.2; };
+};
+```
+
+### 1.4 DNS sous Windows Server
+
+**Installation du role :**
+
+1. Ouvrir le Gestionnaire de serveur
+2. Ajouter des roles et fonctionnalités
+3. Cocher "Serveur DNS"
+4. Terminer l'installation
+
+**Création d'une zone directe (PowerShell) :**
+
+```powershell
+# Créer une zone directe principale
+Add-DnsServerPrimaryZone -Name "exemple.fr" -ZoneFile "exemple.fr.dns" -DynamicUpdate Secure
+
+# Ajouter des enregistrements
+Add-DnsServerResourceRecordA -ZoneName "exemple.fr" -Name "www" -IPv4Address "192.168.1.10"
+Add-DnsServerResourceRecordA -ZoneName "exemple.fr" -Name "mail" -IPv4Address "192.168.1.20"
+Add-DnsServerResourceRecordCName -ZoneName "exemple.fr" -Name "ftp" -HostNameAlias "www.exemple.fr"
+Add-DnsServerResourceRecordMX -ZoneName "exemple.fr" -Name "." -MailExchange "mail.exemple.fr" -Preference 10
+```
+
+**Création d'une zone inverse (PowerShell) :**
+
+```powershell
+# Créer la zone inverse
+Add-DnsServerPrimaryZone -NetworkId "192.168.1.0/24" -ZoneFile "1.168.192.in-addr.arpa.dns"
+
+# Ajouter un enregistrement PTR
+Add-DnsServerResourceRecordPtr -ZoneName "1.168.192.in-addr.arpa" -Name "10" -PtrDomainName "www.exemple.fr"
+```
+
+**Configurer un redirecteur conditionnel :**
+
+```powershell
+Add-DnsServerConditionalForwarderZone -Name "partenaire.com" -MasterServers "10.0.0.1"
+```
+
+**Transfert de zone vers un secondaire :**
+
+```powershell
+Set-DnsServerPrimaryZone -Name "exemple.fr" -SecureSecondaries TransferToSecureServers -SecondaryServers "192.168.1.3"
+```
+
+### 1.5 Délégation de zone
+
+La délégation permet de confier la gestion d'un sous-domaine à un autre serveur DNS.
+
+Dans le fichier de zone de `exemple.fr` :
+
+```
+; Délégation du sous-domaine filiale.exemple.fr
+filiale     IN      NS      ns1.filiale.exemple.fr.
+filiale     IN      NS      ns2.filiale.exemple.fr.
+
+; Enregistrements "glue" (obligatoires si les NS sont dans le sous-domaine délégué)
+ns1.filiale IN      A       10.0.0.2
+ns2.filiale IN      A       10.0.0.3
+```
+
+Les enregistrements glue sont nécessaires pour éviter une dépendance circulaire : le resolver a besoin de l'IP du serveur NS pour résoudre le sous-domaine, mais cette IP se trouve elle-même dans le sous-domaine.
+
+### 1.6 Outils de diagnostic DNS
+
+**nslookup :**
+
+```bash
+# Résolution directe
+nslookup www.exemple.fr
+nslookup www.exemple.fr 192.168.1.2    # interroger un serveur spécifique
+
+# Résolution inverse
+nslookup 192.168.1.10
+
+# Recherche d'enregistrements spécifiques
+nslookup -type=MX exemple.fr
+nslookup -type=SOA exemple.fr
+nslookup -type=NS exemple.fr
+nslookup -type=SRV _ldap._tcp.exemple.fr
+```
+
+**dig (Linux) :**
+
+```bash
+# Résolution directe
+dig www.exemple.fr
+dig @192.168.1.2 www.exemple.fr         # serveur spécifique
+
+# Types d'enregistrements
+dig exemple.fr MX
+dig exemple.fr SOA
+dig exemple.fr NS
+dig exemple.fr AXFR                      # transfert de zone complet
+
+# Options utiles
+dig +short www.exemple.fr               # réponse concise
+dig +trace www.exemple.fr               # trace complète de la résolution
+dig +norecurse www.exemple.fr           # requête non récursive
+dig -x 192.168.1.10                     # résolution inverse
+```
+
+**Lecture d'une sortie dig :**
+
+```
+;; QUESTION SECTION:
+;www.exemple.fr.            IN      A
+
+;; ANSWER SECTION:
+www.exemple.fr.     86400   IN      A       192.168.1.10
+
+;; AUTHORITY SECTION:
+exemple.fr.         86400   IN      NS      ns1.exemple.fr.
+
+;; ADDITIONAL SECTION:
+ns1.exemple.fr.     86400   IN      A       192.168.1.2
+
+;; Query time: 2 msec
+;; SERVER: 192.168.1.2#53(192.168.1.2)
+```
+
+---
+
+## 2. DHCP avancé
+
+### 2.1 Fonctionnement du protocole DHCP
+
+Le DHCP (Dynamic Host Configuration Protocol) attribue automatiquement des paramètres IP aux clients. Il utilise les ports UDP 67 (serveur) et UDP 68 (client).
+
+**Processus DORA :**
+
+| Etape | Message | Direction | Description |
+|---|---|---|---|
+| 1 | DHCPDISCOVER | Client -> Broadcast | Le client recherche un serveur DHCP |
+| 2 | DHCPOFFER | Serveur -> Client | Le serveur propose une adresse IP |
+| 3 | DHCPREQUEST | Client -> Broadcast | Le client accepte l'offre |
+| 4 | DHCPACK | Serveur -> Client | Le serveur confirme l'attribution |
+
+**Renouvellement du bail :**
+
+- A 50% du bail (T1) : le client envoie un DHCPREQUEST en unicast au serveur
+- A 87.5% du bail (T2) : le client envoie un DHCPREQUEST en broadcast
+- A l'expiration : le client libère l'adresse et relance le processus DORA
+
+### 2.2 Installation et configuration sous Linux (isc-dhcp-server)
+
+**Installation :**
+
+```bash
+sudo apt update
+sudo apt install isc-dhcp-server
+```
+
+**Configuration de l'interface d'écoute (`/etc/default/isc-dhcp-server`) :**
+
+```
+INTERFACESv4="ens33"
+INTERFACESv6=""
+```
+
+**Configuration principale (`/etc/dhcp/dhcpd.conf`) :**
+
+```
+# Options globales
+option domain-name "exemple.fr";
+option domain-name-servers 192.168.1.2, 192.168.1.3;
+default-lease-time 3600;        # 1 heure
+max-lease-time 7200;            # 2 heures
+authoritative;
+
+# Sous-réseau 192.168.1.0/24
+subnet 192.168.1.0 netmask 255.255.255.0 {
+    range 192.168.1.100 192.168.1.200;          # plage d'adresses
+    option routers 192.168.1.1;                  # passerelle par défaut
+    option subnet-mask 255.255.255.0;
+    option broadcast-address 192.168.1.255;
+    option domain-name-servers 192.168.1.2;
+    option domain-name "exemple.fr";
+    option ntp-servers 192.168.1.5;
+    default-lease-time 1800;
+    max-lease-time 3600;
+}
+
+# Second sous-réseau
+subnet 10.0.0.0 netmask 255.255.255.0 {
+    range 10.0.0.50 10.0.0.150;
+    option routers 10.0.0.1;
+    option domain-name-servers 192.168.1.2;
+}
+
+# Réservation par adresse MAC
+host poste-direction {
+    hardware ethernet 00:1A:2B:3C:4D:5E;
+    fixed-address 192.168.1.50;
+    option host-name "poste-direction";
+}
+
+host imprimante-rdc {
+    hardware ethernet AA:BB:CC:DD:EE:FF;
+    fixed-address 192.168.1.51;
+}
+```
+
+**Vérification et redémarrage :**
+
+```bash
+# Vérifier la syntaxe
+sudo dhcpd -t -cf /etc/dhcp/dhcpd.conf
+
+# Redémarrer le service
+sudo systemctl restart isc-dhcp-server
+sudo systemctl enable isc-dhcp-server
+
+# Consulter les baux actifs
+cat /var/lib/dhcp/dhcpd.leases
+```
+
+### 2.3 DHCP sous Windows Server
+
+**Installation du role via PowerShell :**
+
+```powershell
+Install-WindowsFeature DHCP -IncludeManagementTools
+```
+
+**Configuration d'une étendue :**
+
+```powershell
+# Créer une étendue
+Add-DhcpServerv4Scope -Name "LAN Principal" -StartRange 192.168.1.100 -EndRange 192.168.1.200 -SubnetMask 255.255.255.0 -LeaseDuration 01:00:00 -State Active
+
+# Définir les options de l'étendue
+Set-DhcpServerv4OptionValue -ScopeId 192.168.1.0 -Router 192.168.1.1
+Set-DhcpServerv4OptionValue -ScopeId 192.168.1.0 -DnsServer 192.168.1.2
+Set-DhcpServerv4OptionValue -ScopeId 192.168.1.0 -DnsDomain "exemple.fr"
+
+# Ajouter une exclusion
+Add-DhcpServerv4ExclusionRange -ScopeId 192.168.1.0 -StartRange 192.168.1.1 -EndRange 192.168.1.49
+
+# Ajouter une réservation
+Add-DhcpServerv4Reservation -ScopeId 192.168.1.0 -IPAddress 192.168.1.50 -ClientId "00-1A-2B-3C-4D-5E" -Name "poste-direction"
+```
+
+**Options DHCP courantes :**
+
+| Code option | Description | Exemple |
+|---|---|---|
+| 003 | Passerelle par défaut (Router) | 192.168.1.1 |
+| 006 | Serveur(s) DNS | 192.168.1.2 |
+| 015 | Suffixe DNS | exemple.fr |
+| 042 | Serveur NTP | 192.168.1.5 |
+| 044 | Serveur WINS/NBNS | 192.168.1.6 |
+| 066 | Serveur TFTP (Boot Server) | 192.168.1.7 |
+| 067 | Nom du fichier de démarrage | pxelinux.0 |
+
+### 2.4 Agent relais DHCP
+
+Lorsque le serveur DHCP ne se trouve pas sur le même sous-réseau que les clients, un agent relais (ip helper) est nécessaire car les messages DHCPDISCOVER sont des broadcasts qui ne traversent pas les routeurs.
+
+**Configuration sur un routeur Cisco :**
+
+```
+interface GigabitEthernet0/1
+ ip address 10.0.0.1 255.255.255.0
+ ip helper-address 192.168.1.4
+```
+
+**Configuration sous Linux (dhcp-relay) :**
+
+```bash
+sudo apt install isc-dhcp-relay
+
+# Configuration dans /etc/default/isc-dhcp-relay
+SERVERS="192.168.1.4"
+INTERFACES="ens33 ens34"
+```
+
+### 2.5 Basculement DHCP (failover)
+
+Le failover DHCP assure la haute disponibilité du service en répartissant les adresses entre deux serveurs.
+
+**Configuration isc-dhcp-server (serveur primaire) :**
+
+```
+failover peer "dhcp-failover" {
+    primary;
+    address 192.168.1.4;
+    port 647;
+    peer address 192.168.1.5;
+    peer port 647;
+    max-response-delay 60;
+    max-unacked-updates 10;
+    load balance max seconds 3;
+    mclt 3600;
+    split 128;     # 50/50
+}
+
+subnet 192.168.1.0 netmask 255.255.255.0 {
+    pool {
+        failover peer "dhcp-failover";
+        range 192.168.1.100 192.168.1.200;
+    }
+    option routers 192.168.1.1;
+}
+```
+
+**Serveur secondaire :** même configuration en remplacant `primary` par `secondary` et en inversant les adresses.
+
+---
+
+## 3. HTTP et HTTPS
+
+### 3.1 Le protocole HTTP
+
+HTTP (HyperText Transfer Protocol) est un protocole applicatif de la couche 7 du modèle OSI, fonctionnant en mode requête/réponse sur TCP port 80 (HTTP) ou TCP port 443 (HTTPS).
+
+**Structure d'une requête HTTP :**
+
+```
+GET /index.html HTTP/1.1
+Host: www.exemple.fr
+User-Agent: Mozilla/5.0
+Accept: text/html
+Accept-Language: fr-FR
+Connection: keep-alive
+```
+
+**Structure d'une réponse HTTP :**
+
+```
+HTTP/1.1 200 OK
+Date: Mon, 01 Jan 2024 12:00:00 GMT
+Server: Apache/2.4.57
+Content-Type: text/html; charset=UTF-8
+Content-Length: 1234
+
+<html>...</html>
+```
+
+**Méthodes HTTP principales :**
+
+| Méthode | Description |
+|---|---|
+| GET | Récupérer une ressource |
+| POST | Envoyer des données au serveur |
+| PUT | Remplacer une ressource existante |
+| DELETE | Supprimer une ressource |
+| HEAD | Comme GET mais sans le corps de la réponse |
+| PATCH | Modification partielle d'une ressource |
+| OPTIONS | Lister les méthodes supportées |
+
+**Codes de statut HTTP :**
+
+| Code | Signification | Exemple |
+|---|---|---|
+| 200 | OK, requête réussie | Page affichée |
+| 201 | Created, ressource créée | Après un POST réussi |
+| 301 | Moved Permanently, redirection permanente | Changement d'URL |
+| 302 | Found, redirection temporaire | Maintenance |
+| 304 | Not Modified, le cache est valide | Ressource non modifiée |
+| 400 | Bad Request, requête mal formée | Syntaxe incorrecte |
+| 401 | Unauthorized, authentification requise | Zone protégée |
+| 403 | Forbidden, accès interdit | Droits insuffisants |
+| 404 | Not Found, ressource introuvable | Page inexistante |
+| 500 | Internal Server Error | Erreur du serveur |
+| 502 | Bad Gateway | Proxy/reverse proxy en erreur |
+| 503 | Service Unavailable | Serveur surchargé |
+
+### 3.2 Apache HTTP Server
+
+**Installation (Debian/Ubuntu) :**
+
+```bash
+sudo apt update
+sudo apt install apache2
+sudo systemctl enable apache2
+sudo systemctl start apache2
+```
+
+**Fichiers de configuration principaux :**
+
+| Fichier/Répertoire | Role |
+|---|---|
+| `/etc/apache2/apache2.conf` | Configuration principale |
+| `/etc/apache2/ports.conf` | Ports d'écoute |
+| `/etc/apache2/sites-available/` | Fichiers de virtual hosts disponibles |
+| `/etc/apache2/sites-enabled/` | Liens symboliques vers les sites actifs |
+| `/etc/apache2/mods-available/` | Modules disponibles |
+| `/etc/apache2/mods-enabled/` | Modules actifs |
+| `/var/www/html/` | Racine web par défaut |
+| `/var/log/apache2/` | Journaux (access.log, error.log) |
+
+**Configuration d'un Virtual Host :**
+
+Fichier `/etc/apache2/sites-available/www.exemple.fr.conf` :
+
+```apache
+<VirtualHost *:80>
+    ServerName www.exemple.fr
+    ServerAlias exemple.fr
+    ServerAdmin admin@exemple.fr
+    DocumentRoot /var/www/www.exemple.fr
+
+    <Directory /var/www/www.exemple.fr>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/exemple.fr-error.log
+    CustomLog ${APACHE_LOG_DIR}/exemple.fr-access.log combined
+</VirtualHost>
+```
+
+**Activation du site :**
+
+```bash
+sudo mkdir -p /var/www/www.exemple.fr
+echo "<h1>Bienvenue sur exemple.fr</h1>" | sudo tee /var/www/www.exemple.fr/index.html
+sudo a2ensite www.exemple.fr.conf
+sudo a2dissite 000-default.conf
+sudo systemctl reload apache2
+```
+
+**Commandes utiles :**
+
+```bash
+sudo a2ensite nom_du_site.conf      # activer un site
+sudo a2dissite nom_du_site.conf     # désactiver un site
+sudo a2enmod nom_du_module          # activer un module
+sudo a2dismod nom_du_module         # désactiver un module
+sudo apachectl configtest           # vérifier la syntaxe
+sudo systemctl reload apache2       # recharger la configuration
+```
+
+### 3.3 Nginx
+
+**Installation :**
+
+```bash
+sudo apt update
+sudo apt install nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
+```
+
+**Fichiers de configuration principaux :**
+
+| Fichier/Répertoire | Role |
+|---|---|
+| `/etc/nginx/nginx.conf` | Configuration principale |
+| `/etc/nginx/sites-available/` | Blocs serveur disponibles |
+| `/etc/nginx/sites-enabled/` | Blocs serveur actifs (liens symboliques) |
+| `/var/www/html/` | Racine web par défaut |
+| `/var/log/nginx/` | Journaux |
+
+**Configuration d'un bloc serveur (Virtual Host) :**
+
+Fichier `/etc/nginx/sites-available/www.exemple.fr` :
+
+```nginx
+server {
+    listen 80;
+    server_name www.exemple.fr exemple.fr;
+    root /var/www/www.exemple.fr;
+    index index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    access_log /var/log/nginx/exemple.fr-access.log;
+    error_log /var/log/nginx/exemple.fr-error.log;
+}
+```
+
+**Activation :**
+
+```bash
+sudo ln -s /etc/nginx/sites-available/www.exemple.fr /etc/nginx/sites-enabled/
+sudo rm /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 3.4 HTTPS et certificats SSL/TLS
+
+**Principes :**
+
+- HTTPS = HTTP sur TLS (Transport Layer Security)
+- Chiffrement des échanges entre client et serveur
+- Authentification du serveur par un certificat numérique
+- Port TCP 443
+
+**Obtention d'un certificat avec Let's Encrypt (Certbot) :**
+
+```bash
+# Installation de Certbot
+sudo apt install certbot
+
+# Pour Apache
+sudo apt install python3-certbot-apache
+sudo certbot --apache -d www.exemple.fr -d exemple.fr
+
+# Pour Nginx
+sudo apt install python3-certbot-nginx
+sudo certbot --nginx -d www.exemple.fr -d exemple.fr
+
+# Renouvellement automatique (test)
+sudo certbot renew --dry-run
+```
+
+**Configuration HTTPS manuelle pour Apache :**
+
+```bash
+sudo a2enmod ssl
+sudo a2enmod rewrite
+```
+
+Fichier `/etc/apache2/sites-available/www.exemple.fr-ssl.conf` :
+
+```apache
+<VirtualHost *:443>
+    ServerName www.exemple.fr
+    DocumentRoot /var/www/www.exemple.fr
+
+    SSLEngine on
+    SSLCertificateFile /etc/letsencrypt/live/www.exemple.fr/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/www.exemple.fr/privkey.pem
+
+    <Directory /var/www/www.exemple.fr>
+        Require all granted
+    </Directory>
+</VirtualHost>
+
+# Redirection HTTP vers HTTPS
+<VirtualHost *:80>
+    ServerName www.exemple.fr
+    Redirect permanent / https://www.exemple.fr/
+</VirtualHost>
+```
+
+**Configuration HTTPS manuelle pour Nginx :**
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name www.exemple.fr;
+    root /var/www/www.exemple.fr;
+
+    ssl_certificate /etc/letsencrypt/live/www.exemple.fr/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/www.exemple.fr/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+
+# Redirection HTTP vers HTTPS
+server {
+    listen 80;
+    server_name www.exemple.fr;
+    return 301 https://$host$request_uri;
+}
+```
+
+---
+
+## 4. FTP et SFTP
+
+### 4.1 Le protocole FTP
+
+FTP (File Transfer Protocol) permet le transfert de fichiers entre un client et un serveur. Il utilise deux connexions TCP :
+
+- **Canal de commande** : port TCP 21 (permanent)
+- **Canal de données** : port variable (établi pour chaque transfert)
+
+**Mode actif :**
+
+1. Le client se connecte au port 21 du serveur (commande)
+2. Le client envoie la commande PORT avec son IP et un port d'écoute
+3. Le serveur initie la connexion de données depuis son port 20 vers le port indiqué par le client
+
+Problème : le pare-feu du client bloque souvent la connexion entrante du serveur.
+
+**Mode passif :**
+
+1. Le client se connecte au port 21 du serveur (commande)
+2. Le client envoie la commande PASV
+3. Le serveur répond avec une IP et un port sur lequel il écoute
+4. Le client initie la connexion de données vers ce port
+
+Avantage : toutes les connexions sont initiées par le client, compatibilité avec les pare-feu et le NAT.
+
+### 4.2 Configuration de vsftpd (Linux)
+
+**Installation :**
+
+```bash
+sudo apt update
+sudo apt install vsftpd
+```
+
+**Configuration (`/etc/vsftpd.conf`) :**
+
+```
+# Interdire les connexions anonymes
+anonymous_enable=NO
+
+# Autoriser les utilisateurs locaux
+local_enable=YES
+
+# Autoriser l'écriture
+write_enable=YES
+
+# Masque de création de fichiers
+local_umask=022
+
+# Enfermer les utilisateurs dans leur répertoire personnel
+chroot_local_user=YES
+allow_writeable_chroot=YES
+
+# Mode passif : définir une plage de ports
+pasv_enable=YES
+pasv_min_port=40000
+pasv_max_port=40100
+
+# Journalisation
+xferlog_enable=YES
+xferlog_file=/var/log/vsftpd.log
+
+# Bannière de connexion
+ftpd_banner=Bienvenue sur le serveur FTP de exemple.fr
+
+# Limiter les utilisateurs autorisés
+userlist_enable=YES
+userlist_file=/etc/vsftpd.userlist
+userlist_deny=NO
+```
+
+**Créer la liste des utilisateurs autorisés :**
+
+```bash
+echo "utilisateur1" | sudo tee /etc/vsftpd.userlist
+sudo systemctl restart vsftpd
+sudo systemctl enable vsftpd
+```
+
+**Règles de pare-feu :**
+
+```bash
+sudo ufw allow 21/tcp
+sudo ufw allow 40000:40100/tcp
+```
+
+### 4.3 SFTP
+
+SFTP (SSH File Transfer Protocol) fonctionne sur le port TCP 22, au sein d'une session SSH chiffrée. Il ne nécessite pas de port additionnel pour les données.
+
+**Configuration d'un accès SFTP restreint (`/etc/ssh/sshd_config`) :**
+
+```
+# Groupe dédié au SFTP
+Match Group sftp-users
+    ChrootDirectory /home/%u
+    ForceCommand internal-sftp
+    AllowTcpForwarding no
+    X11Forwarding no
+```
+
+```bash
+sudo groupadd sftp-users
+sudo usermod -aG sftp-users utilisateur1
+sudo chown root:root /home/utilisateur1
+sudo chmod 755 /home/utilisateur1
+sudo mkdir /home/utilisateur1/uploads
+sudo chown utilisateur1:utilisateur1 /home/utilisateur1/uploads
+sudo systemctl restart sshd
+```
+
+SFTP est toujours préférable à FTP en production car le trafic est intégralement chiffré.
+
+---
+
+## 5. Messagerie
+
+### 5.1 Protocoles de messagerie
+
+| Protocole | Port | Role |
+|---|---|---|
+| SMTP | TCP 25 | Envoi de messages entre serveurs (relay) |
+| SMTP submission | TCP 587 | Envoi de messages depuis un client (avec authentification) |
+| SMTPS | TCP 465 | SMTP sur TLS implicite |
+| POP3 | TCP 110 | Réception : télécharge les messages et les supprime du serveur |
+| POP3S | TCP 995 | POP3 sur TLS |
+| IMAP | TCP 143 | Réception : synchronisation des messages (restent sur le serveur) |
+| IMAPS | TCP 993 | IMAP sur TLS |
+
+**Comparaison POP3 / IMAP :**
+
+| Critère | POP3 | IMAP |
+|---|---|---|
+| Stockage | Messages téléchargés en local | Messages conservés sur le serveur |
+| Multi-appareils | Non adapté (messages sur un seul poste) | Adapté (synchronisation entre appareils) |
+| Gestion des dossiers | Non | Oui (dossiers distants) |
+| Bande passante | Faible après téléchargement initial | Plus élevée (synchronisation continue) |
+
+### 5.2 Enregistrements DNS pour la messagerie
+
+Pour qu'un domaine puisse recevoir des courriels, les enregistrements suivants sont nécessaires :
+
+```
+; Enregistrement MX : indique quel serveur reçoit les mails
+exemple.fr.     IN  MX  10  mail.exemple.fr.
+exemple.fr.     IN  MX  20  mail-backup.exemple.fr.
+
+; Enregistrement A du serveur de messagerie
+mail.exemple.fr.        IN  A   192.168.1.20
+mail-backup.exemple.fr. IN  A   192.168.1.21
+
+; SPF : liste les serveurs autorisés à envoyer pour le domaine
+exemple.fr.     IN  TXT "v=spf1 mx ip4:192.168.1.20 -all"
+```
+
+La priorité MX fonctionne en ordre croissant : la valeur la plus basse est essayée en premier.
+
+### 5.3 Configuration basique de Postfix (SMTP)
+
+**Installation :**
+
+```bash
+sudo apt update
+sudo apt install postfix
+# Choisir "Site Internet" lors de l'installation
+```
+
+**Configuration principale (`/etc/postfix/main.cf`) :**
+
+```
+# Nom d'hôte du serveur
+myhostname = mail.exemple.fr
+mydomain = exemple.fr
+myorigin = $mydomain
+
+# Interfaces d'écoute
+inet_interfaces = all
+inet_protocols = ipv4
+
+# Domaines pour lesquels le serveur accepte les mails
+mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
+
+# Réseaux autorisés à relayer
+mynetworks = 127.0.0.0/8, 192.168.1.0/24
+
+# Répertoire de stockage des mails (format Maildir)
+home_mailbox = Maildir/
+
+# Taille maximale des messages (10 Mo)
+message_size_limit = 10485760
+
+# Bannière SMTP
+smtpd_banner = $myhostname ESMTP
+
+# Relais SMTP (si nécessaire)
+# relayhost = [smtp.fai.fr]:587
+```
+
+**Vérification :**
+
+```bash
+sudo postfix check
+sudo systemctl restart postfix
+sudo systemctl enable postfix
+
+# Test d'envoi en ligne de commande
+echo "Corps du message" | mail -s "Sujet test" destinataire@exemple.fr
+
+# Vérifier la file d'attente
+sudo postqueue -p
+
+# Forcer le traitement de la file
+sudo postqueue -f
+
+# Consulter les journaux
+sudo tail -f /var/log/mail.log
+```
+
+### 5.4 Flux de distribution d'un courriel
+
+1. L'expéditeur compose le message dans son client (MUA - Mail User Agent)
+2. Le MUA transmet le message au serveur SMTP de l'expéditeur (MSA - Mail Submission Agent) sur le port 587
+3. Le serveur SMTP interroge le DNS pour trouver l'enregistrement MX du domaine destinataire
+4. Le message est transmis au serveur SMTP du destinataire (MTA - Mail Transfer Agent) sur le port 25
+5. Le serveur stocke le message dans la boite aux lettres (MDA - Mail Delivery Agent)
+6. Le destinataire récupère le message via POP3 (port 110) ou IMAP (port 143)
+
+---
+
+## 6. NTP
+
+### 6.1 Principes
+
+NTP (Network Time Protocol) assure la synchronisation horaire entre les machines d'un réseau. Il utilise le port UDP 123.
+
+**Hierarchie des strates :**
+
+| Stratum | Description |
+|---|---|
+| 0 | Horloge de référence (horloge atomique, GPS) -- non accessible en réseau |
+| 1 | Serveur directement connecté à une source stratum 0 |
+| 2 | Serveur synchronisé sur un serveur stratum 1 |
+| 3 | Serveur synchronisé sur un serveur stratum 2 |
+| ... | Jusqu'à stratum 15 (stratum 16 = non synchronisé) |
+
+La précision diminue à chaque stratum. En pratique, les serveurs publics sont généralement stratum 1 ou 2.
+
+### 6.2 Configuration sous Linux (chrony)
+
+Chrony est l'implémentation NTP recommandée sur les distributions modernes.
+
+**Installation :**
+
+```bash
+sudo apt install chrony
+```
+
+**Configuration (`/etc/chrony/chrony.conf`) :**
+
+```
+# Serveurs NTP (pool français)
+pool ntp.ubuntu.com iburst
+server 0.fr.pool.ntp.org iburst
+server 1.fr.pool.ntp.org iburst
+
+# Autoriser les clients du réseau local à se synchroniser
+allow 192.168.1.0/24
+
+# Fichier de dérive
+driftfile /var/lib/chrony/chrony.drift
+
+# Journalisation
+logdir /var/log/chrony
+```
+
+**Commandes utiles :**
+
+```bash
+# Vérifier l'état de synchronisation
+chronyc tracking
+
+# Lister les sources NTP et leur état
+chronyc sources -v
+
+# Forcer une synchronisation immédiate
+sudo chronyc makestep
+
+# Vérifier le service
+sudo systemctl status chrony
+```
+
+### 6.3 Configuration sous Windows
+
+```powershell
+# Configurer la source NTP
+w32tm /config /manualpeerlist:"0.fr.pool.ntp.org 1.fr.pool.ntp.org" /syncfromflags:manual /reliable:yes /update
+
+# Redémarrer le service
+Restart-Service w32time
+
+# Forcer la synchronisation
+w32tm /resync
+
+# Vérifier l'état
+w32tm /query /status
+```
+
+---
+
+## 7. SNMP
+
+### 7.1 Principes
+
+SNMP (Simple Network Management Protocol) permet la supervision et la gestion d'équipements réseau. Il utilise le port UDP 161 (requêtes agent) et UDP 162 (traps/notifications).
+
+**Composants :**
+
+| Composant | Role |
+|---|---|
+| Manager (NMS) | Station de supervision qui interroge les agents |
+| Agent | Logiciel sur l'équipement supervisé qui répond aux requêtes |
+| MIB | Management Information Base, base de données hiérarchique des objets gérés |
+
+**Opérations SNMP :**
+
+| Opération | Direction | Description |
+|---|---|---|
+| GET | Manager -> Agent | Lire la valeur d'un OID |
+| GET-NEXT | Manager -> Agent | Lire l'OID suivant dans l'arborescence |
+| GET-BULK | Manager -> Agent | Lire plusieurs OID en une requête (v2c/v3) |
+| SET | Manager -> Agent | Modifier la valeur d'un OID |
+| TRAP | Agent -> Manager | Notification asynchrone d'un événement |
+| INFORM | Agent -> Manager | Trap avec accusé de réception (v2c/v3) |
+
+### 7.2 Versions SNMP
+
+| Caractéristique | v1 | v2c | v3 |
+|---|---|---|---|
+| Authentification | Communauté (texte clair) | Communauté (texte clair) | Utilisateur (MD5/SHA) |
+| Chiffrement | Non | Non | Oui (DES/AES) |
+| Controle d'accès | Basique | Basique | VACM (granulaire) |
+| GET-BULK | Non | Oui | Oui |
+| INFORM | Non | Oui | Oui |
+
+**Niveaux de sécurité SNMPv3 :**
+
+- **noAuthNoPriv** : ni authentification ni chiffrement (déconseillé)
+- **authNoPriv** : authentification sans chiffrement
+- **authPriv** : authentification et chiffrement (recommandé)
+
+### 7.3 MIB et OID
+
+La MIB est une arborescence organisée d'objets identifiés par des OID (Object Identifier).
+
+**OID courants :**
+
+| OID | Nom | Description |
+|---|---|---|
+| 1.3.6.1.2.1.1.1.0 | sysDescr | Description du système |
+| 1.3.6.1.2.1.1.3.0 | sysUpTime | Temps écoulé depuis le démarrage |
+| 1.3.6.1.2.1.1.5.0 | sysName | Nom de l'équipement |
+| 1.3.6.1.2.1.2.2.1.2 | ifDescr | Description des interfaces |
+| 1.3.6.1.2.1.2.2.1.10 | ifInOctets | Octets entrants par interface |
+| 1.3.6.1.2.1.2.2.1.16 | ifOutOctets | Octets sortants par interface |
+
+### 7.4 Configuration d'un agent SNMP (Linux)
+
+**Installation :**
+
+```bash
+sudo apt install snmpd snmp
+```
+
+**Configuration (`/etc/snmp/snmpd.conf`) :**
+
+```
+# Écouter sur toutes les interfaces
+agentAddress udp:161
+
+# Communauté en lecture seule (v2c)
+rocommunity public 192.168.1.0/24
+
+# Communauté en lecture-écriture (v2c)
+rwcommunity private 192.168.1.10/32
+
+# Informations système
+sysLocation  Salle serveur, Batiment A
+sysContact   admin@exemple.fr
+sysName      srv-linux01
+
+# Configuration SNMPv3
+createUser superviseur SHA "MotDePasseAuth" AES "MotDePasseChiffrement"
+rwuser superviseur priv
+
+# Trap destination
+trapsink 192.168.1.100 public
+```
+
+```bash
+sudo systemctl restart snmpd
+sudo systemctl enable snmpd
+```
+
+**Outils de test :**
+
+```bash
+# Requête GET (v2c)
+snmpget -v2c -c public 192.168.1.2 sysName.0
+
+# Parcours de l'arborescence
+snmpwalk -v2c -c public 192.168.1.2 system
+
+# Requête GET (v3 authPriv)
+snmpget -v3 -u superviseur -l authPriv -a SHA -A "MotDePasseAuth" -x AES -X "MotDePasseChiffrement" 192.168.1.2 sysName.0
+
+# Table des interfaces
+snmptable -v2c -c public 192.168.1.2 ifTable
+```
+
+---
+
+## 8. Syslog
+
+### 8.1 Principes
+
+Syslog est un protocole standard de centralisation des journaux. Il utilise le port UDP 514 (ou TCP 514 pour une transmission fiable).
+
+**Niveaux de sévérité :**
+
+| Code | Niveau | Description |
+|---|---|---|
+| 0 | emerg | Système inutilisable |
+| 1 | alert | Action immédiate requise |
+| 2 | crit | Condition critique |
+| 3 | err | Erreur |
+| 4 | warning | Avertissement |
+| 5 | notice | Événement normal mais significatif |
+| 6 | info | Information |
+| 7 | debug | Message de débogage |
+
+**Facilités (facilities) courantes :**
+
+| Facilité | Description |
+|---|---|
+| auth / authpriv | Authentification et sécurité |
+| cron | Tâches planifiées |
+| daemon | Démons système |
+| kern | Messages du noyau |
+| mail | Système de messagerie |
+| syslog | Messages internes de syslog |
+| local0 à local7 | Usage personnalisé |
+
+### 8.2 Configuration de rsyslog (Linux)
+
+**Fichier principal : `/etc/rsyslog.conf`**
+
+**Activer la réception de logs distants :**
+
+```
+# Réception UDP
+module(load="imudp")
+input(type="imudp" port="514")
+
+# Réception TCP
+module(load="imtcp")
+input(type="imtcp" port="514")
+```
+
+**Règles de filtrage (`/etc/rsyslog.d/50-custom.conf`) :**
+
+```
+# Tous les messages auth vers un fichier dédié
+auth,authpriv.*                 /var/log/auth.log
+
+# Erreurs et plus vers un fichier centralisé
+*.err                           /var/log/erreurs.log
+
+# Messages du noyau
+kern.*                          /var/log/kern.log
+
+# Tout sauf auth et mail
+*.*;auth,authpriv.none;mail.none    /var/log/syslog
+
+# Envoyer les logs d'urgence à un serveur distant (UDP)
+*.emerg                         @192.168.1.50:514
+
+# Envoyer tous les logs à un serveur distant (TCP, fiable)
+*.*                             @@192.168.1.50:514
+
+# Utiliser un template pour stocker les logs par hôte
+$template RemoteLogs,"/var/log/remote/%HOSTNAME%/%PROGRAMNAME%.log"
+*.* ?RemoteLogs
+```
+
+```bash
+sudo systemctl restart rsyslog
+
+# Tester l'envoi d'un message syslog
+logger -p local0.info "Message de test depuis srv-linux01"
+```
+
+**Configuration d'un client pour envoyer ses logs :**
+
+Dans `/etc/rsyslog.d/60-remote.conf` :
+
+```
+# Envoyer tous les logs au serveur central en TCP
+*.*  @@192.168.1.50:514
+```
+
+---
+
+## 9. Exercices corriges
+
+### Exercice 1 -- Configuration d'une zone DNS directe
+
+**Enoncé :** Créez le fichier de zone directe pour le domaine `entreprise.local` avec les caractéristiques suivantes :
+- Serveur DNS primaire : `ns1.entreprise.local` (172.16.0.2)
+- Serveur DNS secondaire : `ns2.entreprise.local` (172.16.0.3)
+- Serveur web : `www.entreprise.local` (172.16.0.10)
+- Serveur de messagerie : `mail.entreprise.local` (172.16.0.20), priorité 10
+- Alias : `intranet` pointe vers `www.entreprise.local`
+- Serial : 2024020101, Refresh : 3600, Retry : 600, Expire : 86400, Negative TTL : 3600
+
+**Correction :**
+
+```
+$TTL    86400
+@       IN      SOA     ns1.entreprise.local. admin.entreprise.local. (
+                        2024020101      ; Serial
+                        3600            ; Refresh
+                        600             ; Retry
+                        86400           ; Expire
+                        3600 )          ; Negative TTL
+
+@       IN      NS      ns1.entreprise.local.
+@       IN      NS      ns2.entreprise.local.
+
+ns1     IN      A       172.16.0.2
+ns2     IN      A       172.16.0.3
+www     IN      A       172.16.0.10
+mail    IN      A       172.16.0.20
+
+intranet IN     CNAME   www.entreprise.local.
+
+@       IN      MX      10 mail.entreprise.local.
+```
+
+Points importants : le point final après chaque FQDN est obligatoire. Sans lui, le nom de la zone est automatiquement ajouté (ex : `ns1.entreprise.local` deviendrait `ns1.entreprise.local.entreprise.local`).
+
+---
+
+### Exercice 2 -- Configuration d'une zone DNS inverse
+
+**Enoncé :** Créez le fichier de zone inverse pour le réseau 172.16.0.0/24 correspondant à la zone de l'exercice 1.
+
+**Correction :**
+
+```
+$TTL    86400
+@       IN      SOA     ns1.entreprise.local. admin.entreprise.local. (
+                        2024020101      ; Serial
+                        3600            ; Refresh
+                        600             ; Retry
+                        86400           ; Expire
+                        3600 )          ; Negative TTL
+
+@       IN      NS      ns1.entreprise.local.
+@       IN      NS      ns2.entreprise.local.
+
+2       IN      PTR     ns1.entreprise.local.
+3       IN      PTR     ns2.entreprise.local.
+10      IN      PTR     www.entreprise.local.
+20      IN      PTR     mail.entreprise.local.
+```
+
+La zone se déclare dans `named.conf.local` sous le nom `0.16.172.in-addr.arpa`. L'adresse réseau est écrite à l'envers, sans la partie hôte.
+
+---
+
+### Exercice 3 -- Analyse de requêtes DNS avec dig
+
+**Enoncé :** Interprétez la sortie suivante :
+
+```
+$ dig @172.16.0.2 entreprise.local MX
+
+;; QUESTION SECTION:
+;entreprise.local.          IN      MX
+
+;; ANSWER SECTION:
+entreprise.local.   86400   IN      MX      10 mail.entreprise.local.
+
+;; AUTHORITY SECTION:
+entreprise.local.   86400   IN      NS      ns1.entreprise.local.
+entreprise.local.   86400   IN      NS      ns2.entreprise.local.
+
+;; ADDITIONAL SECTION:
+mail.entreprise.local. 86400 IN     A       172.16.0.20
+ns1.entreprise.local.  86400 IN     A       172.16.0.2
+ns2.entreprise.local.  86400 IN     A       172.16.0.3
+
+;; Query time: 1 msec
+;; SERVER: 172.16.0.2#53(172.16.0.2)
+```
+
+**Correction :**
+
+- **QUESTION SECTION** : la requête demande les enregistrements MX du domaine `entreprise.local`
+- **ANSWER SECTION** : le serveur de messagerie est `mail.entreprise.local` avec la priorité 10. Le TTL est de 86400 secondes (24 heures)
+- **AUTHORITY SECTION** : les serveurs faisant autorité pour la zone sont `ns1` et `ns2`
+- **ADDITIONAL SECTION** : les adresses IP correspondant aux noms mentionnés (résolution complémentaire pour éviter des requêtes supplémentaires)
+- Le serveur interrogé est `172.16.0.2` sur le port 53, avec un temps de réponse de 1 ms
+
+---
+
+### Exercice 4 -- Analyse d'un échange DHCP
+
+**Enoncé :** Un poste client avec l'adresse MAC `00:1A:2B:3C:4D:5E` se connecte au réseau. Décrivez les quatre trames échangées lors de l'obtention d'une adresse IP par DHCP. Précisez pour chaque trame : le type, les adresses IP source et destination, et le contenu principal.
+
+**Correction :**
+
+| Etape | Type | IP source | IP destination | Contenu |
+|---|---|---|---|---|
+| 1 | DHCPDISCOVER | 0.0.0.0 | 255.255.255.255 | Le client envoie un broadcast. Contient l'adresse MAC du client et un identifiant de transaction |
+| 2 | DHCPOFFER | 192.168.1.4 (serveur) | 255.255.255.255 | Le serveur propose l'adresse 192.168.1.100, le masque, la passerelle, les DNS, et la durée du bail |
+| 3 | DHCPREQUEST | 0.0.0.0 | 255.255.255.255 | Le client accepte l'offre. Le broadcast informe les autres serveurs DHCP éventuels que leur offre est refusée |
+| 4 | DHCPACK | 192.168.1.4 (serveur) | 255.255.255.255 | Confirmation de l'attribution. Le client peut maintenant utiliser l'adresse 192.168.1.100 |
+
+Le DHCPREQUEST est envoyé en broadcast (et non en unicast au serveur choisi) pour informer tous les serveurs DHCP du réseau.
+
+---
+
+### Exercice 5 -- Configuration DHCP avec réservations
+
+**Enoncé :** Rédigez la configuration `dhcpd.conf` pour le réseau 10.0.0.0/24 avec :
+- Plage dynamique : 10.0.0.100 à 10.0.0.200
+- Passerelle : 10.0.0.1
+- DNS : 10.0.0.2 et 10.0.0.3
+- Domaine : labo.local
+- Bail par défaut : 4 heures, maximum : 8 heures
+- Réservation : le poste `srv-impression` (MAC `AA:BB:CC:11:22:33`) doit recevoir 10.0.0.50
+
+**Correction :**
+
+```
+option domain-name "labo.local";
+option domain-name-servers 10.0.0.2, 10.0.0.3;
+default-lease-time 14400;
+max-lease-time 28800;
+authoritative;
+
+subnet 10.0.0.0 netmask 255.255.255.0 {
+    range 10.0.0.100 10.0.0.200;
+    option routers 10.0.0.1;
+    option subnet-mask 255.255.255.0;
+    option broadcast-address 10.0.0.255;
+}
+
+host srv-impression {
+    hardware ethernet AA:BB:CC:11:22:33;
+    fixed-address 10.0.0.50;
+}
+```
+
+L'adresse réservée (10.0.0.50) doit être en dehors de la plage dynamique pour éviter les conflits.
+
+---
+
+### Exercice 6 -- Dépannage DNS
+
+**Enoncé :** Un utilisateur signale qu'il ne peut pas accéder à `www.entreprise.local` depuis son poste. Décrivez la procédure de dépannage pas à pas.
+
+**Correction :**
+
+1. **Vérifier la connectivité réseau de base :**
+
+```bash
+ping 172.16.0.2    # Tester l'accès au serveur DNS
+```
+
+Si le ping échoue, le problème est réseau (câble, IP, routage), pas DNS.
+
+2. **Vérifier la configuration DNS du poste :**
+
+```bash
+# Linux
+cat /etc/resolv.conf
+
+# Windows
+ipconfig /all
+```
+
+Vérifier que le serveur DNS configuré est bien `172.16.0.2`.
+
+3. **Tester la résolution DNS :**
+
+```bash
+nslookup www.entreprise.local
+nslookup www.entreprise.local 172.16.0.2
+```
+
+Si la résolution échoue avec le bon serveur, le problème est côté serveur DNS.
+
+4. **Vérifier le service DNS sur le serveur :**
+
+```bash
+sudo systemctl status bind9
+sudo ss -ulnp | grep :53
+```
+
+5. **Vérifier les fichiers de zone :**
+
+```bash
+sudo named-checkconf
+sudo named-checkzone entreprise.local /etc/bind/zones/db.entreprise.local
+```
+
+6. **Vérifier les journaux :**
+
+```bash
+sudo journalctl -u bind9 --since "10 minutes ago"
+sudo tail -50 /var/log/syslog | grep named
+```
+
+7. **Vider le cache DNS du poste (si la zone a été modifiée récemment) :**
+
+```bash
+# Windows
+ipconfig /flushdns
+
+# Linux (systemd-resolved)
+sudo systemd-resolve --flush-caches
+```
+
+---
+
+### Exercice 7 -- Configuration d'un Virtual Host Apache avec HTTPS
+
+**Enoncé :** Configurez Apache pour héberger le site `portail.labo.local` en HTTPS avec redirection automatique depuis HTTP. Le certificat est stocké dans `/etc/ssl/labo/`.
+
+**Correction :**
+
+```bash
+sudo a2enmod ssl
+sudo a2enmod rewrite
+```
+
+Fichier `/etc/apache2/sites-available/portail.labo.local.conf` :
+
+```apache
+<VirtualHost *:80>
+    ServerName portail.labo.local
+    Redirect permanent / https://portail.labo.local/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName portail.labo.local
+    DocumentRoot /var/www/portail.labo.local
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/labo/portail.crt
+    SSLCertificateKeyFile /etc/ssl/labo/portail.key
+
+    <Directory /var/www/portail.labo.local>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/portail-error.log
+    CustomLog ${APACHE_LOG_DIR}/portail-access.log combined
+</VirtualHost>
+```
+
+```bash
+sudo mkdir -p /var/www/portail.labo.local
+sudo a2ensite portail.labo.local.conf
+sudo apachectl configtest
+sudo systemctl reload apache2
+```
+
+---
+
+### Exercice 8 -- Configuration vsftpd en mode passif
+
+**Enoncé :** Configurez vsftpd pour :
+- Interdire l'accès anonyme
+- Autoriser les utilisateurs locaux avec chroot
+- Mode passif sur les ports 50000 à 50100
+- Journalisation activée
+
+**Correction :**
+
+```
+anonymous_enable=NO
+local_enable=YES
+write_enable=YES
+local_umask=022
+chroot_local_user=YES
+allow_writeable_chroot=YES
+pasv_enable=YES
+pasv_min_port=50000
+pasv_max_port=50100
+xferlog_enable=YES
+xferlog_file=/var/log/vsftpd.log
+xferlog_std_format=YES
+listen=YES
+listen_ipv6=NO
+```
+
+Règles de pare-feu nécessaires :
+
+```bash
+sudo ufw allow 21/tcp
+sudo ufw allow 50000:50100/tcp
+sudo systemctl restart vsftpd
+```
+
+Le mode passif est nécessaire lorsque les clients se trouvent derrière un NAT ou un pare-feu qui bloque les connexions entrantes.
+
+---
+
+### Exercice 9 -- Interprétation de codes HTTP
+
+**Enoncé :** Pour chaque situation, indiquez le code HTTP retourné et expliquez-le.
+
+1. Un utilisateur accède à `https://www.exemple.fr/` et la page s'affiche correctement.
+2. Un utilisateur tente d'accéder à `https://www.exemple.fr/ancienne-page.html` qui a été déplacée définitivement vers `/nouvelle-page.html`.
+3. Un utilisateur accède à `/admin/` sans s'être authentifié.
+4. Un utilisateur accède à `/admin/` avec un compte qui n'a pas les droits.
+5. Un utilisateur accède à `/page-inexistante.html`.
+6. Une erreur PHP se produit sur le serveur.
+
+**Correction :**
+
+1. **200 OK** : la requête a été traitée avec succès, le contenu est retourné.
+2. **301 Moved Permanently** : la ressource a été déplacée de manière permanente. Le navigateur est redirigé vers la nouvelle URL et met à jour ses signets/cache.
+3. **401 Unauthorized** : l'accès nécessite une authentification. Le serveur retourne un en-tête `WWW-Authenticate` demandant des identifiants.
+4. **403 Forbidden** : l'utilisateur est authentifié mais n'a pas les autorisations suffisantes. Contrairement au 401, fournir d'autres identifiants ne changera rien.
+5. **404 Not Found** : la ressource demandée n'existe pas sur le serveur.
+6. **500 Internal Server Error** : une erreur s'est produite côté serveur (code PHP incorrect, configuration défaillante, etc.).
+
+---
+
+### Exercice 10 -- Configuration SNMP v3
+
+**Enoncé :** Configurez un agent SNMPv3 sur un serveur Linux avec :
+- Utilisateur : `moniteur`
+- Authentification : SHA, mot de passe `AuthSecure2024`
+- Chiffrement : AES, mot de passe `PrivSecure2024`
+- Accès en lecture seule
+- Localisation : "Salle serveur B2"
+
+Rédigez ensuite la commande `snmpget` pour interroger le `sysName`.
+
+**Correction :**
+
+Configuration dans `/etc/snmp/snmpd.conf` :
+
+```
+agentAddress udp:161
+
+createUser moniteur SHA "AuthSecure2024" AES "PrivSecure2024"
+rouser moniteur priv
+
+sysLocation  Salle serveur B2
+sysContact   admin@exemple.fr
+sysName      srv-prod-01
+```
+
+Commande d'interrogation :
+
+```bash
+snmpget -v3 -u moniteur -l authPriv -a SHA -A "AuthSecure2024" -x AES -X "PrivSecure2024" 192.168.1.2 sysName.0
+```
+
+Détail des options :
+- `-v3` : version SNMPv3
+- `-u moniteur` : nom d'utilisateur
+- `-l authPriv` : niveau de sécurité (authentification + chiffrement)
+- `-a SHA` : algorithme d'authentification
+- `-A` : mot de passe d'authentification
+- `-x AES` : algorithme de chiffrement
+- `-X` : mot de passe de chiffrement
+
+---
+
+### Exercice 11 -- Centralisation Syslog
+
+**Enoncé :** Configurez un serveur rsyslog central qui :
+- Reçoit les logs en TCP sur le port 514
+- Stocke les logs de chaque hôte dans un répertoire séparé (`/var/log/remote/<hostname>/`)
+- Conserve les messages d'authentification dans un fichier dédié
+
+Configurez également un client pour envoyer tous ses logs vers ce serveur.
+
+**Correction :**
+
+**Serveur (`/etc/rsyslog.conf` et `/etc/rsyslog.d/`) :**
+
+Dans `/etc/rsyslog.conf`, activer la réception TCP :
+
+```
+module(load="imtcp")
+input(type="imtcp" port="514")
+```
+
+Dans `/etc/rsyslog.d/30-remote.conf` :
+
+```
+# Template pour stocker par hôte
+$template RemoteHostLog,"/var/log/remote/%HOSTNAME%/syslog.log"
+$template RemoteHostAuth,"/var/log/remote/%HOSTNAME%/auth.log"
+
+# Règles pour les logs distants (ne s'applique qu'aux messages non locaux)
+if $fromhost-ip != '127.0.0.1' then {
+    auth,authpriv.*     ?RemoteHostAuth
+    *.*                 ?RemoteHostLog
+    & stop
+}
+```
+
+```bash
+sudo mkdir -p /var/log/remote
+sudo systemctl restart rsyslog
+```
+
+**Client (`/etc/rsyslog.d/60-remote.conf`) :**
+
+```
+*.*  @@192.168.1.50:514
+```
+
+```bash
+sudo systemctl restart rsyslog
+logger "Test centralisation syslog"
+```
+
+---
+
+### Exercice 12 -- Dépannage DHCP
+
+**Enoncé :** Un poste client obtient l'adresse APIPA 169.254.x.x au lieu d'une adresse du réseau 192.168.1.0/24. Décrivez la démarche de dépannage.
+
+**Correction :**
+
+Une adresse APIPA (169.254.0.0/16) indique que le client n'a pas reçu de réponse DHCP.
+
+1. **Vérifier la connectivité physique :**
+   - Câble réseau branché, voyant de liaison actif
+   - Si Wi-Fi : connexion au bon SSID
+
+2. **Forcer un renouvellement DHCP :**
+
+```bash
+# Windows
+ipconfig /release
+ipconfig /renew
+
+# Linux
+sudo dhclient -r
+sudo dhclient
+```
+
+3. **Vérifier le service DHCP sur le serveur :**
+
+```bash
+sudo systemctl status isc-dhcp-server
+sudo journalctl -u isc-dhcp-server --since "10 minutes ago"
+```
+
+4. **Vérifier la configuration du serveur :**
+
+```bash
+sudo dhcpd -t -cf /etc/dhcp/dhcpd.conf
+```
+
+5. **Vérifier la disponibilité d'adresses dans la plage :**
+
+```bash
+cat /var/lib/dhcp/dhcpd.leases | grep "^lease" | wc -l
+```
+
+Si toutes les adresses sont attribuées, élargir la plage ou réduire la durée des baux.
+
+6. **Vérifier le pare-feu du serveur :**
+
+```bash
+sudo ufw status
+# Les ports UDP 67 et 68 doivent être ouverts
+sudo ufw allow 67/udp
+sudo ufw allow 68/udp
+```
+
+7. **Si le client et le serveur sont sur des sous-réseaux différents :**
+   - Vérifier la présence et la configuration d'un agent relais DHCP (`ip helper-address` sur le routeur)
+   - Vérifier que le routeur transmet bien les broadcasts DHCP
+
+8. **Capturer le trafic réseau pour analyser :**
+
+```bash
+sudo tcpdump -i ens33 port 67 or port 68 -vv
+```
+
+---
+
+### Exercice 13 -- Dépannage complet : un site web interne inaccessible
+
+**Enoncé :** Les utilisateurs du réseau 192.168.1.0/24 ne peuvent pas accéder au site `http://intranet.entreprise.local`. Le serveur web est à l'adresse 192.168.1.10 et le serveur DNS à l'adresse 192.168.1.2. Rédigez une procédure de dépannage complète.
+
+**Correction :**
+
+**Etape 1 : tester depuis le poste client**
+
+```bash
+# Test de connectivité IP directe
+ping 192.168.1.10
+
+# Test de résolution DNS
+nslookup intranet.entreprise.local 192.168.1.2
+
+# Test d'accès HTTP
+curl -v http://intranet.entreprise.local
+curl -v http://192.168.1.10
+```
+
+**Etape 2 : diagnostic selon les résultats**
+
+Cas A -- Le ping vers 192.168.1.10 échoue :
+- Problème réseau (câble, switch, VLAN, routage)
+- Vérifier `ip a` sur le serveur web, vérifier le routage
+
+Cas B -- Le ping fonctionne mais la résolution DNS échoue :
+- Vérifier le service DNS : `sudo systemctl status bind9`
+- Vérifier le fichier de zone : `sudo named-checkzone entreprise.local /etc/bind/zones/db.entreprise.local`
+- Vérifier que l'enregistrement `intranet` existe (A ou CNAME)
+- Vérifier que le poste utilise bien 192.168.1.2 comme serveur DNS
+
+Cas C -- La résolution fonctionne mais le site est inaccessible :
+- Vérifier le service Apache/Nginx : `sudo systemctl status apache2`
+- Vérifier le Virtual Host : le `ServerName` correspond-il à `intranet.entreprise.local` ?
+- Vérifier les ports d'écoute : `sudo ss -tlnp | grep :80`
+- Vérifier les journaux : `sudo tail /var/log/apache2/error.log`
+- Vérifier le pare-feu : `sudo ufw status` (port 80 ouvert ?)
+- Vérifier les permissions du DocumentRoot
+
+---
+
+### Exercice 14 -- Analyse de configuration Postfix
+
+**Enoncé :** Analysez cette configuration Postfix et identifiez les problèmes potentiels :
+
+```
+myhostname = mail.test.local
+mydomain = test.local
+myorigin = $mydomain
+inet_interfaces = localhost
+mydestination = $myhostname, localhost
+mynetworks = 127.0.0.0/8
+home_mailbox = Maildir/
+```
+
+**Correction :**
+
+Problèmes identifiés :
+
+1. **`inet_interfaces = localhost`** : le serveur n'écoute que sur l'interface loopback. Aucun client ou serveur distant ne pourra se connecter. Correction : `inet_interfaces = all`
+
+2. **`mydestination` ne contient pas `$mydomain`** : les mails adressés à `utilisateur@test.local` seront rejetés. Seuls `utilisateur@mail.test.local` et `utilisateur@localhost` seront acceptés. Correction : ajouter `$mydomain` a la liste.
+
+3. **`mynetworks` est limité à 127.0.0.0/8** : seul le serveur lui-même peut envoyer des mails. Les postes du réseau local ne pourront pas utiliser ce serveur comme relais SMTP. Correction : ajouter le réseau local, par exemple `mynetworks = 127.0.0.0/8, 192.168.1.0/24`
+
+Configuration corrigée :
+
+```
+myhostname = mail.test.local
+mydomain = test.local
+myorigin = $mydomain
+inet_interfaces = all
+mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
+mynetworks = 127.0.0.0/8, 192.168.1.0/24
+home_mailbox = Maildir/
+```
+
+---
+
+## 10. Synthèse des ports
+
+| Service | Protocole | Port(s) |
+|---|---|---|
+| DNS | UDP/TCP | 53 |
+| DHCP | UDP | 67 (serveur), 68 (client) |
+| HTTP | TCP | 80 |
+| HTTPS | TCP | 443 |
+| FTP commande | TCP | 21 |
+| FTP données (actif) | TCP | 20 |
+| SFTP / SSH | TCP | 22 |
+| SMTP | TCP | 25 |
+| SMTP submission | TCP | 587 |
+| SMTPS | TCP | 465 |
+| POP3 | TCP | 110 |
+| POP3S | TCP | 995 |
+| IMAP | TCP | 143 |
+| IMAPS | TCP | 993 |
+| NTP | UDP | 123 |
+| SNMP | UDP | 161 |
+| SNMP Trap | UDP | 162 |
+| Syslog | UDP/TCP | 514 |
+
+---
+
+## 11. Points cles pour l'examen
+
+1. **DNS** : savoir rédiger un fichier de zone complet sans erreur (points finaux sur les FQDN, serial incrémenté, enregistrements SOA/NS/A/MX/PTR). Maitriser `dig` et `nslookup` pour le diagnostic.
+
+2. **DHCP** : connaitre le processus DORA par coeur, savoir configurer une étendue avec plages, exclusions et réservations. Comprendre le role de l'agent relais.
+
+3. **HTTP/HTTPS** : connaitre les codes de statut principaux (200, 301, 302, 400, 401, 403, 404, 500, 503). Savoir configurer un Virtual Host Apache ou un bloc serveur Nginx. Comprendre le fonctionnement des certificats TLS.
+
+4. **FTP** : distinguer mode actif et mode passif, comprendre pourquoi le mode passif est nécessaire avec le NAT.
+
+5. **Messagerie** : connaitre la chaine MUA-MSA-MTA-MDA, les ports SMTP/POP3/IMAP et leurs variantes sécurisées. Savoir configurer les enregistrements MX.
+
+6. **NTP** : comprendre la hiérarchie des strates et savoir configurer un client et un serveur.
+
+7. **SNMP** : distinguer les versions (v1/v2c/v3), connaitre les opérations (GET, SET, TRAP), comprendre l'arborescence MIB/OID. Savoir configurer SNMPv3 avec authentification et chiffrement.
+
+8. **Syslog** : connaitre les niveaux de sévérité (0 a 7), savoir configurer la centralisation des logs avec rsyslog.
+
+9. **Transversal** : connaitre les numéros de port de tous les services par coeur. Savoir utiliser `ss`, `netstat`, `tcpdump` et `wireshark` pour le diagnostic réseau.

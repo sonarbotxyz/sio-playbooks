@@ -1,0 +1,1775 @@
+---
+title: "Mathématiques — Probabilités conditionnelles"
+description: "Événements, probabilités conditionnelles, arbres, formule de Bayes, loi binomiale"
+category: "Mathematiques"
+tags: ["probabilités", "bayes", "loi binomiale", "arbres", "maths"]
+difficulty: "Intermédiaire"
+---
+
+# Mathematiques -- Probabilites conditionnelles
+
+> Bible de revision BTS SIO SLAM. Chaque formule est demontree, chaque calcul est detaille fraction par fraction.
+
+---
+
+## Table des matieres
+
+1. [Rappels fondamentaux](#1-rappels-fondamentaux)
+2. [Probabilite d'un evenement](#2-probabilite-dun-evenement)
+3. [Probabilite de la reunion](#3-probabilite-de-la-reunion)
+4. [Probabilite conditionnelle](#4-probabilite-conditionnelle)
+5. [Independance de deux evenements](#5-independance-de-deux-evenements)
+6. [Arbres ponderes](#6-arbres-ponderes)
+7. [Formule des probabilites totales](#7-formule-des-probabilites-totales)
+8. [Formule de Bayes](#8-formule-de-bayes)
+9. [Variables aleatoires discretes](#9-variables-aleatoires-discretes)
+10. [Loi de Bernoulli](#10-loi-de-bernoulli)
+11. [Loi binomiale](#11-loi-binomiale)
+12. [Calculatrice et tableur](#12-calculatrice-et-tableur)
+13. [Applications informatiques](#13-applications-informatiques)
+14. [Exercices corriges](#14-exercices-corriges)
+
+---
+
+## 1. Rappels fondamentaux
+
+### 1.1 Experience aleatoire
+
+Une **experience aleatoire** est une experience dont on ne peut pas prevoir le resultat avec certitude, mais dont on connait l'ensemble des resultats possibles.
+
+Exemples :
+- Lancer un de a 6 faces : on ne sait pas quel chiffre sortira.
+- Tirer une carte dans un jeu de 32 cartes.
+- Tester un composant informatique : il fonctionne ou il est defectueux.
+
+### 1.2 Univers
+
+L'**univers**, note **Omega**, est l'ensemble de tous les resultats possibles d'une experience aleatoire.
+
+Exemples :
+- Lancer d'un de : Omega = {1, 2, 3, 4, 5, 6}
+- Lancer d'une piece : Omega = {Pile, Face}
+- Test d'un composant : Omega = {Fonctionne, Defectueux}
+
+### 1.3 Evenement
+
+Un **evenement** est une partie (un sous-ensemble) de l'univers Omega.
+
+- Un evenement **elementaire** contient un seul resultat. Exemple : "obtenir 3" = {3}.
+- Un evenement **compose** contient plusieurs resultats. Exemple : "obtenir un nombre pair" = {2, 4, 6}.
+- L'evenement **certain** est Omega lui-meme (il se realise toujours).
+- L'evenement **impossible** est l'ensemble vide (il ne se realise jamais).
+
+### 1.4 Evenement contraire
+
+L'evenement contraire de A, note **A barre** (on ecrit aussi A^c ou non-A), est l'ensemble des resultats de Omega qui n'appartiennent pas a A.
+
+Propriete fondamentale :
+
+```
+P(A barre) = 1 - P(A)
+```
+
+Exemple : si A = "obtenir un nombre pair" = {2, 4, 6}, alors A barre = "obtenir un nombre impair" = {1, 3, 5}.
+
+### 1.5 Evenements incompatibles (mutuellement exclusifs)
+
+Deux evenements A et B sont **incompatibles** si ils ne peuvent pas se realiser en meme temps :
+
+```
+A et B incompatibles  <=>  A inter B = ensemble vide  <=>  P(A inter B) = 0
+```
+
+Exemple : sur un de, A = "obtenir 1" et B = "obtenir 6" sont incompatibles. On ne peut pas obtenir 1 et 6 en meme temps avec un seul lancer.
+
+Contre-exemple : A = "obtenir un nombre pair" = {2, 4, 6} et B = "obtenir un nombre superieur a 4" = {5, 6}. Ici A inter B = {6}, donc A et B ne sont PAS incompatibles.
+
+---
+
+## 2. Probabilite d'un evenement
+
+### 2.1 Definition
+
+Soit Omega un univers fini. Une **probabilite** sur Omega est une fonction P qui associe a chaque evenement A un nombre reel P(A) verifiant :
+
+1. Pour tout evenement A : **0 <= P(A) <= 1**
+2. **P(Omega) = 1** (l'evenement certain a pour probabilite 1)
+3. Si A et B sont incompatibles : **P(A union B) = P(A) + P(B)**
+
+Consequences immediates :
+- P(ensemble vide) = 0
+- P(A barre) = 1 - P(A)
+- Pour tout A : 0 <= P(A) <= 1
+
+### 2.2 Situation d'equiprobabilite
+
+Quand tous les resultats elementaires ont la meme probabilite, on dit qu'il y a **equiprobabilite**. Dans ce cas :
+
+```
+P(A) = nombre de resultats favorables a A / nombre total de resultats
+
+P(A) = card(A) / card(Omega)
+```
+
+Exemple : on lance un de equilibre a 6 faces.
+- Omega = {1, 2, 3, 4, 5, 6}, card(Omega) = 6.
+- A = "obtenir un nombre pair" = {2, 4, 6}, card(A) = 3.
+- P(A) = 3/6 = 1/2.
+
+### 2.3 Proprietes essentielles (resume)
+
+```
+P(Omega) = 1
+P(ensemble vide) = 0
+0 <= P(A) <= 1
+P(A barre) = 1 - P(A)
+Si A et B incompatibles : P(A union B) = P(A) + P(B)
+Dans tous les cas : P(A union B) = P(A) + P(B) - P(A inter B)
+```
+
+---
+
+## 3. Probabilite de la reunion
+
+### 3.1 Formule generale
+
+Pour deux evenements quelconques A et B :
+
+```
+P(A union B) = P(A) + P(B) - P(A inter B)
+```
+
+On soustrait P(A inter B) car les resultats qui sont a la fois dans A et dans B seraient comptes deux fois.
+
+### 3.2 Cas particulier : evenements incompatibles
+
+Si A inter B = ensemble vide, alors P(A inter B) = 0 et :
+
+```
+P(A union B) = P(A) + P(B)
+```
+
+### 3.3 Exemple detaille
+
+On lance un de equilibre a 6 faces.
+- A = "obtenir un multiple de 2" = {2, 4, 6}
+- B = "obtenir un multiple de 3" = {3, 6}
+
+Calculons P(A union B) = P("obtenir un multiple de 2 OU un multiple de 3").
+
+Etape 1 : Identifier A inter B.
+A inter B = "obtenir un multiple de 2 ET un multiple de 3" = "obtenir un multiple de 6" = {6}
+
+Etape 2 : Calculer chaque probabilite.
+P(A) = 3/6 = 1/2
+P(B) = 2/6 = 1/3
+P(A inter B) = 1/6
+
+Etape 3 : Appliquer la formule.
+P(A union B) = P(A) + P(B) - P(A inter B)
+P(A union B) = 1/2 + 1/3 - 1/6
+
+Etape 4 : Reduire au meme denominateur (6).
+P(A union B) = 3/6 + 2/6 - 1/6
+P(A union B) = (3 + 2 - 1) / 6
+P(A union B) = 4/6
+P(A union B) = 2/3
+
+Verification : A union B = {2, 3, 4, 6}, card = 4, et 4/6 = 2/3. Correct.
+
+### 3.4 Deuxieme exemple
+
+Dans une classe de 30 eleves, 18 font du sport (S), 12 jouent de la musique (M) et 5 font les deux.
+
+P(S) = 18/30 = 3/5
+P(M) = 12/30 = 2/5
+P(S inter M) = 5/30 = 1/6
+
+P(S union M) = 3/5 + 2/5 - 1/6
+= 18/30 + 12/30 - 5/30
+= (18 + 12 - 5) / 30
+= 25/30
+= 5/6
+
+Donc 25 eleves sur 30 font du sport ou de la musique (ou les deux).
+
+---
+
+## 4. Probabilite conditionnelle
+
+### 4.1 Definition
+
+Soit B un evenement de probabilite non nulle (P(B) > 0). La **probabilite conditionnelle** de A sachant B est :
+
+```
+P(A | B) = P(A inter B) / P(B)
+```
+
+Interpretation : c'est la probabilite que A se realise, sachant que B est deja realise.
+
+### 4.2 Formule de la probabilite de l'intersection
+
+En reorganisant la definition, on obtient la **formule du produit** :
+
+```
+P(A inter B) = P(B) x P(A | B)
+```
+
+De meme :
+
+```
+P(A inter B) = P(A) x P(B | A)
+```
+
+Ces deux ecritures sont equivalentes.
+
+### 4.3 Exemple detaille 1 : urne
+
+Une urne contient 3 boules rouges et 2 boules bleues. On tire une boule, on ne la remet pas, puis on tire une deuxieme boule.
+
+- A = "la deuxieme boule est rouge"
+- B = "la premiere boule est rouge"
+
+Calculons P(A | B) :
+
+Si la premiere boule tiree est rouge (evenement B), il reste dans l'urne : 2 rouges et 2 bleues, soit 4 boules.
+
+P(A | B) = 2/4 = 1/2
+
+Calculons P(A | B barre) :
+
+Si la premiere boule tiree est bleue (evenement B barre), il reste dans l'urne : 3 rouges et 1 bleue, soit 4 boules.
+
+P(A | B barre) = 3/4
+
+### 4.4 Exemple detaille 2 : tableau croise
+
+Dans une entreprise de 200 salaries :
+
+```
+                    Informatique (I)    Autre service (I barre)    Total
+Femme (F)                30                     70                  100
+Homme (F barre)          50                     50                  100
+Total                    80                    120                  200
+```
+
+Calculons P(I | F) = "probabilite d'etre en informatique sachant que c'est une femme".
+
+P(I | F) = P(I inter F) / P(F)
+= (30/200) / (100/200)
+= 30/100
+= 3/10
+
+Calculons P(F | I) = "probabilite d'etre une femme sachant qu'on est en informatique".
+
+P(F | I) = P(F inter I) / P(I)
+= (30/200) / (80/200)
+= 30/80
+= 3/8
+
+Remarque importante : P(I | F) et P(F | I) sont differentes en general. L'ordre compte.
+
+### 4.5 Proprietes de la probabilite conditionnelle
+
+Pour B fixe avec P(B) > 0 :
+- 0 <= P(A | B) <= 1
+- P(B | B) = 1
+- P(Omega | B) = 1
+- P(A barre | B) = 1 - P(A | B)
+
+---
+
+## 5. Independance de deux evenements
+
+### 5.1 Definition
+
+Deux evenements A et B sont **independants** si et seulement si :
+
+```
+P(A inter B) = P(A) x P(B)
+```
+
+Cela signifie que la realisation de l'un n'influence pas la probabilite de l'autre.
+
+Equivalence (quand P(B) > 0) :
+A et B independants <=> P(A | B) = P(A)
+
+### 5.2 Verification : exemple
+
+On lance un de equilibre. A = "obtenir un nombre pair" = {2, 4, 6}. B = "obtenir un nombre <= 4" = {1, 2, 3, 4}.
+
+P(A) = 3/6 = 1/2
+P(B) = 4/6 = 2/3
+P(A inter B) = P({2, 4}) = 2/6 = 1/3
+
+P(A) x P(B) = 1/2 x 2/3 = 2/6 = 1/3
+
+P(A inter B) = P(A) x P(B), donc A et B sont independants.
+
+### 5.3 Contre-exemple
+
+On lance un de. A = "obtenir 6" = {6}. B = "obtenir un nombre pair" = {2, 4, 6}.
+
+P(A) = 1/6
+P(B) = 3/6 = 1/2
+P(A inter B) = P({6}) = 1/6
+
+P(A) x P(B) = 1/6 x 1/2 = 1/12
+
+P(A inter B) = 1/6 et P(A) x P(B) = 1/12. Or 1/6 est different de 1/12.
+
+Donc A et B ne sont PAS independants.
+
+Verification par la conditionnelle : P(A | B) = P(A inter B)/P(B) = (1/6)/(1/2) = 1/6 x 2/1 = 2/6 = 1/3, et P(A) = 1/6. Comme 1/3 est different de 1/6, les evenements ne sont pas independants.
+
+### 5.4 Attention : incompatible et independant, ce n'est pas pareil
+
+- Incompatibles : A et B ne peuvent pas arriver en meme temps (P(A inter B) = 0).
+- Independants : la realisation de l'un ne change pas la probabilite de l'autre (P(A inter B) = P(A)P(B)).
+
+Si A et B sont incompatibles et de probabilites non nulles, alors P(A inter B) = 0 mais P(A)P(B) > 0, donc ils ne sont PAS independants.
+
+---
+
+## 6. Arbres ponderes
+
+### 6.1 Principe de construction
+
+Un arbre pondre est un outil graphique pour representer et calculer des probabilites dans une experience a plusieurs etapes. Chaque branche porte la probabilite (conditionnelle) de l'evenement correspondant.
+
+**Regles fondamentales :**
+
+1. **Regle du produit** : la probabilite d'un chemin (de la racine a une feuille) est le produit des probabilites le long des branches.
+2. **Regle de la somme** : la somme des probabilites des branches partant d'un meme noeud vaut 1.
+
+### 6.2 Exemple : test de composants
+
+Une usine produit des composants. 5% sont defectueux (D). Un test de controle detecte 90% des composants defectueux (positif T+) mais donne aussi un faux positif dans 3% des cas (composant bon mais test positif).
+
+Donnees :
+- P(D) = 0.05, donc P(D barre) = 0.95
+- P(T+ | D) = 0.90, donc P(T- | D) = 0.10
+- P(T+ | D barre) = 0.03, donc P(T- | D barre) = 0.97
+
+Arbre :
+
+```
+                          +----- T+    P(D) x P(T+|D) = 0.05 x 0.90 = 0.045
+                   0.90  /
+            D ----+
+     0.05  /       0.10  \
+          /                +----- T-    P(D) x P(T-|D) = 0.05 x 0.10 = 0.005
+  Racine +
+          \                +----- T+    P(Db) x P(T+|Db) = 0.95 x 0.03 = 0.0285
+     0.95  \       0.03  /
+            Db ---+
+                   0.97  \
+                          +----- T-    P(Db) x P(T-|Db) = 0.95 x 0.97 = 0.9215
+```
+
+(Db = D barre = non defectueux)
+
+Verification : la somme des quatre feuilles doit valoir 1.
+0.045 + 0.005 + 0.0285 + 0.9215 = 1.000. Correct.
+
+### 6.3 Lecture de l'arbre
+
+A partir de cet arbre, on peut lire directement :
+- P(D inter T+) = 0.045
+- P(D inter T-) = 0.005
+- P(D barre inter T+) = 0.0285
+- P(D barre inter T-) = 0.9215
+
+---
+
+## 7. Formule des probabilites totales
+
+### 7.1 Enonce
+
+Soit B1, B2, ..., Bn des evenements formant une **partition** de Omega (ils sont deux a deux incompatibles et leur reunion est Omega, avec P(Bi) > 0 pour tout i).
+
+Alors pour tout evenement A :
+
+```
+P(A) = P(B1) x P(A | B1) + P(B2) x P(A | B2) + ... + P(Bn) x P(A | Bn)
+```
+
+Cas le plus frequent (partition en deux) : B et B barre.
+
+```
+P(A) = P(B) x P(A | B) + P(B barre) x P(A | B barre)
+```
+
+### 7.2 Demonstration par l'arbre
+
+L'evenement A correspond a toutes les feuilles ou A apparait. Chaque feuille est un chemin dont la probabilite est le produit des branches. La probabilite totale de A est la somme de ces chemins. C'est exactement la formule ci-dessus.
+
+### 7.3 Exemple (suite du test de composants)
+
+Calculons P(T+) = probabilite qu'un composant soit declare positif par le test.
+
+P(T+) = P(D) x P(T+ | D) + P(D barre) x P(T+ | D barre)
+P(T+) = 0.05 x 0.90 + 0.95 x 0.03
+P(T+) = 0.045 + 0.0285
+P(T+) = 0.0735
+
+Donc 7.35% des composants sont declares positifs par le test.
+
+### 7.4 Deuxieme exemple : fournisseurs
+
+Une entreprise achete des disques durs a trois fournisseurs :
+- Fournisseur F1 : 50% des achats, taux de panne 2%
+- Fournisseur F2 : 30% des achats, taux de panne 5%
+- Fournisseur F3 : 20% des achats, taux de panne 8%
+
+P(Panne) = P(F1) x P(Panne | F1) + P(F2) x P(Panne | F2) + P(F3) x P(Panne | F3)
+P(Panne) = 0.50 x 0.02 + 0.30 x 0.05 + 0.20 x 0.08
+P(Panne) = 0.010 + 0.015 + 0.016
+P(Panne) = 0.041
+
+Le taux de panne global est de 4.1%.
+
+---
+
+## 8. Formule de Bayes
+
+### 8.1 Enonce
+
+Soit B un evenement de probabilite non nulle, et A un evenement tel que P(A) > 0. Alors :
+
+```
+P(B | A) = P(B) x P(A | B) / P(A)
+```
+
+Avec la formule des probabilites totales au denominateur :
+
+```
+P(B | A) = P(B) x P(A | B) / [ P(B) x P(A | B) + P(B barre) x P(A | B barre) ]
+```
+
+### 8.2 Demonstration
+
+Par definition de la probabilite conditionnelle :
+
+P(B | A) = P(A inter B) / P(A)
+
+Or P(A inter B) = P(B) x P(A | B) (formule du produit).
+
+Donc :
+
+P(B | A) = P(B) x P(A | B) / P(A)
+
+C'est la formule de Bayes.
+
+### 8.3 Interpretation : "retourner l'arbre"
+
+L'arbre donne naturellement P(A | B) (probabilite de la deuxieme etape sachant la premiere). La formule de Bayes permet de calculer P(B | A), c'est-a-dire de "remonter" l'arbre : connaitre la cause sachant l'effet observe.
+
+### 8.4 Exemple 1 : test medical
+
+Un test de depistage d'une maladie a les caracteristiques suivantes :
+- La maladie touche 1% de la population : P(M) = 0.01
+- Le test detecte 95% des malades : P(T+ | M) = 0.95 (sensibilite)
+- Le test donne un faux positif dans 3% des cas : P(T+ | M barre) = 0.03 (1 - specificite)
+
+Question : une personne est testee positive. Quelle est la probabilite qu'elle soit reellement malade ?
+
+On cherche P(M | T+).
+
+Arbre :
+
+```
+                          +----- T+    0.01 x 0.95 = 0.0095
+                   0.95  /
+            M ----+
+     0.01  /       0.05  \
+          /                +----- T-    0.01 x 0.05 = 0.0005
+  Racine +
+          \                +----- T+    0.99 x 0.03 = 0.0297
+     0.99  \       0.03  /
+            Mb ---+
+                   0.97  \
+                          +----- T-    0.99 x 0.97 = 0.9603
+```
+
+Etape 1 : Calculer P(T+) par la formule des probabilites totales.
+P(T+) = P(M) x P(T+ | M) + P(M barre) x P(T+ | M barre)
+P(T+) = 0.01 x 0.95 + 0.99 x 0.03
+P(T+) = 0.0095 + 0.0297
+P(T+) = 0.0392
+
+Etape 2 : Appliquer Bayes.
+P(M | T+) = P(M) x P(T+ | M) / P(T+)
+P(M | T+) = 0.0095 / 0.0392
+P(M | T+) = 95/392
+
+Calculons cette fraction :
+95/392 = 0.24234... soit environ 24.2%
+
+Resultat remarquable : meme avec un test "fiable" (sensibilite 95%, specificite 97%), un resultat positif ne donne que 24.2% de chance d'etre reellement malade, car la maladie est rare.
+
+### 8.5 Exemple 2 : filtre anti-spam (Bayes naif)
+
+Un filtre anti-spam analyse les emails. Donnees :
+- 40% des emails recus sont du spam : P(S) = 0.40
+- Le mot "gratuit" apparait dans 80% des spams : P(G | S) = 0.80
+- Le mot "gratuit" apparait dans 10% des emails normaux : P(G | S barre) = 0.10
+
+Un email contient le mot "gratuit". Quelle est la probabilite que ce soit du spam ?
+
+On cherche P(S | G).
+
+P(G) = P(S) x P(G | S) + P(S barre) x P(G | S barre)
+P(G) = 0.40 x 0.80 + 0.60 x 0.10
+P(G) = 0.32 + 0.06
+P(G) = 0.38
+
+P(S | G) = P(S) x P(G | S) / P(G)
+P(S | G) = 0.32 / 0.38
+P(S | G) = 32/38
+P(S | G) = 16/19
+
+Calculons : 16/19 = 0.8421... soit environ 84.2%.
+
+Si un email contient "gratuit", il y a environ 84% de chances que ce soit du spam.
+
+### 8.6 Exemple 3 : panne informatique
+
+Un serveur peut tomber en panne a cause du materiel (H) ou du logiciel (L) ou d'un probleme reseau (R). Historiquement :
+- P(H) = 0.30, P(L) = 0.50, P(R) = 0.20
+- En cas de panne materielle, le redemarrage echoue 70% du temps : P(E | H) = 0.70
+- En cas de panne logicielle, le redemarrage echoue 20% du temps : P(E | L) = 0.20
+- En cas de panne reseau, le redemarrage echoue 10% du temps : P(E | R) = 0.10
+
+Le redemarrage echoue. Quelle est la probabilite que la cause soit materielle ?
+
+P(E) = P(H) x P(E | H) + P(L) x P(E | L) + P(R) x P(E | R)
+P(E) = 0.30 x 0.70 + 0.50 x 0.20 + 0.20 x 0.10
+P(E) = 0.21 + 0.10 + 0.02
+P(E) = 0.33
+
+P(H | E) = P(H) x P(E | H) / P(E)
+P(H | E) = 0.21 / 0.33
+P(H | E) = 21/33
+P(H | E) = 7/11
+
+7/11 = 0.6363... soit environ 63.6%.
+
+---
+
+## 9. Variables aleatoires discretes
+
+### 9.1 Definition
+
+Une **variable aleatoire discrete** X est une fonction qui associe a chaque resultat de l'univers Omega un nombre reel. L'ensemble des valeurs possibles est fini (ou denombrable).
+
+Exemple : on lance un de. X = "le numero obtenu". Les valeurs possibles sont {1, 2, 3, 4, 5, 6}.
+
+### 9.2 Loi de probabilite
+
+La **loi de probabilite** de X est le tableau qui donne chaque valeur possible xi et sa probabilite P(X = xi).
+
+Exemple : on lance deux pieces. X = "nombre de Pile obtenus".
+
+```
+    xi    |    0    |    1    |    2
+  --------+---------+---------+--------
+  P(X=xi) |   1/4   |   2/4   |   1/4
+          |  = 1/4  |  = 1/2  |  = 1/4
+```
+
+Verification : 1/4 + 1/2 + 1/4 = 1/4 + 2/4 + 1/4 = 4/4 = 1. Correct.
+
+### 9.3 Esperance E(X)
+
+L'**esperance** est la valeur moyenne theorique de X sur un grand nombre de repetitions.
+
+```
+E(X) = somme de [ xi x P(X = xi) ] pour toutes les valeurs xi
+```
+
+Exemple avec les deux pieces :
+
+E(X) = 0 x 1/4 + 1 x 1/2 + 2 x 1/4
+E(X) = 0 + 1/2 + 2/4
+E(X) = 0 + 1/2 + 1/2
+E(X) = 1
+
+En moyenne, on obtient 1 Pile sur deux lancers. C'est intuitif.
+
+### 9.4 Variance V(X)
+
+La **variance** mesure la dispersion des valeurs autour de l'esperance.
+
+```
+V(X) = somme de [ (xi - E(X))^2 x P(X = xi) ]
+```
+
+Formule de Koenig-Huygens (plus pratique pour les calculs) :
+
+```
+V(X) = E(X^2) - [E(X)]^2
+```
+
+ou E(X^2) = somme de [ xi^2 x P(X = xi) ].
+
+Exemple (suite des deux pieces) :
+
+E(X^2) = 0^2 x 1/4 + 1^2 x 1/2 + 2^2 x 1/4
+E(X^2) = 0 + 1/2 + 4/4
+E(X^2) = 1/2 + 1
+E(X^2) = 3/2
+
+V(X) = E(X^2) - [E(X)]^2
+V(X) = 3/2 - 1^2
+V(X) = 3/2 - 1
+V(X) = 1/2
+
+### 9.5 Ecart-type sigma(X)
+
+```
+sigma(X) = racine carree de V(X)
+```
+
+Exemple : sigma(X) = racine(1/2) = racine(2)/2 = 0.7071 environ.
+
+---
+
+## 10. Loi de Bernoulli
+
+### 10.1 Definition
+
+Une **epreuve de Bernoulli** est une experience aleatoire qui n'a que deux issues possibles :
+- **Succes** (S) avec probabilite **p**
+- **Echec** (E) avec probabilite **q = 1 - p**
+
+La variable X qui vaut 1 en cas de succes et 0 en cas d'echec suit une **loi de Bernoulli** de parametre p. On note X ~ B(p).
+
+### 10.2 Loi de probabilite
+
+```
+    xi    |    0    |    1
+  --------+---------+---------
+  P(X=xi) |  1 - p  |    p
+```
+
+### 10.3 Esperance et variance
+
+```
+E(X) = 0 x (1-p) + 1 x p = p
+
+V(X) = E(X^2) - [E(X)]^2 = p - p^2 = p(1 - p) = pq
+```
+
+Detail du calcul de V(X) :
+E(X^2) = 0^2 x (1-p) + 1^2 x p = p
+V(X) = p - p^2 = p(1-p)
+
+### 10.4 Exemple
+
+Un composant a une probabilite de 0.03 d'etre defectueux. On teste un composant.
+
+X ~ B(0.03) avec X = 1 si defectueux, X = 0 si bon.
+
+E(X) = 0.03
+V(X) = 0.03 x 0.97 = 0.0291
+
+---
+
+## 11. Loi binomiale
+
+### 11.1 Schema de Bernoulli
+
+On repete **n** fois de maniere **independante** une epreuve de Bernoulli de parametre p. C'est un **schema de Bernoulli**.
+
+La variable X = "nombre de succes parmi les n epreuves" suit une **loi binomiale** de parametres n et p. On note X ~ B(n, p).
+
+### 11.2 Coefficient binomial
+
+Le **coefficient binomial** C(n, k) (aussi note "n parmi k" ou C_n^k) est le nombre de facons de choisir k elements parmi n.
+
+```
+C(n, k) = n! / [ k! x (n - k)! ]
+```
+
+ou n! = n x (n-1) x (n-2) x ... x 2 x 1 (factorielle).
+
+Exemples de calcul detaille :
+
+C(5, 2) = 5! / (2! x 3!)
+= (5 x 4 x 3 x 2 x 1) / [(2 x 1) x (3 x 2 x 1)]
+= 120 / (2 x 6)
+= 120 / 12
+= 10
+
+C(6, 3) = 6! / (3! x 3!)
+= 720 / (6 x 6)
+= 720 / 36
+= 20
+
+Cas particuliers :
+- C(n, 0) = 1
+- C(n, 1) = n
+- C(n, n) = 1
+- C(n, k) = C(n, n-k)
+
+### 11.3 Formule de la loi binomiale
+
+Si X ~ B(n, p), alors pour k allant de 0 a n :
+
+```
+P(X = k) = C(n, k) x p^k x (1 - p)^(n - k)
+```
+
+Interpretation : C(n,k) est le nombre de facons de placer les k succes parmi les n epreuves, p^k est la probabilite d'avoir k succes, (1-p)^(n-k) est la probabilite d'avoir (n-k) echecs.
+
+### 11.4 Calcul pas a pas complet
+
+Exemple : X ~ B(4, 1/3). Calculons P(X = 2).
+
+P(X = 2) = C(4, 2) x (1/3)^2 x (2/3)^2
+
+Etape 1 : Calculer C(4, 2).
+C(4, 2) = 4! / (2! x 2!)
+= 24 / (2 x 2)
+= 24 / 4
+= 6
+
+Etape 2 : Calculer (1/3)^2.
+(1/3)^2 = 1/9
+
+Etape 3 : Calculer (2/3)^2.
+(2/3)^2 = 4/9
+
+Etape 4 : Multiplier le tout.
+P(X = 2) = 6 x (1/9) x (4/9)
+= 6 x 4 / (9 x 9)
+= 24 / 81
+
+Etape 5 : Simplifier.
+24/81 : PGCD(24, 81). 24 = 8 x 3. 81 = 27 x 3. PGCD = 3.
+24/81 = 8/27
+
+P(X = 2) = 8/27 (environ 0.2963)
+
+### 11.5 Loi complete de X ~ B(4, 1/3)
+
+Calculons chaque P(X = k) :
+
+P(X = 0) = C(4,0) x (1/3)^0 x (2/3)^4 = 1 x 1 x 16/81 = 16/81
+
+P(X = 1) = C(4,1) x (1/3)^1 x (2/3)^3 = 4 x (1/3) x (8/27) = 4 x 8 / (3 x 27) = 32/81
+
+P(X = 2) = 8/27 = 24/81 (calcule ci-dessus)
+
+P(X = 3) = C(4,3) x (1/3)^3 x (2/3)^1 = 4 x (1/27) x (2/3) = 4 x 2 / (27 x 3) = 8/81
+
+P(X = 4) = C(4,4) x (1/3)^4 x (2/3)^0 = 1 x 1/81 x 1 = 1/81
+
+Verification : 16/81 + 32/81 + 24/81 + 8/81 + 1/81 = 81/81 = 1. Correct.
+
+```
+    k     |    0    |    1    |    2    |    3    |    4
+  --------+---------+---------+---------+---------+---------
+  P(X=k)  |  16/81  |  32/81  |  24/81  |   8/81  |   1/81
+```
+
+### 11.6 Esperance et variance de la loi binomiale
+
+Si X ~ B(n, p) :
+
+```
+E(X) = n x p
+V(X) = n x p x (1 - p)
+sigma(X) = racine(n x p x (1 - p))
+```
+
+Exemple : X ~ B(4, 1/3).
+E(X) = 4 x 1/3 = 4/3 (environ 1.33)
+V(X) = 4 x 1/3 x 2/3 = 8/9 (environ 0.89)
+sigma(X) = racine(8/9) = 2 x racine(2) / 3 (environ 0.94)
+
+### 11.7 Probabilites cumulees
+
+Pour calculer P(X <= k), P(X >= k), P(X < k) ou P(X > k), on additionne les probabilites individuelles correspondantes.
+
+Exemple : X ~ B(4, 1/3). Calculer P(X >= 2).
+
+P(X >= 2) = P(X=2) + P(X=3) + P(X=4)
+= 24/81 + 8/81 + 1/81
+= 33/81
+= 11/27
+
+Autre methode (par le complementaire) :
+P(X >= 2) = 1 - P(X <= 1) = 1 - P(X=0) - P(X=1)
+= 1 - 16/81 - 32/81
+= 81/81 - 16/81 - 32/81
+= 33/81
+= 11/27
+
+---
+
+## 12. Calculatrice et tableur
+
+### 12.1 Calculatrice (Casio / TI)
+
+**Coefficient binomial C(n, k) :**
+
+- Casio : n [MATH] [nCr] k
+- TI : n [MATH] > PRB > nCr > k
+
+Exemple : C(10, 3) => entrer 10 nCr 3 => resultat 120.
+
+**P(X = k) pour X ~ B(n, p) :**
+
+- Casio : MENU > STAT > DIST > BINOM > Bpd
+  - x = k, Numtrial = n, p = p
+- TI : 2nd DISTR > binompdf(n, p, k)
+
+**P(X <= k) pour X ~ B(n, p) :**
+
+- Casio : MENU > STAT > DIST > BINOM > Bcd
+  - x = k, Numtrial = n, p = p
+- TI : 2nd DISTR > binomcdf(n, p, k)
+
+### 12.2 Tableur (Excel / LibreOffice Calc)
+
+**Coefficient binomial :**
+
+```
+=COMBIN(n; k)
+```
+
+Exemple : =COMBIN(10; 3) renvoie 120.
+
+**P(X = k) :**
+
+```
+=LOI.BINOMIALE(k; n; p; FAUX)
+```
+
+ou en anglais : =BINOM.DIST(k, n, p, FALSE)
+
+**P(X <= k) :**
+
+```
+=LOI.BINOMIALE(k; n; p; VRAI)
+```
+
+ou en anglais : =BINOM.DIST(k, n, p, TRUE)
+
+### 12.3 Python
+
+```python
+from math import comb, factorial
+from scipy.stats import binom
+
+# Coefficient binomial
+print(comb(10, 3))  # 120
+
+# P(X = k) pour X ~ B(n, p)
+n, p, k = 10, 0.3, 4
+print(binom.pmf(k, n, p))  # P(X = 4)
+
+# P(X <= k)
+print(binom.cdf(k, n, p))  # P(X <= 4)
+
+# P(X >= k)
+print(1 - binom.cdf(k - 1, n, p))  # P(X >= 4)
+```
+
+---
+
+## 13. Applications informatiques
+
+### 13.1 Fiabilite des systemes
+
+Un systeme est compose de n composants identiques et independants. Chaque composant a une probabilite p de fonctionner.
+
+**Systeme en serie** (tous les composants doivent fonctionner) :
+P(systeme fonctionne) = p^n
+
+Exemple : 5 composants en serie, p = 0.99 chacun.
+P = 0.99^5 = 0.95099 environ 95.1%.
+
+**Systeme en parallele** (il suffit qu'un composant fonctionne) :
+P(systeme fonctionne) = 1 - (1 - p)^n = 1 - q^n
+
+Exemple : 3 composants en parallele, p = 0.90 chacun.
+P = 1 - (0.10)^3 = 1 - 0.001 = 0.999 soit 99.9%.
+
+### 13.2 Taux d'erreur reseau
+
+Sur un reseau, chaque paquet a une probabilite d'erreur de 0.001 (1 paquet sur 1000 est corrompu). On envoie n = 500 paquets. X = nombre de paquets corrompus. X ~ B(500, 0.001).
+
+P(aucun paquet corrompu) = P(X = 0) = C(500,0) x 0.001^0 x 0.999^500
+= 0.999^500
+
+Calcul : ln(0.999^500) = 500 x ln(0.999) = 500 x (-0.001000...) = -0.5003
+0.999^500 = e^(-0.5003) = 0.6063 environ.
+
+Donc P(X = 0) = 0.606, soit environ 60.6% de chance qu'aucun paquet ne soit corrompu.
+
+P(X >= 1) = 1 - P(X = 0) = 1 - 0.606 = 0.394, soit environ 39.4%.
+
+### 13.3 Tests logiciels : probabilite de bug
+
+Un programme contient 1000 lignes de code. Chaque ligne a independamment une probabilite de 0.002 de contenir un bug. X = nombre de bugs. X ~ B(1000, 0.002).
+
+E(X) = 1000 x 0.002 = 2 bugs en moyenne.
+
+P(X = 0) = 0.998^1000.
+ln(0.998^1000) = 1000 x ln(0.998) = 1000 x (-0.002002) = -2.002
+P(X = 0) = e^(-2.002) = 0.1351 environ 13.5%.
+
+Il y a seulement 13.5% de chances que le programme ne contienne aucun bug.
+
+### 13.4 Detection de spam : Bayes naif
+
+Le classificateur de Bayes naif utilise la formule de Bayes pour decider si un email est un spam.
+
+Principe simplifie : on observe la presence/absence de certains mots (w1, w2, ..., wm). L'hypothese "naive" suppose l'independance des mots.
+
+```
+P(Spam | w1, w2, ..., wm) proportionnel a P(Spam) x P(w1|Spam) x P(w2|Spam) x ... x P(wm|Spam)
+```
+
+On compare cette valeur a :
+
+```
+P(Non-spam | w1, ..., wm) proportionnel a P(Non-spam) x P(w1|Non-spam) x ... x P(wm|Non-spam)
+```
+
+L'email est classe spam si le premier produit est superieur au second.
+
+Exemple concret :
+
+Un email contient les mots "offre" et "gratuit".
+- P(Spam) = 0.3, P(Non-spam) = 0.7
+- P("offre" | Spam) = 0.6, P("offre" | Non-spam) = 0.05
+- P("gratuit" | Spam) = 0.8, P("gratuit" | Non-spam) = 0.02
+
+Score spam = 0.3 x 0.6 x 0.8 = 0.144
+Score non-spam = 0.7 x 0.05 x 0.02 = 0.0007
+
+P(Spam | mots) = 0.144 / (0.144 + 0.0007) = 0.144 / 0.1447 = 0.9952
+
+Probabilite de spam : 99.5%. L'email est classe spam.
+
+---
+
+## 14. Exercices corriges
+
+---
+
+### Exercice 1 : Probabilites de base avec un de
+
+On lance un de equilibre a 6 faces. Soient :
+- A = "obtenir un nombre impair"
+- B = "obtenir un nombre strictement superieur a 3"
+
+**1.** Calculer P(A) et P(B).
+**2.** Calculer P(A inter B).
+**3.** En deduire P(A union B).
+**4.** A et B sont-ils independants ?
+
+**Correction :**
+
+1. A = {1, 3, 5}, donc P(A) = 3/6 = 1/2.
+   B = {4, 5, 6}, donc P(B) = 3/6 = 1/2.
+
+2. A inter B = {5}, donc P(A inter B) = 1/6.
+
+3. P(A union B) = P(A) + P(B) - P(A inter B)
+   = 1/2 + 1/2 - 1/6
+   = 3/6 + 3/6 - 1/6
+   = 5/6
+
+4. P(A) x P(B) = 1/2 x 1/2 = 1/4.
+   P(A inter B) = 1/6.
+   1/4 est different de 1/6, donc A et B ne sont PAS independants.
+
+---
+
+### Exercice 2 : Probabilite conditionnelle avec tableau
+
+Dans un lycee de 400 eleves :
+
+```
+                BTS SIO (S)    BTS Compta (C)    Total
+Fille (F)           60              100            160
+Garcon (G)         140              100            240
+Total              200              200            400
+```
+
+**1.** Calculer P(S), P(F), P(S inter F).
+**2.** Calculer P(S | F) et P(F | S).
+**3.** S et F sont-ils independants ?
+
+**Correction :**
+
+1. P(S) = 200/400 = 1/2
+   P(F) = 160/400 = 2/5
+   P(S inter F) = 60/400 = 3/20
+
+2. P(S | F) = P(S inter F) / P(F)
+   = (3/20) / (2/5)
+   = (3/20) x (5/2)
+   = 15/40
+   = 3/8
+
+   P(F | S) = P(S inter F) / P(S)
+   = (3/20) / (1/2)
+   = (3/20) x (2/1)
+   = 6/20
+   = 3/10
+
+3. P(S) x P(F) = 1/2 x 2/5 = 2/10 = 1/5
+   P(S inter F) = 3/20
+   1/5 = 4/20. Or 3/20 est different de 4/20.
+   Donc S et F ne sont PAS independants.
+
+---
+
+### Exercice 3 : Arbre pondre -- tirage sans remise
+
+Une urne contient 4 boules rouges (R) et 6 boules vertes (V). On tire deux boules successivement sans remise.
+
+**1.** Construire l'arbre pondre.
+**2.** Calculer la probabilite d'obtenir deux boules rouges.
+**3.** Calculer la probabilite d'obtenir exactement une boule rouge.
+
+**Correction :**
+
+1. Arbre :
+
+```
+                          +----- R    (4/10) x (3/9) = 12/90
+                   3/9   /
+            R ----+
+     4/10  /       6/9   \
+          /                +----- V    (4/10) x (6/9) = 24/90
+  Racine +
+          \                +----- R    (6/10) x (4/9) = 24/90
+     6/10  \       4/9   /
+            V ----+
+                   5/9   \
+                          +----- V    (6/10) x (5/9) = 30/90
+```
+
+Verification : 12/90 + 24/90 + 24/90 + 30/90 = 90/90 = 1. Correct.
+
+2. P(R puis R) = 4/10 x 3/9 = 12/90
+
+   Simplifions : PGCD(12, 90) = 6.
+   12/90 = 2/15
+
+3. P(exactement une rouge) = P(R puis V) + P(V puis R)
+   = 24/90 + 24/90
+   = 48/90
+
+   Simplifions : PGCD(48, 90). 48 = 2^4 x 3. 90 = 2 x 3^2 x 5. PGCD = 6.
+   48/90 = 8/15
+
+---
+
+### Exercice 4 : Probabilites totales et Bayes -- pieces de monnaie
+
+On a deux pieces de monnaie :
+- Piece 1 (equilibree) : P(Pile | P1) = 1/2
+- Piece 2 (truquee) : P(Pile | P2) = 3/4
+
+On choisit une piece au hasard (equiprobablement) et on la lance.
+
+**1.** Construire l'arbre.
+**2.** Calculer P(Pile).
+**3.** On a obtenu Pile. Quelle est la probabilite que ce soit la piece truquee ?
+
+**Correction :**
+
+1. Arbre :
+
+```
+                            +----- Pile    (1/2) x (1/2) = 1/4
+                     1/2   /
+            P1 -----+
+     1/2   /         1/2   \
+          /                  +----- Face    (1/2) x (1/2) = 1/4
+  Racine +
+          \                  +----- Pile    (1/2) x (3/4) = 3/8
+     1/2   \         3/4   /
+            P2 -----+
+                     1/4   \
+                            +----- Face    (1/2) x (1/4) = 1/8
+```
+
+Verification : 1/4 + 1/4 + 3/8 + 1/8 = 2/8 + 2/8 + 3/8 + 1/8 = 8/8 = 1. Correct.
+
+2. P(Pile) = P(P1) x P(Pile | P1) + P(P2) x P(Pile | P2)
+   = 1/2 x 1/2 + 1/2 x 3/4
+   = 1/4 + 3/8
+   = 2/8 + 3/8
+   = 5/8
+
+3. P(P2 | Pile) = P(P2) x P(Pile | P2) / P(Pile)
+   = (3/8) / (5/8)
+   = (3/8) x (8/5)
+   = 3/5
+
+   La probabilite que ce soit la piece truquee sachant qu'on a obtenu Pile est 3/5 = 0.6.
+
+---
+
+### Exercice 5 : Test de depistage (Bayes classique)
+
+Une maladie touche 2% de la population. Un test a les caracteristiques suivantes :
+- Sensibilite : P(T+ | M) = 0.98
+- Specificite : P(T- | M barre) = 0.95, donc P(T+ | M barre) = 0.05
+
+**1.** Construire l'arbre.
+**2.** Calculer P(T+).
+**3.** Calculer P(M | T+).
+**4.** Calculer P(M barre | T-).
+
+**Correction :**
+
+1. Arbre :
+
+```
+                           +----- T+    0.02 x 0.98 = 0.0196
+                    0.98  /
+            M -----+
+     0.02  /        0.02  \
+          /                 +----- T-    0.02 x 0.02 = 0.0004
+  Racine +
+          \                 +----- T+    0.98 x 0.05 = 0.0490
+     0.98  \        0.05  /
+            Mb ----+
+                    0.95  \
+                           +----- T-    0.98 x 0.95 = 0.9310
+```
+
+Verification : 0.0196 + 0.0004 + 0.0490 + 0.9310 = 1.0000. Correct.
+
+2. P(T+) = 0.0196 + 0.0490 = 0.0686
+
+3. P(M | T+) = P(M inter T+) / P(T+)
+   = 0.0196 / 0.0686
+
+   Calculons : 0.0196/0.0686 = 196/686.
+   PGCD(196, 686) : 196 = 4 x 49 = 2^2 x 7^2. 686 = 2 x 343 = 2 x 7^3. PGCD = 2 x 7^2 = 98.
+   196/686 = 2/7
+
+   P(M | T+) = 2/7 = 0.2857 environ 28.6%.
+
+4. P(M barre | T-) = P(M barre inter T-) / P(T-)
+   P(T-) = 1 - P(T+) = 1 - 0.0686 = 0.9314
+   P(M barre | T-) = 0.9310 / 0.9314 = 0.99957...
+
+   Pratiquement 100% : un resultat negatif est tres fiable.
+
+---
+
+### Exercice 6 : Loi binomiale -- controle qualite
+
+Un lot de cles USB contient 10% de cles defectueuses. On preleve 8 cles au hasard (avec remise, ou lot suffisamment grand). X = nombre de cles defectueuses. X ~ B(8, 0.1).
+
+**1.** Calculer P(X = 0).
+**2.** Calculer P(X = 1).
+**3.** Calculer P(X >= 2).
+
+**Correction :**
+
+1. P(X = 0) = C(8,0) x 0.1^0 x 0.9^8
+   = 1 x 1 x 0.9^8
+
+   0.9^2 = 0.81
+   0.9^4 = 0.81^2 = 0.6561
+   0.9^8 = 0.6561^2 = 0.43046721
+
+   P(X = 0) = 0.4305 environ 43.05%.
+
+2. P(X = 1) = C(8,1) x 0.1^1 x 0.9^7
+   = 8 x 0.1 x 0.9^7
+
+   0.9^7 = 0.9^8 / 0.9 = 0.43046721 / 0.9 = 0.4782969
+
+   P(X = 1) = 8 x 0.1 x 0.4782969
+   = 0.8 x 0.4782969
+   = 0.38263752
+
+   P(X = 1) = 0.3826 environ 38.26%.
+
+3. P(X >= 2) = 1 - P(X = 0) - P(X = 1)
+   = 1 - 0.43046721 - 0.38263752
+   = 1 - 0.81310473
+   = 0.18689527
+
+   P(X >= 2) = 0.1869 environ 18.69%.
+
+---
+
+### Exercice 7 : Bayes -- diagnostic de panne serveur
+
+Un serveur tombe en panne. Les causes possibles sont :
+- Disque dur (D) : P(D) = 0.40
+- RAM (R) : P(R) = 0.35
+- Alimentation (A) : P(A) = 0.25
+
+Le temps de redemarrage depasse 5 minutes (evenement L pour "long") avec les probabilites :
+- P(L | D) = 0.80
+- P(L | R) = 0.50
+- P(L | A) = 0.30
+
+Le redemarrage a pris plus de 5 minutes. Quelle est la cause la plus probable ?
+
+**Correction :**
+
+Etape 1 : Calculer P(L).
+P(L) = P(D) x P(L|D) + P(R) x P(L|R) + P(A) x P(L|A)
+= 0.40 x 0.80 + 0.35 x 0.50 + 0.25 x 0.30
+= 0.320 + 0.175 + 0.075
+= 0.570
+
+Etape 2 : Appliquer Bayes pour chaque cause.
+
+P(D | L) = P(D) x P(L|D) / P(L) = 0.320 / 0.570
+
+Simplifions : 320/570. PGCD(320, 570) = 10. 320/570 = 32/57.
+32/57 = 0.5614 environ 56.1%.
+
+P(R | L) = P(R) x P(L|R) / P(L) = 0.175 / 0.570
+= 175/570. PGCD(175, 570) = 5. = 35/114.
+35/114 = 0.3070 environ 30.7%.
+
+P(A | L) = P(A) x P(L|A) / P(L) = 0.075 / 0.570
+= 75/570. PGCD(75, 570) = 15. = 5/38.
+5/38 = 0.1316 environ 13.2%.
+
+Verification : 32/57 + 35/114 + 5/38
+= 64/114 + 35/114 + 15/114
+= 114/114 = 1. Correct.
+
+La cause la plus probable est le disque dur (56.1%).
+
+---
+
+### Exercice 8 : Variable aleatoire -- jeu de des
+
+On lance deux des equilibres. X = somme des deux des.
+
+**1.** Determiner la loi de probabilite de X.
+**2.** Calculer E(X).
+**3.** Calculer V(X).
+
+**Correction :**
+
+1. L'univers contient 6 x 6 = 36 resultats equiprobables.
+
+Denombrons les facons d'obtenir chaque somme :
+
+```
+  X = k  |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12
+  -------+----+----+----+----+----+----+----+----+----+----+----
+  Nb cas |  1 |  2 |  3 |  4 |  5 |  6 |  5 |  4 |  3 |  2 |  1
+  P(X=k) | 1  | 2  | 3  | 4  | 5  | 6  | 5  | 4  | 3  | 2  | 1
+         | /36| /36| /36| /36| /36| /36| /36| /36| /36| /36| /36
+```
+
+Verification : 1+2+3+4+5+6+5+4+3+2+1 = 36. Correct.
+
+2. E(X) = (2x1 + 3x2 + 4x3 + 5x4 + 6x5 + 7x6 + 8x5 + 9x4 + 10x3 + 11x2 + 12x1) / 36
+
+Numerateur :
+2 + 6 + 12 + 20 + 30 + 42 + 40 + 36 + 30 + 22 + 12 = 252
+
+E(X) = 252/36 = 7
+
+3. E(X^2) = (4x1 + 9x2 + 16x3 + 25x4 + 36x5 + 49x6 + 64x5 + 81x4 + 100x3 + 121x2 + 144x1) / 36
+
+Numerateur :
+4 + 18 + 48 + 100 + 180 + 294 + 320 + 324 + 300 + 242 + 144 = 1974
+
+E(X^2) = 1974/36 = 329/6
+
+V(X) = E(X^2) - [E(X)]^2 = 329/6 - 49 = 329/6 - 294/6 = 35/6
+
+V(X) = 35/6 (environ 5.833)
+sigma(X) = racine(35/6) environ 2.415
+
+---
+
+### Exercice 9 : Loi binomiale -- QCM
+
+Un QCM comporte 10 questions. Chaque question propose 4 reponses dont une seule est correcte. Un eleve repond au hasard a toutes les questions. X = nombre de bonnes reponses. X ~ B(10, 1/4).
+
+**1.** Calculer E(X).
+**2.** Calculer P(X = 0).
+**3.** Calculer P(X >= 5).
+
+**Correction :**
+
+1. E(X) = np = 10 x 1/4 = 10/4 = 5/2 = 2.5
+
+   En moyenne, l'eleve obtient 2.5 bonnes reponses sur 10.
+
+2. P(X = 0) = C(10,0) x (1/4)^0 x (3/4)^10
+   = 1 x 1 x (3/4)^10
+
+   (3/4)^2 = 9/16
+   (3/4)^4 = (9/16)^2 = 81/256
+   (3/4)^8 = (81/256)^2 = 6561/65536
+   (3/4)^10 = (3/4)^8 x (3/4)^2 = (6561/65536) x (9/16) = 59049/1048576
+
+   P(X = 0) = 59049/1048576 = 0.05631 environ 5.6%.
+
+3. P(X >= 5) = somme de P(X = k) pour k = 5, 6, ..., 10.
+
+   Il est plus rapide de calculer chaque terme :
+
+   P(X = 5) = C(10,5) x (1/4)^5 x (3/4)^5
+   C(10,5) = 252
+   (1/4)^5 = 1/1024
+   (3/4)^5 = 243/1024
+   P(X=5) = 252 x 243 / 1048576 = 61236/1048576
+
+   P(X = 6) = C(10,6) x (1/4)^6 x (3/4)^4
+   C(10,6) = 210
+   (1/4)^6 = 1/4096
+   (3/4)^4 = 81/256
+   P(X=6) = 210 x 81 / 1048576 = 17010/1048576
+
+   P(X = 7) = C(10,7) x (1/4)^7 x (3/4)^3
+   C(10,7) = 120
+   (1/4)^7 = 1/16384
+   (3/4)^3 = 27/64
+   P(X=7) = 120 x 27 / 1048576 = 3240/1048576
+
+   P(X = 8) = C(10,8) x (1/4)^8 x (3/4)^2
+   C(10,8) = 45
+   (1/4)^8 = 1/65536
+   (3/4)^2 = 9/16
+   P(X=8) = 45 x 9 / 1048576 = 405/1048576
+
+   P(X = 9) = C(10,9) x (1/4)^9 x (3/4)^1
+   C(10,9) = 10
+   (1/4)^9 = 1/262144
+   (3/4)^1 = 3/4
+   P(X=9) = 10 x 3 / 1048576 = 30/1048576
+
+   P(X = 10) = C(10,10) x (1/4)^10 x (3/4)^0
+   = 1/1048576
+
+   P(X >= 5) = (61236 + 17010 + 3240 + 405 + 30 + 1) / 1048576
+   = 81922 / 1048576
+   = 40961 / 524288
+   = 0.07813 environ 7.8%.
+
+   Un eleve repondant au hasard a moins de 8% de chances d'avoir au moins la moitie des reponses correctes.
+
+---
+
+### Exercice 10 : Filtre anti-spam a deux criteres
+
+Un filtre anti-spam analyse deux criteres independants :
+- Presence du mot "promo" (evenement W)
+- Expediteur inconnu (evenement U)
+
+Donnees :
+- P(Spam) = 0.30
+- P(W | Spam) = 0.70, P(W | Non-spam) = 0.05
+- P(U | Spam) = 0.60, P(U | Non-spam) = 0.15
+
+Un email contient "promo" et vient d'un expediteur inconnu.
+
+**1.** Calculer P(W inter U | Spam) et P(W inter U | Non-spam) (par independance des criteres sachant la classe).
+**2.** Calculer P(Spam | W inter U).
+
+**Correction :**
+
+1. Par l'hypothese d'independance conditionnelle (Bayes naif) :
+
+   P(W inter U | Spam) = P(W | Spam) x P(U | Spam) = 0.70 x 0.60 = 0.42
+
+   P(W inter U | Non-spam) = P(W | Non-spam) x P(U | Non-spam) = 0.05 x 0.15 = 0.0075
+
+2. P(W inter U) = P(Spam) x P(W inter U | Spam) + P(Non-spam) x P(W inter U | Non-spam)
+   = 0.30 x 0.42 + 0.70 x 0.0075
+   = 0.126 + 0.00525
+   = 0.13125
+
+   P(Spam | W inter U) = P(Spam) x P(W inter U | Spam) / P(W inter U)
+   = 0.126 / 0.13125
+
+   Simplifions : 126/131.25. Multiplions par 8 : 1008/1050.
+   PGCD(1008, 1050) = 42. 1008/1050 = 24/25.
+
+   P(Spam | W inter U) = 24/25 = 0.96
+
+   Probabilite de 96% que ce soit du spam.
+
+---
+
+### Exercice 11 : Systeme informatique avec redondance
+
+Un serveur web utilise 2 disques en miroir (RAID 1). Chaque disque a une probabilite de panne de 0.05 sur un an. Les pannes sont independantes.
+
+**1.** Calculer la probabilite que les deux disques tombent en panne (perte de donnees).
+**2.** Calculer la probabilite qu'au moins un disque fonctionne.
+**3.** On ajoute un troisieme disque. Recalculer.
+
+**Correction :**
+
+Soit D1 = "disque 1 en panne" et D2 = "disque 2 en panne". P(D1) = P(D2) = 0.05. Independance.
+
+1. P(D1 inter D2) = P(D1) x P(D2) = 0.05 x 0.05 = 0.0025
+
+   Probabilite de perte de donnees : 0.25%.
+
+2. P(au moins un fonctionne) = 1 - P(tous en panne) = 1 - 0.0025 = 0.9975
+
+   Fiabilite : 99.75%.
+
+3. Avec 3 disques independants, perte de donnees = les 3 en panne.
+   P = 0.05^3 = 0.000125
+
+   P(au moins un fonctionne) = 1 - 0.000125 = 0.999875
+
+   Fiabilite : 99.9875%.
+
+---
+
+### Exercice 12 : Evenement contraire et probabilites totales
+
+Dans un reseau, un paquet traverse 3 routeurs en serie. Chaque routeur, independamment, a une probabilite de 0.02 de perdre le paquet.
+
+**1.** Calculer la probabilite que le paquet arrive a destination (les 3 routeurs le transmettent).
+**2.** Calculer la probabilite qu'il soit perdu.
+**3.** Sur 100 paquets envoyes (independants), X = nombre de paquets arrives. Quelle est la loi de X ? Calculer E(X).
+
+**Correction :**
+
+1. P(passe un routeur) = 1 - 0.02 = 0.98.
+   P(passe les 3) = 0.98^3 = 0.98 x 0.98 x 0.98
+
+   0.98 x 0.98 = 0.9604
+   0.9604 x 0.98 = 0.941192
+
+   P(arrive) = 0.941192 environ 94.12%.
+
+2. P(perdu) = 1 - 0.941192 = 0.058808 environ 5.88%.
+
+3. Chaque paquet arrive avec probabilite p = 0.941192, independamment.
+   X ~ B(100, 0.941192).
+
+   E(X) = 100 x 0.941192 = 94.12 paquets en moyenne arrivent.
+
+---
+
+### Exercice 13 : Arbre a trois niveaux
+
+Un site web propose un formulaire d'inscription. Les visiteurs viennent de :
+- Moteur de recherche (M) : 60%
+- Reseaux sociaux (R) : 30%
+- Acces direct (D) : 10%
+
+Taux d'inscription selon la source :
+- P(I | M) = 0.05
+- P(I | R) = 0.08
+- P(I | D) = 0.15
+
+Parmi les inscrits, le taux de premier achat :
+- P(A | I inter M) = 0.20
+- P(A | I inter R) = 0.15
+- P(A | I inter D) = 0.30
+
+**1.** Calculer P(I).
+**2.** Calculer P(M | I) (un inscrit vient-il probablement de Google ?).
+**3.** Calculer P(I inter A) (inscription ET achat).
+
+**Correction :**
+
+1. P(I) = P(M) x P(I|M) + P(R) x P(I|R) + P(D) x P(I|D)
+   = 0.60 x 0.05 + 0.30 x 0.08 + 0.10 x 0.15
+   = 0.030 + 0.024 + 0.015
+   = 0.069
+
+2. P(M | I) = P(M) x P(I|M) / P(I)
+   = 0.030 / 0.069
+   = 30/69
+   PGCD(30, 69) = 3.
+   = 10/23
+   = 0.4348 environ 43.5%.
+
+3. P(I inter A) = somme sur les sources de P(source) x P(I|source) x P(A|I inter source)
+
+   = 0.60 x 0.05 x 0.20 + 0.30 x 0.08 x 0.15 + 0.10 x 0.15 x 0.30
+   = 0.006 + 0.0036 + 0.0045
+   = 0.0141
+
+   1.41% des visiteurs s'inscrivent ET effectuent un achat.
+
+---
+
+### Exercice 14 : Loi binomiale -- mot de passe
+
+Un mot de passe est compose de 6 caracteres. Chaque caractere est choisi independamment parmi 36 possibilites (26 lettres + 10 chiffres). X = nombre de chiffres dans le mot de passe. X ~ B(6, 10/36) = B(6, 5/18).
+
+**1.** Calculer E(X).
+**2.** Calculer P(X = 0) (mot de passe sans chiffre).
+**3.** Calculer P(X >= 1) (au moins un chiffre).
+
+**Correction :**
+
+1. E(X) = np = 6 x 5/18 = 30/18 = 5/3 environ 1.67.
+
+   En moyenne, un mot de passe contient 5/3 chiffres.
+
+2. P(X = 0) = C(6,0) x (5/18)^0 x (13/18)^6
+   = (13/18)^6
+
+   Calculons pas a pas :
+   (13/18)^2 = 169/324
+   (13/18)^3 = (169 x 13) / (324 x 18) = 2197/5832
+   (13/18)^6 = (2197/5832)^2 = 4826809 / 34012224
+
+   4826809 / 34012224 = 0.14191 environ 14.2%.
+
+3. P(X >= 1) = 1 - P(X = 0) = 1 - 0.14191 = 0.85809 environ 85.8%.
+
+   Environ 86% des mots de passe aleatoires contiennent au moins un chiffre.
+
+---
+
+### Exercice 15 : Exercice complet de synthese -- controle de production
+
+Une usine fabrique des cartes electroniques. La production se fait en deux etapes :
+
+Etape 1 : soudure. 8% des cartes ont un defaut de soudure (S).
+Etape 2 : test. Le test detecte 95% des cartes defectueuses et accepte 97% des cartes bonnes.
+
+**1.** Construire l'arbre complet.
+**2.** Calculer la probabilite qu'une carte soit acceptee par le test.
+**3.** Sachant qu'une carte est rejetee, calculer la probabilite qu'elle ait un vrai defaut.
+**4.** On teste un lot de 20 cartes toutes bonnes. Y = nombre de cartes rejetees a tort. Donner la loi de Y, E(Y) et P(Y >= 2).
+
+**Correction :**
+
+1. Arbre :
+
+```
+                            +----- T+ (rejet)    0.08 x 0.95 = 0.0760
+                     0.95  /
+            S ------+
+     0.08  /         0.05  \
+          /                  +----- T- (accepte)  0.08 x 0.05 = 0.0040
+  Racine +
+          \                  +----- T+ (rejet)    0.92 x 0.03 = 0.0276
+     0.92  \         0.03  /
+            Sb -----+
+                     0.97  \
+                            +----- T- (accepte)  0.92 x 0.97 = 0.8924
+```
+
+Verification : 0.0760 + 0.0040 + 0.0276 + 0.8924 = 1.0000. Correct.
+
+2. P(acceptee) = P(T-) = P(S inter T-) + P(Sb inter T-)
+   = 0.0040 + 0.8924
+   = 0.8964
+
+   Environ 89.64% des cartes sont acceptees.
+
+3. P(rejetee) = P(T+) = 1 - 0.8964 = 0.1036
+
+   P(S | T+) = P(S inter T+) / P(T+)
+   = 0.0760 / 0.1036
+
+   Simplifions : 760/1036.
+   PGCD(760, 1036). 760 = 8 x 95 = 2^3 x 5 x 19. 1036 = 4 x 259 = 2^2 x 7 x 37.
+   PGCD = 4.
+   760/1036 = 190/259.
+
+   190/259 = 0.7336 environ 73.4%.
+
+   Si une carte est rejetee, il y a environ 73% de chances qu'elle ait un vrai defaut (et 27% de faux positifs).
+
+4. Les 20 cartes sont bonnes, donc chacune a une probabilite d'etre rejetee a tort de P(T+ | Sb) = 0.03.
+
+   Y ~ B(20, 0.03).
+
+   E(Y) = 20 x 0.03 = 0.60. En moyenne, 0.6 carte est rejetee a tort.
+
+   P(Y >= 2) = 1 - P(Y = 0) - P(Y = 1)
+
+   P(Y = 0) = C(20,0) x 0.03^0 x 0.97^20 = 0.97^20
+
+   Calculons 0.97^20 :
+   0.97^2 = 0.9409
+   0.97^4 = 0.9409^2 = 0.88529281
+   0.97^8 = 0.88529281^2 = 0.78374
+   0.97^16 = 0.78374^2 = 0.61425
+   0.97^20 = 0.97^16 x 0.97^4 = 0.61425 x 0.88529 = 0.54379
+
+   P(Y = 0) = 0.5438 environ.
+
+   P(Y = 1) = C(20,1) x 0.03^1 x 0.97^19
+   = 20 x 0.03 x (0.97^20 / 0.97)
+   = 20 x 0.03 x (0.54379 / 0.97)
+   = 20 x 0.03 x 0.56061
+   = 0.6 x 0.56061
+   = 0.33637
+
+   P(Y >= 2) = 1 - 0.5438 - 0.3364
+   = 1 - 0.8802
+   = 0.1198
+
+   Environ 12% de chances que 2 cartes ou plus soient rejetees a tort dans le lot.
+
+---
+
+### Exercice 16 : Exercice type examen -- entreprise informatique
+
+Une entreprise de services informatiques intervient chez ses clients. L'intervention concerne :
+- Un probleme materiel (M) dans 45% des cas
+- Un probleme logiciel (L) dans 55% des cas
+
+La probabilite de resoudre le probleme en une seule visite est :
+- P(R | M) = 0.70
+- P(R | L) = 0.90
+
+**1.** Construire l'arbre pondre et calculer toutes les probabilites des feuilles.
+**2.** Calculer P(R).
+**3.** L'intervention a necessite une deuxieme visite. Calculer la probabilite que le probleme soit materiel.
+**4.** Sur une semaine, le technicien effectue 12 interventions independantes. Z = nombre d'interventions resolues en une visite. Determiner la loi de Z, E(Z) et sigma(Z).
+
+**Correction :**
+
+1. Arbre :
+
+```
+                           +----- R     0.45 x 0.70 = 0.315
+                    0.70  /
+            M -----+
+     0.45  /        0.30  \
+          /                 +----- Rb    0.45 x 0.30 = 0.135
+  Racine +
+          \                 +----- R     0.55 x 0.90 = 0.495
+     0.55  \        0.90  /
+            L -----+
+                    0.10  \
+                           +----- Rb    0.55 x 0.10 = 0.055
+```
+
+Verification : 0.315 + 0.135 + 0.495 + 0.055 = 1.000. Correct.
+
+2. P(R) = 0.315 + 0.495 = 0.810
+
+   81% des interventions sont resolues en une visite.
+
+3. "Necessite une deuxieme visite" = R barre. P(Rb) = 1 - 0.810 = 0.190.
+
+   P(M | Rb) = P(M inter Rb) / P(Rb)
+   = 0.135 / 0.190
+   = 135/190
+
+   PGCD(135, 190) = 5.
+   = 27/38
+   = 0.7105 environ 71.1%.
+
+   Si une deuxieme visite est necessaire, il y a 71% de chances que ce soit un probleme materiel.
+
+4. Chaque intervention est resolue en une visite avec probabilite p = 0.810.
+   Z ~ B(12, 0.810).
+
+   E(Z) = 12 x 0.810 = 9.72
+
+   V(Z) = 12 x 0.810 x 0.190 = 12 x 0.1539 = 1.8468
+
+   sigma(Z) = racine(1.8468) = 1.359 environ.
+
+   En moyenne, environ 10 interventions sur 12 sont resolues en une seule visite.
+
+---
+
+### Exercice 17 : Complement -- P("au moins un") avec le complementaire
+
+Une application mobile plante avec une probabilite de 0.02 a chaque lancement. On la lance 50 fois (independamment).
+
+**Calculer la probabilite qu'elle plante au moins une fois.**
+
+X = nombre de plantages. X ~ B(50, 0.02).
+
+P(X >= 1) = 1 - P(X = 0)
+
+P(X = 0) = C(50,0) x 0.02^0 x 0.98^50 = 0.98^50
+
+Calculons 0.98^50 :
+ln(0.98^50) = 50 x ln(0.98) = 50 x (-0.02020) = -1.0101
+0.98^50 = e^(-1.0101) = 0.3642
+
+P(X >= 1) = 1 - 0.3642 = 0.6358
+
+Il y a environ 63.6% de chances que l'application plante au moins une fois en 50 lancements.
+
+---
+
+## Fiche de formules recapitulative
+
+```
++-----------------------------------------------------------+
+| PROBABILITES - FORMULES ESSENTIELLES                      |
++-----------------------------------------------------------+
+|                                                           |
+| P(A barre) = 1 - P(A)                                    |
+|                                                           |
+| P(A union B) = P(A) + P(B) - P(A inter B)                |
+|                                                           |
+| P(A | B) = P(A inter B) / P(B)                            |
+|                                                           |
+| P(A inter B) = P(B) x P(A | B)                           |
+|                                                           |
+| Independance : P(A inter B) = P(A) x P(B)                |
+|                                                           |
+| Probabilites totales :                                    |
+| P(A) = P(B)P(A|B) + P(Bb)P(A|Bb)                         |
+|                                                           |
+| Bayes :                                                   |
+| P(B|A) = P(B)P(A|B) / P(A)                               |
+|                                                           |
+| E(X) = somme xi.P(X=xi)                                  |
+| V(X) = E(X^2) - [E(X)]^2                                 |
+| sigma(X) = racine(V(X))                                   |
+|                                                           |
+| Bernoulli B(p) : E=p, V=p(1-p)                           |
+|                                                           |
+| Binomiale B(n,p) :                                        |
+| P(X=k) = C(n,k) . p^k . (1-p)^(n-k)                     |
+| E(X) = np                                                 |
+| V(X) = np(1-p)                                            |
+|                                                           |
+| C(n,k) = n! / [k!(n-k)!]                                 |
++-----------------------------------------------------------+
+```
+
+---
+
+## Methode de resolution type examen
+
+Pour tout exercice de probabilites au BTS SIO, suivre cette demarche :
+
+**Etape 1 : Identifier les evenements.**
+Nommer chaque evenement avec une lettre. Ecrire les probabilites donnees dans l'enonce.
+
+**Etape 2 : Construire l'arbre pondre.**
+Placer les evenements de la premiere etape en premier, puis les evenements conditionnels. Verifier que les branches partant d'un meme noeud somment a 1.
+
+**Etape 3 : Calculer les probabilites des feuilles.**
+Multiplier le long de chaque chemin (regle du produit). Verifier que la somme de toutes les feuilles vaut 1.
+
+**Etape 4 : Repondre aux questions.**
+- "Calculer P(A)" -> Probabilites totales (somme des feuilles correspondantes).
+- "Sachant que B, calculer P(A|B)" -> Formule de Bayes ou definition.
+- "Loi binomiale" -> Identifier n et p, appliquer la formule, simplifier.
+
+**Etape 5 : Verifier.**
+La somme des probabilites d'une partition vaut toujours 1. Toute probabilite est entre 0 et 1. Simplifier les fractions jusqu'au bout.

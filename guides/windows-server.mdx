@@ -1,0 +1,1672 @@
+---
+title: "Windows Server"
+description: "Active Directory, GPO, DNS/DHCP Windows, partage de fichiers, NTFS, gestion des utilisateurs"
+category: "Systemes"
+tags: ["windows server", "active directory", "gpo", "ntfs", "domaine"]
+difficulty: "Intermédiaire"
+---
+
+# Windows Server -- Administration complete
+
+## 1. Installation de Windows Server
+
+### 1.1 Editions
+
+Windows Server existe en plusieurs editions selon les besoins :
+
+| Edition | Usage | Limites |
+|---|---|---|
+| **Datacenter** | Virtualisation massive, cloud prive | Nombre illimite de VM sous Hyper-V |
+| **Standard** | Serveur physique ou virtualisation limitee | 2 VM Hyper-V incluses dans la licence |
+| **Essentials** | Petite entreprise (jusqu'a 25 utilisateurs) | Pas de roles avances, pas de virtualisation |
+
+Windows Server 2019 et 2022 partagent la meme base. La version 2022 apporte le support de TLS 1.3 natif, des ameliorations de securite (Secured-core server) et le hot-patching sur Azure.
+
+### 1.2 Modes d'installation
+
+- **Desktop Experience (Experience utilisateur)** : interface graphique complete avec Server Manager, MMC, navigateur. Recommande pour l'apprentissage en BTS SIO.
+- **Server Core** : ligne de commande uniquement (PowerShell, sconfig). Empreinte reduite, surface d'attaque minimale. Pas d'explorateur de fichiers ni de Server Manager local.
+- **Nano Server** : conteneur minimal (uniquement en image de conteneur depuis 2019, plus installable directement).
+
+### 1.3 Processus d'installation
+
+1. Demarrer sur le media ISO (USB ou DVD).
+2. Choisir la langue, le format horaire et le clavier.
+3. Selectionner l'edition et le mode (Desktop Experience ou Core).
+4. Choisir le type d'installation : mise a niveau ou installation personnalisee.
+5. Partitionner le disque (minimum 32 Go recommande pour la partition systeme).
+6. Definir le mot de passe Administrateur local.
+7. Apres redemarrage, configurer le reseau (IP statique obligatoire pour un serveur de production).
+
+### 1.4 Configuration post-installation
+
+Etapes essentielles via **sconfig** (Core) ou **Server Manager** (GUI) :
+
+- Renommer le serveur (exemple : `SRV-DC01`)
+- Configurer une adresse IP statique
+- Definir le serveur DNS (lui-meme s'il sera controleur de domaine)
+- Activer Windows (licence ou evaluation 180 jours)
+- Appliquer les mises a jour Windows Update
+- Configurer le pare-feu Windows
+
+```powershell
+# Renommer le serveur
+Rename-Computer -NewName "SRV-DC01" -Restart
+
+# Configurer l'adresse IP statique
+New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress 192.168.1.10 -PrefixLength 24 -DefaultGateway 192.168.1.1
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses 192.168.1.10,192.168.1.11
+```
+
+---
+
+## 2. Outils d'administration
+
+### 2.1 Server Manager (Gestionnaire de serveur)
+
+Console centrale lancee automatiquement a l'ouverture de session sur Desktop Experience. Permet de :
+
+- Ajouter/supprimer des roles et fonctionnalites
+- Gerer plusieurs serveurs a distance (ajout de serveurs)
+- Surveiller les evenements, services et performances
+- Acceder aux outils d'administration (DNS, DHCP, AD, etc.)
+
+### 2.2 PowerShell
+
+PowerShell est l'outil principal d'administration en ligne de commande. Les commandes (cmdlets) suivent la convention **Verbe-Nom** :
+
+| Cmdlet | Description |
+|---|---|
+| `Get-WindowsFeature` | Lister les roles et fonctionnalites |
+| `Install-WindowsFeature` | Installer un role ou une fonctionnalite |
+| `Get-Service` | Lister les services |
+| `Get-EventLog` | Consulter les journaux d'evenements |
+| `Get-ADUser` | Lister les utilisateurs Active Directory |
+| `New-ADUser` | Creer un utilisateur AD |
+| `Get-ADGroup` | Lister les groupes AD |
+| `Get-GPO` | Lister les GPO |
+
+PowerShell supporte le pipeline (`|`), les variables (`$var`), les boucles, les scripts (.ps1) et le remoting (`Enter-PSSession`, `Invoke-Command`).
+
+### 2.3 MMC (Microsoft Management Console)
+
+Console generique (`mmc.exe`) dans laquelle on ajoute des composants logiciels enfichables (snap-ins) :
+
+- `dsa.msc` : Utilisateurs et ordinateurs Active Directory
+- `dnsmgmt.msc` : Gestionnaire DNS
+- `dhcpmgmt.msc` : Gestionnaire DHCP
+- `gpmc.msc` : Console de gestion des strategies de groupe
+- `diskmgmt.msc` : Gestion des disques
+- `compmgmt.msc` : Gestion de l'ordinateur
+- `services.msc` : Services
+- `eventvwr.msc` : Observateur d'evenements
+
+### 2.4 RSAT (Remote Server Administration Tools)
+
+Les outils RSAT permettent d'administrer un serveur Windows depuis un poste client Windows 10/11. Depuis Windows 10 1809, ils s'installent comme fonctionnalites facultatives :
+
+```powershell
+# Lister les outils RSAT disponibles
+Get-WindowsCapability -Name RSAT* -Online
+
+# Installer tous les outils RSAT
+Get-WindowsCapability -Name RSAT* -Online | Add-WindowsCapability -Online
+
+# Installer uniquement les outils AD
+Add-WindowsCapability -Online -Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0
+```
+
+---
+
+## 3. Active Directory (AD DS)
+
+### 3.1 Concepts fondamentaux
+
+**Active Directory Domain Services (AD DS)** est un annuaire centralise qui stocke les informations sur les objets du reseau (utilisateurs, ordinateurs, groupes, etc.) et fournit l'authentification et l'autorisation.
+
+#### Composants logiques
+
+| Composant | Definition |
+|---|---|
+| **Domaine** | Unite de base d'AD. Perimetre d'administration et de securite. Identifie par un nom DNS (ex: `entreprise.local`). |
+| **Arbre (Tree)** | Hierarchie de domaines partageant un espace de noms contigu (ex: `entreprise.local` -> `paris.entreprise.local`). |
+| **Foret (Forest)** | Ensemble d'arbres partageant un schema et un catalogue global communs. La foret est la limite de securite absolue. |
+| **Site** | Representation de la topologie physique du reseau (sous-reseaux). Utilise pour optimiser la replication et l'authentification. |
+| **Unite d'organisation (OU)** | Conteneur logique pour organiser les objets dans un domaine. Permet de deleguer l'administration et d'appliquer des GPO. |
+
+#### Composants physiques
+
+| Composant | Definition |
+|---|---|
+| **Controleur de domaine (DC)** | Serveur hebergeant une copie de la base AD (NTDS.dit) et assurant l'authentification. |
+| **Catalogue global (GC)** | Controleur de domaine stockant un repliquat partiel de tous les objets de la foret. Necessaire pour les ouvertures de session et les recherches inter-domaines. |
+| **Roles FSMO** | 5 roles operationnels uniques : Schema Master, Domain Naming Master (1 par foret), RID Master, PDC Emulator, Infrastructure Master (1 par domaine). |
+| **Base NTDS.dit** | Fichier de base de donnees AD (par defaut dans `C:\Windows\NTDS\`). |
+| **SYSVOL** | Dossier replique contenant les scripts de connexion et les fichiers de strategie de groupe. |
+
+#### Protocoles utilises par AD
+
+- **LDAP** (port 389) : acces a l'annuaire
+- **LDAPS** (port 636) : LDAP securise par TLS
+- **Kerberos** (port 88) : authentification
+- **DNS** (port 53) : resolution de noms, indispensable au fonctionnement d'AD
+- **SMB** (port 445) : replication SYSVOL
+- **RPC** : replication AD entre controleurs de domaine
+
+### 3.2 Installation d'AD DS
+
+#### Pre-requis
+
+- Adresse IP statique configuree
+- Nom de serveur definitif (le renommage apres promotion est complexe)
+- Le serveur doit pouvoir se resoudre lui-meme en DNS
+
+#### Installation du role
+
+```powershell
+# Installer le role AD DS
+Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
+
+# Promouvoir en controleur de domaine (nouvelle foret)
+Install-ADDSForest `
+    -DomainName "entreprise.local" `
+    -DomainNetBIOSName "ENTREPRISE" `
+    -ForestMode "WinThreshold" `
+    -DomainMode "WinThreshold" `
+    -InstallDns:$true `
+    -SafeModeAdministratorPassword (ConvertTo-SecureString "P@ssw0rd123!" -AsPlainText -Force) `
+    -Force:$true
+```
+
+Le serveur redemarrera automatiquement apres la promotion.
+
+#### Ajouter un controleur de domaine supplementaire
+
+```powershell
+Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
+
+Install-ADDSDomainController `
+    -DomainName "entreprise.local" `
+    -InstallDns:$true `
+    -Credential (Get-Credential) `
+    -SafeModeAdministratorPassword (ConvertTo-SecureString "P@ssw0rd123!" -AsPlainText -Force) `
+    -Force:$true
+```
+
+#### Verification post-installation
+
+```powershell
+# Verifier que le DC repond
+Get-ADDomainController -Filter *
+
+# Verifier les enregistrements DNS SRV
+nslookup -type=srv _ldap._tcp.dc._msdcs.entreprise.local
+
+# Verifier la replication
+repadmin /replsummary
+
+# Tester le fonctionnement global
+dcdiag /v
+```
+
+### 3.3 Niveaux fonctionnels
+
+Le niveau fonctionnel du domaine et de la foret determine les fonctionnalites disponibles. Il depend de la version minimale des controleurs de domaine :
+
+| Niveau | Version minimale des DC | Fonctionnalites ajoutees |
+|---|---|---|
+| Windows Server 2012 R2 | Server 2012 R2 | Politiques d'authentification, silos |
+| Windows Server 2016 | Server 2016 | PAM (Privileged Access Management) |
+| Windows Server 2025 | Server 2025 | Ameliorations de schema |
+
+On peut elever le niveau fonctionnel mais jamais le redescendre.
+
+---
+
+## 4. Objets Active Directory
+
+### 4.1 Utilisateurs
+
+Chaque utilisateur possede un compte dans AD identifie par :
+
+- **SamAccountName** : nom de connexion pre-Windows 2000 (ex: `jdupont`)
+- **UPN (User Principal Name)** : identifiant au format email (ex: `jdupont@entreprise.local`)
+- **SID (Security Identifier)** : identifiant unique de securite (non reutilisable)
+- **DN (Distinguished Name)** : chemin complet dans l'annuaire (ex: `CN=Jean Dupont,OU=Comptabilite,DC=entreprise,DC=local`)
+
+#### Creation d'un utilisateur
+
+Via l'interface graphique : `dsa.msc` > clic droit sur l'OU > Nouveau > Utilisateur.
+
+Via PowerShell :
+
+```powershell
+New-ADUser -Name "Jean Dupont" `
+    -GivenName "Jean" `
+    -Surname "Dupont" `
+    -SamAccountName "jdupont" `
+    -UserPrincipalName "jdupont@entreprise.local" `
+    -Path "OU=Comptabilite,DC=entreprise,DC=local" `
+    -AccountPassword (ConvertTo-SecureString "Motdepasse1!" -AsPlainText -Force) `
+    -Enabled $true `
+    -ChangePasswordAtLogon $true
+```
+
+#### Creation en masse par CSV
+
+```powershell
+Import-Csv -Path "C:\utilisateurs.csv" -Delimiter ";" | ForEach-Object {
+    New-ADUser -Name "$($_.Prenom) $($_.Nom)" `
+        -GivenName $_.Prenom `
+        -Surname $_.Nom `
+        -SamAccountName $_.Login `
+        -UserPrincipalName "$($_.Login)@entreprise.local" `
+        -Path $_.OU `
+        -AccountPassword (ConvertTo-SecureString $_.MotDePasse -AsPlainText -Force) `
+        -Enabled $true
+}
+```
+
+Exemple de fichier CSV :
+
+```
+Prenom;Nom;Login;MotDePasse;OU
+Jean;Dupont;jdupont;P@ss2024!;OU=Comptabilite,DC=entreprise,DC=local
+Marie;Martin;mmartin;P@ss2024!;OU=Direction,DC=entreprise,DC=local
+```
+
+### 4.2 Groupes
+
+Les groupes permettent de regrouper des objets pour simplifier l'attribution de permissions.
+
+#### Types de groupes
+
+| Type | Usage |
+|---|---|
+| **Securite** | Attribution de permissions sur des ressources (partages, GPO, etc.) |
+| **Distribution** | Listes de diffusion email (pas de permissions de securite) |
+
+#### Etendues de groupes
+
+| Etendue | Membres possibles | Peut recevoir des permissions sur | Usage typique |
+|---|---|---|---|
+| **Locale de domaine** | Utilisateurs/groupes de toute la foret | Ressources du domaine local uniquement | Attribution directe de permissions sur une ressource |
+| **Globale** | Utilisateurs/groupes du meme domaine | Toute la foret | Regrouper les utilisateurs par role/service |
+| **Universelle** | Utilisateurs/groupes de toute la foret | Toute la foret | Regrouper des groupes globaux de plusieurs domaines |
+
+#### Strategie AGDLP
+
+La meilleure pratique Microsoft pour la gestion des permissions :
+
+1. **A** (Account) : Le compte utilisateur est membre d'un...
+2. **G** (Global group) : Groupe global (par role/service), qui est membre d'un...
+3. **DL** (Domain Local group) : Groupe local de domaine (par ressource), auquel on attribue les...
+4. **P** (Permissions) : Permissions sur la ressource.
+
+Exemple concret :
+- Utilisateur `jdupont` est membre du groupe global `GG_Comptabilite`
+- `GG_Comptabilite` est membre du groupe local de domaine `DL_Partage_Compta_Lecture`
+- `DL_Partage_Compta_Lecture` a la permission Lecture sur le dossier `\\SRV-FICHIERS\Comptabilite`
+
+```powershell
+# Creer un groupe global
+New-ADGroup -Name "GG_Comptabilite" -GroupScope Global -GroupCategory Security `
+    -Path "OU=Groupes,DC=entreprise,DC=local"
+
+# Creer un groupe local de domaine
+New-ADGroup -Name "DL_Partage_Compta_Lecture" -GroupScope DomainLocal -GroupCategory Security `
+    -Path "OU=Groupes,DC=entreprise,DC=local"
+
+# Ajouter un utilisateur au groupe global
+Add-ADGroupMember -Identity "GG_Comptabilite" -Members "jdupont"
+
+# Imbriquer le groupe global dans le groupe local de domaine
+Add-ADGroupMember -Identity "DL_Partage_Compta_Lecture" -Members "GG_Comptabilite"
+```
+
+### 4.3 Unites d'organisation (OU)
+
+Les OU sont des conteneurs logiques dans le domaine. Elles servent a :
+
+- Organiser les objets de maniere hierarchique
+- Deleguer l'administration (un technicien peut gerer les comptes d'une OU sans etre administrateur du domaine)
+- Appliquer des GPO de maniere ciblee
+
+Structure type d'OU :
+
+```
+entreprise.local
+  |-- OU=Utilisateurs
+  |     |-- OU=Direction
+  |     |-- OU=Comptabilite
+  |     |-- OU=Informatique
+  |-- OU=Ordinateurs
+  |     |-- OU=Postes_Fixes
+  |     |-- OU=Portables
+  |-- OU=Serveurs
+  |-- OU=Groupes
+```
+
+```powershell
+# Creer une OU
+New-ADOrganizationalUnit -Name "Comptabilite" `
+    -Path "OU=Utilisateurs,DC=entreprise,DC=local" `
+    -ProtectedFromAccidentalDeletion $true
+```
+
+La protection contre la suppression accidentelle est activee par defaut. Pour supprimer une OU protegee, il faut d'abord desactiver cette protection dans les proprietes avancees.
+
+### 4.4 Comptes d'ordinateurs
+
+Chaque ordinateur joint au domaine possede un compte dans AD. La jonction au domaine permet :
+
+- L'authentification centralisee (ouverture de session avec un compte AD)
+- L'application des GPO
+- L'acces aux ressources partagees du domaine
+
+```powershell
+# Joindre un ordinateur au domaine (depuis le poste client)
+Add-Computer -DomainName "entreprise.local" -Credential (Get-Credential) -Restart
+
+# Pre-creer un compte d'ordinateur dans une OU specifique
+New-ADComputer -Name "PC-COMPTA01" `
+    -Path "OU=Postes_Fixes,OU=Ordinateurs,DC=entreprise,DC=local" `
+    -Enabled $true
+```
+
+---
+
+## 5. Strategies de groupe (GPO)
+
+### 5.1 Principes
+
+Une **GPO (Group Policy Object)** est un ensemble de parametres de configuration appliques automatiquement aux utilisateurs et aux ordinateurs. Les GPO sont gerees via la console `gpmc.msc` (GPMC -- Group Policy Management Console).
+
+Chaque GPO contient deux sections :
+
+- **Configuration ordinateur** : appliquee au demarrage de la machine et periodiquement (toutes les 90 min par defaut).
+- **Configuration utilisateur** : appliquee a l'ouverture de session et periodiquement.
+
+### 5.2 Ordre d'application (LSDOU)
+
+Les GPO s'appliquent dans un ordre precis. En cas de conflit, la derniere appliquee l'emporte :
+
+1. **L** -- Local : strategie locale de l'ordinateur (`gpedit.msc`)
+2. **S** -- Site : GPO liees au site AD
+3. **D** -- Domaine : GPO liees au domaine
+4. **OU** -- Unite d'organisation : GPO liees aux OU (de la plus haute a la plus basse dans la hierarchie)
+
+Ainsi, une GPO liee a une OU enfant ecrase les parametres contradictoires d'une GPO liee au domaine.
+
+### 5.3 Heritage et blocage
+
+- Par defaut, les GPO sont **heritees** : une GPO liee au domaine s'applique a toutes les OU du domaine.
+- **Bloquer l'heritage** : option sur une OU pour empecher l'heritage des GPO des niveaux superieurs. A utiliser avec precaution.
+- **Appliquer (Enforced)** : forcer une GPO a s'appliquer meme si l'heritage est bloque sur l'OU cible. Prioritaire sur le blocage.
+
+### 5.4 Filtrage
+
+#### Filtrage de securite
+
+Par defaut, une GPO s'applique au groupe `Utilisateurs authentifies`. On peut restreindre l'application a un groupe de securite specifique en modifiant le filtrage de securite (onglet Etendue de la GPO dans GPMC).
+
+#### Filtrage WMI
+
+Permet de conditionner l'application d'une GPO a une requete WMI (Windows Management Instrumentation). Exemple : appliquer une GPO uniquement aux machines sous Windows 11 :
+
+```sql
+SELECT * FROM Win32_OperatingSystem WHERE Version LIKE "10.0.2%" AND ProductType = "1"
+```
+
+### 5.5 Exemples concrets de GPO
+
+#### Politique de mot de passe
+
+Emplacement : `Configuration ordinateur > Strategies > Parametres Windows > Parametres de securite > Strategies de compte > Strategie de mot de passe`
+
+| Parametre | Valeur recommandee |
+|---|---|
+| Longueur minimale du mot de passe | 12 caracteres |
+| Le mot de passe doit respecter des exigences de complexite | Active |
+| Duree de vie maximale du mot de passe | 90 jours |
+| Duree de vie minimale du mot de passe | 1 jour |
+| Conserver l'historique des mots de passe | 24 mots de passe |
+
+Cette GPO doit etre liee au domaine (les strategies de compte ne s'appliquent qu'au niveau du domaine via la Default Domain Policy, sauf utilisation de Fine-Grained Password Policies).
+
+#### Mappage de lecteur reseau
+
+Emplacement : `Configuration utilisateur > Preferences > Parametres Windows > Mappages de lecteurs`
+
+- Action : Creer
+- Emplacement : `\\SRV-FICHIERS\Comptabilite`
+- Lettre de lecteur : `S:`
+- Reconnecter : coche
+
+Filtrer avec le ciblage au niveau de l'element pour n'appliquer qu'au groupe `GG_Comptabilite`.
+
+#### Fond d'ecran impose
+
+Emplacement : `Configuration utilisateur > Strategies > Modeles d'administration > Bureau > Bureau > Papier peint du Bureau`
+
+- Active
+- Nom du papier peint : `\\SRV-FICHIERS\Wallpaper\entreprise.jpg`
+- Style du papier peint : Etirer
+
+#### Restriction de logiciels (AppLocker)
+
+Emplacement : `Configuration ordinateur > Strategies > Parametres Windows > Parametres de securite > Strategies de controle des applications > AppLocker`
+
+Regles par defaut recommandees :
+- Autoriser tout pour le groupe Administrateurs
+- Autoriser les executables dans `C:\Windows\` et `C:\Program Files\`
+- Bloquer tout le reste
+
+Le service `AppIDSvc` doit etre demarre (configurable par GPO egalement).
+
+#### Deploiement de logiciels par GPO
+
+Emplacement : `Configuration ordinateur > Strategies > Parametres du logiciel > Installation de logiciel`
+
+- Le package MSI doit etre accessible via un partage reseau (`\\SRV-FICHIERS\Logiciels\app.msi`)
+- Methode d'attribution : le logiciel s'installe au prochain demarrage
+- Methode de publication : le logiciel est disponible dans Ajout/Suppression de programmes (uniquement en Configuration utilisateur)
+
+### 5.6 Commandes utiles
+
+```powershell
+# Forcer l'application immediate des GPO
+gpupdate /force
+
+# Afficher le resultat des GPO appliquees (RSoP)
+gpresult /r
+gpresult /h rapport.html
+
+# Sauvegarder toutes les GPO
+Backup-GPO -All -Path "C:\Backup\GPO"
+
+# Creer une GPO
+New-GPO -Name "GPO_MotDePasse" | New-GPLink -Target "DC=entreprise,DC=local"
+```
+
+---
+
+## 6. DNS Windows Server
+
+### 6.1 Role du DNS dans Active Directory
+
+AD repose entierement sur le DNS. Chaque controleur de domaine enregistre des enregistrements SRV dans le DNS pour etre localise par les clients. Sans DNS fonctionnel, pas d'authentification, pas de replication, pas de GPO.
+
+### 6.2 Types de zones
+
+| Type | Description |
+|---|---|
+| **Zone principale (Primary)** | Zone en lecture-ecriture. Un seul serveur maitre si zone standard. |
+| **Zone secondaire (Secondary)** | Copie en lecture seule d'une zone principale. Mise a jour par transfert de zone. |
+| **Zone integree a AD** | Zone stockee dans la base AD et repliquee automatiquement entre les DC. Avantages : multi-maitre (tous les DC peuvent ecrire), securisee, pas de transfert de zone classique. |
+| **Zone stub** | Contient uniquement les enregistrements NS et SOA, pointant vers les serveurs faisant autorite. |
+
+### 6.3 Zones de recherche
+
+- **Zone de recherche directe** : resolution nom vers adresse IP. Exemple : `srv-dc01.entreprise.local` -> `192.168.1.10`
+- **Zone de recherche inversee** : resolution adresse IP vers nom. Exemple : `192.168.1.10` -> `srv-dc01.entreprise.local`. Zone nommee selon le sous-reseau inverse (ex: `1.168.192.in-addr.arpa`).
+
+### 6.4 Types d'enregistrements
+
+| Type | Description | Exemple |
+|---|---|---|
+| **A** | Nom vers IPv4 | `srv-dc01` -> `192.168.1.10` |
+| **AAAA** | Nom vers IPv6 | `srv-dc01` -> `fd00::10` |
+| **CNAME** | Alias vers un autre nom | `mail` -> `srv-mail01.entreprise.local` |
+| **MX** | Serveur de messagerie | `entreprise.local` -> `srv-mail01` (priorite 10) |
+| **PTR** | IP vers nom (inversee) | `10.1.168.192.in-addr.arpa` -> `srv-dc01.entreprise.local` |
+| **SRV** | Localisation de service | `_ldap._tcp.entreprise.local` -> `srv-dc01` |
+| **NS** | Serveur de noms | `entreprise.local` -> `srv-dc01.entreprise.local` |
+| **SOA** | Autorite de la zone | Numero de serie, TTL, intervalles de rafraichissement |
+
+### 6.5 Redirecteurs
+
+Un redirecteur est un serveur DNS externe vers lequel les requetes non resolues localement sont transmises.
+
+- **Redirecteur standard** : toutes les requetes non resolues sont transmises (ex: `8.8.8.8`, `1.1.1.1`)
+- **Redirecteur conditionnel** : les requetes pour un domaine specifique sont transmises a un serveur designe. Utile dans les architectures multi-domaines.
+
+```powershell
+# Ajouter un redirecteur standard
+Add-DnsServerForwarder -IPAddress "8.8.8.8"
+
+# Ajouter un redirecteur conditionnel
+Add-DnsServerConditionalForwarderZone -Name "partenaire.local" -MasterServers 10.0.0.1
+```
+
+### 6.6 Configuration par PowerShell
+
+```powershell
+# Installer le role DNS
+Install-WindowsFeature DNS -IncludeManagementTools
+
+# Creer une zone de recherche directe integree a AD
+Add-DnsServerPrimaryZone -Name "entreprise.local" -ReplicationScope "Forest"
+
+# Creer une zone de recherche inversee
+Add-DnsServerPrimaryZone -NetworkID "192.168.1.0/24" -ReplicationScope "Domain"
+
+# Ajouter un enregistrement A
+Add-DnsServerResourceRecordA -ZoneName "entreprise.local" -Name "srv-fichiers" -IPv4Address "192.168.1.20"
+
+# Ajouter un enregistrement CNAME
+Add-DnsServerResourceRecordCName -ZoneName "entreprise.local" -Name "intranet" -HostNameAlias "srv-web01.entreprise.local"
+
+# Verifier la resolution
+Resolve-DnsName -Name "srv-dc01.entreprise.local" -Type A
+```
+
+---
+
+## 7. DHCP Windows Server
+
+### 7.1 Role du DHCP
+
+Le protocole DHCP (Dynamic Host Configuration Protocol) attribue automatiquement les parametres IP aux clients du reseau : adresse IP, masque de sous-reseau, passerelle par defaut, serveurs DNS.
+
+Processus DORA :
+1. **Discover** : le client diffuse une requete de decouverte
+2. **Offer** : le serveur DHCP propose une adresse
+3. **Request** : le client accepte l'offre
+4. **Acknowledge** : le serveur confirme l'attribution
+
+### 7.2 Installation et configuration
+
+```powershell
+# Installer le role DHCP
+Install-WindowsFeature DHCP -IncludeManagementTools
+
+# Autoriser le serveur DHCP dans AD (obligatoire en environnement AD)
+Add-DhcpServerInDC -DnsName "srv-dc01.entreprise.local" -IPAddress 192.168.1.10
+
+# Creer une etendue (scope)
+Add-DhcpServerv4Scope -Name "Reseau_LAN" `
+    -StartRange 192.168.1.100 `
+    -EndRange 192.168.1.200 `
+    -SubnetMask 255.255.255.0 `
+    -LeaseDuration 8.00:00:00 `
+    -State Active
+
+# Configurer les options d'etendue
+Set-DhcpServerv4OptionValue -ScopeId 192.168.1.0 `
+    -Router 192.168.1.1 `
+    -DnsServer 192.168.1.10 `
+    -DnsDomain "entreprise.local"
+
+# Ajouter une exclusion (plage reservee aux serveurs)
+Add-DhcpServerv4ExclusionRange -ScopeId 192.168.1.0 `
+    -StartRange 192.168.1.1 -EndRange 192.168.1.50
+
+# Creer une reservation (IP fixe liee a une adresse MAC)
+Add-DhcpServerv4Reservation -ScopeId 192.168.1.0 `
+    -IPAddress 192.168.1.150 `
+    -ClientId "AA-BB-CC-DD-EE-FF" `
+    -Name "IMPRIMANTE-RDC" `
+    -Description "Imprimante rez-de-chaussee"
+```
+
+### 7.3 Autorisation dans AD
+
+Un serveur DHCP dans un domaine AD doit etre **autorise** dans Active Directory pour pouvoir distribuer des adresses. Cette securite empeche les serveurs DHCP non autorises (rogue DHCP) de perturber le reseau.
+
+L'autorisation se fait via la console DHCP ou par PowerShell (`Add-DhcpServerInDC`).
+
+### 7.4 Options DHCP
+
+Les options DHCP definissent les parametres supplementaires transmis aux clients :
+
+| Option | Code | Description |
+|---|---|---|
+| Routeur (passerelle) | 003 | Passerelle par defaut |
+| Serveur DNS | 006 | Adresses des serveurs DNS |
+| Nom de domaine DNS | 015 | Suffixe DNS |
+| Serveur WINS | 044 | Serveur de noms NetBIOS |
+| Serveur NTP | 042 | Serveur de temps |
+
+Les options peuvent etre definies a trois niveaux (du plus general au plus specifique) :
+1. Options de serveur (appliquees a toutes les etendues)
+2. Options d'etendue (specifiques a un sous-reseau)
+3. Options de reservation (specifiques a un client)
+
+### 7.5 Basculement DHCP (Failover)
+
+Windows Server permet de configurer un basculement DHCP entre deux serveurs pour la haute disponibilite :
+
+- **Mode equilibrage de charge (Load Balance)** : les deux serveurs distribuent les adresses (repartition configurable, 50/50 par defaut)
+- **Mode veille a chaud (Hot Standby)** : un serveur principal et un serveur de secours qui prend le relais en cas de panne
+
+---
+
+## 8. Partage de fichiers et permissions NTFS
+
+### 8.1 Systeme de fichiers NTFS
+
+NTFS (New Technology File System) est le systeme de fichiers standard de Windows Server. Il supporte :
+
+- Permissions granulaires par fichier et dossier
+- Heritage des permissions
+- Chiffrement (EFS)
+- Compression
+- Quotas de disque
+- Audit d'acces
+
+### 8.2 Permissions NTFS
+
+Les permissions NTFS s'appliquent localement sur le disque et en acces reseau.
+
+#### Permissions standard
+
+| Permission | Dossier | Fichier |
+|---|---|---|
+| **Controle total** | Toutes les actions, y compris modifier les permissions | Idem |
+| **Modification** | Lire, ecrire, supprimer, modifier | Idem |
+| **Lecture et execution** | Parcourir le dossier et executer les fichiers | Lire et executer le fichier |
+| **Afficher le contenu du dossier** | Lister le contenu | Non applicable |
+| **Lecture** | Lire le contenu et les attributs | Idem |
+| **Ecriture** | Creer des fichiers et sous-dossiers | Modifier le contenu |
+
+#### Permissions avancees
+
+Les permissions standard sont des combinaisons de permissions avancees (13 au total) : parcourir le dossier, lister le dossier, lire les attributs, lire les attributs etendus, creer des fichiers, creer des dossiers, ecrire les attributs, ecrire les attributs etendus, supprimer les sous-dossiers et fichiers, supprimer, lire les permissions, modifier les permissions, appropriation.
+
+### 8.3 Heritage des permissions
+
+- Par defaut, un sous-dossier **herite** des permissions de son dossier parent.
+- On peut **desactiver l'heritage** sur un dossier (avec choix de copier ou supprimer les permissions heritees).
+- Les permissions **explicites** (definies directement) l'emportent sur les permissions **heritees**.
+- Les permissions de **refus** l'emportent sur les permissions d'**autorisation** (sauf cas explicite vs herite).
+
+Ordre d'evaluation :
+1. Refus explicite
+2. Autorisation explicite
+3. Refus herite
+4. Autorisation heritee
+
+Si aucune permission ne correspond, l'acces est refuse par defaut (refus implicite).
+
+### 8.4 Permissions de partage
+
+Les permissions de partage s'appliquent uniquement lors de l'acces reseau et sont independantes des permissions NTFS.
+
+| Permission de partage | Description |
+|---|---|
+| **Lecture** | Lire les fichiers et sous-dossiers |
+| **Modification** | Lecture + ecriture + suppression |
+| **Controle total** | Modification + changement de permissions |
+
+**Regle fondamentale** : lors d'un acces reseau, la permission effective est la **plus restrictive** entre la permission NTFS et la permission de partage.
+
+Bonne pratique : definir la permission de partage a **Controle total** pour le groupe concerne et gerer la granularite uniquement via les permissions NTFS. Cela simplifie l'administration.
+
+### 8.5 Creer un partage
+
+```powershell
+# Creer le dossier
+New-Item -Path "D:\Partages\Comptabilite" -ItemType Directory
+
+# Definir les permissions NTFS
+# Desactiver l'heritage et supprimer les permissions heritees
+$acl = Get-Acl "D:\Partages\Comptabilite"
+$acl.SetAccessRuleProtection($true, $false)
+
+# Ajouter les permissions
+$regle1 = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "ENTREPRISE\DL_Partage_Compta_Modification", "Modify", "ContainerInherit,ObjectInherit", "None", "Allow")
+$regle2 = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "ENTREPRISE\DL_Partage_Compta_Lecture", "ReadAndExecute", "ContainerInherit,ObjectInherit", "None", "Allow")
+$regle3 = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "BUILTIN\Administrators", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+
+$acl.AddAccessRule($regle1)
+$acl.AddAccessRule($regle2)
+$acl.AddAccessRule($regle3)
+Set-Acl "D:\Partages\Comptabilite" $acl
+
+# Creer le partage reseau
+New-SmbShare -Name "Comptabilite" -Path "D:\Partages\Comptabilite" `
+    -FullAccess "ENTREPRISE\DL_Partage_Compta_Modification","ENTREPRISE\DL_Partage_Compta_Lecture" `
+    -Description "Partage du service comptabilite"
+```
+
+### 8.6 Partages administratifs
+
+Windows cree automatiquement des partages caches (suffixe `$`) :
+
+| Partage | Description |
+|---|---|
+| `C$`, `D$` | Racine de chaque partition |
+| `ADMIN$` | Dossier `C:\Windows` |
+| `IPC$` | Communication inter-processus |
+| `SYSVOL` | Scripts et GPO (sur les DC) |
+| `NETLOGON` | Scripts de connexion (sur les DC) |
+
+### 8.7 DFS (Distributed File System)
+
+DFS permet de creer un espace de noms unifie regroupant des partages situes sur differents serveurs.
+
+- **DFS Namespaces (DFS-N)** : espace de noms virtuel (`\\entreprise.local\Partages`) pointant vers des dossiers cibles sur differents serveurs.
+- **DFS Replication (DFS-R)** : replication automatique du contenu entre serveurs. Utilise la compression differentielle a distance (RDC).
+
+```powershell
+# Installer les roles DFS
+Install-WindowsFeature FS-DFS-Namespace, FS-DFS-Replication -IncludeManagementTools
+
+# Creer un espace de noms base sur le domaine
+New-DfsnRoot -TargetPath "\\SRV-FICHIERS\Partages" -Type DomainV2 -Path "\\entreprise.local\Partages"
+
+# Ajouter un dossier DFS
+New-DfsnFolder -Path "\\entreprise.local\Partages\Comptabilite" -TargetPath "\\SRV-FICHIERS\Comptabilite"
+```
+
+---
+
+## 9. Gestion des profils
+
+### 9.1 Types de profils
+
+| Type | Description | Emplacement |
+|---|---|---|
+| **Profil local** | Stocke sur le poste local dans `C:\Users\<login>`. Unique a chaque poste. | Poste local |
+| **Profil itinerant (roaming)** | Copie sur un partage reseau a la deconnexion, restaure a la connexion. L'utilisateur retrouve son environnement sur tout poste du domaine. | `\\SRV-FICHIERS\Profils$\%username%` |
+| **Profil obligatoire (mandatory)** | Profil itinerant en lecture seule. Les modifications ne sont pas sauvegardees a la deconnexion. Fichier `ntuser.man` au lieu de `ntuser.dat`. | Idem |
+
+Configuration du profil itinerant : dans les proprietes de l'utilisateur AD (onglet Profil), definir le chemin du profil a `\\SRV-FICHIERS\Profils$\%username%`.
+
+```powershell
+Set-ADUser -Identity "jdupont" -ProfilePath "\\SRV-FICHIERS\Profils$\jdupont"
+```
+
+### 9.2 Redirection de dossiers
+
+La redirection de dossiers permet de stocker certains dossiers du profil (Bureau, Documents, etc.) directement sur un partage reseau, sans copie locale. Avantages :
+
+- Pas de copie du profil a chaque connexion/deconnexion (plus rapide)
+- Sauvegarde centralisee sur le serveur
+- Profil plus leger
+
+Configuration par GPO : `Configuration utilisateur > Strategies > Parametres Windows > Redirection de dossiers`. Clic droit sur le dossier souhaite (Documents, Bureau, etc.) > Proprietes > Rediriger vers un emplacement specifique (`\\SRV-FICHIERS\Redirections$\%username%\Documents`).
+
+### 9.3 Quotas de disque
+
+Les quotas NTFS permettent de limiter l'espace disque utilise par chaque utilisateur.
+
+Configuration : Proprietes du volume > onglet Quota > Activer la gestion des quotas.
+
+- Limiter l'espace disque a : definir la taille maximale par utilisateur
+- Definir le niveau d'avertissement
+- Refuser de l'espace disque ou journaliser uniquement
+
+```powershell
+# Activer les quotas sur un volume
+fsutil quota enforce D:
+
+# Definir un quota par defaut (1 Go limite, 900 Mo avertissement)
+fsutil quota defaults D: 1073741824 943718400
+
+# Definir un quota pour un utilisateur specifique
+fsutil quota modify D: 2147483648 1932735283 ENTREPRISE\jdupont
+```
+
+Depuis Windows Server 2012, le **Gestionnaire de ressources du serveur de fichiers (FSRM)** offre des quotas plus avancees avec des modeles et des notifications par email.
+
+---
+
+## 10. Impression reseau
+
+### 10.1 Serveur d'impression
+
+Le role **Services d'impression et de numerisation** centralise la gestion des imprimantes :
+
+- Installation des pilotes sur le serveur uniquement
+- Deploiement automatique vers les postes clients
+- Gestion des files d'attente
+- Journalisation et audit
+
+```powershell
+# Installer le role
+Install-WindowsFeature Print-Services -IncludeManagementTools
+
+# Ajouter un port d'impression TCP/IP
+Add-PrinterPort -Name "IP_192.168.1.50" -PrinterHostAddress "192.168.1.50"
+
+# Ajouter un pilote d'impression
+Add-PrinterDriver -Name "HP Universal Printing PCL 6"
+
+# Ajouter une imprimante
+Add-Printer -Name "IMP-RDC-01" -DriverName "HP Universal Printing PCL 6" `
+    -PortName "IP_192.168.1.50" -Shared -ShareName "IMP-RDC-01" `
+    -Published  # Publication dans AD
+```
+
+### 10.2 Deploiement par GPO
+
+Emplacement : `Configuration utilisateur > Strategies > Parametres Windows > Imprimantes deployees`
+
+Ou via la console de gestion de l'impression : clic droit sur l'imprimante > Deployer avec la strategie de groupe.
+
+L'imprimante partagee est automatiquement ajoutee sur les postes des utilisateurs concernes.
+
+---
+
+## 11. Sauvegarde et restauration
+
+### 11.1 Windows Server Backup
+
+Fonctionnalite integree pour la sauvegarde du serveur :
+
+```powershell
+# Installer la fonctionnalite
+Install-WindowsFeature Windows-Server-Backup
+
+# Sauvegarde complete ponctuelle sur un volume externe
+wbadmin start backup -backupTarget:E: -include:C: -allCritical -quiet
+
+# Sauvegarde de l'etat du systeme (AD, registre, etc.)
+wbadmin start systemstatebackup -backupTarget:E: -quiet
+
+# Planifier une sauvegarde quotidienne
+$politique = New-WBPolicy
+$volume = Get-WBVolume -AllVolumes | Where-Object { $_.MountPath -eq "C:" }
+Add-WBVolume -Policy $politique -Volume $volume
+$cible = New-WBBackupTarget -VolumePath "E:"
+Add-WBBackupTarget -Policy $politique -Target $cible
+Set-WBSchedule -Policy $politique -Schedule 02:00
+Set-WBPolicy -Policy $politique
+```
+
+### 11.2 Sauvegarde d'Active Directory
+
+Pour restaurer AD, il faut demarrer le controleur de domaine en **mode restauration des services d'annuaire (DSRM)** :
+
+1. Redemarrer le serveur et appuyer sur F8 (ou `bcdedit /set safeboot dsrepair`)
+2. Se connecter avec le mot de passe DSRM (defini lors de la promotion)
+3. Lancer `wbadmin start systemstaterecovery -version:<date>`
+4. Redemarrer normalement
+
+Types de restauration AD :
+- **Non-authoritative** : la base restauree est mise a jour par replication depuis les autres DC (par defaut)
+- **Authoritative** : les objets restaures sont marques comme faisant autorite et repliques vers les autres DC (`ntdsutil` > `authoritative restore`)
+
+### 11.3 Cliches instantanes (Volume Shadow Copy -- VSS)
+
+Les cliches instantanes permettent de restaurer des versions precedentes de fichiers sans restauration complete :
+
+- Configuration : Proprietes du volume > onglet Cliches instantanes > Activer
+- Planification par defaut : 7h et 12h en semaine
+- Les utilisateurs peuvent restaurer eux-memes via clic droit > Proprietes > Versions precedentes
+
+```powershell
+# Activer les cliches instantanes sur un volume
+vssadmin add shadowstorage /for=D: /on=D: /maxsize=10GB
+vssadmin create shadow /for=D:
+```
+
+---
+
+## 12. WSUS (Windows Server Update Services)
+
+### 12.1 Role
+
+WSUS permet de centraliser le telechargement et la distribution des mises a jour Microsoft sur le reseau local :
+
+- Telechargement unique des mises a jour depuis Microsoft Update
+- Approbation manuelle ou automatique des mises a jour
+- Ciblage par groupes d'ordinateurs
+- Rapports de conformite
+
+### 12.2 Installation
+
+```powershell
+# Installer le role WSUS (stockage sur disque local)
+Install-WindowsFeature UpdateServices -IncludeManagementTools
+```
+
+Apres installation, lancer la console WSUS et executer l'assistant de configuration :
+
+1. Choisir le serveur en amont (Microsoft Update ou un autre WSUS)
+2. Selectionner les produits (Windows 10, Windows 11, Windows Server 2022, etc.)
+3. Selectionner les classifications (mises a jour critiques, securite, Service Packs, etc.)
+4. Configurer la planification de synchronisation
+5. Lancer la premiere synchronisation
+
+### 12.3 Configuration des clients par GPO
+
+GPO a lier aux OU contenant les ordinateurs :
+
+Emplacement : `Configuration ordinateur > Strategies > Modeles d'administration > Composants Windows > Windows Update`
+
+Parametres essentiels :
+
+| Parametre | Valeur |
+|---|---|
+| Specifier l'emplacement intranet du service de mise a jour Microsoft | `http://SRV-WSUS:8530` |
+| Configuration du service de mise a jour automatique | 4 - Telechargement auto et planification de l'installation |
+| Autoriser le ciblage cote client | Active, nom du groupe cible |
+| Pas de redemarrage automatique avec des utilisateurs connectes | Active |
+
+---
+
+## 13. Hyper-V
+
+### 13.1 Presentation
+
+Hyper-V est l'hyperviseur de type 1 integre a Windows Server. Il permet de creer et gerer des machines virtuelles (VM).
+
+Pre-requis materiels :
+- Processeur 64 bits avec SLAT (Second Level Address Translation)
+- Virtualisation materielle activee dans le BIOS/UEFI (Intel VT-x ou AMD-V)
+- Minimum 4 Go de RAM (plus selon le nombre de VM)
+
+### 13.2 Installation
+
+```powershell
+# Installer le role Hyper-V
+Install-WindowsFeature Hyper-V -IncludeManagementTools -Restart
+```
+
+### 13.3 Commutateurs virtuels
+
+Hyper-V utilise des commutateurs virtuels (virtual switches) pour le reseau des VM :
+
+| Type | Description |
+|---|---|
+| **Externe** | Lie a une carte reseau physique. Les VM communiquent avec le reseau physique et l'hote. |
+| **Interne** | Communication entre les VM et l'hote uniquement. Pas d'acces au reseau physique. |
+| **Prive** | Communication entre les VM uniquement. Pas d'acces a l'hote ni au reseau physique. |
+
+```powershell
+# Creer un commutateur virtuel externe
+New-VMSwitch -Name "Switch-Externe" -NetAdapterName "Ethernet" -AllowManagementOS $true
+
+# Creer un commutateur virtuel interne
+New-VMSwitch -Name "Switch-Interne" -SwitchType Internal
+
+# Creer un commutateur virtuel prive
+New-VMSwitch -Name "Switch-Prive" -SwitchType Private
+```
+
+### 13.4 Creation et gestion de VM
+
+```powershell
+# Creer une VM
+New-VM -Name "SRV-TEST01" `
+    -MemoryStartupBytes 2GB `
+    -NewVHDPath "D:\Hyper-V\SRV-TEST01\SRV-TEST01.vhdx" `
+    -NewVHDSizeBytes 60GB `
+    -Generation 2 `
+    -SwitchName "Switch-Externe"
+
+# Configurer le nombre de processeurs virtuels
+Set-VMProcessor -VMName "SRV-TEST01" -Count 2
+
+# Activer la memoire dynamique
+Set-VMMemory -VMName "SRV-TEST01" -DynamicMemoryEnabled $true `
+    -MinimumBytes 512MB -MaximumBytes 4GB
+
+# Monter une image ISO
+Add-VMDvdDrive -VMName "SRV-TEST01" -Path "D:\ISO\WindowsServer2022.iso"
+
+# Modifier l'ordre de demarrage (Generation 2)
+$dvd = Get-VMDvdDrive -VMName "SRV-TEST01"
+Set-VMFirmware -VMName "SRV-TEST01" -FirstBootDevice $dvd
+
+# Demarrer la VM
+Start-VM -Name "SRV-TEST01"
+
+# Arreter la VM
+Stop-VM -Name "SRV-TEST01"
+
+# Creer un point de controle (snapshot)
+Checkpoint-VM -Name "SRV-TEST01" -SnapshotName "Avant_Config_AD"
+
+# Exporter une VM
+Export-VM -Name "SRV-TEST01" -Path "D:\Export"
+```
+
+### 13.5 Types de disques virtuels
+
+| Type | Description | Performance | Espace |
+|---|---|---|---|
+| **Dynamique** | Grandit a la demande jusqu'a la taille maximale | Moins bon | Economique |
+| **Taille fixe** | Alloue immediatement toute la taille | Meilleur | Consomme tout l'espace |
+| **Differenciation** | Stocke uniquement les differences par rapport a un disque parent | Variable | Economique pour les labs |
+
+Formats : **VHD** (ancien, limite a 2 To) et **VHDX** (jusqu'a 64 To, resilient aux pannes).
+
+---
+
+## 14. Exercices corriges
+
+### Exercice 1 : Creer une arborescence Active Directory
+
+**Enonce** : L'entreprise TechnoSoft dispose de trois services : Direction, Developpement et Commercial. Creer l'arborescence d'OU suivante dans le domaine `technosoft.local` :
+
+```
+technosoft.local
+  |-- OU=TechnoSoft
+        |-- OU=Utilisateurs
+        |     |-- OU=Direction
+        |     |-- OU=Developpement
+        |     |-- OU=Commercial
+        |-- OU=Ordinateurs
+        |     |-- OU=Postes_Direction
+        |     |-- OU=Postes_Dev
+        |     |-- OU=Postes_Commercial
+        |-- OU=Groupes
+        |-- OU=Serveurs
+```
+
+**Correction** :
+
+```powershell
+# OU racine
+New-ADOrganizationalUnit -Name "TechnoSoft" -Path "DC=technosoft,DC=local"
+
+# OU de niveau 2
+$base = "OU=TechnoSoft,DC=technosoft,DC=local"
+New-ADOrganizationalUnit -Name "Utilisateurs" -Path $base
+New-ADOrganizationalUnit -Name "Ordinateurs" -Path $base
+New-ADOrganizationalUnit -Name "Groupes" -Path $base
+New-ADOrganizationalUnit -Name "Serveurs" -Path $base
+
+# OU de niveau 3 - Utilisateurs
+$baseUsers = "OU=Utilisateurs,$base"
+New-ADOrganizationalUnit -Name "Direction" -Path $baseUsers
+New-ADOrganizationalUnit -Name "Developpement" -Path $baseUsers
+New-ADOrganizationalUnit -Name "Commercial" -Path $baseUsers
+
+# OU de niveau 3 - Ordinateurs
+$basePC = "OU=Ordinateurs,$base"
+New-ADOrganizationalUnit -Name "Postes_Direction" -Path $basePC
+New-ADOrganizationalUnit -Name "Postes_Dev" -Path $basePC
+New-ADOrganizationalUnit -Name "Postes_Commercial" -Path $basePC
+```
+
+---
+
+### Exercice 2 : Creer des utilisateurs et des groupes selon la strategie AGDLP
+
+**Enonce** : Creer trois utilisateurs (un par service) et mettre en place la strategie AGDLP pour l'acces au partage `\\SRV-FICHIERS\Projets` :
+- Le service Direction a un acces en controle total
+- Le service Developpement a un acces en modification
+- Le service Commercial a un acces en lecture seule
+
+**Correction** :
+
+```powershell
+$base = "OU=TechnoSoft,DC=technosoft,DC=local"
+$mdp = ConvertTo-SecureString "P@ssword2024!" -AsPlainText -Force
+
+# Creer les utilisateurs
+New-ADUser -Name "Alice Durand" -SamAccountName "adurand" `
+    -UserPrincipalName "adurand@technosoft.local" `
+    -Path "OU=Direction,OU=Utilisateurs,$base" `
+    -AccountPassword $mdp -Enabled $true
+
+New-ADUser -Name "Bob Martin" -SamAccountName "bmartin" `
+    -UserPrincipalName "bmartin@technosoft.local" `
+    -Path "OU=Developpement,OU=Utilisateurs,$base" `
+    -AccountPassword $mdp -Enabled $true
+
+New-ADUser -Name "Clara Petit" -SamAccountName "cpetit" `
+    -UserPrincipalName "cpetit@technosoft.local" `
+    -Path "OU=Commercial,OU=Utilisateurs,$base" `
+    -AccountPassword $mdp -Enabled $true
+
+# Creer les groupes globaux (G)
+$baseGrp = "OU=Groupes,$base"
+New-ADGroup -Name "GG_Direction" -GroupScope Global -GroupCategory Security -Path $baseGrp
+New-ADGroup -Name "GG_Developpement" -GroupScope Global -GroupCategory Security -Path $baseGrp
+New-ADGroup -Name "GG_Commercial" -GroupScope Global -GroupCategory Security -Path $baseGrp
+
+# Creer les groupes locaux de domaine (DL)
+New-ADGroup -Name "DL_Projets_CT" -GroupScope DomainLocal -GroupCategory Security -Path $baseGrp
+New-ADGroup -Name "DL_Projets_Modif" -GroupScope DomainLocal -GroupCategory Security -Path $baseGrp
+New-ADGroup -Name "DL_Projets_Lecture" -GroupScope DomainLocal -GroupCategory Security -Path $baseGrp
+
+# A : Ajouter les utilisateurs aux groupes globaux
+Add-ADGroupMember -Identity "GG_Direction" -Members "adurand"
+Add-ADGroupMember -Identity "GG_Developpement" -Members "bmartin"
+Add-ADGroupMember -Identity "GG_Commercial" -Members "cpetit"
+
+# G -> DL : Imbriquer les groupes globaux dans les groupes locaux de domaine
+Add-ADGroupMember -Identity "DL_Projets_CT" -Members "GG_Direction"
+Add-ADGroupMember -Identity "DL_Projets_Modif" -Members "GG_Developpement"
+Add-ADGroupMember -Identity "DL_Projets_Lecture" -Members "GG_Commercial"
+
+# P : Les permissions NTFS seront attribuees aux groupes DL (voir exercice suivant)
+```
+
+---
+
+### Exercice 3 : Configurer les permissions NTFS sur un partage
+
+**Enonce** : Creer le dossier `D:\Partages\Projets`, configurer les permissions NTFS selon l'exercice precedent et creer le partage reseau.
+
+**Correction** :
+
+```powershell
+# Creer le dossier
+New-Item -Path "D:\Partages\Projets" -ItemType Directory
+
+# Configurer les permissions NTFS
+$acl = Get-Acl "D:\Partages\Projets"
+
+# Desactiver l'heritage et supprimer les permissions heritees
+$acl.SetAccessRuleProtection($true, $false)
+
+# Controle total pour la Direction
+$acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "TECHNOSOFT\DL_Projets_CT", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")))
+
+# Modification pour le Developpement
+$acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "TECHNOSOFT\DL_Projets_Modif", "Modify", "ContainerInherit,ObjectInherit", "None", "Allow")))
+
+# Lecture pour le Commercial
+$acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "TECHNOSOFT\DL_Projets_Lecture", "ReadAndExecute", "ContainerInherit,ObjectInherit", "None", "Allow")))
+
+# Administrateurs
+$acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "BUILTIN\Administrators", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")))
+
+Set-Acl "D:\Partages\Projets" $acl
+
+# Creer le partage (Controle total pour Utilisateurs authentifies, la granularite est geree par NTFS)
+New-SmbShare -Name "Projets" -Path "D:\Partages\Projets" `
+    -FullAccess "Utilisateurs authentifies" `
+    -Description "Dossier projets"
+```
+
+---
+
+### Exercice 4 : Configurer une GPO de politique de mot de passe
+
+**Enonce** : Configurer la politique de mot de passe du domaine `technosoft.local` avec les parametres suivants : longueur minimale 10 caracteres, complexite activee, duree de vie maximale 60 jours, historique de 12 mots de passe.
+
+**Correction** :
+
+La politique de mot de passe du domaine se configure dans la **Default Domain Policy** ou dans une GPO liee au domaine.
+
+Par interface graphique :
+1. Ouvrir `gpmc.msc`
+2. Editer la Default Domain Policy
+3. Naviguer vers : `Configuration ordinateur > Strategies > Parametres Windows > Parametres de securite > Strategies de compte > Strategie de mot de passe`
+4. Configurer :
+   - Longueur minimale du mot de passe : 10
+   - Le mot de passe doit respecter des exigences de complexite : Active
+   - Duree de vie maximale du mot de passe : 60 jours
+   - Duree de vie minimale du mot de passe : 1 jour
+   - Conserver l'historique des mots de passe : 12 mots de passe memorises
+
+Par PowerShell (via le module GroupPolicy) :
+
+```powershell
+# Modifier la Default Domain Policy
+Set-ADDefaultDomainPasswordPolicy -Identity "technosoft.local" `
+    -MinPasswordLength 10 `
+    -ComplexityEnabled $true `
+    -MaxPasswordAge "60.00:00:00" `
+    -MinPasswordAge "1.00:00:00" `
+    -PasswordHistoryCount 12
+```
+
+---
+
+### Exercice 5 : Configurer une GPO de mappage de lecteur reseau
+
+**Enonce** : Creer une GPO qui mappe le lecteur `P:` vers `\\SRV-FICHIERS\Projets` pour tous les membres du groupe `GG_Developpement`.
+
+**Correction** :
+
+1. Ouvrir `gpmc.msc`
+2. Creer une nouvelle GPO nommee `GPO_Lecteur_Projets`
+3. La lier a l'OU `Utilisateurs` (ou au domaine)
+4. Editer la GPO :
+   - `Configuration utilisateur > Preferences > Parametres Windows > Mappages de lecteurs`
+   - Nouveau mappage : Action = Creer, Emplacement = `\\SRV-FICHIERS\Projets`, Lettre = `P:`, Reconnecter = coche
+   - Onglet **Commun** : cocher "Ciblage au niveau de l'element"
+   - Clic sur "Ciblage" : Nouvel element > Groupe de securite > selectionner `GG_Developpement`
+5. Fermer l'editeur
+
+Verification sur un poste client membre du groupe :
+
+```powershell
+gpupdate /force
+# Le lecteur P: doit apparaitre dans l'Explorateur de fichiers
+```
+
+---
+
+### Exercice 6 : Configurer le DNS avec zone inversee et redirecteur conditionnel
+
+**Enonce** : Sur le serveur DNS de `technosoft.local` (192.168.1.10) :
+1. Creer la zone de recherche inversee pour le reseau 192.168.1.0/24
+2. Ajouter un enregistrement PTR pour le serveur SRV-DC01
+3. Configurer un redirecteur conditionnel vers le domaine `partenaire.fr` (serveur DNS : 10.0.0.53)
+
+**Correction** :
+
+```powershell
+# Creer la zone inversee integree a AD
+Add-DnsServerPrimaryZone -NetworkID "192.168.1.0/24" -ReplicationScope "Domain"
+
+# Ajouter un enregistrement PTR
+Add-DnsServerResourceRecordPtr -ZoneName "1.168.192.in-addr.arpa" `
+    -Name "10" -PtrDomainName "srv-dc01.technosoft.local"
+
+# Configurer le redirecteur conditionnel
+Add-DnsServerConditionalForwarderZone -Name "partenaire.fr" `
+    -MasterServers 10.0.0.53 -ReplicationScope "Forest"
+
+# Verification
+Resolve-DnsName -Name "10.1.168.192.in-addr.arpa" -Type PTR
+nslookup 192.168.1.10
+```
+
+---
+
+### Exercice 7 : Installer et configurer le DHCP
+
+**Enonce** : Installer le role DHCP et configurer une etendue pour le reseau 192.168.1.0/24 :
+- Plage : 192.168.1.100 a 192.168.1.200
+- Exclusion : 192.168.1.100 a 192.168.1.110 (imprimantes)
+- Reservation : 192.168.1.105 pour l'imprimante (MAC : 00-11-22-33-44-55)
+- Options : passerelle 192.168.1.1, DNS 192.168.1.10, domaine technosoft.local
+- Bail : 12 heures
+
+**Correction** :
+
+```powershell
+# Installer le role
+Install-WindowsFeature DHCP -IncludeManagementTools
+
+# Autoriser dans AD
+Add-DhcpServerInDC -DnsName "srv-dc01.technosoft.local" -IPAddress 192.168.1.10
+
+# Creer l'etendue
+Add-DhcpServerv4Scope -Name "LAN_Principal" `
+    -StartRange 192.168.1.100 `
+    -EndRange 192.168.1.200 `
+    -SubnetMask 255.255.255.0 `
+    -LeaseDuration 0.12:00:00 `
+    -State Active
+
+# Ajouter l'exclusion
+Add-DhcpServerv4ExclusionRange -ScopeId 192.168.1.0 `
+    -StartRange 192.168.1.100 -EndRange 192.168.1.110
+
+# Configurer les options
+Set-DhcpServerv4OptionValue -ScopeId 192.168.1.0 `
+    -Router 192.168.1.1 `
+    -DnsServer 192.168.1.10 `
+    -DnsDomain "technosoft.local"
+
+# Creer la reservation
+Add-DhcpServerv4Reservation -ScopeId 192.168.1.0 `
+    -IPAddress 192.168.1.105 `
+    -ClientId "00-11-22-33-44-55" `
+    -Name "IMP-PRINCIPALE" `
+    -Description "Imprimante principale"
+
+# Verification
+Get-DhcpServerv4Scope
+Get-DhcpServerv4ExclusionRange -ScopeId 192.168.1.0
+Get-DhcpServerv4Reservation -ScopeId 192.168.1.0
+```
+
+---
+
+### Exercice 8 : Deployer une imprimante par GPO
+
+**Enonce** : Le serveur `SRV-PRINT01` heberge une imprimante partagee `IMP-COMPTA`. Deployer cette imprimante par GPO pour tous les utilisateurs de l'OU Comptabilite.
+
+**Correction** :
+
+1. Sur le serveur d'impression, s'assurer que l'imprimante est partagee et publiee dans AD
+2. Ouvrir `gpmc.msc`
+3. Creer une GPO `GPO_Imprimante_Compta` liee a l'OU `Comptabilite`
+4. Editer la GPO :
+   - `Configuration utilisateur > Strategies > Parametres Windows > Imprimantes deployees`
+   - Clic droit > Deployer l'imprimante
+   - Chemin UNC : `\\SRV-PRINT01\IMP-COMPTA`
+   - Cocher "Imprimante par defaut" si souhaite
+5. Sur les postes clients :
+
+```powershell
+gpupdate /force
+# L'imprimante apparait dans Peripheriques et imprimantes
+Get-Printer
+```
+
+---
+
+### Exercice 9 : Configurer les cliches instantanes et la sauvegarde
+
+**Enonce** : Sur le volume `D:` qui contient les partages :
+1. Activer les cliches instantanes avec un espace maximal de 5 Go
+2. Creer un cliche instantane immediatement
+3. Configurer une sauvegarde quotidienne de `D:` vers `E:` a 3h du matin
+
+**Correction** :
+
+```powershell
+# Activer les cliches instantanes
+vssadmin add shadowstorage /for=D: /on=D: /maxsize=5GB
+
+# Creer un cliche immediatement
+vssadmin create shadow /for=D:
+
+# Verifier
+vssadmin list shadows /for=D:
+
+# Configurer la sauvegarde planifiee
+Install-WindowsFeature Windows-Server-Backup
+
+$politique = New-WBPolicy
+$volumeSource = Get-WBVolume -AllVolumes | Where-Object { $_.MountPath -eq "D:" }
+Add-WBVolume -Policy $politique -Volume $volumeSource
+$cible = New-WBBackupTarget -VolumePath "E:"
+Add-WBBackupTarget -Policy $politique -Target $cible
+Set-WBSchedule -Policy $politique -Schedule 03:00
+Set-WBPolicy -Policy $politique
+
+# Verifier la politique
+Get-WBPolicy
+```
+
+---
+
+### Exercice 10 : Configurer WSUS et le deploiement des mises a jour
+
+**Enonce** : Installer WSUS sur `SRV-WSUS01` et configurer les postes clients par GPO pour qu'ils telechargent les mises a jour depuis ce serveur.
+
+**Correction** :
+
+Sur le serveur WSUS :
+
+```powershell
+# Installer le role
+Install-WindowsFeature UpdateServices, UpdateServices-WidDB, UpdateServices-Services `
+    -IncludeManagementTools
+
+# Initialiser WSUS (stockage dans D:\WSUS)
+& "C:\Program Files\Update Services\Tools\wsusutil.exe" postinstall CONTENT_DIR=D:\WSUS
+```
+
+Puis configurer via la console WSUS : produits, classifications, synchronisation.
+
+GPO pour les clients (`GPO_WSUS_Clients` liee aux OU contenant les ordinateurs) :
+
+1. `Configuration ordinateur > Strategies > Modeles d'administration > Composants Windows > Windows Update`
+2. Parametres :
+   - **Specifier l'emplacement intranet du service de mise a jour** : Active, URL = `http://SRV-WSUS01:8530`
+   - **Configuration du service de mise a jour automatique** : Active, option 4 (telechargement auto et planification), installation a 03:00
+   - **Autoriser le ciblage cote client** : Active, groupe = `Postes_Production`
+   - **Ne pas redemarrer automatiquement si des utilisateurs sont connectes** : Active
+
+Verification sur un poste client :
+
+```powershell
+gpupdate /force
+wuauclt /detectnow /reportnow
+
+# Ou avec PowerShell (module PSWindowsUpdate)
+Get-WindowsUpdate
+```
+
+---
+
+### Exercice 11 : Creer une machine virtuelle sous Hyper-V
+
+**Enonce** : Creer une VM de generation 2 nommee `SRV-WEB01` avec 2 Go de RAM (dynamique, min 1 Go, max 4 Go), 2 processeurs virtuels, un disque VHDX de 40 Go, connectee au commutateur externe. Monter l'ISO de Windows Server 2022 et demarrer la VM.
+
+**Correction** :
+
+```powershell
+# Creer le commutateur externe (si pas deja fait)
+New-VMSwitch -Name "Switch-Externe" -NetAdapterName "Ethernet" -AllowManagementOS $true
+
+# Creer la VM
+New-VM -Name "SRV-WEB01" `
+    -Generation 2 `
+    -MemoryStartupBytes 2GB `
+    -NewVHDPath "D:\Hyper-V\SRV-WEB01\SRV-WEB01.vhdx" `
+    -NewVHDSizeBytes 40GB `
+    -SwitchName "Switch-Externe"
+
+# Configurer la memoire dynamique
+Set-VMMemory -VMName "SRV-WEB01" -DynamicMemoryEnabled $true `
+    -MinimumBytes 1GB -MaximumBytes 4GB -StartupBytes 2GB
+
+# Configurer les processeurs
+Set-VMProcessor -VMName "SRV-WEB01" -Count 2
+
+# Monter l'ISO
+Add-VMDvdDrive -VMName "SRV-WEB01" -Path "D:\ISO\WindowsServer2022.iso"
+
+# Configurer le demarrage sur le DVD
+$dvd = Get-VMDvdDrive -VMName "SRV-WEB01"
+Set-VMFirmware -VMName "SRV-WEB01" -FirstBootDevice $dvd
+
+# Demarrer la VM
+Start-VM -Name "SRV-WEB01"
+
+# Verification
+Get-VM -Name "SRV-WEB01" | Format-List *
+```
+
+---
+
+### Exercice 12 : Configurer DFS et la redirection de dossiers
+
+**Enonce** :
+1. Creer un espace de noms DFS `\\technosoft.local\Partages` regroupant les partages Projets et Comptabilite
+2. Configurer la redirection du dossier Documents des utilisateurs vers `\\SRV-FICHIERS\Redirections$\%username%\Documents`
+
+**Correction** :
+
+Partie 1 -- DFS :
+
+```powershell
+# Installer DFS
+Install-WindowsFeature FS-DFS-Namespace, FS-DFS-Replication -IncludeManagementTools
+
+# Creer le dossier racine sur le serveur
+New-Item -Path "D:\DFSRoots\Partages" -ItemType Directory
+New-SmbShare -Name "Partages" -Path "D:\DFSRoots\Partages" -FullAccess "Tout le monde"
+
+# Creer l'espace de noms DFS
+New-DfsnRoot -TargetPath "\\SRV-FICHIERS\Partages" -Type DomainV2 `
+    -Path "\\technosoft.local\Partages"
+
+# Ajouter les dossiers DFS
+New-DfsnFolder -Path "\\technosoft.local\Partages\Projets" `
+    -TargetPath "\\SRV-FICHIERS\Projets"
+New-DfsnFolder -Path "\\technosoft.local\Partages\Comptabilite" `
+    -TargetPath "\\SRV-FICHIERS\Comptabilite"
+
+# Verification
+Get-DfsnFolder -Path "\\technosoft.local\Partages\*"
+```
+
+Partie 2 -- Redirection de dossiers :
+
+1. Creer le dossier de redirection sur le serveur :
+
+```powershell
+New-Item -Path "D:\Redirections" -ItemType Directory
+New-SmbShare -Name "Redirections$" -Path "D:\Redirections" `
+    -FullAccess "TECHNOSOFT\Admins du domaine" `
+    -ChangeAccess "TECHNOSOFT\Utilisateurs du domaine"
+```
+
+2. Creer une GPO `GPO_Redirection_Documents` liee a l'OU `Utilisateurs` :
+   - `Configuration utilisateur > Strategies > Parametres Windows > Redirection de dossiers`
+   - Clic droit sur `Documents` > Proprietes
+   - Parametre : De base - Rediriger les dossiers de tout le monde vers le meme emplacement
+   - Emplacement du dossier cible : Creer un dossier pour chaque utilisateur sous le chemin racine
+   - Chemin racine : `\\SRV-FICHIERS\Redirections$`
+   - Onglet Parametres : cocher "Accorder a l'utilisateur des droits exclusifs sur Documents"
+
+Verification :
+
+```powershell
+gpupdate /force
+# Se deconnecter et se reconnecter
+# Le dossier Documents pointe maintenant vers le partage reseau
+```
+
+---
+
+### Exercice 13 : Creer des utilisateurs en masse par CSV
+
+**Enonce** : A partir du fichier CSV suivant, creer les 6 utilisateurs dans les OU appropriees :
+
+```csv
+Prenom;Nom;Login;Service;MotDePasse
+Pierre;Leroy;pleroy;Direction;P@ss2024Dir!
+Sophie;Bernard;sbernard;Direction;P@ss2024Dir!
+Thomas;Moreau;tmoreau;Developpement;P@ss2024Dev!
+Julie;Simon;jsimon;Developpement;P@ss2024Dev!
+Marc;Laurent;mlaurent;Commercial;P@ss2024Com!
+Emma;Robert;erobert;Commercial;P@ss2024Com!
+```
+
+**Correction** :
+
+```powershell
+$base = "OU=TechnoSoft,DC=technosoft,DC=local"
+
+Import-Csv -Path "C:\utilisateurs.csv" -Delimiter ";" | ForEach-Object {
+    $ou = "OU=$($_.Service),OU=Utilisateurs,$base"
+
+    New-ADUser -Name "$($_.Prenom) $($_.Nom)" `
+        -GivenName $_.Prenom `
+        -Surname $_.Nom `
+        -SamAccountName $_.Login `
+        -UserPrincipalName "$($_.Login)@technosoft.local" `
+        -Path $ou `
+        -AccountPassword (ConvertTo-SecureString $_.MotDePasse -AsPlainText -Force) `
+        -Enabled $true `
+        -ChangePasswordAtLogon $true `
+        -DisplayName "$($_.Prenom) $($_.Nom)" `
+        -Department $_.Service
+
+    # Ajouter au groupe global correspondant
+    $groupe = "GG_$($_.Service)"
+    Add-ADGroupMember -Identity $groupe -Members $_.Login
+
+    Write-Host "Utilisateur $($_.Login) cree dans $ou et ajoute a $groupe"
+}
+
+# Verification
+Get-ADUser -Filter * -SearchBase "OU=Utilisateurs,$base" -Properties Department |
+    Format-Table Name, SamAccountName, Department, DistinguishedName
+```
+
+---
+
+### Exercice 14 : Restriction par AppLocker
+
+**Enonce** : Configurer AppLocker par GPO pour :
+- Autoriser tous les executables dans `C:\Windows\` et `C:\Program Files\` pour tout le monde
+- Autoriser tous les executables pour les Administrateurs
+- Bloquer tout autre executable
+
+**Correction** :
+
+1. Ouvrir `gpmc.msc`, creer et lier `GPO_AppLocker` a l'OU `Ordinateurs`
+2. Editer :
+   - `Configuration ordinateur > Strategies > Parametres Windows > Parametres de securite > Strategies de controle des applications > AppLocker`
+   - Clic droit sur `Regles de l'executable` > Creer des regles par defaut
+   - Trois regles sont creees automatiquement :
+     - Autoriser tout pour BUILTIN\Administrateurs
+     - Autoriser `C:\Windows\*` pour Tout le monde
+     - Autoriser `C:\Program Files\*` pour Tout le monde
+   - Dans les proprietes d'AppLocker : cocher "Configure" pour les regles de l'executable et selectionner "Appliquer les regles"
+
+3. Configurer le demarrage automatique du service AppIDSvc :
+   - `Configuration ordinateur > Strategies > Parametres Windows > Parametres de securite > Services systeme`
+   - Service `Identite de l'application` : Automatique
+
+4. Pour tester, copier un executable sur le Bureau d'un utilisateur standard et tenter de l'executer : l'acces doit etre refuse.
+
+---
+
+## 15. Aide-memoire des commandes PowerShell essentielles
+
+### Active Directory
+
+| Commande | Description |
+|---|---|
+| `Get-ADUser -Filter *` | Lister tous les utilisateurs |
+| `Get-ADUser -Identity jdupont -Properties *` | Details complets d'un utilisateur |
+| `Set-ADUser -Identity jdupont -Description "Comptable"` | Modifier un attribut |
+| `Disable-ADAccount -Identity jdupont` | Desactiver un compte |
+| `Unlock-ADAccount -Identity jdupont` | Deverrouiller un compte |
+| `Search-ADAccount -LockedOut` | Trouver les comptes verrouilles |
+| `Search-ADAccount -AccountInactive -TimeSpan 90.00:00:00` | Comptes inactifs depuis 90 jours |
+| `Move-ADObject -Identity "CN=Jean Dupont,OU=Compta,DC=..." -TargetPath "OU=Archive,DC=..."` | Deplacer un objet |
+| `Get-ADGroupMember -Identity "GG_Compta" -Recursive` | Membres d'un groupe (recursif) |
+
+### DNS
+
+| Commande | Description |
+|---|---|
+| `Get-DnsServerZone` | Lister les zones |
+| `Get-DnsServerResourceRecord -ZoneName "entreprise.local"` | Lister les enregistrements |
+| `Remove-DnsServerResourceRecord` | Supprimer un enregistrement |
+| `Clear-DnsServerCache` | Vider le cache DNS du serveur |
+| `Clear-DnsClientCache` | Vider le cache DNS du client |
+
+### DHCP
+
+| Commande | Description |
+|---|---|
+| `Get-DhcpServerv4Lease -ScopeId 192.168.1.0` | Baux actifs |
+| `Get-DhcpServerv4FreeIPAddress -ScopeId 192.168.1.0` | Adresses disponibles |
+| `Get-DhcpServerv4ScopeStatistics` | Statistiques d'utilisation |
+
+### GPO
+
+| Commande | Description |
+|---|---|
+| `Get-GPO -All` | Lister toutes les GPO |
+| `Get-GPOReport -All -ReportType HTML -Path "C:\rapport_gpo.html"` | Rapport HTML |
+| `Copy-GPO -SourceName "GPO_Source" -TargetName "GPO_Copie"` | Copier une GPO |
+| `Remove-GPLink -Name "GPO_Test" -Target "OU=Test,DC=..."` | Supprimer une liaison |
+| `Set-GPLink -Name "GPO_Securite" -Target "DC=..." -Enforced Yes` | Forcer une GPO |
+
+### Hyper-V
+
+| Commande | Description |
+|---|---|
+| `Get-VM` | Lister les VM |
+| `Get-VMSnapshot -VMName "SRV-TEST01"` | Lister les points de controle |
+| `Restore-VMSnapshot -Name "Avant_Config" -VMName "SRV-TEST01"` | Restaurer un snapshot |
+| `Remove-VMSnapshot -VMName "SRV-TEST01" -Name "Ancien"` | Supprimer un snapshot |
+| `Get-VMNetworkAdapter -VMName "SRV-TEST01"` | Cartes reseau de la VM |
+
+---
+
+## 16. Bonnes pratiques pour l'examen BTS SIO SISR
+
+1. **Toujours configurer une IP statique** avant d'installer un role serveur.
+2. **Nommer les serveurs de maniere explicite** : `SRV-DC01`, `SRV-FICHIERS`, `SRV-DHCP01`.
+3. **Documenter l'arborescence des OU** avant de la creer.
+4. **Appliquer la strategie AGDLP** systematiquement pour les permissions.
+5. **Ne jamais attribuer de permissions directement a un utilisateur** : toujours passer par un groupe.
+6. **Gerer les permissions NTFS uniquement** et laisser le partage en Controle total.
+7. **Sauvegarder l'etat du systeme** avant toute modification majeure d'AD.
+8. **Tester les GPO** avec `gpresult /r` et `gpresult /h` avant de valider.
+9. **Utiliser des comptes de service dedies** pour les applications, jamais le compte Administrateur.
+10. **Verifier le DNS** en premier lieu en cas de probleme AD (la majorite des dysfonctionnements AD proviennent du DNS).
+11. **Creer au moins deux controleurs de domaine** pour la tolerance de pannes.
+12. **Documenter toutes les modifications** : adresses IP, roles installes, GPO creees, permissions attribuees.

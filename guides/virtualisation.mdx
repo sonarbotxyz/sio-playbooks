@@ -1,0 +1,1525 @@
+---
+title: "Virtualisation"
+description: "Hyperviseurs, VMware, VirtualBox, Proxmox, machines virtuelles, snapshots, allocation de ressources"
+category: "Virtualisation"
+tags: ["virtualisation", "vmware", "virtualbox", "proxmox", "hyperviseur", "vm"]
+difficulty: "Intermédiaire"
+---
+
+# Virtualisation
+
+## 1. Concepts fondamentaux
+
+### 1.1 Qu'est-ce que la virtualisation ?
+
+La virtualisation consiste a executer plusieurs systemes d'exploitation sur une meme machine physique grace a une couche logicielle appelee **hyperviseur**. Chaque systeme s'execute dans une **machine virtuelle (VM)**, un environnement isole disposant de ses propres ressources virtuelles (CPU, RAM, disque, reseau).
+
+### 1.2 Bare metal vs virtualisation
+
+| Critere | Bare metal | Virtualise |
+|---|---|---|
+| Nombre d'OS par serveur | 1 | Plusieurs |
+| Utilisation des ressources | Souvent sous-exploite (10-15 %) | Optimise (60-80 %) |
+| Isolation | Physique | Logique (hyperviseur) |
+| Deploiement | Long (installation physique) | Rapide (creation de VM) |
+| Cout | Eleve (un serveur par service) | Reduit (consolidation) |
+| PRA / reprise | Complexe | Simplifie (snapshots, migration) |
+
+### 1.3 Pourquoi virtualiser ?
+
+**Consolidation de serveurs** : reduire le nombre de machines physiques en hebergeant plusieurs VM sur un seul hote. Gains : espace, electricite, refroidissement, licences materielles.
+
+**Isolation des services** : chaque VM fonctionne de maniere independante. Une panne ou une compromission d'une VM n'affecte pas les autres.
+
+**Plan de reprise d'activite (PRA)** : les VM sont des fichiers. On peut les sauvegarder, repliquer et restaurer rapidement sur un autre hote.
+
+**Environnements de test** : creer et detruire des environnements a volonte sans impacter la production.
+
+**Compatibilite** : faire tourner des OS anciens ou differents sur du materiel moderne.
+
+**Haute disponibilite** : migrer des VM entre hotes sans interruption de service.
+
+---
+
+## 2. Les hyperviseurs
+
+### 2.1 Definition
+
+L'hyperviseur est la couche logicielle qui abstrait le materiel physique et permet l'execution simultanee de plusieurs VM. Il gere le partage des ressources CPU, memoire, stockage et reseau.
+
+### 2.2 Type 1 (bare metal)
+
+L'hyperviseur s'installe directement sur le materiel, sans OS intermediaire. Il offre de meilleures performances et une securite accrue.
+
+| Hyperviseur | Editeur | Licence | Utilisation typique |
+|---|---|---|---|
+| VMware ESXi | Broadcom (ex-VMware) | Proprietaire | Datacenter, production |
+| Proxmox VE | Proxmox Server Solutions | Open source (AGPL) | PME, labos, production |
+| Microsoft Hyper-V | Microsoft | Inclus dans Windows Server | Environnements Microsoft |
+| Citrix Hypervisor (XenServer) | Cloud Software Group | Proprietaire / open source | Virtualisation de bureau |
+| KVM | Communaute Linux | Open source (GPL) | Base de nombreuses solutions |
+
+**Caracteristiques communes :**
+- Acces direct au materiel (meilleure performance)
+- Interface de gestion distante (web ou client lourd)
+- Support de la migration a chaud
+- Fonctions de haute disponibilite
+
+### 2.3 Type 2 (hosted)
+
+L'hyperviseur s'installe sur un systeme d'exploitation existant. Plus simple a mettre en place, mais performances moindres.
+
+| Hyperviseur | Editeur | OS hote | Licence |
+|---|---|---|---|
+| Oracle VirtualBox | Oracle | Windows, macOS, Linux | Open source (GPLv2) |
+| VMware Workstation Pro | Broadcom | Windows, Linux | Gratuit (usage personnel) |
+| VMware Fusion | Broadcom | macOS | Gratuit (usage personnel) |
+| Parallels Desktop | Parallels | macOS | Proprietaire |
+
+**Caracteristiques communes :**
+- Installation comme une application classique
+- Ideal pour le developpement et les tests
+- Performance reduite par la couche OS hote
+- Pas adapte a la production critique
+
+### 2.4 Comparaison type 1 vs type 2
+
+| Critere | Type 1 | Type 2 |
+|---|---|---|
+| Installation | Sur le materiel nu | Sur un OS existant |
+| Performance | Elevee (acces direct au materiel) | Moyenne (couche OS intermediaire) |
+| Securite | Surface d'attaque reduite | Dependante de l'OS hote |
+| Usage | Production, datacenter | Tests, developpement, formation |
+| Administration | Interface dediee (web/client) | Interface graphique integree |
+| Cout | Variable (licences serveur) | Souvent gratuit |
+
+---
+
+## 3. Oracle VirtualBox
+
+### 3.1 Installation
+
+**Prerequis :**
+- Processeur supportant la virtualisation materielle (VT-x pour Intel, AMD-V pour AMD)
+- Activer la virtualisation dans le BIOS/UEFI
+- OS hote 64 bits
+- RAM suffisante (minimum 4 Go pour l'hote + les VM)
+
+**Installation sous Windows :**
+1. Telecharger VirtualBox depuis le site officiel (virtualbox.org)
+2. Executer l'installateur, accepter les parametres par defaut
+3. Installer le pack d'extensions (Extension Pack) pour le support USB 2.0/3.0, RDP, chiffrement disque
+
+**Installation sous Linux (Debian/Ubuntu) :**
+
+```bash
+sudo apt update
+sudo apt install virtualbox virtualbox-ext-pack
+```
+
+**Verification de la virtualisation materielle :**
+
+```bash
+# Linux
+egrep -c '(vmx|svm)' /proc/cpuinfo
+# Resultat > 0 : virtualisation supportee
+
+# Windows : Gestionnaire des taches > Performances > Virtualisation
+```
+
+### 3.2 Creation d'une machine virtuelle
+
+**Etapes dans l'interface graphique :**
+
+1. **Nouvelle VM** : nom, type d'OS (Linux, Windows, etc.), version
+2. **Memoire vive** : allocation de RAM (exemple : 2048 Mo pour un serveur Debian)
+3. **Disque dur** : creer un disque virtuel (VDI, VMDK ou VHD)
+4. **Type d'allocation** : dynamique (grandit selon les besoins) ou fixe (taille allouee immediatement)
+5. **Taille du disque** : definir la capacite maximale (exemple : 20 Go)
+
+**Recommandations par OS :**
+
+| OS invite | RAM minimum | Disque minimum | CPU |
+|---|---|---|---|
+| Debian 12 (sans GUI) | 512 Mo | 8 Go | 1 vCPU |
+| Debian 12 (avec GUI) | 2048 Mo | 20 Go | 2 vCPU |
+| Ubuntu Server 22.04 | 1024 Mo | 10 Go | 1 vCPU |
+| Windows Server 2022 | 2048 Mo | 32 Go | 2 vCPU |
+| Windows 10/11 | 4096 Mo | 50 Go | 2 vCPU |
+
+### 3.3 Configuration detaillee
+
+**Systeme :**
+- Ordre d'amorcage : disque dur, optique, reseau
+- EFI : activer pour les OS modernes (Windows 11 exige EFI + TPM)
+- Chipset : PIIX3 (ancien) ou ICH9 (moderne, supporte plus de CPUs)
+
+**Processeur :**
+- Nombre de vCPU : ne pas depasser le nombre de coeurs physiques
+- Limite d'execution : plafonner l'utilisation CPU (pourcentage)
+- PAE/NX : activer pour les OS 32 bits necessitant plus de 4 Go
+
+**Affichage :**
+- Memoire video : 128 Mo recommandes
+- Controleur graphique : VMSVGA (Linux), VBoxSVGA (Windows)
+- Acceleration 3D : activer si necessaire (Additions invites requises)
+
+**Stockage :**
+- Controleur IDE : pour le lecteur CD/DVD virtuel (ISO d'installation)
+- Controleur SATA : pour les disques durs virtuels
+- Controleur SCSI/SAS : pour des configurations avancees
+
+**Audio, USB, dossiers partages :**
+- Dossiers partages : partage de repertoires entre hote et invite (necessite les Additions invites)
+- USB : configurer les filtres pour le passage de peripheriques
+
+### 3.4 Modes reseau
+
+VirtualBox propose six modes de connexion reseau pour chaque carte virtuelle :
+
+**NAT (Network Address Translation) :**
+- La VM accede a Internet via l'IP de l'hote
+- La VM est invisible depuis le reseau externe
+- Attribution automatique d'une IP (10.0.2.x)
+- Ideal pour un acces Internet simple
+- Redirection de ports possible pour rendre un service accessible
+
+```
+VM (10.0.2.15) --> NAT VirtualBox --> Hote --> Internet
+```
+
+**Acces par pont (Bridge) :**
+- La VM obtient une IP sur le meme reseau que l'hote
+- La VM est visible par toutes les machines du reseau physique
+- Utilise la carte reseau physique de l'hote
+- Ideal pour les serveurs devant etre accessibles
+
+```
+VM (192.168.1.50) <--> Switch physique <--> Reseau local
+```
+
+**Reseau interne (Internal Network) :**
+- Communication uniquement entre VM connectees au meme reseau interne
+- Aucun acces a l'hote ni a Internet
+- Le nom du reseau interne doit etre identique sur chaque VM
+- Ideal pour simuler un reseau isole (lab)
+
+```
+VM1 (172.16.0.1) <--> Reseau interne "labo" <--> VM2 (172.16.0.2)
+```
+
+**Reseau hote uniquement (Host-Only) :**
+- Communication entre les VM et l'hote uniquement
+- Pas d'acces a Internet (sauf configuration specifique)
+- VirtualBox cree une interface reseau virtuelle sur l'hote
+- Plage par defaut : 192.168.56.0/24
+
+```
+VM (192.168.56.101) <--> vboxnet0 (192.168.56.1) <--> Hote
+```
+
+**Reseau NAT (NAT Network) :**
+- Comme NAT, mais les VM du meme reseau NAT peuvent communiquer entre elles
+- Acces Internet possible
+- Ideal pour un groupe de VM devant se voir et acceder a Internet
+
+**Non connecte :**
+- Carte reseau presente mais sans cable virtuel branche
+- Utile pour tester le comportement d'un OS sans reseau
+
+**Tableau recapitulatif :**
+
+| Mode | VM vers Internet | VM vers hote | Hote vers VM | VM vers VM |
+|---|---|---|---|---|
+| NAT | Oui | Non | Redirection de port | Non |
+| Bridge | Oui | Oui | Oui | Oui |
+| Reseau interne | Non | Non | Non | Oui (meme nom) |
+| Host-Only | Non | Oui | Oui | Oui |
+| Reseau NAT | Oui | Non | Redirection de port | Oui |
+
+### 3.5 Snapshots
+
+Un snapshot capture l'etat complet d'une VM a un instant donne : disque, memoire, configuration.
+
+**Creation :** Menu Machine > Prendre un instantane (ou Ctrl+Shift+S)
+
+**Restauration :** revenir a l'etat exact du snapshot (toute modification posterieure est perdue)
+
+**Arborescence :** les snapshots forment un arbre. On peut creer des branches a partir de n'importe quel snapshot.
+
+**Bonnes pratiques :**
+- Nommer les snapshots de maniere explicite (ex : "Avant installation Apache")
+- Ne pas accumuler trop de snapshots (degradation des performances d'E/S)
+- Supprimer les snapshots obsoletes pour liberer de l'espace
+- Ne pas utiliser les snapshots comme solution de sauvegarde en production
+
+### 3.6 Clones
+
+**Clone complet :** copie integrale et independante de la VM. Le clone n'a aucun lien avec l'original. Occupe autant d'espace disque.
+
+**Clone lie :** utilise les disques du snapshot parent et ne stocke que les differences. Economise de l'espace mais depend de la VM originale.
+
+**Reinitialiser les adresses MAC :** toujours cocher cette option lors du clonage pour eviter les conflits reseau.
+
+### 3.7 VBoxManage (ligne de commande)
+
+```bash
+# Lister les VM
+VBoxManage list vms
+VBoxManage list runningvms
+
+# Creer une VM
+VBoxManage createvm --name "srv-debian" --ostype Debian_64 --register
+
+# Configurer la RAM et les CPUs
+VBoxManage modifyvm "srv-debian" --memory 2048 --cpus 2
+
+# Creer un disque virtuel
+VBoxManage createmedium disk --filename srv-debian.vdi --size 20480
+
+# Ajouter un controleur SATA et attacher le disque
+VBoxManage storagectl "srv-debian" --name "SATA" --add sata --controller IntelAhci
+VBoxManage storageattach "srv-debian" --storagectl "SATA" --port 0 --device 0 \
+  --type hdd --medium srv-debian.vdi
+
+# Attacher une ISO
+VBoxManage storageattach "srv-debian" --storagectl "SATA" --port 1 --device 0 \
+  --type dvddrive --medium /chemin/debian-12.iso
+
+# Configurer le reseau en bridge
+VBoxManage modifyvm "srv-debian" --nic1 bridged --bridgeadapter1 eth0
+
+# Demarrer la VM
+VBoxManage startvm "srv-debian" --type headless
+
+# Prendre un snapshot
+VBoxManage snapshot "srv-debian" take "avant-config-reseau"
+
+# Restaurer un snapshot
+VBoxManage snapshot "srv-debian" restore "avant-config-reseau"
+
+# Arreter la VM
+VBoxManage controlvm "srv-debian" poweroff
+
+# Exporter en OVA
+VBoxManage export "srv-debian" -o srv-debian.ova
+```
+
+---
+
+## 4. VMware (ESXi et vSphere)
+
+### 4.1 VMware ESXi -- Installation
+
+**Prerequis materiels :**
+- Processeur 64 bits avec VT-x/EPT (Intel) ou AMD-V/RVI (AMD)
+- Minimum 4 Go de RAM (8 Go recommandes)
+- Un ou plusieurs disques pour le datastore
+- Au moins une carte reseau compatible
+
+**Procedure d'installation :**
+1. Demarrer sur l'ISO ESXi (cle USB ou iLO/iDRAC)
+2. Accepter la licence
+3. Selectionner le disque d'installation (ESXi occupe environ 1 Go)
+4. Definir le mot de passe root
+5. Confirmer l'installation et redemarrer
+6. Configurer le reseau de gestion (IP, masque, passerelle, DNS) via la console DCUI
+
+**Acces apres installation :**
+- Interface web : `https://<IP_ESXi>` (VMware Host Client)
+- Port de gestion : 443 (HTTPS)
+
+### 4.2 vSphere Client
+
+Le vSphere Client est l'interface web de gestion d'ESXi (et de vCenter).
+
+**Fonctions principales :**
+- Creation et gestion des VM
+- Gestion des datastores et du reseau
+- Surveillance des performances (CPU, RAM, I/O)
+- Gestion des snapshots
+- Configuration des permissions et des utilisateurs
+
+### 4.3 Creation d'une VM sur ESXi
+
+1. Cliquer sur "Creer/Enregistrer une VM"
+2. Choisir "Creer une nouvelle machine virtuelle"
+3. Nommer la VM, selectionner le type et la version d'OS
+4. Selectionner le datastore de stockage
+5. Configurer les ressources :
+   - CPU : nombre de sockets et de coeurs par socket
+   - RAM : quantite de memoire
+   - Disque : taille et type de provisionnement
+   - Reseau : port group associe
+   - Lecteur CD/DVD : monter l'ISO d'installation
+6. Verifier le recapitulatif et valider
+7. Demarrer la VM et ouvrir la console (VMRC ou console web)
+
+### 4.4 Datastores
+
+Un datastore est un espace de stockage utilise par ESXi pour stocker les fichiers des VM.
+
+**Types de datastores :**
+
+| Type | Description | Protocole |
+|---|---|---|
+| VMFS | Systeme de fichiers natif VMware | Acces bloc (SAN, disque local) |
+| NFS | Partage reseau | NFS v3 ou v4.1 |
+| vSAN | Stockage distribue sur les disques locaux | Proprietaire VMware |
+
+**Fichiers d'une VM sur un datastore VMFS :**
+- `.vmx` : fichier de configuration de la VM
+- `.vmdk` : descripteur du disque virtuel
+- `-flat.vmdk` : donnees brutes du disque
+- `.nvram` : configuration du BIOS/EFI
+- `.vmsd` : metadonnees des snapshots
+- `.vmsn` : etat de la memoire du snapshot
+- `.log` : journaux de la VM
+
+### 4.5 Reseau virtuel sur ESXi (vSwitch)
+
+**vSwitch standard :**
+- Switch virtuel local a un hote ESXi
+- Relie les VM aux cartes reseau physiques (uplinks)
+- Supporte les VLAN (802.1Q)
+
+**Composants :**
+- **Port group** : groupe de ports virtuels partageant une meme configuration (VLAN, politique de securite)
+- **VMkernel port** : interface reseau pour les services ESXi (gestion, vMotion, iSCSI, NFS)
+- **Uplink** : carte reseau physique associee au vSwitch
+
+**Configuration d'un VLAN :**
+- Creer un port group avec un VLAN ID specifique
+- Les VM connectees a ce port group sont taguees dans le VLAN correspondant
+- Le switch physique en amont doit etre configure en trunk
+
+```
+VM1 ──┐                      ┌── vmnic0 ──> Switch physique
+VM2 ──┤── Port Group (VLAN10)──┤
+VM3 ──┘                      └── vmnic1 ──> Switch physique (redondance)
+```
+
+**vSwitch distribue (vDS) :**
+- Necessite vCenter
+- Configuration centralisee sur plusieurs hotes
+- Fonctions avancees : NetFlow, port mirroring, LACP
+
+---
+
+## 5. Proxmox VE
+
+### 5.1 Presentation
+
+Proxmox VE (Virtual Environment) est une plateforme de virtualisation open source basee sur Debian. Elle combine KVM (virtualisation complete) et LXC (conteneurs Linux) avec une interface web de gestion.
+
+### 5.2 Installation
+
+1. Demarrer sur l'ISO Proxmox VE
+2. Accepter la licence (AGPL v3)
+3. Selectionner le disque cible (systeme de fichiers : ext4, XFS ou ZFS)
+4. Configurer le pays, le fuseau horaire et la disposition clavier
+5. Definir le mot de passe root et l'adresse e-mail
+6. Configurer le reseau : nom d'hote FQDN, IP, masque, passerelle, DNS
+
+**Acces apres installation :**
+- Interface web : `https://<IP_Proxmox>:8006`
+- Authentification : root avec PAM ou integration LDAP/AD
+
+### 5.3 Interface web
+
+L'interface web de Proxmox est organisee en arborescence :
+- **Datacenter** : vue globale, configuration du cluster, stockage, reseau, permissions
+- **Noeud** : chaque serveur Proxmox, ses VM et conteneurs
+- **VM/CT** : configuration individuelle, console, snapshots, sauvegardes
+
+### 5.4 Creation d'une VM (KVM)
+
+1. Cliquer sur "Creer VM"
+2. **General** : noeud, VM ID (numerique), nom
+3. **OS** : selectionner l'ISO, type d'OS (Linux, Windows)
+4. **Systeme** : controleur graphique, machine (i440fx ou q35), BIOS (SeaBIOS ou OVMF/EFI)
+5. **Disque** : bus (SCSI avec VirtIO recommande), taille, stockage cible, format (qcow2 ou raw)
+6. **CPU** : nombre de sockets et coeurs, type de CPU (host pour meilleures performances)
+7. **Memoire** : quantite de RAM, option ballooning (allocation dynamique)
+8. **Reseau** : bridge (vmbr0), modele de carte (VirtIO recommande), VLAN tag
+
+### 5.5 Conteneurs LXC
+
+Les conteneurs LXC partagent le noyau de l'hote. Ils sont plus legers que les VM mais ne supportent que Linux.
+
+**Creation d'un conteneur :**
+1. Telecharger un template (Debian, Ubuntu, Alpine, etc.) depuis le depot
+2. Cliquer sur "Creer CT"
+3. Configurer : hostname, mot de passe root, template, disque, CPU, RAM, reseau
+
+**VM vs conteneur LXC sur Proxmox :**
+
+| Critere | VM (KVM) | Conteneur (LXC) |
+|---|---|---|
+| Noyau | Propre noyau | Noyau de l'hote |
+| OS supporte | Tout (Linux, Windows, BSD) | Linux uniquement |
+| Isolation | Forte (materiel virtualise) | Moderee (noyau partage) |
+| Performance | Bonne (surcharge legere) | Excellente (quasi-native) |
+| Demarrage | 30-60 secondes | 1-5 secondes |
+| Empreinte memoire | Elevee | Faible |
+
+### 5.6 Stockage dans Proxmox
+
+| Type de stockage | Contenu supporte | Protocole |
+|---|---|---|
+| local | ISO, templates, sauvegardes | Systeme de fichiers local |
+| local-lvm | Disques VM, conteneurs | LVM thin provisioning |
+| NFS | ISO, disques VM, sauvegardes | NFS |
+| iSCSI | Disques VM | iSCSI |
+| Ceph/RBD | Disques VM, conteneurs | Ceph natif |
+| ZFS | Disques VM, conteneurs | ZFS local ou over iSCSI |
+| GlusterFS | Disques VM | GlusterFS |
+
+**Configuration d'un partage NFS :**
+1. Datacenter > Stockage > Ajouter > NFS
+2. Renseigner : ID, serveur NFS, export, contenu autorise (images disque, ISO, sauvegardes)
+
+### 5.7 Reseau dans Proxmox
+
+**Bridge Linux (vmbr0) :**
+- Par defaut, Proxmox cree un bridge `vmbr0` relie a l'interface physique
+- Les VM et conteneurs se connectent a ce bridge
+- Configuration dans `/etc/network/interfaces`
+
+**Exemple de configuration reseau :**
+
+```
+auto lo
+iface lo inet loopback
+
+auto eno1
+iface eno1 inet manual
+
+auto vmbr0
+iface vmbr0 inet static
+    address 192.168.1.10/24
+    gateway 192.168.1.1
+    bridge-ports eno1
+    bridge-stp off
+    bridge-fd 0
+```
+
+**VLAN sur Proxmox :**
+- Activer "VLAN aware" sur le bridge
+- Assigner un VLAN tag a chaque VM/conteneur dans sa configuration reseau
+
+---
+
+## 6. Allocation de ressources
+
+### 6.1 CPU virtuel (vCPU)
+
+Un vCPU est un coeur de processeur virtuel assigne a une VM. L'hyperviseur planifie l'acces des vCPU aux coeurs physiques.
+
+**Regles d'allocation :**
+- Le ratio vCPU total / coeurs physiques ne doit pas depasser 3:1 a 5:1 en production
+- Une VM n'a pas besoin de plus de vCPU qu'elle n'a de threads actifs
+- Trop de vCPU peut degrader les performances (attente de planification)
+
+**Surallocation CPU :** possible car les VM utilisent rarement 100 % de leurs vCPU en meme temps. L'hyperviseur partage le temps CPU entre les VM.
+
+### 6.2 Memoire vive (RAM)
+
+**Allocation fixe :** la RAM est reservee au demarrage de la VM. Garantie de performance mais pas de flexibilite.
+
+**Allocation dynamique (ballooning) :** l'hyperviseur peut recuperer de la RAM inutilisee par une VM pour la donner a une autre. Necessite un pilote ballooning dans l'OS invite.
+
+**Surallocation memoire :** risquee. Si la memoire physique est epuisee, l'hyperviseur doit utiliser le swap, ce qui degrade fortement les performances. A eviter en production critique.
+
+### 6.3 Disque
+
+**Provisionnement dynamique (thin provisioning) :**
+- Le fichier disque commence petit et grandit au fur et a mesure de l'ecriture
+- Permet de surallouer l'espace disque
+- Risque : si l'espace physique est epuise, les VM peuvent planter
+
+**Provisionnement fixe (thick provisioning) :**
+- L'espace disque est integralement alloue a la creation
+- Meilleures performances en ecriture (pas de fragmentation)
+- Pas de risque de manque d'espace
+
+**Thick eager zeroed :** l'espace est alloue ET mis a zero. Meilleure performance mais creation plus lente. Requis pour certaines fonctions (VMware FT).
+
+### 6.4 Tableau recapitulatif de la surallocation
+
+| Ressource | Surallocation possible | Risque | Recommandation |
+|---|---|---|---|
+| CPU | Oui (courante) | Contention, latence | Ratio 3:1 a 5:1 max |
+| RAM | Oui (avec ballooning) | Swap, OOM killer | Eviter en production critique |
+| Disque | Oui (thin provisioning) | Espace insuffisant | Surveiller l'utilisation reelle |
+| Reseau | Oui (bande passante partagee) | Saturation | QoS, traffic shaping |
+
+---
+
+## 7. Stockage virtuel
+
+### 7.1 Formats de disque virtuel
+
+| Format | Hyperviseur | Thin provisioning | Snapshots | Description |
+|---|---|---|---|---|
+| VMDK | VMware | Oui | Oui | Format natif VMware, tres repandu |
+| VDI | VirtualBox | Oui | Oui | Format natif VirtualBox |
+| QCOW2 | KVM/Proxmox | Oui | Oui | Format natif QEMU/KVM, supporte chiffrement et compression |
+| VHD/VHDX | Hyper-V | Oui (VHDX) | Oui | Format natif Microsoft, VHDX supporte les disques > 2 To |
+| RAW | Tous | Non | Non | Image brute, meilleures performances, pas de fonctions avancees |
+
+**Conversion entre formats :**
+
+```bash
+# VMDK vers QCOW2
+qemu-img convert -f vmdk -O qcow2 disque.vmdk disque.qcow2
+
+# QCOW2 vers VDI
+qemu-img convert -f qcow2 -O vdi disque.qcow2 disque.vdi
+
+# Information sur un disque virtuel
+qemu-img info disque.qcow2
+```
+
+### 7.2 Stockage partage
+
+Le stockage partage permet a plusieurs hotes d'acceder aux memes donnees. Indispensable pour la migration a chaud et la haute disponibilite.
+
+**NFS (Network File System) :**
+- Protocole de partage de fichiers sur le reseau
+- Simple a mettre en place
+- Performances limitees par le reseau
+- Adapte aux ISO, templates, sauvegardes
+
+**iSCSI (Internet Small Computer Systems Interface) :**
+- Transport du protocole SCSI sur TCP/IP
+- Acces bloc (le serveur voit un disque brut)
+- Meilleures performances que NFS pour les disques VM
+- Necessite un initiateur (client) et une cible (serveur)
+
+**SAN (Storage Area Network) :**
+- Reseau dedie au stockage (Fibre Channel ou iSCSI)
+- Tres hautes performances
+- Cout eleve
+- Utilise en datacenter
+
+**Comparaison :**
+
+| Critere | NFS | iSCSI | Fibre Channel |
+|---|---|---|---|
+| Type d'acces | Fichier | Bloc | Bloc |
+| Performance | Moyenne | Bonne | Excellente |
+| Complexite | Faible | Moyenne | Elevee |
+| Cout | Faible | Moyen | Eleve |
+| Partage multi-hotes | Natif | Avec VMFS/clustering | Avec VMFS/clustering |
+
+---
+
+## 8. Reseau virtuel
+
+### 8.1 vSwitch (commutateur virtuel)
+
+Un vSwitch est un commutateur logiciel au sein de l'hyperviseur. Il interconnecte les VM entre elles et avec le reseau physique via les cartes reseau de l'hote (uplinks).
+
+**Fonctions d'un vSwitch :**
+- Commutation de trames au niveau 2 (comme un switch physique)
+- Support des VLAN (etiquetage 802.1Q)
+- Politique de securite (mode promiscuous, changement d'adresse MAC, transmissions forgees)
+- Teaming NIC (agregation de liens pour redondance et performance)
+
+### 8.2 VLAN sur hyperviseur
+
+Les VLAN permettent de segmenter le reseau virtuel sans ajouter de materiel.
+
+**Configuration type :**
+1. Le switch physique en amont est configure en mode trunk (toutes les VLAN autorisees)
+2. L'uplink de l'hyperviseur est connecte a ce port trunk
+3. On cree un port group (ou bridge VLAN-aware) par VLAN
+4. Chaque VM est associee au port group correspondant a son VLAN
+
+**Exemple sur Proxmox :**
+- Bridge `vmbr0` avec l'option VLAN aware activee
+- VM dans le VLAN 10 : configurer le tag VLAN 10 sur l'interface reseau de la VM
+- VM dans le VLAN 20 : configurer le tag VLAN 20
+
+### 8.3 Reseau isole
+
+Un reseau isole n'a aucune connexion vers l'exterieur. Les VM communiquent uniquement entre elles.
+
+**Cas d'usage :**
+- Laboratoire de test de securite (malware, pentest)
+- Simulation d'infrastructure reseau complete
+- Formation sans risque pour le reseau de production
+
+**Mise en place :**
+- VirtualBox : mode "Reseau interne"
+- Proxmox : creer un bridge sans interface physique (`vmbr1` sans `bridge-ports`)
+- ESXi : creer un vSwitch sans uplink
+
+### 8.4 Bridge (pont reseau)
+
+Le mode bridge connecte directement la VM au reseau physique. La VM apparait comme une machine physique sur le reseau.
+
+**Fonctionnement :**
+- La carte reseau physique de l'hote passe en mode promiscuous
+- Les trames de la VM sont envoyees directement sur le reseau physique
+- La VM obtient une IP du serveur DHCP du reseau physique (ou IP statique dans le meme sous-reseau)
+
+---
+
+## 9. Snapshots
+
+### 9.1 Fonctionnement
+
+Un snapshot capture l'etat d'une VM a un instant precis :
+- **Etat du disque** : les ecritures ulterieures sont redirigees vers un fichier delta (differencing disk)
+- **Etat de la memoire** (optionnel) : contenu de la RAM sauvegarde (permet de reprendre la VM exactement la ou elle etait)
+- **Configuration** : parametres de la VM au moment du snapshot
+
+**Mecanisme interne :**
+1. Lors de la creation, le disque original devient en lecture seule
+2. Un nouveau fichier delta est cree pour les nouvelles ecritures
+3. A la restauration, le fichier delta est supprime et le disque original redevient actif
+4. A la suppression du snapshot, le delta est fusionne dans le disque parent
+
+### 9.2 Bonnes pratiques
+
+- Prendre un snapshot avant toute operation risquee (mise a jour, changement de configuration)
+- Nommer les snapshots de facon descriptive avec la date
+- Limiter le nombre de snapshots actifs (3 a 5 maximum)
+- Supprimer les snapshots des que possible (les deltas grandissent et ralentissent les I/O)
+- Ne jamais considerer un snapshot comme une sauvegarde (il depend du disque parent)
+- Eteindre la VM avant de prendre un snapshot si possible (evite de sauvegarder la memoire, plus rapide)
+
+### 9.3 Limitations
+
+- Chaque snapshot ajoute une couche d'indirection pour les lectures disque : degradation progressive des performances
+- Les fichiers delta peuvent devenir tres volumineux
+- Une chaine de snapshots corrompue peut rendre la VM inutilisable
+- Le temps de suppression d'un snapshot est proportionnel a la taille du delta a fusionner
+- Certains logiciels (bases de donnees) necessitent une quiesce (mise en coherence) avant le snapshot
+
+---
+
+## 10. Templates et clones
+
+### 10.1 Templates
+
+Un template est une VM preparee et figee servant de modele pour creer de nouvelles VM.
+
+**Preparation d'un template :**
+1. Installer et configurer l'OS (mises a jour, outils, agents)
+2. Generaliser l'OS :
+   - Linux : supprimer les cles SSH, vider les logs, reinitialiser machine-id
+   - Windows : executer `sysprep` pour reinitialiser le SID
+3. Convertir la VM en template (selon l'hyperviseur)
+
+**Commandes de generalisation Linux :**
+
+```bash
+# Supprimer les cles SSH de l'hote
+sudo rm -f /etc/ssh/ssh_host_*
+
+# Vider le machine-id
+sudo truncate -s 0 /etc/machine-id
+
+# Nettoyer les logs
+sudo find /var/log -type f -exec truncate -s 0 {} \;
+
+# Supprimer l'historique bash
+history -c && rm -f ~/.bash_history
+
+# Vider le cache apt
+sudo apt clean
+```
+
+### 10.2 Clones
+
+**Clone complet (full clone) :**
+- Copie integrale et independante
+- Aucune dependance vers l'original
+- Occupe autant d'espace que l'original
+- Peut etre deplace sur un autre stockage
+
+**Clone lie (linked clone) :**
+- Ne contient que les differences par rapport au snapshot parent
+- Occupe moins d'espace
+- Depend du template/snapshot source (ne pas le supprimer)
+- Ideal pour les environnements de test temporaires
+
+### 10.3 Deploiement rapide
+
+Avec un template et le clonage, deployer 10 serveurs identiques prend quelques minutes au lieu de plusieurs heures.
+
+**Workflow type :**
+1. Creer et preparer un template (Debian avec SSH, Sudo, outils de base)
+2. Cloner le template pour chaque nouvelle VM
+3. Personnaliser chaque clone (hostname, IP, role)
+
+---
+
+## 11. Migration de machines virtuelles
+
+### 11.1 Migration a froid (offline)
+
+La VM est eteinte avant d'etre deplacee vers un autre hote.
+
+**Procedure :**
+1. Eteindre la VM
+2. Copier les fichiers de la VM vers le nouvel hote (ou utiliser un stockage partage)
+3. Enregistrer la VM sur le nouvel hote
+4. Demarrer la VM
+
+**Avantages :** simple, pas de prerequis particulier, compatible avec tout type de stockage.
+
+**Inconvenient :** interruption de service pendant la migration.
+
+### 11.2 Migration a chaud (live migration / vMotion)
+
+La VM est deplacee vers un autre hote sans interruption de service.
+
+**Conditions requises :**
+- Stockage partage accessible par les deux hotes (NFS, iSCSI, SAN) ou migration du stockage simultanee
+- Meme reseau de gestion entre les hotes
+- Processeurs compatibles (meme famille ou masque de compatibilite active -- EVC chez VMware)
+- Bande passante suffisante sur le reseau de migration
+- Solution de gestion centralisee (vCenter pour VMware, cluster Proxmox)
+
+**Fonctionnement de vMotion (VMware) :**
+1. La memoire de la VM est copiee vers l'hote de destination (premier passage)
+2. Les pages modifiees pendant la copie sont recopiees (passages iteratifs)
+3. Quand le delta est suffisamment petit, la VM est brievement suspendue (quelques millisecondes)
+4. Les dernieres pages et l'etat du CPU sont transferes
+5. La VM reprend sur l'hote de destination
+6. L'ARP est mis a jour pour rediriger le trafic reseau
+
+**Proxmox -- migration a chaud :**
+
+```bash
+# Depuis l'interface web : clic droit sur la VM > Migrer
+# Ou en ligne de commande :
+qm migrate <VMID> <noeud_destination> --online
+```
+
+### 11.3 Storage vMotion
+
+Deplacement du stockage d'une VM d'un datastore a un autre sans interruption. La VM reste sur le meme hote.
+
+---
+
+## 12. Haute disponibilite
+
+### 12.1 Cluster
+
+Un cluster est un groupe de serveurs (noeuds) qui travaillent ensemble et sont geres comme une entite unique.
+
+**VMware :** un cluster vSphere regroupe des hotes ESXi geres par vCenter.
+
+**Proxmox :** un cluster Proxmox regroupe des noeuds Proxmox. Formation du cluster :
+
+```bash
+# Sur le premier noeud :
+pvecm create mon-cluster
+
+# Sur les noeuds suivants :
+pvecm add <IP_du_premier_noeud>
+
+# Verifier le statut :
+pvecm status
+```
+
+### 12.2 Failover (basculement automatique)
+
+En cas de panne d'un noeud, les VM sont automatiquement redemarrees sur un autre noeud du cluster.
+
+**Conditions :**
+- Stockage partage (les VM doivent etre accessibles par tous les noeuds)
+- Configuration HA activee sur les VM concernees
+- Quorum : majorite de noeuds operationnels (3 noeuds minimum recommandes)
+
+**Proxmox HA :**
+1. Datacenter > HA > Ajouter
+2. Selectionner la VM ou le conteneur
+3. Definir le groupe de noeuds et la priorite
+4. En cas de panne, le gestionnaire HA redemarre la VM sur un noeud sain
+
+### 12.3 Repartition de charge (load balancing)
+
+**DRS (Distributed Resource Scheduler) chez VMware :**
+- Surveille la charge CPU et memoire de chaque hote du cluster
+- Deplace automatiquement les VM (via vMotion) pour equilibrer la charge
+- Modes : manuel (recommandations), partiellement automatise, entierement automatise
+
+**Proxmox :** pas de DRS natif, mais des scripts et outils tiers permettent de repartir les VM.
+
+---
+
+## 13. Conteneurs vs machines virtuelles
+
+### 13.1 Differences fondamentales
+
+| Critere | Machine virtuelle | Conteneur |
+|---|---|---|
+| Isolation | Materielle (hyperviseur) | Noyau partage (namespaces, cgroups) |
+| OS | Complet (noyau + userland) | Userland uniquement |
+| Taille | Plusieurs Go | Quelques Mo a centaines de Mo |
+| Demarrage | 30-60 secondes | Moins de 1 seconde |
+| Densite | Dizaines par hote | Centaines voire milliers par hote |
+| Overhead | Modere | Quasi nul |
+| Securite | Forte (frontiere materielle) | Moindre (noyau partage) |
+| Portabilite | OVA, OVF (lourds) | Image Docker (legere, reproductible) |
+| OS invite | Linux, Windows, BSD | Linux (natif), Windows (experimental) |
+
+### 13.2 Cas d'usage
+
+**Privilegier les VM quand :**
+- L'application necessite Windows ou un noyau specifique
+- L'isolation forte est requise (multi-tenant, securite)
+- L'OS invite doit etre different de l'hote
+- Des pilotes ou modules noyau specifiques sont necessaires
+
+**Privilegier les conteneurs quand :**
+- L'application est Linux et sans besoin noyau specifique
+- On souhaite un deploiement rapide et reproductible
+- La densite de services est importante
+- On utilise une architecture micro-services
+
+### 13.3 Docker en bref
+
+Docker est une plateforme de conteneurisation qui simplifie la creation, la distribution et l'execution de conteneurs.
+
+**Concepts cles :**
+- **Image** : modele en lecture seule contenant l'application et ses dependances
+- **Conteneur** : instance en cours d'execution d'une image
+- **Dockerfile** : fichier de definition pour construire une image
+- **Docker Hub** : registre public d'images
+
+**Commandes essentielles :**
+
+```bash
+# Telecharger une image
+docker pull debian:12
+
+# Lancer un conteneur
+docker run -d --name mon-serveur -p 80:80 nginx
+
+# Lister les conteneurs
+docker ps
+docker ps -a
+
+# Arreter et supprimer
+docker stop mon-serveur
+docker rm mon-serveur
+
+# Construire une image
+docker build -t mon-app:v1 .
+```
+
+**Lien avec la virtualisation :** Docker s'execute souvent dans des VM en production (VM qui heberge le moteur Docker et les conteneurs). Les conteneurs LXC de Proxmox et les conteneurs Docker reposent sur les memes mecanismes Linux (namespaces et cgroups) mais avec des objectifs differents : LXC virtualise un systeme complet, Docker isole une application.
+
+---
+
+## 14. Exercices corriges
+
+### Exercice 1 -- Creer une infrastructure multi-VM avec VirtualBox
+
+**Enonce :**
+Creer une infrastructure composee de trois VM sur VirtualBox :
+- `srv-web` : serveur web Debian 12 (Apache, 1 Go RAM, 10 Go disque)
+- `srv-bdd` : serveur de base de donnees Debian 12 (MariaDB, 2 Go RAM, 20 Go disque)
+- `cli-linux` : client Ubuntu Desktop (2 Go RAM, 20 Go disque)
+
+Les trois machines doivent pouvoir communiquer entre elles sur un reseau interne 172.16.0.0/24. Seul `srv-web` doit avoir acces a Internet.
+
+**Correction :**
+
+1. Creer les trois VM avec les ressources specifiees.
+
+2. Configuration reseau de `srv-web` :
+   - Carte 1 : NAT (acces Internet)
+   - Carte 2 : Reseau interne, nom "infra-labo"
+
+3. Configuration reseau de `srv-bdd` :
+   - Carte 1 : Reseau interne, nom "infra-labo"
+
+4. Configuration reseau de `cli-linux` :
+   - Carte 1 : Reseau interne, nom "infra-labo"
+
+5. Configuration IP sur chaque VM (dans `/etc/network/interfaces` ou via Netplan) :
+
+```bash
+# srv-web (carte enp0s8, reseau interne)
+auto enp0s8
+iface enp0s8 inet static
+    address 172.16.0.1/24
+
+# srv-bdd (carte enp0s3)
+auto enp0s3
+iface enp0s3 inet static
+    address 172.16.0.2/24
+    gateway 172.16.0.1
+
+# cli-linux (carte enp0s3)
+auto enp0s3
+iface enp0s3 inet static
+    address 172.16.0.3/24
+    gateway 172.16.0.1
+```
+
+6. Sur `srv-web`, activer le routage et le NAT pour permettre aux autres VM d'acceder a Internet via `srv-web` (si souhaite) :
+
+```bash
+# Activer le routage
+echo 1 > /proc/sys/net/ipv4/ip_forward
+# Rendre permanent : decomenter net.ipv4.ip_forward=1 dans /etc/sysctl.conf
+
+# NAT via iptables
+iptables -t nat -A POSTROUTING -o enp0s3 -j MASQUERADE
+```
+
+7. Verification : depuis chaque VM, `ping 172.16.0.x` pour tester la communication.
+
+---
+
+### Exercice 2 -- Configurer les modes reseau VirtualBox
+
+**Enonce :**
+Pour une VM Debian, tester et documenter le comportement de chaque mode reseau : NAT, Bridge, Reseau interne, Host-Only. Pour chaque mode, noter l'adresse IP obtenue et les communications possibles.
+
+**Correction :**
+
+| Mode | IP obtenue | Ping vers hote | Ping vers Internet | Ping vers autre VM (meme mode) |
+|---|---|---|---|---|
+| NAT | 10.0.2.15 (DHCP auto) | Non (sauf redirection) | Oui | Non |
+| Bridge | 192.168.1.x (DHCP reseau) | Oui | Oui | Oui |
+| Reseau interne | Manuelle (ex : 10.0.0.1) | Non | Non | Oui (meme nom) |
+| Host-Only | 192.168.56.x (DHCP VBox) | Oui | Non | Oui |
+
+Procedure pour chaque test :
+1. Modifier le mode reseau dans les parametres de la VM
+2. Redemarrer le service reseau (`systemctl restart networking`)
+3. Verifier l'IP (`ip addr show`)
+4. Tester la connectivite (`ping`)
+
+---
+
+### Exercice 3 -- Snapshots et restauration
+
+**Enonce :**
+Sur une VM VirtualBox :
+1. Installer Apache
+2. Prendre un snapshot "avant-config"
+3. Modifier la configuration Apache (changer le port d'ecoute en 8080)
+4. Prendre un snapshot "apres-config"
+5. Restaurer le snapshot "avant-config"
+6. Verifier que la configuration Apache est revenue a l'etat initial
+
+**Correction :**
+
+```bash
+# 1. Installer Apache
+sudo apt update && sudo apt install apache2 -y
+
+# 2. Snapshot "avant-config" (dans VirtualBox : Machine > Prendre un instantane)
+
+# 3. Modifier la configuration
+sudo sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf
+sudo systemctl restart apache2
+# Verifier : ss -tlnp | grep 8080
+
+# 4. Snapshot "apres-config"
+
+# 5. Restaurer "avant-config" (Machine > Instantanes > Restaurer)
+# La VM redemarrera a l'etat du snapshot
+
+# 6. Verification
+cat /etc/apache2/ports.conf | grep Listen
+# Resultat attendu : Listen 80
+ss -tlnp | grep 80
+# Apache ecoute de nouveau sur le port 80
+```
+
+---
+
+### Exercice 4 -- Creer une VM sur Proxmox avec stockage et reseau
+
+**Enonce :**
+Sur un serveur Proxmox VE :
+1. Creer une VM Debian 12 avec 2 vCPU, 2 Go de RAM, 20 Go de disque en SCSI VirtIO
+2. Configurer le reseau en bridge avec un VLAN tag 10
+3. Installer l'OS et configurer une IP statique 10.10.10.5/24
+
+**Correction :**
+
+1. Interface web > Creer VM :
+   - General : VM ID 100, nom "srv-app"
+   - OS : ISO debian-12-netinst, type Linux
+   - Systeme : BIOS SeaBIOS, machine q35
+   - Disque : bus SCSI (VirtIO SCSI), 20 Go, stockage local-lvm
+   - CPU : 1 socket, 2 coeurs, type host
+   - Memoire : 2048 Mo
+   - Reseau : bridge vmbr0, modele VirtIO, VLAN tag 10
+
+2. Le bridge `vmbr0` doit etre VLAN aware :
+
+```
+auto vmbr0
+iface vmbr0 inet static
+    address 192.168.1.10/24
+    gateway 192.168.1.1
+    bridge-ports eno1
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware yes
+```
+
+3. Apres installation de Debian, configurer l'IP statique :
+
+```bash
+# /etc/network/interfaces
+auto ens18
+iface ens18 inet static
+    address 10.10.10.5/24
+    gateway 10.10.10.1
+    dns-nameservers 10.10.10.1
+```
+
+---
+
+### Exercice 5 -- Planifier l'allocation de ressources
+
+**Enonce :**
+Un serveur physique dispose de 8 coeurs CPU, 32 Go de RAM et 500 Go de stockage SSD. Planifier l'hebergement des VM suivantes :
+
+| VM | Role | CPU | RAM | Disque |
+|---|---|---|---|---|
+| srv-web | Serveur web Nginx | 2 | 4 Go | 30 Go |
+| srv-bdd | Serveur MariaDB | 4 | 8 Go | 100 Go |
+| srv-mail | Serveur mail Postfix | 2 | 4 Go | 50 Go |
+| srv-fichiers | Serveur de fichiers Samba | 2 | 4 Go | 200 Go |
+| srv-monitoring | Supervision Zabbix | 2 | 4 Go | 40 Go |
+
+Est-ce realisable ? Justifier.
+
+**Correction :**
+
+**CPU :** total demande = 2 + 4 + 2 + 2 + 2 = 12 vCPU pour 8 coeurs physiques. Ratio = 12/8 = 1.5:1. C'est acceptable (inferieur a 3:1). Les VM n'utiliseront pas 100 % du CPU en permanence.
+
+**RAM :** total demande = 4 + 8 + 4 + 4 + 4 = 24 Go pour 32 Go physiques. Il reste 8 Go pour l'hyperviseur (qui en necessite environ 2-4 Go). C'est realisable sans surallocation memoire.
+
+**Disque :** total demande = 30 + 100 + 50 + 200 + 40 = 420 Go pour 500 Go. En provisionnement fixe, il reste 80 Go. Avec l'OS de l'hyperviseur (~10 Go) et les snapshots, l'espace est juste. Recommandation : utiliser le thin provisioning et surveiller l'utilisation reelle.
+
+**Conclusion :** l'hebergement est realisable avec une surveillance attentive du stockage. Ajouter un second disque ou un stockage externe serait prudent.
+
+---
+
+### Exercice 6 -- Migration a chaud sur Proxmox
+
+**Enonce :**
+Deux noeuds Proxmox (`pve1` et `pve2`) forment un cluster avec un stockage NFS partage. Decrire la procedure pour migrer a chaud la VM 100 de `pve1` vers `pve2`.
+
+**Correction :**
+
+**Prerequis :**
+- Les deux noeuds sont dans le meme cluster (`pvecm status` pour verifier)
+- Le stockage NFS est configure sur les deux noeuds avec le meme ID
+- Le disque de la VM 100 se trouve sur le stockage NFS (pas sur un stockage local)
+- Les deux noeuds ont acces au meme reseau
+
+**Procedure via l'interface web :**
+1. Selectionner la VM 100 sur `pve1`
+2. Clic droit > Migrer
+3. Noeud cible : `pve2`
+4. Mode : En ligne (migration a chaud)
+5. Valider
+
+**Procedure en ligne de commande :**
+
+```bash
+qm migrate 100 pve2 --online
+```
+
+**Verification :**
+- La VM apparait maintenant sur `pve2` dans l'interface web
+- Le service heberge par la VM n'a subi aucune interruption
+- `qm status 100` sur `pve2` affiche "running"
+
+**En cas d'echec :** verifier les logs (`/var/log/pve/tasks/`), la connectivite reseau entre les noeuds, et les permissions d'acces au stockage partage.
+
+---
+
+### Exercice 7 -- Configurer un vSwitch avec VLAN sur ESXi
+
+**Enonce :**
+Sur un hote ESXi, creer un vSwitch avec deux port groups :
+- "VLAN-Production" (VLAN 10)
+- "VLAN-Administration" (VLAN 20)
+
+Associer deux VM au VLAN Production et une VM au VLAN Administration.
+
+**Correction :**
+
+1. Se connecter au VMware Host Client (`https://<IP_ESXi>`)
+2. Reseau > Commutateurs virtuels > Ajouter un commutateur virtuel standard
+   - Nom : vSwitch1
+   - Uplink : vmnic1 (carte physique connectee au switch en trunk)
+
+3. Reseau > Groupes de ports > Ajouter un groupe de ports
+   - Nom : VLAN-Production
+   - VLAN ID : 10
+   - Commutateur virtuel : vSwitch1
+
+4. Ajouter un second groupe de ports
+   - Nom : VLAN-Administration
+   - VLAN ID : 20
+   - Commutateur virtuel : vSwitch1
+
+5. Modifier les parametres reseau des VM :
+   - VM1 et VM2 : carte reseau sur "VLAN-Production"
+   - VM3 : carte reseau sur "VLAN-Administration"
+
+6. Sur le switch physique, le port connecte a vmnic1 doit etre en mode trunk :
+
+```
+interface GigabitEthernet0/1
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+```
+
+7. Verification : VM1 et VM2 peuvent communiquer entre elles. VM3 ne peut pas communiquer directement avec VM1 et VM2 (VLAN differents). Un routeur inter-VLAN est necessaire pour la communication entre VLAN.
+
+---
+
+### Exercice 8 -- Deploiement rapide par template (Proxmox)
+
+**Enonce :**
+Creer un template Debian 12 sur Proxmox puis deployer trois serveurs identiques a partir de ce template. Personnaliser chaque clone avec un hostname et une IP differents.
+
+**Correction :**
+
+1. Creer une VM Debian 12 (ID 9000) et installer l'OS avec les outils de base, sudo, SSH.
+
+2. Preparer le template :
+
+```bash
+# Sur la VM, en root
+apt update && apt upgrade -y
+apt install qemu-guest-agent cloud-init -y
+
+# Generaliser
+rm -f /etc/ssh/ssh_host_*
+truncate -s 0 /etc/machine-id
+rm -f /var/lib/dbus/machine-id
+apt clean
+history -c
+```
+
+3. Arreter la VM et la convertir en template :
+   - Interface web : clic droit sur la VM 9000 > Convertir en template
+
+4. Cloner le template (trois fois) :
+   - Clic droit sur le template > Cloner
+   - VM 101 : nom "srv-web", clone complet
+   - VM 102 : nom "srv-app", clone complet
+   - VM 103 : nom "srv-bdd", clone complet
+
+5. Personnaliser chaque clone :
+
+```bash
+# Sur srv-web (VM 101)
+hostnamectl set-hostname srv-web
+# Configurer IP 192.168.1.11/24
+
+# Sur srv-app (VM 102)
+hostnamectl set-hostname srv-app
+# Configurer IP 192.168.1.12/24
+
+# Sur srv-bdd (VM 103)
+hostnamectl set-hostname srv-bdd
+# Configurer IP 192.168.1.13/24
+```
+
+6. Regenerer les cles SSH sur chaque clone :
+
+```bash
+dpkg-reconfigure openssh-server
+systemctl restart sshd
+```
+
+---
+
+### Exercice 9 -- Conteneurs LXC vs VM sur Proxmox
+
+**Enonce :**
+Creer un conteneur LXC Debian 12 et une VM Debian 12 sur le meme noeud Proxmox. Comparer les temps de demarrage, la consommation memoire et l'espace disque utilise.
+
+**Correction :**
+
+1. Telecharger le template LXC : Stockage local > Templates CT > Templates > debian-12-standard
+
+2. Creer le conteneur (CT 200) : 1 CPU, 512 Mo RAM, 4 Go disque
+
+3. Creer la VM (VM 201) : 1 CPU, 1024 Mo RAM, 10 Go disque, installation Debian 12 minimale
+
+4. Resultats attendus :
+
+| Critere | Conteneur LXC (CT 200) | VM KVM (VM 201) |
+|---|---|---|
+| Temps de demarrage | 1-3 secondes | 20-40 secondes |
+| RAM utilisee (apres boot) | 30-50 Mo | 150-300 Mo |
+| Espace disque (apres install) | 200-400 Mo | 1.5-3 Go |
+| Noyau | Celui de l'hote Proxmox | Noyau propre de la VM |
+| Processus visibles depuis l'hote | Oui (via `ps aux`) | Non (isoles par KVM) |
+
+5. Conclusion : les conteneurs LXC sont beaucoup plus legers et rapides que les VM, mais offrent une isolation moindre. Pour un service Linux standard (serveur web, DNS, DHCP), un conteneur est souvent suffisant. Pour Windows ou une isolation forte, la VM est obligatoire.
+
+---
+
+### Exercice 10 -- Configurer un stockage iSCSI sur Proxmox
+
+**Enonce :**
+Un NAS expose une cible iSCSI `iqn.2024-01.lan.local:storage` sur l'adresse 192.168.1.200. Configurer Proxmox pour utiliser ce stockage et y creer une VM.
+
+**Correction :**
+
+1. Datacenter > Stockage > Ajouter > iSCSI
+   - ID : `nas-iscsi`
+   - Portail : 192.168.1.200
+   - Cible : `iqn.2024-01.lan.local:storage`
+
+2. Ajouter un stockage LVM par-dessus l'iSCSI :
+   - Datacenter > Stockage > Ajouter > LVM
+   - ID : `nas-iscsi-lvm`
+   - Base de stockage : `nas-iscsi`
+   - Groupe de volumes : creer ou selectionner
+   - Contenu : images disque
+
+3. Creer une VM en selectionnant le stockage `nas-iscsi-lvm` pour le disque.
+
+4. Verification :
+
+```bash
+# Voir les sessions iSCSI actives
+iscsiadm -m session
+
+# Voir les volumes LVM
+lvs
+```
+
+5. Avantage : le stockage iSCSI etant accessible par tous les noeuds du cluster (si configure sur chacun), il permet la migration a chaud et la haute disponibilite.
+
+---
+
+### Exercice 11 -- Comparer les formats de disques virtuels
+
+**Enonce :**
+Creer un disque de 20 Go en format QCOW2 (dynamique), RAW et QCOW2 avec preallocation. Comparer la taille reelle sur le stockage et les performances d'ecriture.
+
+**Correction :**
+
+```bash
+# Creation des disques
+qemu-img create -f qcow2 test-qcow2.qcow2 20G
+qemu-img create -f raw test-raw.raw 20G
+qemu-img create -f qcow2 -o preallocation=full test-prealloc.qcow2 20G
+
+# Verifier la taille reelle
+ls -lh test-*
+# test-qcow2.qcow2    : ~200 Ko (dynamique, quasi vide)
+# test-raw.raw         : 20 Go (sparse, mais ls montre 20G)
+# test-prealloc.qcow2  : ~20 Go (prealloue)
+
+# Taille reelle sur disque
+du -h test-*
+# test-qcow2.qcow2    : ~200 Ko
+# test-raw.raw         : ~0 (fichier sparse)
+# test-prealloc.qcow2  : ~20 Go
+
+# Information detaillee
+qemu-img info test-qcow2.qcow2
+```
+
+**Analyse :**
+- QCOW2 dynamique : economise l'espace, supporte les snapshots, overhead leger en ecriture
+- RAW : meilleures performances brutes, pas de fonctions avancees
+- QCOW2 prealloue : performances proches du RAW, conserve les fonctions QCOW2
+
+---
+
+### Exercice 12 -- Haute disponibilite sur Proxmox
+
+**Enonce :**
+Un cluster Proxmox de trois noeuds (`pve1`, `pve2`, `pve3`) avec stockage Ceph partage heberge les VM suivantes :
+- VM 100 (srv-web) sur pve1
+- VM 101 (srv-bdd) sur pve2
+- VM 102 (srv-mail) sur pve3
+
+Configurer la haute disponibilite pour que chaque VM soit automatiquement redemarree sur un autre noeud en cas de panne.
+
+**Correction :**
+
+1. Verifier le cluster :
+
+```bash
+pvecm status
+# Nodes: 3, Quorate: Yes
+```
+
+2. Verifier le stockage Ceph :
+
+```bash
+ceph status
+# health: HEALTH_OK
+```
+
+3. Configurer la HA pour chaque VM via l'interface web :
+   - Datacenter > HA > Ajouter
+   - Ressource : vm:100, etat demande : started, groupe : ha-group1
+   - Repeter pour vm:101 et vm:102
+
+4. Creer un groupe HA (optionnel, pour definir les noeuds preferes) :
+   - Datacenter > HA > Groupes > Creer
+   - Nom : ha-group1
+   - Noeuds : pve1 (priorite 3), pve2 (priorite 2), pve3 (priorite 1)
+
+5. Tester le failover :
+
+```bash
+# Simuler une panne de pve1
+systemctl stop pve-cluster corosync
+# Ou eteindre le noeud
+
+# Observer dans l'interface web :
+# La VM 100 est automatiquement redemarree sur pve2 ou pve3
+# Les VM 101 et 102 restent sur leurs noeuds respectifs
+```
+
+6. Verifier les logs HA :
+
+```bash
+# Sur un noeud fonctionnel
+cat /var/log/pve/ha-manager/current
+```
+
+7. Retour a la normale : quand `pve1` revient en ligne, la VM 100 peut etre remigree manuellement ou automatiquement selon la configuration du groupe HA.
+
+---
+
+### Exercice 13 -- VBoxManage : gestion en ligne de commande
+
+**Enonce :**
+En utilisant uniquement VBoxManage, creer une VM "srv-dns" avec les specifications suivantes : Debian 64 bits, 1 Go de RAM, 1 vCPU, disque VDI de 10 Go en provisionnement dynamique, carte reseau en mode Bridge sur l'interface `eth0`. Demarrer la VM en mode headless.
+
+**Correction :**
+
+```bash
+# Creer et enregistrer la VM
+VBoxManage createvm --name "srv-dns" --ostype Debian_64 --register
+
+# Configurer les ressources
+VBoxManage modifyvm "srv-dns" --memory 1024 --cpus 1
+
+# Configurer le reseau en bridge
+VBoxManage modifyvm "srv-dns" --nic1 bridged --bridgeadapter1 eth0
+
+# Activer l'APIC et l'I/O APIC
+VBoxManage modifyvm "srv-dns" --ioapic on
+
+# Creer le controleur de stockage
+VBoxManage storagectl "srv-dns" --name "SATA Controller" --add sata \
+  --controller IntelAhci --portcount 2
+
+# Creer le disque virtuel (10 Go, dynamique = variante Standard)
+VBoxManage createmedium disk --filename "$HOME/VirtualBox VMs/srv-dns/srv-dns.vdi" \
+  --size 10240 --format VDI --variant Standard
+
+# Attacher le disque
+VBoxManage storageattach "srv-dns" --storagectl "SATA Controller" \
+  --port 0 --device 0 --type hdd \
+  --medium "$HOME/VirtualBox VMs/srv-dns/srv-dns.vdi"
+
+# Attacher l'ISO d'installation
+VBoxManage storageattach "srv-dns" --storagectl "SATA Controller" \
+  --port 1 --device 0 --type dvddrive \
+  --medium /chemin/vers/debian-12-amd64-netinst.iso
+
+# Configurer l'ordre de boot (DVD en premier pour l'installation)
+VBoxManage modifyvm "srv-dns" --boot1 dvd --boot2 disk --boot3 none --boot4 none
+
+# Demarrer en mode headless
+VBoxManage startvm "srv-dns" --type headless
+
+# Acceder a la VM via VRDE (bureau a distance) si necessaire
+VBoxManage modifyvm "srv-dns" --vrde on --vrdeport 5001
+```
+
+---
+
+### Exercice 14 -- Concevoir une infrastructure virtualisee complete
+
+**Enonce :**
+Une PME souhaite virtualiser son infrastructure. Elle dispose de deux serveurs physiques (chacun 16 coeurs, 64 Go RAM, 1 To SSD) et un NAS (4 To utiles, NFS et iSCSI). Concevoir l'infrastructure pour heberger :
+
+- 1 serveur web (Nginx + PHP)
+- 1 serveur de base de donnees (PostgreSQL)
+- 1 serveur de fichiers (Samba/NFS)
+- 1 serveur de messagerie (Postfix + Dovecot)
+- 1 serveur de supervision (Zabbix)
+- 1 controleur de domaine (Active Directory)
+- 1 serveur de sauvegarde (Proxmox Backup Server)
+
+**Correction :**
+
+**Choix de l'hyperviseur :** Proxmox VE (open source, supporte KVM et LXC, clustering, HA).
+
+**Architecture :**
+- Cluster Proxmox de 2 noeuds (pve1, pve2)
+- Stockage NFS sur le NAS pour les disques VM (migration a chaud possible)
+- Stockage local pour les ISO et templates
+
+**Repartition des VM :**
+
+| VM | Type | CPU | RAM | Disque | Noeud principal |
+|---|---|---|---|---|---|
+| srv-web | LXC | 2 | 2 Go | 10 Go | pve1 |
+| srv-bdd | KVM | 4 | 8 Go | 100 Go | pve2 |
+| srv-fichiers | LXC | 2 | 2 Go | 20 Go (+ NAS) | pve1 |
+| srv-mail | LXC | 2 | 4 Go | 50 Go | pve2 |
+| srv-supervision | LXC | 2 | 4 Go | 30 Go | pve1 |
+| srv-ad | KVM | 2 | 4 Go | 50 Go | pve2 |
+| srv-backup | KVM | 2 | 4 Go | 50 Go (+ NAS) | pve1 |
+
+**Totaux par noeud :**
+
+| Noeud | vCPU | RAM | Disponible CPU | Disponible RAM |
+|---|---|---|---|---|
+| pve1 | 8 | 12 Go | 16 coeurs | 64 Go |
+| pve2 | 8 | 16 Go | 16 coeurs | 64 Go |
+
+Les deux noeuds sont largement dimensionnes. En cas de panne d'un noeud, l'autre peut heberger toutes les VM (12+16 = 28 Go < 64 Go ; 8+8 = 16 vCPU = 16 coeurs).
+
+**Reseau :**
+- VLAN 10 : Production (srv-web, srv-bdd, srv-fichiers, srv-mail)
+- VLAN 20 : Administration (srv-supervision, srv-ad, srv-backup)
+- VLAN 30 : Gestion Proxmox et migration
+
+**HA :** activer sur les VM critiques (srv-web, srv-bdd, srv-mail, srv-ad).
+
+**Sauvegardes :** Proxmox Backup Server planifie des sauvegardes quotidiennes de toutes les VM sur le NAS. Retention : 7 quotidiennes, 4 hebdomadaires, 3 mensuelles.
+
+---
+
+## 15. Points cles pour l'examen
+
+1. Savoir differencier hyperviseur de type 1 et de type 2 avec des exemples concrets.
+2. Connaitre les modes reseau de VirtualBox et savoir lequel utiliser selon le besoin.
+3. Maitriser les commandes VBoxManage de base (creation, configuration, snapshots).
+4. Comprendre la difference entre provisionnement dynamique et fixe.
+5. Savoir expliquer le fonctionnement d'un snapshot et ses limitations.
+6. Connaitre les formats de disques virtuels (VMDK, VDI, QCOW2, VHD) et leur association aux hyperviseurs.
+7. Comprendre le role d'un vSwitch et la configuration des VLAN sur un hyperviseur.
+8. Savoir planifier l'allocation de ressources et calculer les ratios de surallocation.
+9. Connaitre les prerequis et le fonctionnement de la migration a chaud.
+10. Differencier conteneurs et VM, savoir quand utiliser chaque technologie.
+11. Savoir creer un template, generaliser un OS et deployer par clonage.
+12. Comprendre les principes de haute disponibilite : cluster, quorum, failover.

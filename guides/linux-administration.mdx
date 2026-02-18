@@ -1,0 +1,2495 @@
+---
+title: "Linux — Administration systeme"
+description: "Installation, commandes essentielles, utilisateurs, permissions, processus, systemd, apt, scripts Bash"
+category: "Systemes"
+tags: ["linux", "debian", "administration", "bash", "permissions", "systemd"]
+difficulty: "Intermediaire"
+---
+
+# Linux -- Administration systeme
+
+---
+
+## 1. Introduction a Linux
+
+### 1.1 Historique
+
+En 1991, Linus Torvalds, etudiant finlandais, publie la premiere version du noyau Linux, inspire par le systeme MINIX d'Andrew Tanenbaum. Le projet s'inscrit dans la continuite du mouvement GNU lance par Richard Stallman en 1983, dont l'objectif est de creer un systeme d'exploitation entierement libre. Le noyau Linux, combine aux outils GNU, forme ce que l'on appelle GNU/Linux.
+
+Dates cles :
+
+- **1969** : creation d'UNIX aux laboratoires Bell (Ken Thompson, Dennis Ritchie)
+- **1983** : lancement du projet GNU par Richard Stallman
+- **1985** : creation de la Free Software Foundation (FSF)
+- **1991** : premiere version du noyau Linux (0.01)
+- **1993** : naissance de Debian et de Slackware
+- **2004** : sortie d'Ubuntu, basee sur Debian
+- **2014** : adoption massive de systemd par les grandes distributions
+
+### 1.2 Distributions
+
+Une distribution Linux est un ensemble compose du noyau Linux, d'outils systeme, d'un gestionnaire de paquets et eventuellement d'un environnement graphique.
+
+| Distribution | Base | Gestionnaire de paquets | Usage principal |
+|---|---|---|---|
+| Debian | Independante | apt / dpkg | Serveurs, stabilite |
+| Ubuntu Server | Debian | apt / dpkg | Serveurs, cloud |
+| CentOS / Rocky Linux | RHEL | dnf / rpm | Serveurs entreprise |
+| Fedora | Independante (upstream RHEL) | dnf / rpm | Poste de travail, innovation |
+| Arch Linux | Independante | pacman | Utilisateurs avances |
+
+En contexte BTS SIO SISR, les distributions privilegiees sont **Debian** et **Ubuntu Server** (famille Debian, paquets `.deb`, gestionnaire `apt`).
+
+### 1.3 Logiciel libre vs proprietaire
+
+| Critere | Logiciel libre | Logiciel proprietaire |
+|---|---|---|
+| Code source | Accessible, modifiable | Ferme, non accessible |
+| Licence | GPL, MIT, Apache, BSD | EULA, licence commerciale |
+| Cout | Generalement gratuit | Payant (licence, abonnement) |
+| Exemples | Linux, Apache, MariaDB | Windows Server, VMware ESXi |
+
+Les quatre libertes fondamentales du logiciel libre (FSF) :
+
+0. Liberte d'executer le programme pour tout usage
+1. Liberte d'etudier le fonctionnement et de l'adapter
+2. Liberte de redistribuer des copies
+3. Liberte d'ameliorer le programme et de publier les ameliorations
+
+### 1.4 Le noyau Linux
+
+Le noyau (kernel) est le composant central du systeme d'exploitation. Il assure :
+
+- La gestion de la memoire (RAM, swap, memoire virtuelle)
+- L'ordonnancement des processus (scheduler)
+- La gestion des peripheriques via les pilotes (drivers)
+- La gestion des systemes de fichiers (ext4, xfs, btrfs)
+- La pile reseau (TCP/IP)
+- La securite (permissions, SELinux, cgroups, namespaces)
+
+Verifier la version du noyau :
+
+```bash
+uname -r
+# Exemple de sortie : 6.1.0-18-amd64
+
+uname -a
+# Affiche toutes les informations systeme
+```
+
+---
+
+## 2. Installation Debian / Ubuntu Server
+
+### 2.1 Prerequis et support d'installation
+
+Telecharger l'image ISO depuis les sites officiels :
+
+- Debian : `https://www.debian.org/distrib/`
+- Ubuntu Server : `https://ubuntu.com/download/server`
+
+Creer une cle USB bootable :
+
+```bash
+# Depuis Linux
+sudo dd if=debian-12-amd64-netinst.iso of=/dev/sdX bs=4M status=progress
+sync
+```
+
+### 2.2 Partitionnement
+
+Le partitionnement consiste a diviser le disque dur en sections logiques. En contexte serveur, on separe les donnees pour des raisons de securite, de performance et de maintenance.
+
+**Schema de partitionnement recommande :**
+
+| Point de montage | Taille suggeree | Role |
+|---|---|---|
+| `/` | 10 a 20 Go | Systeme de base |
+| `/home` | Variable | Donnees utilisateurs |
+| `/var` | 5 a 10 Go | Logs, bases de donnees, mails |
+| `/tmp` | 1 a 2 Go | Fichiers temporaires |
+| `swap` | 1 a 2x la RAM | Extension memoire virtuelle |
+| `/boot` | 500 Mo | Noyau et chargeur d'amorcage |
+
+**Types de partitions (MBR) :**
+
+- **Primaire** : maximum 4 par disque
+- **Etendue** : conteneur pour les partitions logiques (1 maximum)
+- **Logique** : situees dans la partition etendue
+
+**Table de partitions GPT** : remplace le MBR, supporte plus de 128 partitions, disques de plus de 2 To.
+
+### 2.3 LVM (Logical Volume Manager)
+
+LVM ajoute une couche d'abstraction entre les disques physiques et les systemes de fichiers, permettant un redimensionnement dynamique.
+
+**Architecture LVM :**
+
+```
+Disques physiques (/dev/sda, /dev/sdb)
+        |
+  Physical Volumes (PV)
+        |
+    Volume Group (VG)
+        |
+   Logical Volumes (LV)
+        |
+   Systemes de fichiers (ext4, xfs)
+```
+
+**Creation d'une infrastructure LVM :**
+
+```bash
+# Creer les Physical Volumes
+pvcreate /dev/sdb1
+pvcreate /dev/sdc1
+
+# Verifier les PV
+pvs
+pvdisplay
+
+# Creer un Volume Group
+vgcreate vg-data /dev/sdb1 /dev/sdc1
+
+# Verifier le VG
+vgs
+vgdisplay
+
+# Creer des Logical Volumes
+lvcreate -L 10G -n lv-www vg-data
+lvcreate -L 5G -n lv-db vg-data
+lvcreate -l 100%FREE -n lv-backup vg-data
+
+# Verifier les LV
+lvs
+lvdisplay
+
+# Formater et monter
+mkfs.ext4 /dev/vg-data/lv-www
+mkdir -p /srv/www
+mount /dev/vg-data/lv-www /srv/www
+```
+
+**Etendre un volume logique :**
+
+```bash
+# Etendre le LV de 5 Go
+lvextend -L +5G /dev/vg-data/lv-www
+
+# Redimensionner le systeme de fichiers
+resize2fs /dev/vg-data/lv-www    # Pour ext4
+xfs_growfs /srv/www               # Pour xfs
+```
+
+### 2.4 Choix des paquets a l'installation
+
+Lors de l'installation Debian, l'ecran `tasksel` propose des profils :
+
+- **Serveur SSH** : indispensable pour l'administration a distance
+- **Serveur web** : Apache ou Nginx
+- **Utilitaires standard du systeme** : outils de base
+- **Environnement de bureau** : inutile sur un serveur
+
+Recommandation : installer un systeme minimal et ajouter les paquets necessaires ensuite.
+
+---
+
+## 3. L'arborescence Linux (FHS)
+
+Le FHS (Filesystem Hierarchy Standard) definit l'organisation des repertoires dans un systeme Linux.
+
+| Repertoire | Contenu |
+|---|---|
+| `/` | Racine du systeme de fichiers |
+| `/bin` | Binaires essentiels (ls, cp, mv, cat) |
+| `/sbin` | Binaires systeme (fdisk, iptables, reboot) |
+| `/etc` | Fichiers de configuration |
+| `/home` | Repertoires personnels des utilisateurs |
+| `/root` | Repertoire personnel de root |
+| `/var` | Donnees variables (logs, mails, spool, www) |
+| `/var/log` | Fichiers de journalisation |
+| `/var/www` | Racine par defaut du serveur web |
+| `/tmp` | Fichiers temporaires (efface au redemarrage) |
+| `/usr` | Programmes et bibliotheques utilisateur |
+| `/usr/bin` | Binaires utilisateur non essentiels |
+| `/usr/sbin` | Binaires systeme non essentiels |
+| `/usr/local` | Logiciels installes manuellement |
+| `/usr/share` | Donnees partagees (documentation, man pages) |
+| `/lib` | Bibliotheques partagees essentielles |
+| `/dev` | Fichiers de peripheriques (sda, tty, null, zero, random) |
+| `/proc` | Systeme de fichiers virtuel (informations noyau et processus) |
+| `/sys` | Systeme de fichiers virtuel (informations materiel) |
+| `/mnt` | Point de montage temporaire |
+| `/media` | Montage automatique des peripheriques amovibles |
+| `/opt` | Logiciels tiers optionnels |
+| `/boot` | Noyau, initrd, configuration GRUB |
+| `/srv` | Donnees servies par le systeme (FTP, HTTP) |
+
+**Fichiers speciaux dans `/dev` :**
+
+| Fichier | Role |
+|---|---|
+| `/dev/null` | Puits sans fond (absorbe toute donnee) |
+| `/dev/zero` | Source infinie d'octets nuls |
+| `/dev/random` | Generateur de nombres aleatoires (bloquant) |
+| `/dev/urandom` | Generateur de nombres aleatoires (non bloquant) |
+| `/dev/sda` | Premier disque SCSI/SATA |
+| `/dev/sda1` | Premiere partition du premier disque |
+| `/dev/tty` | Terminal courant |
+
+---
+
+## 4. Terminal et commandes essentielles
+
+### 4.1 Navigation et exploration
+
+```bash
+# Afficher le repertoire courant
+pwd
+
+# Lister les fichiers
+ls              # Liste simple
+ls -l           # Liste detaillee (permissions, taille, date)
+ls -la          # Inclut les fichiers caches (commencant par .)
+ls -lh          # Tailles lisibles (Ko, Mo, Go)
+ls -lt          # Tri par date de modification (plus recent en premier)
+ls -lS          # Tri par taille (plus gros en premier)
+ls -R           # Listing recursif
+
+# Changer de repertoire
+cd /etc                 # Aller dans /etc
+cd ..                   # Remonter d'un niveau
+cd ~                    # Aller dans le repertoire personnel
+cd -                    # Retourner au repertoire precedent
+cd                      # Equivalent de cd ~
+```
+
+### 4.2 Manipulation de fichiers et repertoires
+
+```bash
+# Creer des repertoires
+mkdir projets
+mkdir -p projets/web/css         # Cree l'arborescence complete
+
+# Supprimer des repertoires vides
+rmdir projets/web/css
+
+# Copier
+cp fichier.txt copie.txt
+cp -r dossier/ copie_dossier/    # Copie recursive
+cp -p fichier.txt backup.txt     # Preserve permissions et dates
+cp -a source/ dest/              # Archive (preserve tout)
+
+# Deplacer / renommer
+mv fichier.txt nouveau_nom.txt
+mv fichier.txt /tmp/
+
+# Supprimer
+rm fichier.txt
+rm -r dossier/                   # Suppression recursive
+rm -ri dossier/                  # Demande confirmation
+rm -rf dossier/                  # Force sans confirmation (DANGER)
+
+# Creer un fichier vide
+touch nouveau_fichier.txt
+
+# Creer un lien symbolique
+ln -s /chemin/cible /chemin/lien
+
+# Creer un lien physique (hard link)
+ln /chemin/cible /chemin/lien
+```
+
+### 4.3 Lecture et affichage de fichiers
+
+```bash
+# Afficher tout le contenu
+cat fichier.txt
+cat -n fichier.txt               # Avec numeros de ligne
+
+# Pagination
+less fichier.txt                 # Navigation avec fleches, q pour quitter
+more fichier.txt                 # Pagination basique
+
+# Debut et fin de fichier
+head fichier.txt                 # 10 premieres lignes
+head -n 20 fichier.txt           # 20 premieres lignes
+tail fichier.txt                 # 10 dernieres lignes
+tail -n 20 fichier.txt           # 20 dernieres lignes
+tail -f /var/log/syslog          # Suivi en temps reel
+```
+
+### 4.4 Recherche et filtrage
+
+```bash
+# grep : recherche de motifs dans du texte
+grep "erreur" /var/log/syslog
+grep -i "erreur" fichier.txt         # Insensible a la casse
+grep -r "motif" /etc/                # Recherche recursive
+grep -n "motif" fichier.txt          # Affiche les numeros de ligne
+grep -v "commentaire" fichier.txt    # Inverse (exclut les lignes)
+grep -c "motif" fichier.txt          # Compte les occurrences
+grep -E "motif1|motif2" fichier.txt  # Expression reguliere etendue
+
+# find : recherche de fichiers dans l'arborescence
+find /home -name "*.txt"                        # Par nom
+find /var/log -name "*.log" -size +10M          # Par taille
+find / -user www-data                            # Par proprietaire
+find /tmp -mtime +7                              # Modifie il y a plus de 7 jours
+find /tmp -mtime +7 -exec rm {} \;              # Supprime les resultats
+find /etc -type f -name "*.conf"                 # Fichiers uniquement
+find /usr -type d -name "bin"                    # Repertoires uniquement
+find / -perm -4000                               # Fichiers avec SUID
+
+# locate : recherche rapide via base de donnees
+locate fichier.conf
+sudo updatedb                    # Mettre a jour la base de donnees
+
+# which : localiser un binaire
+which python3
+which ls
+
+# man : consulter le manuel
+man ls
+man 5 passwd                     # Section 5 (format de fichier)
+```
+
+### 4.5 Traitement de texte
+
+```bash
+# wc : compter lignes, mots, caracteres
+wc fichier.txt                   # Lignes, mots, caracteres
+wc -l fichier.txt                # Lignes uniquement
+wc -w fichier.txt                # Mots uniquement
+
+# sort : trier
+sort fichier.txt                 # Tri alphabetique
+sort -n fichier.txt              # Tri numerique
+sort -r fichier.txt              # Tri inverse
+sort -t: -k3 -n /etc/passwd     # Tri sur le 3e champ (separateur :)
+
+# uniq : supprimer les doublons consecutifs
+sort fichier.txt | uniq          # Doublons supprimes
+sort fichier.txt | uniq -c       # Avec comptage
+sort fichier.txt | uniq -d       # Affiche uniquement les doublons
+
+# cut : extraire des colonnes
+cut -d: -f1 /etc/passwd          # 1er champ, separateur :
+cut -d: -f1,3 /etc/passwd        # Champs 1 et 3
+cut -c1-10 fichier.txt           # Caracteres 1 a 10
+
+# tr : transformer des caracteres
+echo "BONJOUR" | tr 'A-Z' 'a-z'           # Minuscules
+echo "hello world" | tr ' ' '\n'           # Espaces en retours a la ligne
+echo "aabbcc" | tr -d 'b'                  # Supprime les b
+echo "aabbcc" | tr -s 'a'                  # Supprime les repetitions de a
+
+# sed : editeur de flux
+sed 's/ancien/nouveau/' fichier.txt        # Remplace la 1re occurrence par ligne
+sed 's/ancien/nouveau/g' fichier.txt       # Remplace toutes les occurrences
+sed -i 's/ancien/nouveau/g' fichier.txt    # Modification en place
+sed -n '5,10p' fichier.txt                 # Affiche les lignes 5 a 10
+sed '/^#/d' fichier.txt                    # Supprime les lignes commencant par #
+sed '/^$/d' fichier.txt                    # Supprime les lignes vides
+
+# awk : traitement avance
+awk '{print $1}' fichier.txt               # 1er champ (separateur espace)
+awk -F: '{print $1, $3}' /etc/passwd       # Champs 1 et 3, separateur :
+awk -F: '$3 >= 1000 {print $1}' /etc/passwd  # Utilisateurs avec UID >= 1000
+awk '{sum += $1} END {print sum}' nombres.txt # Somme d'une colonne
+awk 'NR==5,NR==10' fichier.txt             # Lignes 5 a 10
+```
+
+---
+
+## 5. Redirections et pipes
+
+### 5.1 Les flux standard
+
+Chaque processus Linux dispose de trois flux standard :
+
+| Flux | Descripteur | Description |
+|---|---|---|
+| stdin | 0 | Entree standard (clavier) |
+| stdout | 1 | Sortie standard (ecran) |
+| stderr | 2 | Sortie d'erreur (ecran) |
+
+### 5.2 Redirections
+
+```bash
+# Rediriger stdout vers un fichier (ecrase)
+ls /etc > liste.txt
+
+# Rediriger stdout vers un fichier (ajoute)
+echo "nouvelle ligne" >> liste.txt
+
+# Rediriger stderr vers un fichier
+find / -name "*.conf" 2> erreurs.txt
+
+# Rediriger stdout et stderr vers le meme fichier
+commande > resultat.txt 2>&1
+commande &> resultat.txt                    # Syntaxe equivalente en Bash
+
+# Rediriger stderr vers /dev/null (ignorer les erreurs)
+find / -name "*.conf" 2>/dev/null
+
+# Rediriger stdin depuis un fichier
+sort < liste.txt
+
+# Here document (heredoc)
+cat << EOF > config.txt
+parametre1=valeur1
+parametre2=valeur2
+EOF
+```
+
+### 5.3 Pipes et enchainement
+
+```bash
+# Le pipe | envoie la sortie d'une commande vers l'entree de la suivante
+ls -la /etc | grep "conf"
+cat /var/log/syslog | grep "error" | wc -l
+ps aux | sort -k4 -rn | head -10            # Top 10 processus par memoire
+
+# tee : affiche et redirige simultanement
+ls -la | tee liste.txt                       # Affiche ET ecrit dans le fichier
+ls -la | tee -a liste.txt                    # Ajoute au lieu d'ecraser
+
+# Enchainement de commandes
+commande1 ; commande2                        # Execute les deux dans l'ordre
+commande1 && commande2                       # Execute 2 seulement si 1 reussit
+commande1 || commande2                       # Execute 2 seulement si 1 echoue
+
+# Substitution de commande
+echo "Nous sommes le $(date)"
+fichiers=$(ls /tmp)
+nb_users=$(wc -l < /etc/passwd)
+```
+
+---
+
+## 6. Gestion des utilisateurs et groupes
+
+### 6.1 Fichiers de reference
+
+**/etc/passwd** -- informations utilisateur (un utilisateur par ligne) :
+
+```
+nom:x:UID:GID:commentaire:repertoire_home:shell
+```
+
+Exemple :
+
+```
+root:x:0:0:root:/root:/bin/bash
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+jean:x:1001:1001:Jean Dupont:/home/jean:/bin/bash
+```
+
+- `x` : le mot de passe est stocke dans `/etc/shadow`
+- UID 0 : root
+- UID 1-999 : comptes systeme
+- UID >= 1000 : comptes utilisateurs
+
+**/etc/shadow** -- mots de passe chiffres (lisible uniquement par root) :
+
+```
+nom:hash:derniere_modif:min:max:warn:inactive:expire:reserve
+```
+
+**/etc/group** -- groupes du systeme :
+
+```
+nom_groupe:x:GID:membres
+```
+
+Exemple :
+
+```
+sudo:x:27:jean,marie
+www-data:x:33:
+```
+
+### 6.2 Commandes de gestion
+
+```bash
+# Creer un utilisateur
+useradd -m -s /bin/bash -c "Jean Dupont" jean
+# -m : cree le repertoire personnel
+# -s : definit le shell
+# -c : commentaire (nom complet)
+
+# Alternative plus interactive (Debian)
+adduser jean
+
+# Definir / modifier un mot de passe
+passwd jean
+
+# Modifier un utilisateur
+usermod -aG sudo jean                # Ajouter au groupe sudo
+usermod -s /bin/zsh jean             # Changer le shell
+usermod -L jean                      # Verrouiller le compte
+usermod -U jean                      # Deverrouiller le compte
+usermod -d /home/nouveau jean        # Changer le home
+usermod -l nouveau_nom jean          # Renommer
+
+# Supprimer un utilisateur
+userdel jean                         # Supprime le compte
+userdel -r jean                      # Supprime le compte ET le home
+
+# Gestion des groupes
+groupadd developpeurs                # Creer un groupe
+groupdel developpeurs                # Supprimer un groupe
+groups jean                          # Lister les groupes d'un utilisateur
+id jean                              # UID, GID et groupes
+
+# Changer de groupe primaire
+usermod -g developpeurs jean
+
+# Informations utilisateur courant
+whoami
+id
+who                                  # Utilisateurs connectes
+w                                    # Utilisateurs connectes + activite
+last                                 # Historique des connexions
+```
+
+### 6.3 Sudo et visudo
+
+Le fichier `/etc/sudoers` definit qui peut executer des commandes en tant que root.
+
+```bash
+# Editer le fichier sudoers (ne jamais utiliser un editeur classique)
+visudo
+
+# Syntaxe du fichier sudoers :
+# utilisateur  hote=(utilisateur_cible)  commandes
+jean    ALL=(ALL:ALL) ALL                  # Tous les droits
+marie   ALL=(ALL) /usr/bin/apt             # Uniquement apt
+%admin  ALL=(ALL) ALL                      # Tout le groupe admin
+jean    ALL=(ALL) NOPASSWD: ALL            # Sans mot de passe
+```
+
+Utilisation :
+
+```bash
+sudo commande                        # Executer en tant que root
+sudo -u www-data commande            # Executer en tant qu'un autre utilisateur
+sudo -i                              # Ouvrir un shell root
+sudo -l                              # Lister les droits sudo de l'utilisateur courant
+```
+
+---
+
+## 7. Permissions
+
+### 7.1 Le systeme rwx
+
+Chaque fichier ou repertoire possede trois niveaux de permissions pour trois categories :
+
+| Categorie | Lettre | Description |
+|---|---|---|
+| Proprietaire (user) | u | Le createur du fichier |
+| Groupe (group) | g | Le groupe associe |
+| Autres (others) | o | Tous les autres utilisateurs |
+
+| Permission | Lettre | Valeur octale | Sur un fichier | Sur un repertoire |
+|---|---|---|---|---|
+| Lecture | r | 4 | Lire le contenu | Lister le contenu |
+| Ecriture | w | 2 | Modifier le contenu | Creer/supprimer des fichiers |
+| Execution | x | 1 | Executer le fichier | Traverser (cd) le repertoire |
+
+Lecture de la sortie de `ls -l` :
+
+```
+-rwxr-xr-- 1 jean developpeurs 4096 jan 15 10:30 script.sh
+```
+
+| Segment | Signification |
+|---|---|
+| `-` | Type (- fichier, d repertoire, l lien symbolique) |
+| `rwx` | Permissions du proprietaire : lecture, ecriture, execution |
+| `r-x` | Permissions du groupe : lecture, execution |
+| `r--` | Permissions des autres : lecture seule |
+| `jean` | Proprietaire |
+| `developpeurs` | Groupe |
+
+### 7.2 chmod : modifier les permissions
+
+**Notation symbolique :**
+
+```bash
+chmod u+x script.sh                  # Ajouter execution au proprietaire
+chmod g-w fichier.txt                # Retirer ecriture au groupe
+chmod o=r fichier.txt                # Definir lecture seule pour les autres
+chmod u+rwx,g+rx,o-rwx script.sh    # Combinaison
+chmod a+r fichier.txt                # Lecture pour tous (a = all)
+```
+
+**Notation octale :**
+
+Chaque chiffre est la somme de r(4) + w(2) + x(1) :
+
+| Octal | Permissions | Signification |
+|---|---|---|
+| 7 | rwx | Lecture, ecriture, execution |
+| 6 | rw- | Lecture, ecriture |
+| 5 | r-x | Lecture, execution |
+| 4 | r-- | Lecture seule |
+| 3 | -wx | Ecriture, execution |
+| 2 | -w- | Ecriture seule |
+| 1 | --x | Execution seule |
+| 0 | --- | Aucune permission |
+
+```bash
+chmod 755 script.sh                  # rwxr-xr-x
+chmod 644 fichier.txt                # rw-r--r--
+chmod 700 prive/                     # rwx------
+chmod 750 partage/                   # rwxr-x---
+chmod -R 755 repertoire/             # Recursif
+```
+
+### 7.3 chown et chgrp
+
+```bash
+# Changer le proprietaire
+chown jean fichier.txt
+chown jean:developpeurs fichier.txt  # Proprietaire ET groupe
+chown -R www-data:www-data /var/www/ # Recursif
+
+# Changer le groupe uniquement
+chgrp developpeurs fichier.txt
+chgrp -R developpeurs projets/
+```
+
+### 7.4 Permissions speciales
+
+**SUID (Set User ID)** -- bit 4000 :
+
+Lorsqu'un fichier executable possede le SUID, il s'execute avec les droits du proprietaire du fichier (et non de l'utilisateur qui le lance).
+
+```bash
+chmod u+s /usr/bin/programme
+chmod 4755 /usr/bin/programme
+
+# Exemple classique : /usr/bin/passwd a le SUID pour modifier /etc/shadow
+ls -l /usr/bin/passwd
+# -rwsr-xr-x 1 root root ...
+```
+
+**SGID (Set Group ID)** -- bit 2000 :
+
+Sur un fichier : execution avec les droits du groupe. Sur un repertoire : les fichiers crees heritent du groupe du repertoire.
+
+```bash
+chmod g+s /srv/partage/
+chmod 2775 /srv/partage/
+
+# Tous les fichiers crees dans /srv/partage/ appartiendront
+# au groupe du repertoire, pas au groupe primaire du createur
+```
+
+**Sticky bit** -- bit 1000 :
+
+Sur un repertoire : seul le proprietaire d'un fichier (ou root) peut le supprimer, meme si d'autres ont le droit d'ecriture.
+
+```bash
+chmod +t /tmp
+chmod 1777 /tmp
+
+ls -ld /tmp
+# drwxrwxrwt 15 root root ...
+# Le "t" final indique le sticky bit
+```
+
+### 7.5 umask
+
+Le umask definit les permissions par defaut retirees lors de la creation de fichiers et repertoires.
+
+- Permissions par defaut d'un fichier : 666
+- Permissions par defaut d'un repertoire : 777
+- Permissions effectives = defaut - umask
+
+```bash
+umask                    # Afficher le umask courant (souvent 0022)
+umask 0027               # Definir : fichiers 640, repertoires 750
+
+# Avec umask 0022 :
+# Fichier cree :  666 - 022 = 644 (rw-r--r--)
+# Repertoire cree : 777 - 022 = 755 (rwxr-xr-x)
+
+# Avec umask 0077 :
+# Fichier cree :  666 - 077 = 600 (rw-------)
+# Repertoire cree : 777 - 077 = 700 (rwx------)
+```
+
+Pour rendre le umask permanent, l'ajouter dans `~/.bashrc` ou `/etc/profile`.
+
+---
+
+## 8. Gestion des processus
+
+### 8.1 Concepts
+
+Un processus est une instance d'un programme en cours d'execution. Chaque processus possede :
+
+- Un **PID** (Process ID) unique
+- Un **PPID** (Parent PID) : PID du processus parent
+- Un **UID** : utilisateur proprietaire
+- Un **etat** : running, sleeping, stopped, zombie
+
+Le processus `init` (ou `systemd`) est le premier processus lance (PID 1). Il est le parent de tous les autres processus.
+
+### 8.2 Commandes de surveillance
+
+```bash
+# ps : afficher les processus
+ps                       # Processus du terminal courant
+ps aux                   # Tous les processus (format BSD)
+ps -ef                   # Tous les processus (format System V)
+ps aux --sort=-%mem      # Tries par memoire decroissante
+ps aux --sort=-%cpu      # Tries par CPU decroissant
+ps -u jean               # Processus de l'utilisateur jean
+ps -p 1234               # Informations sur le PID 1234
+ps --forest              # Arborescence des processus
+
+# top : surveillance en temps reel
+top
+# Raccourcis dans top :
+#   q     quitter
+#   k     tuer un processus
+#   M     trier par memoire
+#   P     trier par CPU
+#   1     afficher chaque CPU
+#   h     aide
+
+# htop : version amelioree de top (a installer)
+sudo apt install htop
+htop
+
+# pstree : arborescence des processus
+pstree
+pstree -p                # Avec les PID
+```
+
+### 8.3 Gestion des signaux
+
+```bash
+# kill : envoyer un signal a un processus
+kill 1234                # Envoie SIGTERM (15) : arret propre
+kill -9 1234             # Envoie SIGKILL (9) : arret force
+kill -HUP 1234           # Envoie SIGHUP (1) : rechargement de configuration
+
+# Signaux importants
+# SIGHUP  (1)  : hangup, rechargement
+# SIGINT  (2)  : interruption (Ctrl+C)
+# SIGKILL (9)  : arret force (non interceptable)
+# SIGTERM (15) : arret propre (par defaut)
+# SIGSTOP (19) : suspension (non interceptable)
+# SIGCONT (18) : reprise
+
+# killall : tuer par nom
+killall firefox
+killall -9 apache2
+
+# pkill : tuer par motif
+pkill -u jean                    # Tous les processus de jean
+pkill -f "python script.py"     # Par ligne de commande
+```
+
+### 8.4 Priorite et nice
+
+La priorite d'un processus va de -20 (plus haute) a 19 (plus basse). La valeur par defaut est 0. Seul root peut definir une valeur negative.
+
+```bash
+# Lancer un processus avec une priorite modifiee
+nice -n 10 commande_lourde       # Priorite basse
+nice -n -5 commande_urgente      # Priorite haute (root)
+
+# Modifier la priorite d'un processus en cours
+renice 10 -p 1234               # PID 1234 passe a nice 10
+renice -5 -p 1234               # PID 1234 passe a nice -5 (root)
+renice 15 -u jean               # Tous les processus de jean
+```
+
+### 8.5 Gestion des jobs (avant-plan / arriere-plan)
+
+```bash
+# Lancer en arriere-plan
+commande_longue &
+
+# Suspendre le processus en cours (Ctrl+Z)
+# Le remettre en arriere-plan
+bg
+
+# Le remettre en avant-plan
+fg
+
+# Lister les jobs
+jobs
+jobs -l                  # Avec les PID
+
+# Remettre un job specifique en avant-plan
+fg %1                    # Job numero 1
+bg %2                    # Job numero 2 en arriere-plan
+
+# nohup : le processus continue apres deconnexion
+nohup commande_longue &
+# La sortie est redirigee vers nohup.out
+
+# disown : detacher un job du terminal
+commande_longue &
+disown %1
+```
+
+---
+
+## 9. Gestion des paquets
+
+### 9.1 APT (Advanced Package Tool)
+
+APT est le gestionnaire de paquets des distributions basees sur Debian.
+
+```bash
+# Mettre a jour la liste des paquets disponibles
+sudo apt update
+
+# Mettre a jour tous les paquets installes
+sudo apt upgrade
+sudo apt full-upgrade            # Gere aussi les suppressions si necessaire
+
+# Rechercher un paquet
+apt search nginx
+apt list --installed             # Lister les paquets installes
+
+# Afficher les informations d'un paquet
+apt show nginx
+
+# Installer un paquet
+sudo apt install nginx
+sudo apt install nginx apache2   # Plusieurs paquets
+sudo apt install -y nginx        # Sans confirmation
+
+# Desinstaller
+sudo apt remove nginx            # Supprime le paquet (conserve la config)
+sudo apt purge nginx             # Supprime le paquet ET la configuration
+sudo apt autoremove              # Supprime les dependances orphelines
+
+# Nettoyer le cache
+sudo apt clean                   # Supprime tous les paquets telecharges
+sudo apt autoclean               # Supprime les anciennes versions
+```
+
+### 9.2 dpkg
+
+`dpkg` est l'outil bas niveau de gestion des paquets `.deb`.
+
+```bash
+# Installer un paquet .deb telecharge
+sudo dpkg -i paquet.deb
+
+# Lister les paquets installes
+dpkg -l
+dpkg -l | grep nginx
+
+# Afficher les fichiers d'un paquet
+dpkg -L nginx
+
+# Trouver a quel paquet appartient un fichier
+dpkg -S /usr/sbin/nginx
+
+# Supprimer un paquet
+sudo dpkg -r nginx               # Supprime
+sudo dpkg -P nginx               # Purge
+
+# Reparer les dependances cassees
+sudo apt install -f
+```
+
+### 9.3 Sources de paquets
+
+Le fichier `/etc/apt/sources.list` et le repertoire `/etc/apt/sources.list.d/` definissent les depots.
+
+Format d'une ligne :
+
+```
+deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
+deb-src http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
+```
+
+| Element | Signification |
+|---|---|
+| `deb` | Paquets binaires |
+| `deb-src` | Paquets sources |
+| URL | Adresse du depot |
+| `bookworm` | Nom de la version (release) |
+| `main` | Section principale (libre) |
+| `contrib` | Libre mais dependant de non-libre |
+| `non-free` | Logiciels non libres |
+
+Apres modification des sources :
+
+```bash
+sudo apt update
+```
+
+---
+
+## 10. Systemd
+
+### 10.1 Presentation
+
+Systemd est le systeme d'initialisation et le gestionnaire de services standard des distributions Linux modernes. Il remplace SysVinit et Upstart.
+
+Concepts cles :
+
+- **Unit** : element gere par systemd (service, timer, mount, socket, target)
+- **Target** : equivalent des runlevels (multi-user.target, graphical.target)
+- **Service** : un daemon ou processus gere
+
+### 10.2 systemctl
+
+```bash
+# Gestion des services
+sudo systemctl start nginx       # Demarrer
+sudo systemctl stop nginx        # Arreter
+sudo systemctl restart nginx     # Redemarrer
+sudo systemctl reload nginx      # Recharger la configuration
+sudo systemctl status nginx      # Etat du service
+
+# Activation au demarrage
+sudo systemctl enable nginx      # Activer au boot
+sudo systemctl disable nginx     # Desactiver au boot
+sudo systemctl enable --now nginx # Activer et demarrer immediatement
+sudo systemctl is-enabled nginx  # Verifier si active au boot
+sudo systemctl is-active nginx   # Verifier si en cours d'execution
+
+# Lister les services
+systemctl list-units --type=service
+systemctl list-units --type=service --state=running
+systemctl list-unit-files --type=service
+
+# Masquer un service (empeche tout demarrage)
+sudo systemctl mask nginx
+sudo systemctl unmask nginx
+
+# Gestion du systeme
+sudo systemctl reboot
+sudo systemctl poweroff
+sudo systemctl suspend
+
+# Cibles (targets) -- equivalences runlevels
+sudo systemctl get-default
+sudo systemctl set-default multi-user.target      # Mode texte
+sudo systemctl set-default graphical.target        # Mode graphique
+sudo systemctl isolate rescue.target               # Mode rescue
+```
+
+### 10.3 journalctl
+
+```bash
+# Consulter les logs systemd
+journalctl                                   # Tous les logs
+journalctl -u nginx                          # Logs d'un service
+journalctl -u nginx --since "1 hour ago"     # Derniere heure
+journalctl -u nginx --since "2025-01-15"     # Depuis une date
+journalctl -u nginx -f                       # Suivi en temps reel
+journalctl -p err                            # Uniquement les erreurs
+journalctl -b                                # Depuis le dernier boot
+journalctl -b -1                             # Boot precedent
+journalctl --disk-usage                      # Espace utilise
+sudo journalctl --vacuum-size=500M           # Limiter a 500 Mo
+```
+
+### 10.4 Creer un service personnalise
+
+Creer le fichier `/etc/systemd/system/mon-app.service` :
+
+```ini
+[Unit]
+Description=Mon application personnalisee
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/mon-app
+ExecStart=/usr/bin/python3 /opt/mon-app/app.py
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+| Directive | Role |
+|---|---|
+| `After` | Demarre apres l'unite specifiee |
+| `Wants` | Dependance souple |
+| `Requires` | Dependance stricte |
+| `Type` | simple, forking, oneshot, notify |
+| `ExecStart` | Commande de demarrage |
+| `ExecReload` | Commande de rechargement |
+| `Restart` | Politique de redemarrage (always, on-failure, no) |
+| `RestartSec` | Delai avant redemarrage |
+| `WantedBy` | Target d'installation |
+
+Activation :
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now mon-app
+sudo systemctl status mon-app
+```
+
+---
+
+## 11. Planification des taches
+
+### 11.1 cron
+
+`cron` est le planificateur de taches periodiques. Chaque utilisateur peut definir sa propre crontab.
+
+```bash
+# Editer la crontab de l'utilisateur courant
+crontab -e
+
+# Lister la crontab
+crontab -l
+
+# Supprimer la crontab
+crontab -r
+
+# Editer la crontab d'un autre utilisateur (root)
+sudo crontab -u jean -e
+```
+
+**Syntaxe d'une entree crontab :**
+
+```
+minute  heure  jour_mois  mois  jour_semaine  commande
+  *       *       *         *        *
+  |       |       |         |        |
+  |       |       |         |        +-- 0=dimanche, 1=lundi ... 6=samedi
+  |       |       |         +----------- 1-12
+  |       |       +--------------------- 1-31
+  |       +----------------------------- 0-23
+  +-------------------------------------- 0-59
+```
+
+**Exemples :**
+
+```bash
+# Toutes les 5 minutes
+*/5 * * * * /usr/local/bin/check_services.sh
+
+# Tous les jours a 3h30
+30 3 * * * /usr/local/bin/backup.sh
+
+# Chaque lundi a 8h00
+0 8 * * 1 /usr/local/bin/rapport.sh
+
+# Le 1er de chaque mois a minuit
+0 0 1 * * /usr/local/bin/nettoyage.sh
+
+# Du lundi au vendredi a 18h00
+0 18 * * 1-5 /usr/local/bin/notification.sh
+
+# Toutes les 2 heures
+0 */2 * * * /usr/local/bin/sync.sh
+```
+
+**Crontab systeme** : le fichier `/etc/crontab` ajoute un champ utilisateur :
+
+```
+30 3 * * * root /usr/local/bin/backup.sh
+```
+
+Repertoires automatiques :
+
+- `/etc/cron.hourly/`
+- `/etc/cron.daily/`
+- `/etc/cron.weekly/`
+- `/etc/cron.monthly/`
+
+### 11.2 at
+
+`at` permet de planifier une tache unique a un moment precis.
+
+```bash
+# Installer at
+sudo apt install at
+
+# Planifier une commande
+at 14:30
+> /usr/local/bin/rapport.sh
+> Ctrl+D
+
+at now + 30 minutes
+> echo "Rappel" | mail -s "Alerte" admin@example.com
+> Ctrl+D
+
+# Lister les taches planifiees
+atq
+
+# Supprimer une tache
+atrm 3
+```
+
+### 11.3 anacron
+
+`anacron` garantit l'execution des taches meme si la machine etait eteinte au moment prevu. Il s'appuie sur le fichier `/etc/anacrontab` :
+
+```
+# periode  delai  identifiant   commande
+1          5      cron.daily    run-parts /etc/cron.daily
+7          10     cron.weekly   run-parts /etc/cron.weekly
+@monthly   15     cron.monthly  run-parts /etc/cron.monthly
+```
+
+---
+
+## 12. Stockage et systemes de fichiers
+
+### 12.1 Outils de diagnostic
+
+```bash
+# Lister les peripheriques de stockage
+lsblk
+lsblk -f                        # Avec systemes de fichiers et UUID
+
+# Espace disque utilise par les systemes de fichiers
+df -h                            # Affichage lisible
+df -hT                           # Avec le type de systeme de fichiers
+
+# Espace utilise par un repertoire
+du -sh /var/log/                 # Taille totale
+du -sh /var/log/*                # Taille de chaque element
+du -h --max-depth=1 /var/        # Profondeur 1
+
+# Informations sur un disque
+sudo fdisk -l /dev/sda
+sudo blkid                       # UUID et type de tous les volumes
+```
+
+### 12.2 Partitionnement et formatage
+
+```bash
+# Partitionner un disque
+sudo fdisk /dev/sdb
+# Commandes fdisk :
+#   n   nouvelle partition
+#   d   supprimer une partition
+#   p   afficher la table
+#   t   changer le type
+#   w   ecrire et quitter
+#   q   quitter sans sauvegarder
+
+# Alternative pour GPT
+sudo parted /dev/sdb
+sudo gdisk /dev/sdb
+
+# Formater une partition
+sudo mkfs.ext4 /dev/sdb1
+sudo mkfs.xfs /dev/sdb1
+sudo mkfs.vfat /dev/sdb1         # FAT32
+```
+
+### 12.3 Montage et /etc/fstab
+
+```bash
+# Monter manuellement
+sudo mkdir -p /mnt/data
+sudo mount /dev/sdb1 /mnt/data
+sudo mount -t ext4 /dev/sdb1 /mnt/data
+sudo mount -o ro /dev/sdb1 /mnt/data        # Lecture seule
+
+# Demonter
+sudo umount /mnt/data
+
+# Monter tous les volumes de /etc/fstab
+sudo mount -a
+```
+
+Le fichier `/etc/fstab` definit les montages permanents :
+
+```
+# <peripherique>                          <point_montage>  <type>  <options>         <dump> <pass>
+UUID=a1b2c3d4-e5f6-7890-abcd-ef1234567890 /               ext4    errors=remount-ro  0      1
+UUID=b2c3d4e5-f6a7-8901-bcde-f12345678901 /home           ext4    defaults           0      2
+UUID=c3d4e5f6-a7b8-9012-cdef-123456789012 /var            ext4    defaults           0      2
+UUID=d4e5f6a7-b8c9-0123-defa-234567890123 none            swap    sw                 0      0
+/dev/vg-data/lv-www                        /srv/www        ext4    defaults           0      2
+```
+
+| Champ | Description |
+|---|---|
+| peripherique | UUID, chemin /dev, ou label |
+| point_montage | Repertoire cible |
+| type | ext4, xfs, swap, nfs, vfat |
+| options | defaults, ro, noexec, nosuid, nodev |
+| dump | 0 = pas de sauvegarde, 1 = sauvegarde |
+| pass | Ordre de verification fsck (0 = pas de verification, 1 = racine, 2 = autres) |
+
+### 12.4 LVM -- Operations avancees
+
+```bash
+# Ajouter un disque a un VG existant
+pvcreate /dev/sdd1
+vgextend vg-data /dev/sdd1
+
+# Reduire un LV (attention : reduire le FS d'abord)
+sudo umount /srv/www
+sudo e2fsck -f /dev/vg-data/lv-www
+sudo resize2fs /dev/vg-data/lv-www 8G
+sudo lvreduce -L 8G /dev/vg-data/lv-www
+sudo mount /dev/vg-data/lv-www /srv/www
+
+# Creer un snapshot LVM
+lvcreate -L 2G -s -n snap-www /dev/vg-data/lv-www
+
+# Supprimer un LV
+sudo umount /srv/www
+sudo lvremove /dev/vg-data/lv-www
+
+# Supprimer un VG
+sudo vgremove vg-data
+
+# Supprimer un PV
+sudo pvremove /dev/sdb1
+```
+
+---
+
+## 13. Reseau Linux
+
+### 13.1 Configuration IP
+
+```bash
+# Afficher la configuration reseau
+ip addr                          # Alias : ip a
+ip addr show ens33               # Interface specifique
+
+# Configurer une adresse IP temporaire
+sudo ip addr add 192.168.1.100/24 dev ens33
+sudo ip addr del 192.168.1.100/24 dev ens33
+
+# Activer/desactiver une interface
+sudo ip link set ens33 up
+sudo ip link set ens33 down
+
+# Table de routage
+ip route                         # Alias : ip r
+ip route show
+sudo ip route add default via 192.168.1.1
+sudo ip route add 10.0.0.0/8 via 192.168.1.254
+sudo ip route del 10.0.0.0/8
+
+# Informations sur les interfaces
+ip link show
+```
+
+### 13.2 Configuration permanente
+
+**Debian (fichier `/etc/network/interfaces`) :**
+
+```
+# Interface loopback
+auto lo
+iface lo inet loopback
+
+# Configuration statique
+auto ens33
+iface ens33 inet static
+    address 192.168.1.100
+    netmask 255.255.255.0
+    gateway 192.168.1.1
+    dns-nameservers 8.8.8.8 8.8.4.4
+
+# Configuration DHCP
+auto ens34
+iface ens34 inet dhcp
+```
+
+Application :
+
+```bash
+sudo systemctl restart networking
+# ou
+sudo ifdown ens33 && sudo ifup ens33
+```
+
+**Ubuntu Server (Netplan -- `/etc/netplan/01-config.yaml`) :**
+
+```yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens33:
+      dhcp4: false
+      addresses:
+        - 192.168.1.100/24
+      routes:
+        - to: default
+          via: 192.168.1.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+    ens34:
+      dhcp4: true
+```
+
+Application :
+
+```bash
+sudo netplan apply
+sudo netplan try                 # Applique et revient en arriere apres 120s si pas confirme
+```
+
+**nmcli (NetworkManager) :**
+
+```bash
+# Lister les connexions
+nmcli connection show
+
+# Configurer une IP statique
+nmcli connection modify "ens33" ipv4.method manual \
+    ipv4.addresses "192.168.1.100/24" \
+    ipv4.gateway "192.168.1.1" \
+    ipv4.dns "8.8.8.8,8.8.4.4"
+
+nmcli connection up "ens33"
+```
+
+### 13.3 Fichiers de configuration reseau
+
+```bash
+# Nom d'hote
+hostname                         # Afficher
+sudo hostnamectl set-hostname serveur01
+
+# /etc/hostname : nom d'hote permanent
+serveur01
+
+# /etc/hosts : resolution locale
+127.0.0.1       localhost
+127.0.1.1       serveur01
+192.168.1.200   serveur-db
+
+# /etc/resolv.conf : serveurs DNS
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+search mondomaine.local
+```
+
+### 13.4 Diagnostic reseau
+
+```bash
+# Connexions et ports ouverts
+ss -tuln                         # TCP/UDP en ecoute, numerique
+ss -tunap                        # Avec processus et toutes les connexions
+ss -t state established          # Connexions TCP etablies
+
+# Equivalent ancien (obsolete mais encore utilise)
+netstat -tuln
+netstat -tunap
+
+# Test de connectivite
+ping 192.168.1.1
+ping -c 4 8.8.8.8               # 4 paquets
+
+# Trace de route
+traceroute 8.8.8.8
+
+# Resolution DNS
+nslookup google.com
+dig google.com
+host google.com
+
+# Telecharger
+curl -O https://example.com/fichier.tar.gz
+wget https://example.com/fichier.tar.gz
+```
+
+---
+
+## 14. SSH (Secure Shell)
+
+### 14.1 Installation et demarrage
+
+```bash
+# Installer le serveur SSH
+sudo apt install openssh-server
+
+# Verifier le statut
+sudo systemctl status ssh
+
+# Activer au demarrage
+sudo systemctl enable ssh
+```
+
+### 14.2 Configuration du serveur
+
+Le fichier de configuration est `/etc/ssh/sshd_config` :
+
+```bash
+# Port d'ecoute (defaut : 22)
+Port 2222
+
+# Interdire la connexion root par mot de passe
+PermitRootLogin prohibit-password
+
+# Interdire completement la connexion root
+PermitRootLogin no
+
+# Autoriser uniquement l'authentification par cle
+PasswordAuthentication no
+PubkeyAuthentication yes
+
+# Limiter les utilisateurs autorises
+AllowUsers jean marie
+AllowGroups ssh-users
+
+# Duree d'inactivite avant deconnexion
+ClientAliveInterval 300
+ClientAliveCountMax 2
+
+# Nombre maximum de tentatives
+MaxAuthTries 3
+```
+
+Apres modification :
+
+```bash
+# Verifier la syntaxe
+sudo sshd -t
+
+# Recharger la configuration
+sudo systemctl reload ssh
+```
+
+### 14.3 Authentification par cles
+
+```bash
+# Generer une paire de cles sur le CLIENT
+ssh-keygen -t ed25519 -C "jean@poste-client"
+# Ou avec RSA
+ssh-keygen -t rsa -b 4096 -C "jean@poste-client"
+
+# Les cles sont creees dans ~/.ssh/
+# id_ed25519       : cle privee (NE JAMAIS PARTAGER)
+# id_ed25519.pub   : cle publique
+
+# Copier la cle publique sur le serveur
+ssh-copy-id -i ~/.ssh/id_ed25519.pub jean@192.168.1.100
+# Ou manuellement
+cat ~/.ssh/id_ed25519.pub | ssh jean@192.168.1.100 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+
+# Connexion (desormais sans mot de passe)
+ssh jean@192.168.1.100
+ssh -p 2222 jean@192.168.1.100   # Port personnalise
+```
+
+### 14.4 Transfert de fichiers
+
+```bash
+# scp : copie securisee
+scp fichier.txt jean@192.168.1.100:/home/jean/
+scp jean@192.168.1.100:/var/log/syslog ./
+scp -r dossier/ jean@192.168.1.100:/home/jean/
+scp -P 2222 fichier.txt jean@192.168.1.100:/tmp/   # Port personnalise
+
+# sftp : transfert interactif
+sftp jean@192.168.1.100
+sftp> ls
+sftp> get fichier_distant.txt
+sftp> put fichier_local.txt
+sftp> quit
+```
+
+### 14.5 Fichier de configuration client
+
+Le fichier `~/.ssh/config` simplifie les connexions :
+
+```
+Host serveur-web
+    HostName 192.168.1.100
+    User jean
+    Port 2222
+    IdentityFile ~/.ssh/id_ed25519
+
+Host serveur-db
+    HostName 192.168.1.200
+    User admin
+    Port 22
+```
+
+Utilisation :
+
+```bash
+ssh serveur-web                  # Equivalent de ssh -p 2222 jean@192.168.1.100
+scp fichier.txt serveur-web:/tmp/
+```
+
+---
+
+## 15. Journalisation (Logs)
+
+### 15.1 Emplacement des logs
+
+| Fichier | Contenu |
+|---|---|
+| `/var/log/syslog` | Logs systeme generaux (Debian) |
+| `/var/log/messages` | Logs systeme generaux (RHEL) |
+| `/var/log/auth.log` | Authentifications, connexions SSH, sudo |
+| `/var/log/kern.log` | Messages du noyau |
+| `/var/log/dmesg` | Messages de demarrage du noyau |
+| `/var/log/dpkg.log` | Historique des installations de paquets |
+| `/var/log/apt/history.log` | Historique des commandes apt |
+| `/var/log/apache2/` | Logs du serveur Apache |
+| `/var/log/nginx/` | Logs du serveur Nginx |
+| `/var/log/mysql/` | Logs de MySQL/MariaDB |
+| `/var/log/cron.log` | Logs cron (si configure) |
+| `/var/log/boot.log` | Logs de demarrage |
+| `/var/log/faillog` | Echecs de connexion |
+| `/var/log/lastlog` | Dernieres connexions |
+
+### 15.2 journalctl (systemd)
+
+Voir la section 10.3 pour les commandes detaillees. Rappel des plus utiles :
+
+```bash
+journalctl -u ssh --since "today"
+journalctl -p crit                   # Priorite critique et superieure
+journalctl _UID=1001                 # Logs d'un utilisateur specifique
+journalctl --no-pager                # Sans pagination
+journalctl -o json-pretty            # Format JSON
+```
+
+Niveaux de priorite (du plus critique au moins critique) :
+
+| Niveau | Mot-cle | Description |
+|---|---|---|
+| 0 | emerg | Systeme inutilisable |
+| 1 | alert | Action immediate requise |
+| 2 | crit | Conditions critiques |
+| 3 | err | Erreurs |
+| 4 | warning | Avertissements |
+| 5 | notice | Conditions normales notables |
+| 6 | info | Informations |
+| 7 | debug | Messages de debogage |
+
+### 15.3 logrotate
+
+`logrotate` gere la rotation automatique des fichiers de logs pour eviter qu'ils ne saturent le disque.
+
+Configuration globale : `/etc/logrotate.conf`
+
+Configurations specifiques : `/etc/logrotate.d/`
+
+Exemple pour une application personnalisee (`/etc/logrotate.d/mon-app`) :
+
+```
+/var/log/mon-app/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 www-data www-data
+    postrotate
+        systemctl reload mon-app > /dev/null 2>&1 || true
+    endscript
+}
+```
+
+| Directive | Role |
+|---|---|
+| `daily` / `weekly` / `monthly` | Frequence de rotation |
+| `rotate 14` | Conserver 14 archives |
+| `compress` | Compresser les anciens logs (gzip) |
+| `delaycompress` | Compresser a partir de la deuxieme rotation |
+| `missingok` | Pas d'erreur si le fichier est absent |
+| `notifempty` | Ne pas faire de rotation si le fichier est vide |
+| `create` | Permissions du nouveau fichier |
+| `postrotate` | Script execute apres la rotation |
+
+Tester une configuration :
+
+```bash
+sudo logrotate -d /etc/logrotate.d/mon-app   # Mode debug (simulation)
+sudo logrotate -f /etc/logrotate.d/mon-app   # Forcer la rotation
+```
+
+---
+
+## 16. Scripts Bash
+
+### 16.1 Structure de base
+
+```bash
+#!/bin/bash
+# La premiere ligne (shebang) indique l'interpreteur
+
+# Rendre le script executable
+chmod +x script.sh
+
+# Executer
+./script.sh
+bash script.sh
+```
+
+### 16.2 Variables
+
+```bash
+#!/bin/bash
+
+# Declaration (pas d'espaces autour du =)
+nom="Jean"
+age=25
+repertoire="/var/log"
+
+# Utilisation
+echo "Bonjour $nom, vous avez $age ans"
+echo "Contenu de ${repertoire} :"
+
+# Variables d'environnement
+echo "Utilisateur : $USER"
+echo "Home : $HOME"
+echo "Shell : $SHELL"
+echo "Repertoire courant : $PWD"
+echo "Chemin : $PATH"
+
+# Resultat d'une commande
+date_actuelle=$(date +"%Y-%m-%d")
+nb_fichiers=$(ls /etc | wc -l)
+echo "Date : $date_actuelle"
+echo "Nombre de fichiers dans /etc : $nb_fichiers"
+
+# Variables en lecture seule
+readonly VERSION="1.0"
+
+# Saisie utilisateur
+read -p "Entrez votre nom : " nom_utilisateur
+echo "Bonjour $nom_utilisateur"
+
+read -sp "Mot de passe : " mdp    # -s : saisie masquee
+echo
+```
+
+### 16.3 Arguments
+
+```bash
+#!/bin/bash
+# Appel : ./script.sh arg1 arg2 arg3
+
+echo "Nom du script : $0"
+echo "Premier argument : $1"
+echo "Deuxieme argument : $2"
+echo "Tous les arguments : $@"
+echo "Nombre d'arguments : $#"
+echo "Tous les arguments (une chaine) : $*"
+echo "PID du script : $$"
+echo "Code de retour de la derniere commande : $?"
+
+# Verification du nombre d'arguments
+if [ $# -lt 2 ]; then
+    echo "Usage : $0 <source> <destination>"
+    exit 1
+fi
+```
+
+### 16.4 Code de retour
+
+Chaque commande retourne un code :
+- **0** : succes
+- **1-255** : erreur
+
+```bash
+#!/bin/bash
+
+ls /etc/passwd
+echo "Code de retour : $?"    # 0 (succes)
+
+ls /fichier_inexistant 2>/dev/null
+echo "Code de retour : $?"    # 2 (erreur)
+
+# Definir un code de retour
+exit 0      # Succes
+exit 1      # Erreur
+```
+
+### 16.5 Conditions
+
+```bash
+#!/bin/bash
+
+# Structure if/elif/else
+if [ condition ]; then
+    commandes
+elif [ autre_condition ]; then
+    commandes
+else
+    commandes
+fi
+
+# Operateurs de comparaison numerique
+# -eq  egal
+# -ne  different
+# -lt  inferieur strict
+# -le  inferieur ou egal
+# -gt  superieur strict
+# -ge  superieur ou egal
+
+# Operateurs de comparaison de chaines
+# =    egal
+# !=   different
+# -z   chaine vide
+# -n   chaine non vide
+
+# Tests sur les fichiers
+# -f   existe et est un fichier regulier
+# -d   existe et est un repertoire
+# -e   existe
+# -r   lisible
+# -w   accessible en ecriture
+# -x   executable
+# -s   existe et taille > 0
+# -L   est un lien symbolique
+```
+
+**Exemples concrets :**
+
+```bash
+#!/bin/bash
+
+# Verifier si un fichier existe
+if [ -f "/etc/nginx/nginx.conf" ]; then
+    echo "Nginx est installe"
+else
+    echo "Nginx n'est pas installe"
+fi
+
+# Verifier si un utilisateur est root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Ce script doit etre execute en tant que root"
+    exit 1
+fi
+
+# Verifier un service
+if systemctl is-active --quiet nginx; then
+    echo "Nginx est en cours d'execution"
+else
+    echo "Nginx est arrete"
+    sudo systemctl start nginx
+fi
+
+# Case (switch)
+case "$1" in
+    start)
+        echo "Demarrage..."
+        ;;
+    stop)
+        echo "Arret..."
+        ;;
+    restart)
+        echo "Redemarrage..."
+        ;;
+    *)
+        echo "Usage : $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+```
+
+### 16.6 Boucles
+
+```bash
+#!/bin/bash
+
+# Boucle for
+for i in 1 2 3 4 5; do
+    echo "Iteration $i"
+done
+
+# Boucle for avec sequence
+for i in $(seq 1 10); do
+    echo "Nombre : $i"
+done
+
+# Boucle for style C
+for ((i=0; i<10; i++)); do
+    echo "Index : $i"
+done
+
+# Boucle for sur des fichiers
+for fichier in /var/log/*.log; do
+    echo "Fichier : $fichier ($(du -sh "$fichier" | cut -f1))"
+done
+
+# Boucle while
+compteur=1
+while [ $compteur -le 5 ]; do
+    echo "Compteur : $compteur"
+    compteur=$((compteur + 1))
+done
+
+# Lire un fichier ligne par ligne
+while IFS= read -r ligne; do
+    echo "Ligne : $ligne"
+done < /etc/hostname
+
+# Boucle until (s'execute tant que la condition est fausse)
+until ping -c 1 192.168.1.1 &>/dev/null; do
+    echo "En attente du reseau..."
+    sleep 2
+done
+echo "Reseau disponible"
+
+# break et continue
+for i in $(seq 1 20); do
+    if [ $i -eq 5 ]; then
+        continue         # Saute l'iteration 5
+    fi
+    if [ $i -eq 15 ]; then
+        break            # Sort de la boucle a 15
+    fi
+    echo $i
+done
+```
+
+### 16.7 Fonctions
+
+```bash
+#!/bin/bash
+
+# Declaration d'une fonction
+afficher_aide() {
+    echo "Usage : $0 [options]"
+    echo "  -h    Afficher cette aide"
+    echo "  -v    Mode verbeux"
+}
+
+# Fonction avec arguments
+saluer() {
+    local nom="$1"           # Variable locale
+    local prenom="$2"
+    echo "Bonjour $prenom $nom"
+}
+
+# Fonction avec valeur de retour
+verifier_service() {
+    local service="$1"
+    if systemctl is-active --quiet "$service"; then
+        return 0             # Succes
+    else
+        return 1             # Echec
+    fi
+}
+
+# Appels
+afficher_aide
+saluer "Dupont" "Jean"
+
+if verifier_service "nginx"; then
+    echo "Nginx fonctionne"
+else
+    echo "Nginx est arrete"
+fi
+```
+
+### 16.8 Exemples pratiques d'administration
+
+**Script de sauvegarde :**
+
+```bash
+#!/bin/bash
+# sauvegarde.sh -- Sauvegarde quotidienne de /etc et /home
+
+set -euo pipefail
+
+DATE=$(date +"%Y-%m-%d_%H%M%S")
+DEST="/backup"
+RETENTION=30
+
+mkdir -p "$DEST"
+
+echo "[$(date)] Debut de la sauvegarde"
+
+tar czf "${DEST}/etc_${DATE}.tar.gz" /etc 2>/dev/null
+tar czf "${DEST}/home_${DATE}.tar.gz" /home 2>/dev/null
+
+echo "[$(date)] Sauvegarde terminee"
+
+# Suppression des sauvegardes de plus de $RETENTION jours
+find "$DEST" -name "*.tar.gz" -mtime +${RETENTION} -delete
+echo "[$(date)] Nettoyage effectue (retention : ${RETENTION} jours)"
+```
+
+**Script de surveillance des services :**
+
+```bash
+#!/bin/bash
+# check_services.sh -- Verifie et redemarre les services critiques
+
+SERVICES=("nginx" "mariadb" "ssh")
+MAIL="admin@example.com"
+
+for service in "${SERVICES[@]}"; do
+    if ! systemctl is-active --quiet "$service"; then
+        echo "[ALERTE] $service est arrete. Tentative de redemarrage..."
+        sudo systemctl start "$service"
+
+        if systemctl is-active --quiet "$service"; then
+            echo "[OK] $service redemarre avec succes"
+        else
+            echo "[CRITIQUE] Impossible de redemarrer $service" | \
+                mail -s "ALERTE : $service en echec sur $(hostname)" "$MAIL"
+        fi
+    fi
+done
+```
+
+**Script de creation d'utilisateurs en masse :**
+
+```bash
+#!/bin/bash
+# creer_utilisateurs.sh -- Cree des utilisateurs depuis un fichier CSV
+# Format CSV : prenom,nom,groupe
+
+if [ $# -ne 1 ]; then
+    echo "Usage : $0 <fichier.csv>"
+    exit 1
+fi
+
+FICHIER="$1"
+
+if [ ! -f "$FICHIER" ]; then
+    echo "Erreur : fichier $FICHIER introuvable"
+    exit 1
+fi
+
+while IFS=',' read -r prenom nom groupe; do
+    login=$(echo "${prenom:0:1}${nom}" | tr 'A-Z' 'a-z' | tr -d ' ')
+
+    if id "$login" &>/dev/null; then
+        echo "[SKIP] $login existe deja"
+        continue
+    fi
+
+    groupadd -f "$groupe"
+    useradd -m -s /bin/bash -G "$groupe" -c "$prenom $nom" "$login"
+    echo "MotDePasse123!" | chpasswd <<< "${login}:MotDePasse123!"
+    passwd -e "$login"       # Force le changement au premier login
+
+    echo "[OK] Utilisateur $login cree (groupe : $groupe)"
+done < "$FICHIER"
+```
+
+---
+
+## 17. Exercices corriges
+
+### Exercice 1 -- Navigation et exploration
+
+**Enonce** : Afficher la liste de tous les fichiers (y compris caches) du repertoire `/etc` contenant le mot "network" dans leur nom, tries par date de modification.
+
+**Correction** :
+
+```bash
+ls -lat /etc | grep -i network
+# ou plus precise :
+find /etc -maxdepth 1 -name "*network*" -ls
+```
+
+---
+
+### Exercice 2 -- Redirections
+
+**Enonce** : Lister tous les fichiers `.conf` du systeme, rediriger les resultats dans `configs.txt` et les erreurs dans `erreurs.txt`.
+
+**Correction** :
+
+```bash
+find / -name "*.conf" > configs.txt 2> erreurs.txt
+```
+
+---
+
+### Exercice 3 -- Gestion des utilisateurs
+
+**Enonce** : Creer un utilisateur `technicien` avec le repertoire personnel `/home/technicien`, le shell `/bin/bash`, membre du groupe secondaire `support`. Lui attribuer le mot de passe "Tech2025!".
+
+**Correction** :
+
+```bash
+sudo groupadd -f support
+sudo useradd -m -d /home/technicien -s /bin/bash -G support -c "Compte technicien" technicien
+echo "technicien:Tech2025!" | sudo chpasswd
+```
+
+Verification :
+
+```bash
+id technicien
+# uid=1002(technicien) gid=1002(technicien) groups=1002(technicien),1003(support)
+grep technicien /etc/passwd
+```
+
+---
+
+### Exercice 4 -- Permissions octales
+
+**Enonce** : Quelles sont les permissions correspondant a `chmod 2750 /srv/partage/` ? Expliquer chaque chiffre.
+
+**Correction** :
+
+- `2` : SGID active (les fichiers crees heritent du groupe du repertoire)
+- `7` : proprietaire : rwx (lecture, ecriture, execution)
+- `5` : groupe : r-x (lecture, execution)
+- `0` : autres : --- (aucun acces)
+
+Resultat de `ls -ld /srv/partage/` :
+
+```
+drwxr-s--- 2 root developpeurs 4096 ... /srv/partage/
+```
+
+Le `s` dans les permissions du groupe indique le SGID.
+
+---
+
+### Exercice 5 -- Permissions symboliques
+
+**Enonce** : Un fichier `rapport.txt` a les permissions `-rw-r-----`. Ecrire les commandes pour :
+1. Ajouter l'execution au proprietaire
+2. Ajouter la lecture aux autres
+3. Retirer la lecture au groupe
+
+**Correction** :
+
+```bash
+chmod u+x rapport.txt          # -rwxr-----
+chmod o+r rapport.txt          # -rwxr---r--
+chmod g-r rapport.txt          # -rwx----r--
+```
+
+Equivalent en une seule commande :
+
+```bash
+chmod 704 rapport.txt
+```
+
+---
+
+### Exercice 6 -- Processus
+
+**Enonce** : Trouver les 5 processus qui consomment le plus de memoire, puis tuer le processus ayant le PID 4521 de maniere propre. Si cela echoue, le forcer.
+
+**Correction** :
+
+```bash
+ps aux --sort=-%mem | head -6
+
+kill 4521
+# Si le processus ne s'arrete pas :
+kill -9 4521
+```
+
+---
+
+### Exercice 7 -- Crontab
+
+**Enonce** : Ecrire les entrees crontab pour :
+1. Executer `/usr/local/bin/backup.sh` tous les jours a 2h30
+2. Executer `/usr/local/bin/clean.sh` tous les dimanches a 4h00
+3. Executer `/usr/local/bin/check.sh` toutes les 15 minutes, du lundi au vendredi
+
+**Correction** :
+
+```
+30 2 * * * /usr/local/bin/backup.sh
+0 4 * * 0 /usr/local/bin/clean.sh
+*/15 * * * 1-5 /usr/local/bin/check.sh
+```
+
+---
+
+### Exercice 8 -- LVM
+
+**Enonce** : A partir de deux disques `/dev/sdb` et `/dev/sdc`, creer un Volume Group `vg-prod` contenant un Logical Volume `lv-data` de 20 Go formate en ext4 et monte sur `/data`.
+
+**Correction** :
+
+```bash
+# Creer les PV
+sudo pvcreate /dev/sdb /dev/sdc
+
+# Creer le VG
+sudo vgcreate vg-prod /dev/sdb /dev/sdc
+
+# Creer le LV
+sudo lvcreate -L 20G -n lv-data vg-prod
+
+# Formater
+sudo mkfs.ext4 /dev/vg-prod/lv-data
+
+# Creer le point de montage et monter
+sudo mkdir -p /data
+sudo mount /dev/vg-prod/lv-data /data
+
+# Rendre le montage permanent
+echo "/dev/vg-prod/lv-data /data ext4 defaults 0 2" | sudo tee -a /etc/fstab
+
+# Verifier
+df -h /data
+```
+
+---
+
+### Exercice 9 -- Configuration reseau
+
+**Enonce** : Configurer l'interface `ens33` en IP statique avec l'adresse 172.16.0.50/24, la passerelle 172.16.0.1 et les DNS 1.1.1.1 et 9.9.9.9 sur un serveur Debian.
+
+**Correction** :
+
+Editer `/etc/network/interfaces` :
+
+```
+auto ens33
+iface ens33 inet static
+    address 172.16.0.50
+    netmask 255.255.255.0
+    gateway 172.16.0.1
+    dns-nameservers 1.1.1.1 9.9.9.9
+```
+
+Appliquer :
+
+```bash
+sudo systemctl restart networking
+```
+
+Verification :
+
+```bash
+ip addr show ens33
+ip route
+cat /etc/resolv.conf
+ping -c 2 172.16.0.1
+```
+
+---
+
+### Exercice 10 -- SSH
+
+**Enonce** : Configurer un serveur SSH pour :
+- Ecouter sur le port 2222
+- Interdire la connexion root
+- N'autoriser que l'authentification par cle
+- Limiter a 3 tentatives d'authentification
+
+**Correction** :
+
+Editer `/etc/ssh/sshd_config` :
+
+```
+Port 2222
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+MaxAuthTries 3
+```
+
+Appliquer :
+
+```bash
+sudo sshd -t                    # Verifier la syntaxe
+sudo systemctl restart ssh
+```
+
+Sur le client, generer et copier la cle :
+
+```bash
+ssh-keygen -t ed25519
+ssh-copy-id -p 2222 jean@172.16.0.50
+ssh -p 2222 jean@172.16.0.50
+```
+
+---
+
+### Exercice 11 -- systemd
+
+**Enonce** : Creer un service systemd pour une application Python situee dans `/opt/webapp/app.py` qui doit :
+- S'executer en tant que l'utilisateur `webapp`
+- Redemarrer automatiquement en cas d'echec
+- Demarrer apres le reseau
+
+**Correction** :
+
+Creer `/etc/systemd/system/webapp.service` :
+
+```ini
+[Unit]
+Description=Application web Python
+After=network.target
+
+[Service]
+Type=simple
+User=webapp
+Group=webapp
+WorkingDirectory=/opt/webapp
+ExecStart=/usr/bin/python3 /opt/webapp/app.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Activer :
+
+```bash
+sudo useradd -r -s /usr/sbin/nologin webapp
+sudo systemctl daemon-reload
+sudo systemctl enable --now webapp
+sudo systemctl status webapp
+journalctl -u webapp -f
+```
+
+---
+
+### Exercice 12 -- Script Bash : sauvegarde conditionnelle
+
+**Enonce** : Ecrire un script qui :
+1. Verifie qu'il est execute en tant que root
+2. Prend en argument un repertoire a sauvegarder
+3. Cree une archive tar.gz dans `/backup/` avec la date dans le nom
+4. Affiche la taille de l'archive
+5. Retourne un code d'erreur si le repertoire n'existe pas
+
+**Correction** :
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# Verification root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Erreur : ce script doit etre execute en tant que root"
+    exit 1
+fi
+
+# Verification des arguments
+if [ $# -ne 1 ]; then
+    echo "Usage : $0 <repertoire>"
+    exit 1
+fi
+
+SOURCE="$1"
+DEST="/backup"
+DATE=$(date +"%Y-%m-%d_%H%M%S")
+NOM_BASE=$(basename "$SOURCE")
+ARCHIVE="${DEST}/${NOM_BASE}_${DATE}.tar.gz"
+
+# Verification de l'existence du repertoire
+if [ ! -d "$SOURCE" ]; then
+    echo "Erreur : le repertoire $SOURCE n'existe pas"
+    exit 2
+fi
+
+# Creation du repertoire de destination
+mkdir -p "$DEST"
+
+# Creation de l'archive
+tar czf "$ARCHIVE" -C "$(dirname "$SOURCE")" "$NOM_BASE"
+
+# Affichage du resultat
+TAILLE=$(du -sh "$ARCHIVE" | cut -f1)
+echo "Sauvegarde terminee : $ARCHIVE ($TAILLE)"
+
+exit 0
+```
+
+---
+
+### Exercice 13 -- Analyse de logs
+
+**Enonce** : Ecrire une commande qui affiche les 10 adresses IP les plus frequentes dans le fichier de log Apache `/var/log/apache2/access.log`.
+
+**Correction** :
+
+```bash
+awk '{print $1}' /var/log/apache2/access.log | sort | uniq -c | sort -rn | head -10
+```
+
+Explication :
+- `awk '{print $1}'` : extrait le premier champ (adresse IP)
+- `sort` : trie les IP pour que `uniq` fonctionne
+- `uniq -c` : compte les occurrences consecutives
+- `sort -rn` : trie par nombre decroissant
+- `head -10` : affiche les 10 premieres
+
+---
+
+### Exercice 14 -- Script de surveillance disque
+
+**Enonce** : Ecrire un script qui verifie l'espace disque de toutes les partitions. Si une partition depasse 80% d'utilisation, afficher une alerte.
+
+**Correction** :
+
+```bash
+#!/bin/bash
+SEUIL=80
+
+echo "=== Verification de l'espace disque ==="
+echo "Date : $(date)"
+echo
+
+alerte=0
+
+while IFS= read -r ligne; do
+    utilisation=$(echo "$ligne" | awk '{print $5}' | tr -d '%')
+    partition=$(echo "$ligne" | awk '{print $6}')
+    filesystem=$(echo "$ligne" | awk '{print $1}')
+
+    if [ "$utilisation" -ge "$SEUIL" ]; then
+        echo "[ALERTE] $partition ($filesystem) : ${utilisation}% utilise"
+        alerte=1
+    fi
+done < <(df -h | grep -vE '^Filesystem|tmpfs|udev')
+
+if [ "$alerte" -eq 0 ]; then
+    echo "[OK] Toutes les partitions sont en dessous de ${SEUIL}%"
+fi
+```
+
+---
+
+### Exercice 15 -- Gestion complete : fstab
+
+**Enonce** : Un nouveau disque `/dev/sdc1` formate en ext4 doit etre monte automatiquement au demarrage sur `/srv/donnees` avec les options `defaults,noexec,nosuid`. Ecrire les commandes et la ligne fstab.
+
+**Correction** :
+
+```bash
+# Identifier l'UUID
+sudo blkid /dev/sdc1
+# Sortie exemple : /dev/sdc1: UUID="abcd1234-ef56-7890-abcd-ef1234567890" TYPE="ext4"
+
+# Creer le point de montage
+sudo mkdir -p /srv/donnees
+
+# Ajouter dans /etc/fstab
+echo "UUID=abcd1234-ef56-7890-abcd-ef1234567890 /srv/donnees ext4 defaults,noexec,nosuid 0 2" | sudo tee -a /etc/fstab
+
+# Tester le montage (sans redemarrer)
+sudo mount -a
+
+# Verifier
+df -h /srv/donnees
+mount | grep /srv/donnees
+```
+
+Explication des options :
+- `defaults` : rw, suid, dev, exec, auto, nouser, async
+- `noexec` : interdit l'execution de binaires depuis cette partition
+- `nosuid` : ignore les bits SUID/SGID (securite)
+
+---
+
+### Exercice 16 -- Script : gestion de menus
+
+**Enonce** : Ecrire un script interactif qui propose un menu d'administration avec les options suivantes : afficher l'espace disque, lister les utilisateurs connectes, afficher les services actifs, quitter.
+
+**Correction** :
+
+```bash
+#!/bin/bash
+
+while true; do
+    echo
+    echo "=============================="
+    echo "  Menu d'administration"
+    echo "=============================="
+    echo "1. Espace disque"
+    echo "2. Utilisateurs connectes"
+    echo "3. Services actifs"
+    echo "4. Quitter"
+    echo "=============================="
+    read -p "Choix : " choix
+
+    case $choix in
+        1)
+            echo
+            df -hT | grep -vE 'tmpfs|udev'
+            ;;
+        2)
+            echo
+            w
+            ;;
+        3)
+            echo
+            systemctl list-units --type=service --state=running --no-pager
+            ;;
+        4)
+            echo "Au revoir."
+            exit 0
+            ;;
+        *)
+            echo "Choix invalide."
+            ;;
+    esac
+done
+```
+
+---
+
+### Exercice 17 -- sed et awk
+
+**Enonce** : A partir du fichier `/etc/passwd`, afficher uniquement les noms d'utilisateurs ayant un UID superieur ou egal a 1000, avec leur shell de connexion, au format "utilisateur -> shell".
+
+**Correction** :
+
+```bash
+awk -F: '$3 >= 1000 {print $1 " -> " $7}' /etc/passwd
+```
+
+Resultat exemple :
+
+```
+jean -> /bin/bash
+marie -> /bin/bash
+technicien -> /bin/bash
+```
+
+---
+
+## Aide-memoire : commandes essentielles
+
+| Domaine | Commandes cles |
+|---|---|
+| Navigation | `pwd`, `ls -la`, `cd`, `find`, `locate` |
+| Fichiers | `cp`, `mv`, `rm`, `mkdir`, `touch`, `ln -s` |
+| Texte | `cat`, `grep`, `sed`, `awk`, `cut`, `sort`, `uniq` |
+| Redirections | `>`, `>>`, `2>`, `2>&1`, `\|`, `tee` |
+| Utilisateurs | `useradd`, `usermod`, `userdel`, `passwd`, `id`, `groups` |
+| Permissions | `chmod`, `chown`, `chgrp`, `umask` |
+| Processus | `ps aux`, `top`, `kill`, `nice`, `jobs`, `bg`, `fg` |
+| Paquets | `apt update`, `apt install`, `apt remove`, `dpkg -l` |
+| Services | `systemctl start/stop/restart/enable/status`, `journalctl -u` |
+| Cron | `crontab -e`, `crontab -l` |
+| Stockage | `lsblk`, `df -h`, `du -sh`, `fdisk`, `mount`, `lvextend` |
+| Reseau | `ip addr`, `ip route`, `ss -tuln`, `ping`, `dig` |
+| SSH | `ssh`, `ssh-keygen`, `ssh-copy-id`, `scp`, `sftp` |
+| Logs | `journalctl`, `tail -f`, `/var/log/` |

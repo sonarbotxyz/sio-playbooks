@@ -1,0 +1,1955 @@
+---
+title: "Conteneurs et Docker"
+description: "Images, conteneurs, Dockerfile, docker-compose, volumes, réseaux, déploiement d'applications"
+category: "Virtualisation"
+tags: ["docker", "conteneurs", "dockerfile", "compose", "devops"]
+difficulty: "Intermédiaire"
+---
+
+# Conteneurs et Docker
+
+## 1. Conteneurs vs Machines Virtuelles
+
+### 1.1 Architecture comparee
+
+**Machine virtuelle (VM) :**
+
+Une VM embarque un systeme d'exploitation complet (noyau + espace utilisateur) au-dessus d'un hyperviseur. Chaque VM possede ses propres ressources virtualisees (CPU, RAM, stockage, carte reseau).
+
+```
++--App A--+ +--App B--+
+|  Bins/Libs|  |  Bins/Libs|
+|  Guest OS |  |  Guest OS |
++-----------+ +-----------+
++------Hyperviseur---------+
++------OS Hote-------------+
++------Materiel-------------+
+```
+
+**Conteneur :**
+
+Un conteneur partage le noyau du systeme hote. Il n'embarque que l'application et ses dependances (bibliotheques, binaires). L'isolation repose sur des mecanismes du noyau Linux : les **namespaces** (isolation des processus, reseau, systeme de fichiers) et les **cgroups** (limitation des ressources).
+
+```
++--App A--+ +--App B--+
+|  Bins/Libs|  |  Bins/Libs|
++-----------+ +-----------+
++------Docker Engine--------+
++------OS Hote (noyau)------+
++------Materiel--------------+
+```
+
+### 1.2 Comparaison detaillee
+
+| Critere | Machine Virtuelle | Conteneur |
+|---|---|---|
+| Isolation | Forte (noyau separe) | Moderee (noyau partage) |
+| Demarrage | Minutes | Secondes |
+| Taille | Go (OS complet) | Mo (application seule) |
+| Performance | Overhead de virtualisation | Quasi-native |
+| Portabilite | Image VM liee a l'hyperviseur | Image portable (Docker Hub) |
+| Densite | Quelques VM par hote | Dizaines/centaines de conteneurs |
+| Securite | Isolation materielle | Isolation logicielle (namespaces) |
+| Cas d'usage | Environnements heterogenes, OS differents | Microservices, CI/CD, deploiement rapide |
+
+### 1.3 Mecanismes d'isolation Linux
+
+- **Namespaces** : isolent la vision qu'un processus a du systeme (PID, reseau, montages, utilisateurs, hostname).
+- **Cgroups (Control Groups)** : limitent et mesurent les ressources (CPU, memoire, I/O) consommees par un groupe de processus.
+- **Union filesystem (OverlayFS)** : systeme de fichiers en couches permettant de superposer des layers en lecture seule avec une couche en ecriture.
+
+### 1.4 Cas d'usage typiques
+
+- **VM** : heberger des OS differents (Windows sur Linux), isolation forte pour la securite, environnements legacy.
+- **Conteneurs** : deploiement d'applications web, microservices, pipelines CI/CD, environnements de developpement reproductibles, scaling horizontal.
+
+---
+
+## 2. Installation de Docker
+
+### 2.1 Installation sur Linux (Debian/Ubuntu)
+
+```bash
+# Mettre a jour les paquets
+sudo apt update
+
+# Installer les prerequis
+sudo apt install -y ca-certificates curl gnupg lsb-release
+
+# Ajouter la cle GPG officielle de Docker
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+# Ajouter le depot Docker
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Installer Docker Engine
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+# Ajouter l'utilisateur courant au groupe docker (evite sudo)
+sudo usermod -aG docker $USER
+# Deconnexion/reconnexion necessaire pour prendre effet
+```
+
+### 2.2 Installation sur Windows
+
+1. Telecharger **Docker Desktop** depuis le site officiel (docker.com).
+2. Installer l'application (necessite WSL 2 ou Hyper-V).
+3. Activer WSL 2 si demande : `wsl --install` dans PowerShell en administrateur.
+4. Redemarrer le systeme.
+5. Lancer Docker Desktop.
+
+### 2.3 Verification de l'installation
+
+```bash
+# Verifier la version
+docker --version
+# Exemple de sortie : Docker version 24.0.7, build afdd53b
+
+# Verifier que le daemon fonctionne
+docker info
+
+# Tester avec un conteneur
+docker run hello-world
+```
+
+La commande `docker run hello-world` telecharge l'image `hello-world` depuis Docker Hub, cree un conteneur et l'execute. Si le message de bienvenue s'affiche, l'installation est fonctionnelle.
+
+### 2.4 Gestion du service Docker (Linux)
+
+```bash
+# Demarrer le service
+sudo systemctl start docker
+
+# Activer le demarrage automatique
+sudo systemctl enable docker
+
+# Verifier le statut
+sudo systemctl status docker
+
+# Redemarrer le service
+sudo systemctl restart docker
+```
+
+---
+
+## 3. Concepts fondamentaux
+
+### 3.1 Image
+
+Une **image** est un modele en lecture seule contenant tout le necessaire pour executer une application : code, runtime, bibliotheques, variables d'environnement, fichiers de configuration. Une image est composee de **layers** (couches) empilees.
+
+Chaque instruction dans un Dockerfile cree une nouvelle layer. Les layers sont mises en cache et partagees entre images, ce qui optimise le stockage et le temps de construction.
+
+### 3.2 Conteneur
+
+Un **conteneur** est une instance executable d'une image. C'est un processus isole qui s'execute sur le systeme hote. On peut creer, demarrer, arreter, deplacer ou supprimer un conteneur. Un conteneur possede une couche en ecriture au-dessus des layers de l'image.
+
+Relation : `Image` = classe, `Conteneur` = instance.
+
+### 3.3 Registry et Docker Hub
+
+Un **registry** est un depot d'images Docker. **Docker Hub** (hub.docker.com) est le registry public par defaut. Il contient :
+
+- **Images officielles** : maintenues par Docker ou les editeurs (nginx, mysql, python, node). Identifiables par l'absence de prefixe utilisateur.
+- **Images communautaires** : publiees par des utilisateurs (`utilisateur/nom-image`).
+
+### 3.4 Tags
+
+Un **tag** identifie une version specifique d'une image. Par defaut, le tag est `latest`.
+
+```
+nginx:1.25      # Version specifique
+nginx:latest    # Derniere version (par defaut)
+nginx:alpine    # Variante basee sur Alpine Linux (legere)
+python:3.12-slim # Python 3.12, variante allegee
+```
+
+Bonne pratique : toujours specifier un tag explicite en production. Ne jamais se fier a `latest`.
+
+### 3.5 Layers (couches)
+
+Chaque instruction du Dockerfile produit une layer. Les layers sont :
+
+- **En lecture seule** pour l'image.
+- **Mises en cache** : si une instruction n'a pas change, Docker reutilise la layer existante.
+- **Partagees** : si deux images utilisent la meme base (`FROM ubuntu:22.04`), la layer de base n'est stockee qu'une fois.
+
+```
+Layer 4 : COPY . /app          (code applicatif)
+Layer 3 : RUN npm install      (dependances)
+Layer 2 : RUN apt-get install  (paquets systeme)
+Layer 1 : FROM node:18         (image de base)
+```
+
+---
+
+## 4. Commandes essentielles
+
+### 4.1 Gestion des conteneurs
+
+```bash
+# Lancer un conteneur (telecharge l'image si absente)
+docker run nginx
+# -d : mode detache (arriere-plan)
+# -p 8080:80 : mapper le port 8080 de l'hote vers le port 80 du conteneur
+# --name mon-nginx : nommer le conteneur
+docker run -d -p 8080:80 --name mon-nginx nginx
+
+# Lister les conteneurs en cours d'execution
+docker ps
+
+# Lister tous les conteneurs (y compris arretes)
+docker ps -a
+
+# Arreter un conteneur
+docker stop mon-nginx
+
+# Demarrer un conteneur arrete
+docker start mon-nginx
+
+# Redemarrer un conteneur
+docker restart mon-nginx
+
+# Supprimer un conteneur (doit etre arrete)
+docker rm mon-nginx
+
+# Forcer la suppression d'un conteneur en cours d'execution
+docker rm -f mon-nginx
+
+# Supprimer tous les conteneurs arretes
+docker container prune
+```
+
+### 4.2 Execution de commandes dans un conteneur
+
+```bash
+# Ouvrir un shell interactif dans un conteneur en cours d'execution
+docker exec -it mon-nginx bash
+# -i : mode interactif (stdin ouvert)
+# -t : allouer un pseudo-terminal
+
+# Executer une commande unique
+docker exec mon-nginx cat /etc/nginx/nginx.conf
+```
+
+### 4.3 Journaux et inspection
+
+```bash
+# Afficher les logs d'un conteneur
+docker logs mon-nginx
+
+# Suivre les logs en temps reel
+docker logs -f mon-nginx
+
+# Afficher les 50 dernieres lignes
+docker logs --tail 50 mon-nginx
+
+# Inspecter un conteneur (details JSON complets)
+docker inspect mon-nginx
+
+# Afficher les statistiques en temps reel (CPU, RAM, reseau)
+docker stats
+```
+
+### 4.4 Gestion des images
+
+```bash
+# Lister les images locales
+docker images
+
+# Telecharger une image depuis Docker Hub
+docker pull ubuntu:22.04
+
+# Supprimer une image
+docker rmi ubuntu:22.04
+
+# Supprimer les images non utilisees
+docker image prune
+
+# Rechercher une image sur Docker Hub
+docker search nginx
+
+# Taguer une image
+docker tag mon-app:latest mon-registre/mon-app:v1.0
+
+# Pousser une image vers un registre
+docker push mon-registre/mon-app:v1.0
+```
+
+### 4.5 Options importantes de docker run
+
+| Option | Description |
+|---|---|
+| `-d` | Mode detache (arriere-plan) |
+| `-p hote:conteneur` | Mappage de ports |
+| `--name` | Nommer le conteneur |
+| `-e VAR=valeur` | Definir une variable d'environnement |
+| `-v chemin:chemin` | Monter un volume |
+| `--network` | Connecter a un reseau |
+| `--rm` | Supprimer automatiquement le conteneur a l'arret |
+| `-it` | Mode interactif avec terminal |
+| `--restart` | Politique de redemarrage (no, always, unless-stopped, on-failure) |
+| `--memory` | Limiter la memoire |
+| `--cpus` | Limiter le nombre de CPUs |
+
+---
+
+## 5. Images Docker
+
+### 5.1 Recherche et selection d'images
+
+```bash
+# Rechercher sur Docker Hub
+docker search mysql
+
+# Filtrer les images officielles
+docker search --filter is-official=true nginx
+```
+
+Sur le site hub.docker.com, chaque image dispose d'une page de documentation avec les tags disponibles, les variables d'environnement supportees et des exemples d'utilisation.
+
+### 5.2 Images officielles vs communautaires
+
+| Critere | Image officielle | Image communautaire |
+|---|---|---|
+| Nom | `nginx`, `mysql`, `python` | `utilisateur/mon-image` |
+| Maintenance | Docker, editeur officiel | Utilisateur tiers |
+| Securite | Auditee, mises a jour regulieres | Variable, pas de garantie |
+| Documentation | Complete | Variable |
+| Recommandation | A privilegier | Verifier la popularite et les mises a jour |
+
+### 5.3 Variantes d'images courantes
+
+- **`image:version`** : image standard, basee sur Debian.
+- **`image:version-alpine`** : basee sur Alpine Linux (5 Mo), tres legere.
+- **`image:version-slim`** : version allegee de Debian, sans les outils superflus.
+- **`image:version-bullseye`** / **`bookworm`** : basee sur une version specifique de Debian.
+
+---
+
+## 6. Dockerfile
+
+Le Dockerfile est un fichier texte contenant les instructions pour construire une image Docker.
+
+### 6.1 Instructions principales
+
+```dockerfile
+# Image de base
+FROM node:18-alpine
+
+# Definir une variable de construction (disponible uniquement au build)
+ARG NODE_ENV=production
+
+# Definir une variable d'environnement (disponible au build ET a l'execution)
+ENV NODE_ENV=$NODE_ENV
+
+# Definir le repertoire de travail
+WORKDIR /app
+
+# Copier des fichiers depuis le contexte de build vers l'image
+COPY package*.json ./
+
+# Executer une commande (cree une nouvelle layer)
+RUN npm ci --only=production
+
+# Copier le reste du code
+COPY . .
+
+# Documenter le port expose (informatif, ne publie pas le port)
+EXPOSE 3000
+
+# Commande par defaut executee au demarrage du conteneur
+CMD ["node", "server.js"]
+```
+
+### 6.2 Detail de chaque instruction
+
+**FROM** : definit l'image de base. Premiere instruction obligatoire.
+```dockerfile
+FROM ubuntu:22.04
+FROM python:3.12-slim
+FROM scratch          # Image vide (pour binaires statiques)
+```
+
+**RUN** : execute une commande lors de la construction de l'image. Chaque RUN cree une layer.
+```dockerfile
+RUN apt-get update && apt-get install -y curl wget
+# Combiner les commandes avec && pour minimiser les layers
+```
+
+**COPY** : copie des fichiers ou repertoires du contexte de build vers l'image.
+```dockerfile
+COPY src/ /app/src/
+COPY config.json /app/
+```
+
+**ADD** : similaire a COPY, mais supporte en plus la decompression automatique d'archives et les URL distantes. Privilegier COPY dans la plupart des cas.
+```dockerfile
+ADD archive.tar.gz /app/
+```
+
+**WORKDIR** : definit le repertoire de travail pour les instructions suivantes (RUN, CMD, COPY, etc.). Cree le repertoire s'il n'existe pas.
+```dockerfile
+WORKDIR /app
+```
+
+**EXPOSE** : documente le port sur lequel l'application ecoute. Ne publie pas le port : il faut utiliser `-p` avec `docker run`.
+```dockerfile
+EXPOSE 8080
+```
+
+**CMD** : commande par defaut executee au demarrage du conteneur. Peut etre remplacee par l'utilisateur lors du `docker run`.
+```dockerfile
+CMD ["python", "app.py"]
+# Forme shell (moins recommandee) :
+CMD python app.py
+```
+
+**ENTRYPOINT** : definit l'executable principal du conteneur. Contrairement a CMD, ne peut pas etre facilement remplace. Les arguments de `docker run` sont passes en parametres a ENTRYPOINT.
+```dockerfile
+ENTRYPOINT ["python"]
+CMD ["app.py"]
+# docker run mon-image          -> python app.py
+# docker run mon-image script.py -> python script.py
+```
+
+**ENV** : definit une variable d'environnement persistante (disponible au build et a l'execution).
+```dockerfile
+ENV DATABASE_HOST=localhost
+ENV DATABASE_PORT=5432
+```
+
+**ARG** : definit une variable utilisable uniquement pendant le build. Peut etre surchargee avec `--build-arg`.
+```dockerfile
+ARG VERSION=1.0
+RUN echo "Version: $VERSION"
+# docker build --build-arg VERSION=2.0 .
+```
+
+### 6.3 CMD vs ENTRYPOINT
+
+| Aspect | CMD | ENTRYPOINT |
+|---|---|---|
+| Role | Commande par defaut | Executable principal |
+| Remplacement | Facile (`docker run image commande`) | Necessite `--entrypoint` |
+| Combinaison | Sert d'arguments par defaut a ENTRYPOINT | Fixe l'executable |
+| Usage typique | Applications simples | Outils en ligne de commande, wrappers |
+
+### 6.4 Fichier .dockerignore
+
+Le fichier `.dockerignore` exclut des fichiers du contexte de build, reduisant la taille et le temps de construction.
+
+```
+# .dockerignore
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+Dockerfile
+docker-compose.yml
+README.md
+.DS_Store
+```
+
+### 6.5 Multi-stage builds
+
+Les builds multi-etapes permettent de reduire la taille de l'image finale en separant la phase de compilation de la phase d'execution.
+
+```dockerfile
+# Etape 1 : construction
+FROM node:18 AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Etape 2 : image de production (legere)
+FROM node:18-alpine
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY package*.json ./
+EXPOSE 3000
+CMD ["node", "dist/server.js"]
+```
+
+Avantages :
+- L'image finale ne contient pas les outils de build (compilateurs, devDependencies).
+- Reduction significative de la taille de l'image.
+- Separation claire entre environnement de build et environnement d'execution.
+
+---
+
+## 7. Construction d'images
+
+### 7.1 Commande docker build
+
+```bash
+# Construire une image depuis le repertoire courant
+docker build -t mon-app:v1.0 .
+# -t : tag de l'image (nom:version)
+# . : contexte de build (repertoire contenant le Dockerfile)
+
+# Specifier un Dockerfile different
+docker build -t mon-app:v1.0 -f Dockerfile.prod .
+
+# Construire sans cache
+docker build --no-cache -t mon-app:v1.0 .
+
+# Passer un argument de build
+docker build --build-arg NODE_ENV=development -t mon-app:dev .
+```
+
+### 7.2 Bonnes pratiques de construction
+
+1. **Minimiser le nombre de layers** : combiner les commandes RUN avec `&&`.
+```dockerfile
+# Mauvais : 3 layers
+RUN apt-get update
+RUN apt-get install -y curl
+RUN apt-get clean
+
+# Bon : 1 layer
+RUN apt-get update && \
+    apt-get install -y curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+```
+
+2. **Utiliser `.dockerignore`** : exclure les fichiers inutiles du contexte de build.
+
+3. **Privilegier les images Alpine** : `node:18-alpine` (environ 50 Mo) contre `node:18` (environ 350 Mo).
+
+4. **Ordonner les instructions par frequence de changement** : placer les instructions qui changent le moins souvent en premier pour profiter du cache.
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./        # Change rarement
+RUN npm ci                    # Mis en cache si package.json inchange
+COPY . .                      # Change souvent (code source)
+```
+
+5. **Ne pas executer en root** : creer un utilisateur dedie.
+```dockerfile
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+```
+
+6. **Utiliser les multi-stage builds** pour les applications compilees.
+
+7. **Nettoyer les caches** dans la meme instruction RUN que l'installation.
+
+---
+
+## 8. Volumes
+
+Les volumes permettent de persister les donnees au-dela du cycle de vie d'un conteneur.
+
+### 8.1 Types de montages
+
+**Volumes nommes (recommande)** : geres par Docker, stockes dans `/var/lib/docker/volumes/`.
+```bash
+# Creer un volume
+docker volume create mes-donnees
+
+# Utiliser un volume nomme
+docker run -d -v mes-donnees:/var/lib/mysql --name mysql-db mysql:8.0
+```
+
+**Bind mounts** : montent un repertoire de l'hote dans le conteneur. Utiles pour le developpement.
+```bash
+# Monter le repertoire courant dans /app du conteneur
+docker run -d -v $(pwd):/app --name mon-app node:18
+```
+
+**tmpfs mounts** : stockage en memoire, non persiste sur disque.
+```bash
+docker run -d --tmpfs /tmp mon-app
+```
+
+### 8.2 Comparaison
+
+| Type | Persistance | Gestion | Cas d'usage |
+|---|---|---|---|
+| Volume nomme | Oui | Docker | Bases de donnees, donnees applicatives |
+| Bind mount | Oui (sur l'hote) | Utilisateur | Developpement, fichiers de configuration |
+| tmpfs | Non (RAM) | Systeme | Donnees temporaires, secrets |
+
+### 8.3 Commandes de gestion des volumes
+
+```bash
+# Creer un volume
+docker volume create mon-volume
+
+# Lister les volumes
+docker volume ls
+
+# Inspecter un volume (chemin physique, options)
+docker volume inspect mon-volume
+
+# Supprimer un volume
+docker volume rm mon-volume
+
+# Supprimer tous les volumes non utilises
+docker volume prune
+```
+
+### 8.4 Persistance des donnees avec une base de donnees
+
+```bash
+# MySQL avec volume nomme pour les donnees
+docker run -d \
+  --name mysql-prod \
+  -e MYSQL_ROOT_PASSWORD=motdepasse \
+  -e MYSQL_DATABASE=mabase \
+  -v mysql-data:/var/lib/mysql \
+  -p 3306:3306 \
+  mysql:8.0
+
+# Meme apres suppression du conteneur, les donnees restent dans le volume
+docker rm -f mysql-prod
+# Recreer un conteneur avec le meme volume : les donnees sont toujours la
+docker run -d --name mysql-prod -v mysql-data:/var/lib/mysql mysql:8.0
+```
+
+---
+
+## 9. Reseaux Docker
+
+### 9.1 Types de reseaux
+
+**bridge (defaut)** : reseau prive interne. Les conteneurs sur le meme bridge communiquent entre eux. Reseau par defaut pour les conteneurs non connectes a un reseau specifique.
+
+**host** : le conteneur partage directement la pile reseau de l'hote. Pas d'isolation reseau. Utile pour les performances.
+```bash
+docker run --network host nginx
+```
+
+**none** : aucune connectivite reseau. Le conteneur est completement isole.
+```bash
+docker run --network none alpine
+```
+
+### 9.2 Reseaux personnalises (user-defined bridge)
+
+Les reseaux personnalises offrent des avantages par rapport au bridge par defaut :
+- **Resolution DNS automatique** : les conteneurs se contactent par leur nom.
+- **Isolation** : seuls les conteneurs sur le meme reseau communiquent.
+- **Connexion/deconnexion a chaud** : sans redemarrer le conteneur.
+
+```bash
+# Creer un reseau personnalise
+docker network create mon-reseau
+
+# Lancer des conteneurs sur ce reseau
+docker run -d --name web --network mon-reseau nginx
+docker run -d --name api --network mon-reseau node:18
+
+# Depuis le conteneur 'api', on peut joindre 'web' par son nom :
+# curl http://web:80
+
+# Lister les reseaux
+docker network ls
+
+# Inspecter un reseau
+docker network inspect mon-reseau
+
+# Connecter un conteneur existant a un reseau
+docker network connect mon-reseau mon-conteneur
+
+# Deconnecter un conteneur d'un reseau
+docker network disconnect mon-reseau mon-conteneur
+
+# Supprimer un reseau
+docker network rm mon-reseau
+```
+
+### 9.3 DNS interne
+
+Sur un reseau personnalise, Docker fournit un serveur DNS integre. Chaque conteneur est joignable par son nom (option `--name`). C'est le mecanisme fondamental pour la communication entre services dans Docker Compose.
+
+```bash
+# Exemple : un conteneur 'app' contacte un conteneur 'db' par son nom
+docker network create backend
+docker run -d --name db --network backend mysql:8.0 -e MYSQL_ROOT_PASSWORD=secret
+docker run -d --name app --network backend -e DB_HOST=db mon-app
+# Dans l'application, la connexion a la base utilise le hostname 'db'
+```
+
+### 9.4 Publication de ports
+
+```bash
+# Mapper le port 8080 de l'hote vers le port 80 du conteneur
+docker run -d -p 8080:80 nginx
+
+# Mapper sur une interface specifique
+docker run -d -p 127.0.0.1:8080:80 nginx
+
+# Mapper un port aleatoire
+docker run -d -P nginx
+# Docker attribue un port aleatoire sur l'hote pour chaque port EXPOSE
+```
+
+---
+
+## 10. Docker Compose
+
+Docker Compose permet de definir et gerer des applications multi-conteneurs avec un fichier YAML.
+
+### 10.1 Structure du fichier docker-compose.yml
+
+```yaml
+# docker-compose.yml
+version: "3.8"
+
+services:
+  web:
+    image: nginx:1.25-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - frontend
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=secret
+      - DB_NAME=mabase
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: mabase
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+    networks:
+      - backend
+
+volumes:
+  db-data:
+
+networks:
+  frontend:
+  backend:
+```
+
+### 10.2 Directives principales
+
+| Directive | Description |
+|---|---|
+| `image` | Image a utiliser |
+| `build` | Chemin vers le Dockerfile a construire |
+| `ports` | Mappage de ports (hote:conteneur) |
+| `volumes` | Montages de volumes |
+| `environment` | Variables d'environnement |
+| `env_file` | Fichier contenant les variables d'environnement |
+| `depends_on` | Dependances entre services (ordre de demarrage) |
+| `restart` | Politique de redemarrage (no, always, unless-stopped, on-failure) |
+| `networks` | Reseaux auxquels le service est connecte |
+| `command` | Remplace la commande par defaut (CMD) |
+| `container_name` | Nom explicite du conteneur |
+| `healthcheck` | Verification de sante du service |
+
+### 10.3 Commandes Docker Compose
+
+```bash
+# Demarrer tous les services (mode detache)
+docker compose up -d
+
+# Demarrer en reconstruisant les images
+docker compose up -d --build
+
+# Arreter tous les services
+docker compose down
+
+# Arreter et supprimer les volumes
+docker compose down -v
+
+# Afficher les logs de tous les services
+docker compose logs
+
+# Suivre les logs d'un service specifique
+docker compose logs -f api
+
+# Lister les conteneurs du projet
+docker compose ps
+
+# Executer une commande dans un service
+docker compose exec api bash
+
+# Reconstruire les images sans demarrer
+docker compose build
+
+# Mettre a l'echelle un service
+docker compose up -d --scale api=3
+```
+
+### 10.4 Variables d'environnement et fichier .env
+
+Docker Compose charge automatiquement un fichier `.env` dans le meme repertoire :
+
+```
+# .env
+MYSQL_ROOT_PASSWORD=secret
+MYSQL_DATABASE=mabase
+API_PORT=3000
+```
+
+```yaml
+# docker-compose.yml
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+  api:
+    ports:
+      - "${API_PORT}:3000"
+```
+
+### 10.5 Healthcheck
+
+```yaml
+services:
+  db:
+    image: mysql:8.0
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+```
+
+---
+
+## 11. Exemple complet : application web + base de donnees
+
+### 11.1 Architecture
+
+Application PHP (avec Apache) connectee a une base MySQL.
+
+### 11.2 Structure du projet
+
+```
+projet/
+  docker-compose.yml
+  app/
+    Dockerfile
+    index.php
+    .dockerignore
+  db/
+    init.sql
+```
+
+### 11.3 Fichiers
+
+**app/Dockerfile** :
+```dockerfile
+FROM php:8.2-apache
+
+# Installer l'extension PDO MySQL
+RUN docker-php-ext-install pdo pdo_mysql
+
+# Activer le module rewrite d'Apache
+RUN a2enmod rewrite
+
+# Copier le code source
+COPY . /var/www/html/
+
+# Definir les permissions
+RUN chown -R www-data:www-data /var/www/html
+
+EXPOSE 80
+```
+
+**app/.dockerignore** :
+```
+Dockerfile
+.dockerignore
+.git
+```
+
+**app/index.php** :
+```php
+<?php
+$host = getenv('DB_HOST');
+$dbname = getenv('DB_NAME');
+$user = getenv('DB_USER');
+$pass = getenv('DB_PASSWORD');
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $stmt = $pdo->query("SELECT * FROM utilisateurs");
+    $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo "<h1>Liste des utilisateurs</h1>";
+    echo "<ul>";
+    foreach ($utilisateurs as $u) {
+        echo "<li>" . htmlspecialchars($u['nom']) . " - " . htmlspecialchars($u['email']) . "</li>";
+    }
+    echo "</ul>";
+} catch (PDOException $e) {
+    echo "Erreur de connexion : " . $e->getMessage();
+}
+?>
+```
+
+**db/init.sql** :
+```sql
+CREATE TABLE IF NOT EXISTS utilisateurs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    date_creation DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO utilisateurs (nom, email) VALUES
+('Alice Dupont', 'alice@example.com'),
+('Bob Martin', 'bob@example.com'),
+('Claire Leroy', 'claire@example.com');
+```
+
+**docker-compose.yml** :
+```yaml
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: ./app
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_NAME: webapp
+      DB_USER: root
+      DB_PASSWORD: rootpass
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - appnet
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: webapp
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - appnet
+
+volumes:
+  db-data:
+
+networks:
+  appnet:
+```
+
+### 11.4 Deploiement
+
+```bash
+# Se placer dans le repertoire du projet
+cd projet
+
+# Construire et demarrer
+docker compose up -d --build
+
+# Verifier que les services sont operationnels
+docker compose ps
+
+# Acceder a l'application : http://localhost:8080
+
+# Consulter les logs
+docker compose logs -f
+
+# Arreter et nettoyer
+docker compose down -v
+```
+
+---
+
+## 12. Registre prive
+
+### 12.1 Deployer un registre local
+
+Docker fournit une image officielle `registry` pour heberger un registre prive.
+
+```bash
+# Demarrer un registre local sur le port 5000
+docker run -d -p 5000:5000 --name registre \
+  -v registre-data:/var/lib/registry \
+  --restart always \
+  registry:2
+
+# Taguer une image pour le registre local
+docker tag mon-app:v1.0 localhost:5000/mon-app:v1.0
+
+# Pousser l'image
+docker push localhost:5000/mon-app:v1.0
+
+# Telecharger l'image depuis le registre local
+docker pull localhost:5000/mon-app:v1.0
+
+# Lister les images du registre (API HTTP)
+curl http://localhost:5000/v2/_catalog
+```
+
+### 12.2 Configuration pour un reseau local
+
+Pour utiliser le registre depuis d'autres machines du reseau (sans HTTPS), ajouter le registre comme "insecure registry" dans la configuration Docker :
+
+```json
+// /etc/docker/daemon.json
+{
+  "insecure-registries": ["192.168.1.100:5000"]
+}
+```
+
+Redemarrer le service Docker apres modification.
+
+---
+
+## 13. Securite
+
+### 13.1 Utilisateur non-root
+
+Par defaut, les processus dans un conteneur s'executent en root. C'est un risque de securite.
+
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY . .
+RUN npm ci --only=production
+
+# Creer un utilisateur non-root
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Changer le proprietaire des fichiers
+RUN chown -R appuser:appgroup /app
+
+# Basculer vers l'utilisateur non-root
+USER appuser
+
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+
+### 13.2 Scan d'images
+
+Analyser les images pour detecter les vulnerabilites connues (CVE).
+
+```bash
+# Avec Docker Scout (integre a Docker Desktop)
+docker scout cves mon-app:v1.0
+
+# Avec Trivy (outil open source)
+docker run --rm aquasec/trivy image mon-app:v1.0
+```
+
+### 13.3 Limites de ressources
+
+Empecher un conteneur de consommer toutes les ressources de l'hote.
+
+```bash
+# Limiter la memoire a 512 Mo
+docker run -d --memory=512m mon-app
+
+# Limiter a 1.5 CPUs
+docker run -d --cpus=1.5 mon-app
+
+# Combiner les limites
+docker run -d --memory=256m --cpus=0.5 mon-app
+
+# Dans docker-compose.yml
+services:
+  api:
+    image: mon-app
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+```
+
+### 13.4 Autres bonnes pratiques de securite
+
+- **Ne pas stocker de secrets dans les images** : utiliser des variables d'environnement ou Docker Secrets.
+- **Utiliser des images minimales** (Alpine, distroless) pour reduire la surface d'attaque.
+- **Mettre a jour regulierement** les images de base.
+- **Ne pas executer en mode `--privileged`** sauf necessite absolue.
+- **Limiter les capabilities Linux** : `--cap-drop ALL --cap-add NET_BIND_SERVICE`.
+- **Utiliser le mode read-only** : `--read-only` pour le systeme de fichiers du conteneur.
+
+---
+
+## 14. Docker en production : orchestration
+
+### 14.1 Limites de Docker seul
+
+Docker gere des conteneurs sur une seule machine. En production, il faut :
+- Deployer sur plusieurs serveurs (haute disponibilite).
+- Gerer le scaling automatique.
+- Repartir la charge (load balancing).
+- Gerer les mises a jour sans interruption (rolling updates).
+- Redemarrer automatiquement les conteneurs defaillants.
+
+### 14.2 Docker Swarm
+
+Docker Swarm est l'orchestrateur integre a Docker. Il transforme un groupe de machines Docker en un cluster.
+
+```bash
+# Initialiser un Swarm (sur le manager)
+docker swarm init --advertise-addr 192.168.1.100
+
+# Ajouter un noeud worker
+docker swarm join --token <token> 192.168.1.100:2377
+
+# Deployer un service
+docker service create --name web --replicas 3 -p 80:80 nginx
+
+# Lister les services
+docker service ls
+
+# Mettre a l'echelle
+docker service scale web=5
+
+# Mettre a jour l'image (rolling update)
+docker service update --image nginx:1.25 web
+```
+
+Concepts Swarm :
+- **Manager** : noeud qui gere le cluster et repartit les taches.
+- **Worker** : noeud qui execute les conteneurs.
+- **Service** : definition d'une tache a executer (image, nombre de replicas, ports).
+- **Stack** : deploiement d'un fichier Compose sur le Swarm (`docker stack deploy`).
+
+### 14.3 Kubernetes (introduction)
+
+Kubernetes (K8s) est l'orchestrateur de conteneurs le plus utilise en production. Concepts fondamentaux :
+
+- **Pod** : plus petite unite deployable, contient un ou plusieurs conteneurs.
+- **Deployment** : gere le deploiement et le scaling des Pods.
+- **Service** : expose les Pods sur le reseau (ClusterIP, NodePort, LoadBalancer).
+- **Namespace** : partitionnement logique du cluster.
+- **ConfigMap / Secret** : gestion de la configuration et des secrets.
+- **Ingress** : routage HTTP/HTTPS vers les services.
+
+```yaml
+# Exemple de Deployment Kubernetes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+```
+
+Kubernetes depasse le cadre du BTS SIO SISR mais il est important d'en connaitre l'existence et les concepts de base.
+
+---
+
+## 15. Exercices corriges
+
+### Exercice 1 : Premiers pas avec Docker
+
+**Enonce** : Telecharger l'image `alpine:3.18`, lancer un conteneur interactif, executer la commande `cat /etc/os-release`, puis supprimer le conteneur.
+
+**Correction** :
+```bash
+# Telecharger l'image
+docker pull alpine:3.18
+
+# Lancer un conteneur interactif (--rm pour suppression automatique)
+docker run -it --rm alpine:3.18
+
+# Dans le conteneur :
+cat /etc/os-release
+exit
+
+# Si --rm n'a pas ete utilise :
+docker ps -a
+docker rm <id_conteneur>
+```
+
+---
+
+### Exercice 2 : Lancer un serveur web
+
+**Enonce** : Lancer un conteneur Nginx accessible sur le port 8080 de la machine hote, en mode detache, avec le nom `serveur-web`. Verifier qu'il fonctionne, puis l'arreter et le supprimer.
+
+**Correction** :
+```bash
+docker run -d -p 8080:80 --name serveur-web nginx
+
+# Verifier
+curl http://localhost:8080
+docker ps
+
+# Arreter et supprimer
+docker stop serveur-web
+docker rm serveur-web
+```
+
+---
+
+### Exercice 3 : Ecrire un Dockerfile simple
+
+**Enonce** : Ecrire un Dockerfile pour une application Python Flask qui :
+- Utilise Python 3.11 en version Alpine.
+- Copie le fichier `app.py` et `requirements.txt`.
+- Installe les dependances.
+- Expose le port 5000.
+- Lance l'application avec `python app.py`.
+
+**Correction** :
+```dockerfile
+FROM python:3.11-alpine
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]
+```
+
+Construction et lancement :
+```bash
+docker build -t flask-app:v1.0 .
+docker run -d -p 5000:5000 --name flask flask-app:v1.0
+```
+
+---
+
+### Exercice 4 : Volumes et persistance
+
+**Enonce** : Lancer un conteneur MySQL avec un volume nomme `mysql-exercice` pour persister les donnees. Creer une table, supprimer le conteneur, recreer un nouveau conteneur avec le meme volume et verifier que la table existe toujours.
+
+**Correction** :
+```bash
+# Creer le volume et lancer MySQL
+docker volume create mysql-exercice
+docker run -d --name mysql-test \
+  -e MYSQL_ROOT_PASSWORD=test123 \
+  -e MYSQL_DATABASE=testdb \
+  -v mysql-exercice:/var/lib/mysql \
+  mysql:8.0
+
+# Attendre le demarrage, puis creer une table
+docker exec -it mysql-test mysql -uroot -ptest123 testdb \
+  -e "CREATE TABLE test (id INT, nom VARCHAR(50)); INSERT INTO test VALUES (1, 'Alice');"
+
+# Supprimer le conteneur
+docker rm -f mysql-test
+
+# Recreer un conteneur avec le meme volume
+docker run -d --name mysql-test2 \
+  -e MYSQL_ROOT_PASSWORD=test123 \
+  -v mysql-exercice:/var/lib/mysql \
+  mysql:8.0
+
+# Verifier que les donnees sont toujours la
+docker exec -it mysql-test2 mysql -uroot -ptest123 testdb \
+  -e "SELECT * FROM test;"
+# Resultat attendu : 1, Alice
+```
+
+---
+
+### Exercice 5 : Reseaux et communication entre conteneurs
+
+**Enonce** : Creer un reseau personnalise `app-network`. Lancer un conteneur Nginx nomme `web` et un conteneur Alpine nomme `client` sur ce reseau. Depuis `client`, verifier que `web` est joignable par son nom.
+
+**Correction** :
+```bash
+# Creer le reseau
+docker network create app-network
+
+# Lancer les conteneurs
+docker run -d --name web --network app-network nginx
+docker run -it --rm --name client --network app-network alpine
+
+# Dans le conteneur Alpine :
+apk add --no-cache curl
+curl http://web:80
+# La page d'accueil Nginx s'affiche
+
+# Nettoyage
+docker stop web && docker rm web
+docker network rm app-network
+```
+
+---
+
+### Exercice 6 : Docker Compose basique
+
+**Enonce** : Ecrire un fichier `docker-compose.yml` qui lance :
+- Un service `web` avec l'image `httpd:2.4` accessible sur le port 8080.
+- Un service `db` avec l'image `mariadb:10.11`, un mot de passe root et un volume pour les donnees.
+
+**Correction** :
+```yaml
+version: "3.8"
+
+services:
+  web:
+    image: httpd:2.4
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: mariadb:10.11
+    environment:
+      MARIADB_ROOT_PASSWORD: secret
+      MARIADB_DATABASE: webapp
+    volumes:
+      - db-data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  db-data:
+```
+
+```bash
+docker compose up -d
+docker compose ps
+curl http://localhost:8080
+docker compose down -v
+```
+
+---
+
+### Exercice 7 : Dockerfile multi-stage
+
+**Enonce** : Ecrire un Dockerfile multi-stage pour une application Go. L'etape de build compile le binaire, l'etape finale utilise `scratch` (image vide) pour un conteneur minimal.
+
+Fichier `main.go` :
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, "Bonjour depuis Go !")
+    })
+    http.ListenAndServe(":8080", nil)
+}
+```
+
+**Correction** :
+```dockerfile
+# Etape 1 : compilation
+FROM golang:1.21-alpine AS builder
+WORKDIR /app
+COPY main.go .
+RUN CGO_ENABLED=0 GOOS=linux go build -o serveur main.go
+
+# Etape 2 : image minimale
+FROM scratch
+COPY --from=builder /app/serveur /serveur
+EXPOSE 8080
+ENTRYPOINT ["/serveur"]
+```
+
+```bash
+docker build -t go-app .
+docker images go-app
+# La taille de l'image est de quelques Mo seulement
+docker run -d -p 8080:8080 go-app
+curl http://localhost:8080
+```
+
+---
+
+### Exercice 8 : Docker Compose multi-services avec build
+
+**Enonce** : Creer un projet avec :
+- Un service `api` (Node.js) construit depuis un Dockerfile, avec une variable d'environnement `PORT=3000`.
+- Un service `redis` utilisant l'image `redis:7-alpine`.
+- Un service `nginx` comme reverse proxy, mappant le port 80 vers l'API.
+- Un reseau commun `app-net`.
+
+**Correction** :
+
+**api/Dockerfile** :
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+EXPOSE 3000
+CMD ["node", "index.js"]
+```
+
+**api/index.js** :
+```javascript
+const http = require('http');
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('API fonctionnelle\n');
+});
+server.listen(process.env.PORT || 3000, () => {
+    console.log(`Serveur demarre sur le port ${process.env.PORT || 3000}`);
+});
+```
+
+**api/package.json** :
+```json
+{
+  "name": "api",
+  "version": "1.0.0",
+  "main": "index.js"
+}
+```
+
+**nginx/default.conf** :
+```nginx
+server {
+    listen 80;
+    location / {
+        proxy_pass http://api:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+**docker-compose.yml** :
+```yaml
+version: "3.8"
+
+services:
+  api:
+    build: ./api
+    environment:
+      - PORT=3000
+    depends_on:
+      - redis
+    networks:
+      - app-net
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - app-net
+
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+    networks:
+      - app-net
+
+networks:
+  app-net:
+```
+
+---
+
+### Exercice 9 : Debugging d'un conteneur
+
+**Enonce** : Un conteneur `mon-app` ne demarre pas. Decrire la demarche de diagnostic.
+
+**Correction** :
+
+```bash
+# 1. Verifier le statut du conteneur
+docker ps -a
+# Observer la colonne STATUS (Exited, Restarting...)
+
+# 2. Lire les logs
+docker logs mon-app
+# Identifier les erreurs (port deja utilise, fichier manquant, etc.)
+
+# 3. Inspecter le conteneur
+docker inspect mon-app
+# Verifier : les montages de volumes, les variables d'environnement,
+# la commande executee, le code de sortie (ExitCode)
+
+# 4. Lancer le conteneur en mode interactif pour explorer
+docker run -it --entrypoint sh mon-image
+# Verifier : fichiers presents, permissions, configuration
+
+# 5. Verifier les ressources
+docker stats
+# Memoire insuffisante ? CPU sature ?
+
+# 6. Verifier les reseaux
+docker network inspect <reseau>
+# Le conteneur est-il sur le bon reseau ?
+# Les ports sont-ils correctement mappes ?
+
+# 7. Verifier les volumes
+docker volume inspect <volume>
+# Le volume est-il correctement monte ?
+# Les permissions sont-elles correctes ?
+```
+
+Codes de sortie courants :
+- **0** : arret normal.
+- **1** : erreur applicative.
+- **137** : tue par le systeme (OOM Killer, memoire insuffisante).
+- **139** : erreur de segmentation.
+- **143** : arret par signal SIGTERM.
+
+---
+
+### Exercice 10 : Securiser un conteneur
+
+**Enonce** : Modifier le Dockerfile suivant pour le securiser (utilisateur non-root, limiter les layers, image legere).
+
+Dockerfile initial :
+```dockerfile
+FROM ubuntu:22.04
+RUN apt-get update
+RUN apt-get install -y python3 python3-pip
+RUN pip3 install flask
+COPY app.py /app/app.py
+CMD python3 /app/app.py
+```
+
+**Correction** :
+```dockerfile
+FROM python:3.11-alpine
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN chown -R appuser:appgroup /app
+USER appuser
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]
+```
+
+Ameliorations :
+- Image Alpine au lieu d'Ubuntu (reduction de taille).
+- Layers combinees et optimisees.
+- Utilisateur non-root.
+- Utilisation d'un fichier `requirements.txt` pour les dependances.
+- `--no-cache-dir` pour reduire la taille de l'image.
+- Forme exec pour CMD (meilleure gestion des signaux).
+
+---
+
+### Exercice 11 : Registre prive et workflow
+
+**Enonce** : Deployer un registre prive local, construire une image, la pousser vers le registre, puis la telecharger sur une autre machine (simulee).
+
+**Correction** :
+```bash
+# Demarrer le registre
+docker run -d -p 5000:5000 --name registre --restart always registry:2
+
+# Construire une image
+docker build -t mon-app:v1.0 .
+
+# Taguer pour le registre local
+docker tag mon-app:v1.0 localhost:5000/mon-app:v1.0
+
+# Pousser
+docker push localhost:5000/mon-app:v1.0
+
+# Verifier le contenu du registre
+curl http://localhost:5000/v2/_catalog
+# {"repositories":["mon-app"]}
+
+curl http://localhost:5000/v2/mon-app/tags/list
+# {"name":"mon-app","tags":["v1.0"]}
+
+# Supprimer l'image locale pour simuler un autre poste
+docker rmi mon-app:v1.0 localhost:5000/mon-app:v1.0
+
+# Telecharger depuis le registre
+docker pull localhost:5000/mon-app:v1.0
+docker images
+```
+
+---
+
+### Exercice 12 : Application complete avec Docker Compose
+
+**Enonce** : Creer une application WordPress avec MySQL en utilisant Docker Compose. Exigences :
+- WordPress accessible sur le port 8080.
+- MySQL avec un volume pour la persistance.
+- Variables d'environnement dans un fichier `.env`.
+- Healthcheck sur MySQL.
+- Reseau dedie.
+
+**Correction** :
+
+**.env** :
+```
+MYSQL_ROOT_PASSWORD=rootsecret
+MYSQL_DATABASE=wordpress
+MYSQL_USER=wpuser
+MYSQL_PASSWORD=wpsecret
+```
+
+**docker-compose.yml** :
+```yaml
+version: "3.8"
+
+services:
+  wordpress:
+    image: wordpress:6.4-apache
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+    volumes:
+      - wp-content:/var/www/html/wp-content
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - wp-net
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - wp-net
+
+volumes:
+  db-data:
+  wp-content:
+
+networks:
+  wp-net:
+```
+
+```bash
+# Demarrer
+docker compose up -d
+
+# Verifier la sante des services
+docker compose ps
+
+# Acceder a WordPress : http://localhost:8080
+
+# Consulter les logs
+docker compose logs -f
+
+# Arreter proprement
+docker compose down
+
+# Arreter et supprimer toutes les donnees
+docker compose down -v
+```
+
+---
+
+### Exercice 13 : Variables d'environnement et configuration
+
+**Enonce** : Expliquer la difference entre `ARG` et `ENV` dans un Dockerfile. Ecrire un Dockerfile qui utilise les deux.
+
+**Correction** :
+
+| Aspect | ARG | ENV |
+|---|---|---|
+| Disponibilite | Build uniquement | Build et execution |
+| Surcharge | `--build-arg` | `-e` ou `--env` au run |
+| Persistance | Non (disparait apres le build) | Oui (dans l'image et le conteneur) |
+| Usage | Versions, options de compilation | Configuration applicative |
+
+```dockerfile
+FROM node:18-alpine
+
+# ARG : utilise uniquement pendant le build
+ARG APP_VERSION=1.0.0
+ARG NODE_ENV=production
+
+# ENV : persiste dans le conteneur
+ENV NODE_ENV=$NODE_ENV
+ENV APP_VERSION=$APP_VERSION
+
+WORKDIR /app
+
+RUN echo "Construction de la version $APP_VERSION en mode $NODE_ENV"
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+
+```bash
+# Build avec des arguments personnalises
+docker build --build-arg APP_VERSION=2.0.0 --build-arg NODE_ENV=development -t mon-app .
+
+# Surcharger ENV au lancement
+docker run -e NODE_ENV=staging mon-app
+```
+
+---
+
+### Exercice 14 : Diagnostic et reparation d'un docker-compose.yml
+
+**Enonce** : Le fichier suivant contient plusieurs erreurs. Les identifier et les corriger.
+
+```yaml
+version: "3.8"
+
+services:
+  web:
+    image: nginx
+    port:
+      - "80:80"
+    volume:
+      - ./site:/usr/share/nginx/html
+    depend_on:
+      - app
+
+  app:
+    build: .
+    environment:
+      DB_HOST: database
+    network:
+      - backend
+
+  database:
+    image: postgres:15
+    environment:
+      - POSTGRES_PASSWORD
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volume:
+  pgdata:
+
+network:
+  backend:
+```
+
+**Correction** :
+
+Erreurs identifiees :
+1. `port` doit etre `ports` (pluriel).
+2. `volume` sous `web` doit etre `volumes` (pluriel).
+3. `depend_on` doit etre `depends_on`.
+4. `network` sous `app` doit etre `networks` (pluriel).
+5. `POSTGRES_PASSWORD` n'a pas de valeur.
+6. `volume` au niveau racine doit etre `volumes` (pluriel).
+7. `network` au niveau racine doit etre `networks` (pluriel).
+8. Les services `web` et `database` ne sont pas sur le reseau `backend`.
+
+Fichier corrige :
+```yaml
+version: "3.8"
+
+services:
+  web:
+    image: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./site:/usr/share/nginx/html
+    depends_on:
+      - app
+    networks:
+      - backend
+
+  app:
+    build: .
+    environment:
+      DB_HOST: database
+    networks:
+      - backend
+
+  database:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+
+volumes:
+  pgdata:
+
+networks:
+  backend:
+```
+
+---
+
+## 16. Resume des commandes
+
+### Conteneurs
+
+| Commande | Description |
+|---|---|
+| `docker run [options] image` | Creer et demarrer un conteneur |
+| `docker ps` | Lister les conteneurs actifs |
+| `docker ps -a` | Lister tous les conteneurs |
+| `docker stop <nom>` | Arreter un conteneur |
+| `docker start <nom>` | Demarrer un conteneur arrete |
+| `docker restart <nom>` | Redemarrer un conteneur |
+| `docker rm <nom>` | Supprimer un conteneur |
+| `docker exec -it <nom> <cmd>` | Executer une commande dans un conteneur |
+| `docker logs <nom>` | Afficher les journaux |
+| `docker inspect <nom>` | Details complets en JSON |
+| `docker stats` | Statistiques en temps reel |
+
+### Images
+
+| Commande | Description |
+|---|---|
+| `docker images` | Lister les images locales |
+| `docker pull image:tag` | Telecharger une image |
+| `docker build -t nom:tag .` | Construire une image |
+| `docker rmi image` | Supprimer une image |
+| `docker tag source cible` | Taguer une image |
+| `docker push image:tag` | Pousser vers un registre |
+
+### Volumes
+
+| Commande | Description |
+|---|---|
+| `docker volume create nom` | Creer un volume |
+| `docker volume ls` | Lister les volumes |
+| `docker volume inspect nom` | Inspecter un volume |
+| `docker volume rm nom` | Supprimer un volume |
+| `docker volume prune` | Supprimer les volumes inutilises |
+
+### Reseaux
+
+| Commande | Description |
+|---|---|
+| `docker network create nom` | Creer un reseau |
+| `docker network ls` | Lister les reseaux |
+| `docker network inspect nom` | Inspecter un reseau |
+| `docker network connect reseau conteneur` | Connecter un conteneur |
+| `docker network disconnect reseau conteneur` | Deconnecter un conteneur |
+| `docker network rm nom` | Supprimer un reseau |
+
+### Docker Compose
+
+| Commande | Description |
+|---|---|
+| `docker compose up -d` | Demarrer les services |
+| `docker compose down` | Arreter et supprimer |
+| `docker compose down -v` | Arreter, supprimer avec les volumes |
+| `docker compose ps` | Lister les services |
+| `docker compose logs -f` | Suivre les journaux |
+| `docker compose exec service cmd` | Executer une commande |
+| `docker compose build` | Reconstruire les images |
+
+### Nettoyage global
+
+```bash
+# Supprimer tous les conteneurs arretes, reseaux inutilises,
+# images non referencees et caches de build
+docker system prune -a
+
+# Afficher l'espace disque utilise par Docker
+docker system df
+```

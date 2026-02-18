@@ -1,0 +1,1512 @@
+---
+title: "Réseaux — Routage et commutation"
+description: "Switches, VLANs, trunking, routage statique et dynamique, ACL, Packet Tracer"
+category: "Reseaux"
+tags: ["routage", "commutation", "vlan", "ospf", "acl", "cisco"]
+difficulty: "Intermédiaire"
+---
+
+# Routage et commutation
+
+Ce playbook couvre l'ensemble des notions de commutation et de routage au programme du BTS SIO option SISR. Chaque section est conçue pour servir de reference directe lors des revisions et des epreuves pratiques.
+
+---
+
+## 1. Commutation -- Fonctionnement d'un switch
+
+### 1.1 Role du commutateur (switch)
+
+Un commutateur opere au **niveau 2 du modele OSI** (couche liaison de donnees). Il interconnecte des equipements au sein d'un meme reseau local (LAN) en se basant sur les **adresses MAC**.
+
+Contrairement a un concentrateur (hub), le switch **n'envoie pas les trames a tous les ports** : il les dirige uniquement vers le port de destination concerne, grace a sa table d'adresses MAC.
+
+### 1.2 Table d'adresses MAC (table CAM)
+
+La table CAM (Content Addressable Memory) associe chaque adresse MAC source a un numero de port physique.
+
+**Processus d'apprentissage :**
+
+1. Une trame arrive sur le port Fa0/1 avec l'adresse MAC source `AA:BB:CC:DD:EE:01`.
+2. Le switch enregistre l'association `AA:BB:CC:DD:EE:01 -> Fa0/1` dans sa table CAM.
+3. Si l'adresse MAC de destination est connue dans la table, le switch transmet la trame uniquement vers le port correspondant (**forwarding**).
+4. Si l'adresse MAC de destination est inconnue, le switch envoie la trame sur **tous les ports sauf le port source** (**flooding**).
+5. Les entrees de la table CAM expirent apres un delai configurable (300 secondes par defaut sur Cisco).
+
+**Commande de verification :**
+
+```
+Switch# show mac address-table
+```
+
+### 1.3 Domaine de collision et domaine de broadcast
+
+| Concept | Definition | Delimite par |
+|---|---|---|
+| Domaine de collision | Zone dans laquelle deux trames emises simultanement entrent en collision | Chaque port d'un switch constitue un domaine de collision distinct |
+| Domaine de broadcast | Zone dans laquelle une trame de broadcast (destination `FF:FF:FF:FF:FF:FF`) est diffusee | Un switch entier (ou un VLAN) forme un seul domaine de broadcast |
+
+**Points cles :**
+
+- Un hub ne segmente **ni** les domaines de collision **ni** les domaines de broadcast.
+- Un switch segmente les **domaines de collision** (un par port) mais **pas** les domaines de broadcast.
+- Un routeur (ou un VLAN) segmente **les deux**.
+
+### 1.4 Modes de commutation
+
+| Mode | Description | Latence | Verification d'erreur |
+|---|---|---|---|
+| Store-and-Forward | Le switch recoit la trame entiere, verifie le CRC, puis la transmet | Elevee | Oui (FCS) |
+| Cut-Through | Le switch lit uniquement l'adresse MAC destination (6 premiers octets) et transmet immediatement | Faible | Non |
+| Fragment-Free | Le switch lit les 64 premiers octets (taille minimale d'une trame Ethernet) avant de transmettre | Moyenne | Partielle |
+
+Les switches Cisco Catalyst utilisent **Store-and-Forward** par defaut.
+
+---
+
+## 2. VLANs (Virtual Local Area Networks)
+
+### 2.1 Concept
+
+Un VLAN est un **reseau local virtuel** qui segmente logiquement un switch en plusieurs domaines de broadcast independants, sans necessiter de materiel supplementaire.
+
+**Avantages :**
+
+- Segmentation du trafic broadcast.
+- Amelioration de la securite (isolation des flux).
+- Flexibilite d'organisation (regroupement logique independant de la topologie physique).
+- Simplification de l'administration.
+
+### 2.2 Types de VLANs
+
+| Type | Description |
+|---|---|
+| VLAN de donnees | Transporte le trafic utilisateur |
+| VLAN natif | VLAN par defaut sur les liens trunk (VLAN 1 par defaut). Les trames de ce VLAN ne sont pas etiquetees sur le trunk |
+| VLAN de gestion | Utilise pour l'administration du switch (acces SSH, Telnet) |
+| VLAN voix | Dedie au trafic VoIP, avec priorite QoS |
+
+Le **VLAN 1** est le VLAN par defaut sur tous les ports. Pour des raisons de securite, il est recommande de ne pas l'utiliser pour le trafic de production et de modifier le VLAN natif.
+
+### 2.3 Creation et affectation de VLANs
+
+**Creer un VLAN :**
+
+```
+Switch(config)# vlan 10
+Switch(config-vlan)# name COMPTABILITE
+Switch(config-vlan)# exit
+Switch(config)# vlan 20
+Switch(config-vlan)# name COMMERCIAL
+Switch(config-vlan)# exit
+```
+
+**Affecter un port en mode access :**
+
+```
+Switch(config)# interface fastEthernet 0/1
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport access vlan 10
+Switch(config-if)# exit
+```
+
+**Verification :**
+
+```
+Switch# show vlan brief
+```
+
+### 2.4 Ports Access et Trunk
+
+**Port access :** appartient a un seul VLAN. Utilise pour connecter des equipements terminaux (PC, imprimante).
+
+**Port trunk :** transporte le trafic de **plusieurs VLANs** simultanement entre deux switches ou entre un switch et un routeur. Les trames sont marquees avec un identifiant de VLAN grace au protocole **IEEE 802.1Q**.
+
+**Configuration d'un trunk :**
+
+```
+Switch(config)# interface gigabitEthernet 0/1
+Switch(config-if)# switchport mode trunk
+Switch(config-if)# switchport trunk allowed vlan 10,20,30
+Switch(config-if)# switchport trunk native vlan 99
+Switch(config-if)# exit
+```
+
+**Encapsulation 802.1Q :** un champ de 4 octets est insere dans l'en-tete de la trame Ethernet. Il contient notamment le **VLAN ID** (12 bits, soit 4094 VLANs possibles) et le champ **Priority** (3 bits, pour la QoS).
+
+### 2.5 VLAN natif
+
+Le VLAN natif est le VLAN dont les trames **ne sont pas etiquetees** sur un lien trunk. Par defaut, c'est le VLAN 1.
+
+**Risque de securite :** si le VLAN natif n'est pas modifie, une attaque de type VLAN hopping peut exploiter cette configuration. Il est recommande de :
+
+- Changer le VLAN natif pour un VLAN inutilise (ex. VLAN 99).
+- S'assurer que le VLAN natif est identique des deux cotes du trunk.
+
+### 2.6 Routage inter-VLAN
+
+Les equipements situes dans des VLANs differents ne peuvent pas communiquer directement. Un equipement de couche 3 est necessaire.
+
+#### Methode 1 : Router-on-a-stick
+
+Un seul lien physique relie le switch au routeur. Ce lien est configure en **trunk**. Le routeur cree des **sous-interfaces** pour chaque VLAN.
+
+**Configuration du routeur :**
+
+```
+Router(config)# interface gigabitEthernet 0/0
+Router(config-if)# no shutdown
+Router(config-if)# exit
+
+Router(config)# interface gigabitEthernet 0/0.10
+Router(config-subif)# encapsulation dot1Q 10
+Router(config-subif)# ip address 192.168.10.1 255.255.255.0
+Router(config-subif)# exit
+
+Router(config)# interface gigabitEthernet 0/0.20
+Router(config-subif)# encapsulation dot1Q 20
+Router(config-subif)# ip address 192.168.20.1 255.255.255.0
+Router(config-subif)# exit
+```
+
+**Configuration du switch :**
+
+```
+Switch(config)# interface gigabitEthernet 0/1
+Switch(config-if)# switchport mode trunk
+Switch(config-if)# switchport trunk allowed vlan 10,20
+Switch(config-if)# exit
+```
+
+Les postes du VLAN 10 utilisent `192.168.10.1` comme passerelle par defaut. Ceux du VLAN 20 utilisent `192.168.20.1`.
+
+#### Methode 2 : Switch de couche 3 (switch L3)
+
+Un switch multicouche possede des capacites de routage integrees. On configure des **interfaces VLAN** (SVI -- Switch Virtual Interface).
+
+```
+Switch(config)# ip routing
+
+Switch(config)# interface vlan 10
+Switch(config-if)# ip address 192.168.10.1 255.255.255.0
+Switch(config-if)# no shutdown
+Switch(config-if)# exit
+
+Switch(config)# interface vlan 20
+Switch(config-if)# ip address 192.168.20.1 255.255.255.0
+Switch(config-if)# no shutdown
+Switch(config-if)# exit
+```
+
+La commande `ip routing` active les fonctions de routage sur le switch L3.
+
+---
+
+## 3. Protocole STP (Spanning Tree Protocol)
+
+### 3.1 Problematique des boucles
+
+Lorsque des liens redondants existent entre des switches (pour la haute disponibilite), les trames de broadcast peuvent circuler indefiniment, provoquant :
+
+- Une **tempete de broadcast** (broadcast storm).
+- Des **duplications de trames**.
+- Une **instabilite de la table MAC**.
+
+STP (IEEE 802.1D) resout ce probleme en **desactivant logiquement certains ports** pour eliminer les boucles tout en conservant des chemins de secours.
+
+### 3.2 Fonctionnement de STP
+
+**Election du Root Bridge :**
+
+1. Chaque switch possede un **Bridge ID** compose d'une **priorite** (32768 par defaut) et de son **adresse MAC**.
+2. Le switch avec le **Bridge ID le plus bas** est elu **Root Bridge**.
+3. A priorite egale, c'est l'adresse MAC la plus basse qui l'emporte.
+
+**Calcul des couts :**
+
+| Debit du lien | Cout STP (802.1D) |
+|---|---|
+| 10 Mbps | 100 |
+| 100 Mbps | 19 |
+| 1 Gbps | 4 |
+| 10 Gbps | 2 |
+
+**Roles des ports :**
+
+| Role | Description |
+|---|---|
+| Root Port (RP) | Port du switch non-root qui offre le **meilleur chemin** vers le Root Bridge. Un seul par switch non-root |
+| Designated Port (DP) | Port qui transmet le trafic vers un segment donne. Le Root Bridge a tous ses ports en Designated |
+| Blocked Port (ou Alternate) | Port desactive pour empecher les boucles. Il ne transmet ni ne recoit de trafic utilisateur |
+
+### 3.3 Etats des ports STP
+
+| Etat | Duree | Trafic utilisateur | Apprentissage MAC | BPDU |
+|---|---|---|---|---|
+| Blocking | Indefini | Non | Non | Reception uniquement |
+| Listening | 15 s (Forward Delay) | Non | Non | Emission et reception |
+| Learning | 15 s (Forward Delay) | Non | Oui | Emission et reception |
+| Forwarding | Indefini | Oui | Oui | Emission et reception |
+| Disabled | -- | Non | Non | Non |
+
+Le temps de convergence total est d'environ **30 a 50 secondes** avec STP classique (802.1D).
+
+### 3.4 Rapid Spanning Tree Protocol (RSTP -- 802.1w)
+
+RSTP ameliore le temps de convergence (quelques secondes au lieu de 30-50 secondes) en introduisant :
+
+- Le role **Alternate Port** (remplace le Blocked Port, pret a devenir Root Port).
+- Le role **Backup Port** (port de secours sur le meme segment).
+- Des etats simplifies : **Discarding**, **Learning**, **Forwarding**.
+
+### 3.5 Configuration STP
+
+**Forcer un switch comme Root Bridge :**
+
+```
+Switch(config)# spanning-tree vlan 10 root primary
+```
+
+Ou manuellement :
+
+```
+Switch(config)# spanning-tree vlan 10 priority 4096
+```
+
+**Verification :**
+
+```
+Switch# show spanning-tree
+Switch# show spanning-tree vlan 10
+```
+
+---
+
+## 4. Principes du routage
+
+### 4.1 Role du routeur
+
+Un routeur opere au **niveau 3 du modele OSI** (couche reseau). Il interconnecte des reseaux IP differents et prend des decisions d'acheminement basees sur les **adresses IP de destination**.
+
+### 4.2 Table de routage
+
+La table de routage contient les informations necessaires pour acheminer les paquets. Chaque entree comprend :
+
+- Le **reseau de destination** (adresse reseau + masque).
+- Le **prochain saut** (next hop) ou l'**interface de sortie**.
+- La **metrique** (cout du chemin).
+- La **distance administrative** (fiabilite de la source de l'information).
+
+**Sources des routes :**
+
+| Code | Source | Distance administrative |
+|---|---|---|
+| C | Directement connecte | 0 |
+| S | Route statique | 1 |
+| R | RIP | 120 |
+| O | OSPF | 110 |
+| D | EIGRP | 90 |
+
+**Consultation de la table :**
+
+```
+Router# show ip route
+```
+
+Exemple de sortie :
+
+```
+C    192.168.10.0/24 is directly connected, GigabitEthernet0/0
+S    192.168.20.0/24 [1/0] via 10.0.0.2
+O    172.16.0.0/16 [110/20] via 10.0.0.3, 00:05:12, GigabitEthernet0/1
+S*   0.0.0.0/0 [1/0] via 10.0.0.1
+```
+
+### 4.3 Processus de routage
+
+1. Le routeur recoit un paquet sur une interface.
+2. Il extrait l'adresse IP de destination.
+3. Il consulte sa table de routage en appliquant le **longest prefix match** (correspondance du masque le plus long).
+4. Il transmet le paquet vers le prochain saut ou l'interface de sortie.
+5. Si aucune route ne correspond, le paquet est soit envoye vers la **route par defaut**, soit **rejete**.
+
+### 4.4 Metrique et distance administrative
+
+- **Metrique** : valeur utilisee par un protocole de routage pour determiner le meilleur chemin. Chaque protocole utilise sa propre metrique (nombre de sauts pour RIP, cout pour OSPF).
+- **Distance administrative (AD)** : valeur de confiance attribuee a la source de la route. Lorsque plusieurs protocoles proposent une route vers le meme reseau, la route avec la **distance administrative la plus basse** est privilegiee.
+
+### 4.5 Passerelle par defaut
+
+La passerelle par defaut (default gateway) est l'adresse IP du routeur vers lequel un hote envoie tout le trafic destine a un reseau exterieur a son propre sous-reseau.
+
+Configuration sur un poste client :
+
+- Adresse IP : `192.168.10.10`
+- Masque : `255.255.255.0`
+- Passerelle par defaut : `192.168.10.1`
+
+---
+
+## 5. Routage statique
+
+### 5.1 Principe
+
+Le routage statique consiste a configurer manuellement les routes dans la table de routage du routeur. L'administrateur definit explicitement le reseau de destination, le masque et le prochain saut.
+
+### 5.2 Configuration
+
+**Syntaxe generale :**
+
+```
+Router(config)# ip route <reseau_destination> <masque> <prochain_saut | interface_sortie>
+```
+
+**Exemples :**
+
+```
+Router(config)# ip route 192.168.20.0 255.255.255.0 10.0.0.2
+Router(config)# ip route 172.16.0.0 255.255.0.0 serial 0/0/0
+```
+
+### 5.3 Route par defaut (default route)
+
+La route par defaut redirige tout le trafic dont la destination n'est pas explicitement presente dans la table de routage.
+
+```
+Router(config)# ip route 0.0.0.0 0.0.0.0 10.0.0.1
+```
+
+Elle apparait dans la table de routage avec le code `S*`.
+
+### 5.4 Route statique flottante
+
+Une route statique flottante est une route de secours avec une **distance administrative superieure** a celle de la route principale. Elle n'est utilisee que si la route principale disparait.
+
+```
+Router(config)# ip route 192.168.20.0 255.255.255.0 10.0.1.2 200
+```
+
+Ici, la distance administrative est fixee a 200 (superieure a la valeur par defaut de 1).
+
+### 5.5 Avantages et limites
+
+| Avantages | Limites |
+|---|---|
+| Simple a configurer sur de petits reseaux | Ne s'adapte pas automatiquement aux changements de topologie |
+| Pas de consommation de bande passante (pas d'echanges entre routeurs) | Configuration fastidieuse sur de grands reseaux |
+| Securise (pas de diffusion d'informations de routage) | Necessite une intervention manuelle en cas de panne |
+| Controle total de l'administrateur | Risque d'erreur humaine |
+
+---
+
+## 6. Routage dynamique
+
+### 6.1 Principes generaux
+
+Les protocoles de routage dynamique permettent aux routeurs d'echanger automatiquement des informations sur les reseaux qu'ils connaissent. La table de routage se met a jour automatiquement en cas de changement de topologie.
+
+**Classification :**
+
+| Type | Protocoles | Fonctionnement |
+|---|---|---|
+| Vecteur de distance | RIP, EIGRP | Chaque routeur partage sa table de routage avec ses voisins directs |
+| Etat de lien | OSPF, IS-IS | Chaque routeur connait la topologie complete du reseau et calcule le meilleur chemin |
+
+### 6.2 RIP (Routing Information Protocol)
+
+#### RIPv1
+
+- Protocole a **vecteur de distance**.
+- Metrique : **nombre de sauts** (maximum 15 ; 16 = inaccessible).
+- Envoie ses mises a jour en **broadcast** (255.255.255.255) toutes les **30 secondes**.
+- **Classful** : ne transmet pas les masques de sous-reseau.
+- Ne supporte pas le VLSM ni le CIDR.
+
+#### RIPv2
+
+- Memes bases que RIPv1 mais en version **classless** : transmet les masques de sous-reseau.
+- Envoie ses mises a jour en **multicast** (224.0.0.9).
+- Supporte l'**authentification**.
+- Supporte le **VLSM** et le **CIDR**.
+
+**Configuration de RIPv2 :**
+
+```
+Router(config)# router rip
+Router(config-router)# version 2
+Router(config-router)# network 192.168.10.0
+Router(config-router)# network 10.0.0.0
+Router(config-router)# no auto-summary
+Router(config-router)# exit
+```
+
+La commande `no auto-summary` desactive le resume automatique des routes aux frontieres de classe, ce qui est indispensable avec le VLSM.
+
+**Verification :**
+
+```
+Router# show ip route rip
+Router# show ip protocols
+```
+
+**Mecanismes anti-boucle de RIP :**
+
+- **Split Horizon** : un routeur n'annonce pas une route sur l'interface par laquelle il l'a apprise.
+- **Route Poisoning** : une route inaccessible est annoncee avec une metrique de 16.
+- **Holddown Timer** : un routeur attend un certain temps avant d'accepter une nouvelle route vers un reseau declare inaccessible.
+
+### 6.3 OSPF (Open Shortest Path First)
+
+OSPF est un protocole a **etat de lien** (link-state), standardise par l'IETF (RFC 2328 pour OSPFv2). C'est le protocole de routage dynamique le plus utilise en entreprise.
+
+#### Fonctionnement general
+
+1. Chaque routeur OSPF decouvre ses voisins via des paquets **Hello** (multicast 224.0.0.5).
+2. Les routeurs echangent des **LSA** (Link-State Advertisement) pour construire une base de donnees topologique identique sur tous les routeurs d'une meme aire.
+3. L'algorithme de **Dijkstra** (SPF -- Shortest Path First) calcule le chemin le plus court vers chaque destination.
+
+#### Aires OSPF
+
+OSPF utilise une architecture hierarchique basee sur des **aires** pour limiter la taille de la base de donnees et le volume des echanges.
+
+| Aire | Role |
+|---|---|
+| Aire 0 (backbone) | Aire centrale obligatoire. Toutes les autres aires doivent y etre connectees |
+| Aire standard | Aire normale connectee a l'aire 0 |
+| ABR (Area Border Router) | Routeur situe a la frontiere entre deux aires |
+| ASBR (AS Boundary Router) | Routeur connectant le domaine OSPF a un autre systeme autonome |
+
+#### Cout OSPF
+
+Le cout d'une interface est calcule selon la formule :
+
+```
+Cout = Bande passante de reference / Bande passante de l'interface
+```
+
+Par defaut, la bande passante de reference est **100 Mbps** (10^8 bps).
+
+| Interface | Bande passante | Cout |
+|---|---|---|
+| FastEthernet | 100 Mbps | 1 |
+| GigabitEthernet | 1 Gbps | 1 (arrondi) |
+| Serial | 1.544 Mbps | 64 |
+
+Pour differencier les liens a haut debit, il est recommande de modifier la bande passante de reference :
+
+```
+Router(config-router)# auto-cost reference-bandwidth 10000
+```
+
+(Reference a 10 Gbps : un lien GigabitEthernet aura un cout de 10.)
+
+#### Types de LSA
+
+| Type | Nom | Description |
+|---|---|---|
+| 1 | Router LSA | Genere par chaque routeur, decrit ses liens dans l'aire |
+| 2 | Network LSA | Genere par le DR sur un reseau multi-acces |
+| 3 | Summary LSA | Genere par l'ABR, resume les routes inter-aires |
+| 4 | ASBR Summary LSA | Genere par l'ABR, indique le chemin vers l'ASBR |
+| 5 | External LSA | Genere par l'ASBR, decrit les routes redistribuees |
+
+#### Election DR/BDR
+
+Sur un reseau multi-acces (Ethernet), OSPF elit un **Designated Router (DR)** et un **Backup Designated Router (BDR)** pour reduire le nombre d'adjacences.
+
+- Le routeur avec la **priorite OSPF la plus elevee** est elu DR (priorite par defaut : 1).
+- En cas d'egalite, c'est le **Router ID le plus eleve** qui l'emporte.
+- Une priorite de **0** empeche le routeur de participer a l'election.
+
+```
+Router(config-if)# ip ospf priority 100
+```
+
+#### Configuration OSPF
+
+```
+Router(config)# router ospf 1
+Router(config-router)# router-id 1.1.1.1
+Router(config-router)# network 192.168.10.0 0.0.0.255 area 0
+Router(config-router)# network 10.0.0.0 0.0.0.3 area 0
+Router(config-router)# exit
+```
+
+Le **wildcard mask** est l'inverse du masque de sous-reseau :
+
+| Masque | Wildcard |
+|---|---|
+| 255.255.255.0 | 0.0.0.255 |
+| 255.255.255.252 | 0.0.0.3 |
+| 255.255.0.0 | 0.0.255.255 |
+| 255.255.255.128 | 0.0.0.127 |
+
+**Verification :**
+
+```
+Router# show ip ospf neighbor
+Router# show ip ospf interface
+Router# show ip ospf database
+Router# show ip route ospf
+```
+
+### 6.4 Comparaison RIP / OSPF
+
+| Critere | RIP | OSPF |
+|---|---|---|
+| Type | Vecteur de distance | Etat de lien |
+| Metrique | Nombre de sauts (max 15) | Cout (base sur la bande passante) |
+| Convergence | Lente | Rapide |
+| Scalabilite | Petits reseaux (< 15 sauts) | Grands reseaux |
+| Mises a jour | Periodiques (30 s) | Declenchees par les changements |
+| Ressources | Faible consommation CPU/RAM | Plus gourmand |
+| Standard | RFC 2453 (RIPv2) | RFC 2328 (OSPFv2) |
+| Distance administrative | 120 | 110 |
+
+---
+
+## 7. ACL (Access Control Lists)
+
+### 7.1 Principe
+
+Une ACL est une liste ordonnee de regles qui filtrent le trafic sur un routeur. Chaque regle autorise (**permit**) ou refuse (**deny**) le trafic en fonction de criteres definis.
+
+**Regles fondamentales :**
+
+- Les regles sont evaluees de haut en bas, dans l'ordre.
+- Des qu'une correspondance est trouvee, l'action est appliquee et l'evaluation s'arrete.
+- A la fin de toute ACL, il existe un **deny implicite** (`deny any`) qui bloque tout le trafic non explicitement autorise.
+- Une ACL est appliquee a une interface dans un sens : **in** (entrant) ou **out** (sortant).
+
+### 7.2 ACL standard
+
+Filtre uniquement sur l'**adresse IP source**.
+
+- Numerotation : **1 a 99** (et 1300 a 1999).
+- Placement recommande : **le plus pres de la destination**.
+
+**Syntaxe :**
+
+```
+Router(config)# access-list <numero> {permit | deny} <source> <wildcard>
+```
+
+**Exemple : autoriser le reseau 192.168.10.0/24 et bloquer tout le reste.**
+
+```
+Router(config)# access-list 10 permit 192.168.10.0 0.0.0.255
+! Le deny implicite bloque tout le reste
+
+Router(config)# interface gigabitEthernet 0/1
+Router(config-if)# ip access-group 10 out
+Router(config-if)# exit
+```
+
+**Mot-cle `host`** : designe un seul hote (wildcard 0.0.0.0).
+
+```
+Router(config)# access-list 10 deny host 192.168.10.50
+Router(config)# access-list 10 permit any
+```
+
+### 7.3 ACL etendue
+
+Filtre sur l'**adresse source**, l'**adresse de destination**, le **protocole** et le **numero de port**.
+
+- Numerotation : **100 a 199** (et 2000 a 2699).
+- Placement recommande : **le plus pres de la source**.
+
+**Syntaxe :**
+
+```
+Router(config)# access-list <numero> {permit | deny} <protocole> <source> <wildcard_src> [operateur port] <destination> <wildcard_dst> [operateur port]
+```
+
+**Operateurs :** `eq` (egal), `gt` (superieur), `lt` (inferieur), `range` (plage).
+
+**Exemple : autoriser HTTP et HTTPS depuis 192.168.10.0/24 vers n'importe quelle destination.**
+
+```
+Router(config)# access-list 100 permit tcp 192.168.10.0 0.0.0.255 any eq 80
+Router(config)# access-list 100 permit tcp 192.168.10.0 0.0.0.255 any eq 443
+Router(config)# access-list 100 deny ip any any
+
+Router(config)# interface gigabitEthernet 0/0
+Router(config-if)# ip access-group 100 in
+Router(config-if)# exit
+```
+
+### 7.4 ACL nommees
+
+Les ACL nommees offrent plus de lisibilite et permettent de modifier des regles individuelles.
+
+```
+Router(config)# ip access-list extended FILTRAGE_WEB
+Router(config-ext-nacl)# permit tcp 192.168.10.0 0.0.0.255 any eq 80
+Router(config-ext-nacl)# permit tcp 192.168.10.0 0.0.0.255 any eq 443
+Router(config-ext-nacl)# deny ip any any
+Router(config-ext-nacl)# exit
+
+Router(config)# interface gigabitEthernet 0/0
+Router(config-if)# ip access-group FILTRAGE_WEB in
+```
+
+### 7.5 Regles de placement
+
+| Type d'ACL | Placement |
+|---|---|
+| Standard | Pres de la **destination** (car elle ne filtre que sur la source, un placement pres de la source bloquerait le trafic vers toutes les destinations) |
+| Etendue | Pres de la **source** (pour bloquer le trafic indesirable au plus tot) |
+
+### 7.6 Verification des ACL
+
+```
+Router# show access-lists
+Router# show ip access-lists
+Router# show ip interface gigabitEthernet 0/0
+```
+
+La derniere commande affiche les ACL appliquees sur l'interface (inbound et outbound).
+
+---
+
+## 8. Cisco IOS -- Commandes essentielles
+
+### 8.1 Modes de fonctionnement
+
+| Mode | Invite (prompt) | Acces |
+|---|---|---|
+| Utilisateur | `Switch>` | Connexion initiale |
+| Privilegie (enable) | `Switch#` | `enable` |
+| Configuration globale | `Switch(config)#` | `configure terminal` |
+| Configuration d'interface | `Switch(config-if)#` | `interface <type> <numero>` |
+| Configuration de ligne | `Switch(config-line)#` | `line console 0` ou `line vty 0 15` |
+| Configuration du routeur | `Router(config-router)#` | `router ospf 1` ou `router rip` |
+
+### 8.2 Commandes de base
+
+**Navigation :**
+
+```
+Switch> enable
+Switch# configure terminal
+Switch(config)# exit
+Switch# disable
+```
+
+**Configuration du nom d'hote :**
+
+```
+Switch(config)# hostname SW-COMPTA
+```
+
+**Securisation des acces :**
+
+```
+Switch(config)# enable secret MotDePasse123
+Switch(config)# line console 0
+Switch(config-line)# password console123
+Switch(config-line)# login
+Switch(config-line)# exit
+Switch(config)# line vty 0 15
+Switch(config-line)# password vty123
+Switch(config-line)# login
+Switch(config-line)# exit
+Switch(config)# service password-encryption
+```
+
+**Configuration d'une interface (routeur) :**
+
+```
+Router(config)# interface gigabitEthernet 0/0
+Router(config-if)# ip address 192.168.10.1 255.255.255.0
+Router(config-if)# no shutdown
+Router(config-if)# exit
+```
+
+**Configuration d'une interface VLAN de gestion (switch) :**
+
+```
+Switch(config)# interface vlan 1
+Switch(config-if)# ip address 192.168.1.2 255.255.255.0
+Switch(config-if)# no shutdown
+Switch(config-if)# exit
+Switch(config)# ip default-gateway 192.168.1.1
+```
+
+### 8.3 Commandes show
+
+| Commande | Description |
+|---|---|
+| `show running-config` | Affiche la configuration courante (en RAM) |
+| `show startup-config` | Affiche la configuration sauvegardee (en NVRAM) |
+| `show ip interface brief` | Resume de l'etat des interfaces et de leurs adresses IP |
+| `show vlan brief` | Liste des VLANs et des ports associes |
+| `show mac address-table` | Table des adresses MAC |
+| `show ip route` | Table de routage |
+| `show spanning-tree` | Informations STP |
+| `show ip ospf neighbor` | Voisins OSPF |
+| `show access-lists` | ACL configurees |
+| `show interfaces trunk` | Informations sur les ports trunk |
+
+### 8.4 Sauvegarde de la configuration
+
+```
+Router# copy running-config startup-config
+```
+
+Ou en abrege :
+
+```
+Router# wr
+```
+
+**Reinitialisation :**
+
+```
+Router# erase startup-config
+Router# reload
+```
+
+### 8.5 Configuration SSH
+
+```
+Switch(config)# hostname SW1
+SW1(config)# ip domain-name entreprise.local
+SW1(config)# crypto key generate rsa general-keys modulus 2048
+SW1(config)# username admin privilege 15 secret AdminPass
+SW1(config)# line vty 0 15
+SW1(config-line)# transport input ssh
+SW1(config-line)# login local
+SW1(config-line)# exit
+SW1(config)# ip ssh version 2
+```
+
+---
+
+## 9. Agregation de liens -- EtherChannel
+
+### 9.1 Principe
+
+EtherChannel regroupe plusieurs liens physiques paralleles entre deux switches en un seul **lien logique**. Cela permet :
+
+- D'**augmenter la bande passante** (cumul des debits des liens membres).
+- D'assurer la **redondance** (si un lien tombe, les autres restent actifs).
+- D'**eviter le blocage STP** (STP voit un seul lien logique et ne bloque pas les liens individuels).
+
+### 9.2 Protocoles de negociation
+
+| Protocole | Standard | Modes |
+|---|---|---|
+| PAgP (Port Aggregation Protocol) | Proprietaire Cisco | **desirable** (initie la negociation), **auto** (attend la negociation) |
+| LACP (Link Aggregation Control Protocol) | IEEE 802.3ad | **active** (initie la negociation), **passive** (attend la negociation) |
+
+Un EtherChannel peut aussi etre configure en mode **on** (sans negociation) des deux cotes.
+
+**Regles de compatibilite :**
+
+| Cote A | Cote B | Resultat |
+|---|---|---|
+| desirable | desirable | EtherChannel PAgP forme |
+| desirable | auto | EtherChannel PAgP forme |
+| auto | auto | Pas d'EtherChannel |
+| active | active | EtherChannel LACP forme |
+| active | passive | EtherChannel LACP forme |
+| passive | passive | Pas d'EtherChannel |
+| on | on | EtherChannel forme (sans negociation) |
+
+### 9.3 Configuration
+
+**Avec LACP :**
+
+```
+Switch(config)# interface range fastEthernet 0/1 - 2
+Switch(config-if-range)# channel-group 1 mode active
+Switch(config-if-range)# exit
+
+Switch(config)# interface port-channel 1
+Switch(config-if)# switchport mode trunk
+Switch(config-if)# switchport trunk allowed vlan 10,20
+Switch(config-if)# exit
+```
+
+**Conditions pour former un EtherChannel :**
+
+- Meme vitesse et duplex sur tous les ports membres.
+- Meme VLAN (en mode access) ou meme configuration trunk.
+- Meme STP path cost et port priority.
+- Maximum de **8 ports actifs** par EtherChannel.
+
+**Verification :**
+
+```
+Switch# show etherchannel summary
+Switch# show etherchannel port-channel
+```
+
+---
+
+## 10. Packet Tracer
+
+### 10.1 Presentation
+
+Cisco Packet Tracer est un **simulateur reseau** gratuit edite par Cisco dans le cadre du programme Networking Academy. Il permet de :
+
+- Concevoir des topologies reseau completes.
+- Configurer des equipements Cisco (routeurs, switches, points d'acces, serveurs).
+- Simuler le trafic et observer le comportement des protocoles.
+- Verifier la connectivite avec les outils de diagnostic (ping, traceroute).
+- Pratiquer sans materiel physique.
+
+### 10.2 Interface
+
+L'interface de Packet Tracer est divisee en plusieurs zones :
+
+- **Zone de travail** : espace central ou l'on place et connecte les equipements.
+- **Barre d'equipements** : en bas, selection des categories (routeurs, switches, terminaux, connexions).
+- **Mode temps reel / simulation** : le mode simulation permet de visualiser les paquets pas a pas.
+- **Onglet CLI** : acces a la ligne de commande de chaque equipement.
+
+### 10.3 Types de cables
+
+| Cable | Utilisation |
+|---|---|
+| Cable droit (copper straight-through) | PC vers switch, switch vers routeur |
+| Cable croise (copper cross-over) | Switch vers switch, PC vers PC, routeur vers routeur |
+| Cable console (RS-232) | PC vers port console d'un equipement |
+| Cable serie (serial DCE/DTE) | Liaison WAN entre routeurs |
+
+Dans les versions recentes, l'option **auto-detect** choisit automatiquement le bon cable.
+
+### 10.4 Demarche type pour un exercice Packet Tracer
+
+1. Analyser le schema et le plan d'adressage.
+2. Placer les equipements et les relier avec les cables appropries.
+3. Configurer les adresses IP, les masques et les passerelles par defaut sur les postes.
+4. Configurer les interfaces des routeurs et switches.
+5. Configurer les VLANs et les trunks si necessaire.
+6. Configurer le routage (statique ou dynamique).
+7. Appliquer les ACL si demande.
+8. Tester avec `ping` et `traceroute`.
+9. Sauvegarder les configurations (`copy running-config startup-config`).
+
+---
+
+## 11. Exercices corriges
+
+### Exercice 1 -- Creation de VLANs et affectation de ports
+
+**Enonce :**
+Un switch SW1 possede 4 ports FastEthernet. Creer deux VLANs (VLAN 10 "ADMIN" et VLAN 20 "USERS"). Affecter Fa0/1 et Fa0/2 au VLAN 10. Affecter Fa0/3 et Fa0/4 au VLAN 20.
+
+**Correction :**
+
+```
+SW1(config)# vlan 10
+SW1(config-vlan)# name ADMIN
+SW1(config-vlan)# exit
+SW1(config)# vlan 20
+SW1(config-vlan)# name USERS
+SW1(config-vlan)# exit
+
+SW1(config)# interface range fastEthernet 0/1 - 2
+SW1(config-if-range)# switchport mode access
+SW1(config-if-range)# switchport access vlan 10
+SW1(config-if-range)# exit
+
+SW1(config)# interface range fastEthernet 0/3 - 4
+SW1(config-if-range)# switchport mode access
+SW1(config-if-range)# switchport access vlan 20
+SW1(config-if-range)# exit
+```
+
+**Verification :**
+
+```
+SW1# show vlan brief
+
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- ----------------------------
+1    default                          active    Fa0/5, Fa0/6, ...
+10   ADMIN                            active    Fa0/1, Fa0/2
+20   USERS                            active    Fa0/3, Fa0/4
+```
+
+---
+
+### Exercice 2 -- Configuration d'un trunk
+
+**Enonce :**
+Configurer un lien trunk entre SW1 (Gi0/1) et SW2 (Gi0/1). Autoriser uniquement les VLANs 10, 20 et 99. Definir le VLAN natif a 99.
+
+**Correction :**
+
+Sur SW1 :
+
+```
+SW1(config)# interface gigabitEthernet 0/1
+SW1(config-if)# switchport mode trunk
+SW1(config-if)# switchport trunk allowed vlan 10,20,99
+SW1(config-if)# switchport trunk native vlan 99
+SW1(config-if)# exit
+```
+
+Sur SW2 :
+
+```
+SW2(config)# interface gigabitEthernet 0/1
+SW2(config-if)# switchport mode trunk
+SW2(config-if)# switchport trunk allowed vlan 10,20,99
+SW2(config-if)# switchport trunk native vlan 99
+SW2(config-if)# exit
+```
+
+**Verification :**
+
+```
+SW1# show interfaces trunk
+
+Port        Mode         Encapsulation  Status        Native vlan
+Gi0/1       on           802.1q         trunking      99
+
+Port        Vlans allowed on trunk
+Gi0/1       10,20,99
+```
+
+---
+
+### Exercice 3 -- Router-on-a-stick
+
+**Enonce :**
+Le routeur R1 est connecte a SW1 via Gi0/0. Configurer le routage inter-VLAN pour les VLANs 10 (192.168.10.0/24) et 20 (192.168.20.0/24).
+
+**Correction :**
+
+Sur R1 :
+
+```
+R1(config)# interface gigabitEthernet 0/0
+R1(config-if)# no shutdown
+R1(config-if)# exit
+
+R1(config)# interface gigabitEthernet 0/0.10
+R1(config-subif)# encapsulation dot1Q 10
+R1(config-subif)# ip address 192.168.10.1 255.255.255.0
+R1(config-subif)# exit
+
+R1(config)# interface gigabitEthernet 0/0.20
+R1(config-subif)# encapsulation dot1Q 20
+R1(config-subif)# ip address 192.168.20.1 255.255.255.0
+R1(config-subif)# exit
+```
+
+Sur SW1, le port Gi0/1 vers R1 doit etre en trunk :
+
+```
+SW1(config)# interface gigabitEthernet 0/1
+SW1(config-if)# switchport mode trunk
+SW1(config-if)# switchport trunk allowed vlan 10,20
+SW1(config-if)# exit
+```
+
+**Test :** un PC du VLAN 10 (192.168.10.10, passerelle 192.168.10.1) doit pouvoir pinger un PC du VLAN 20 (192.168.20.10, passerelle 192.168.20.1).
+
+---
+
+### Exercice 4 -- Routage statique entre deux reseaux
+
+**Enonce :**
+Deux routeurs R1 et R2 sont connectes via un lien serie (10.0.0.0/30). R1 gere le reseau 192.168.10.0/24. R2 gere le reseau 192.168.20.0/24. Configurer le routage statique bidirectionnel.
+
+**Correction :**
+
+Sur R1 :
+
+```
+R1(config)# interface serial 0/0/0
+R1(config-if)# ip address 10.0.0.1 255.255.255.252
+R1(config-if)# clock rate 128000
+R1(config-if)# no shutdown
+R1(config-if)# exit
+
+R1(config)# interface gigabitEthernet 0/0
+R1(config-if)# ip address 192.168.10.1 255.255.255.0
+R1(config-if)# no shutdown
+R1(config-if)# exit
+
+R1(config)# ip route 192.168.20.0 255.255.255.0 10.0.0.2
+```
+
+Sur R2 :
+
+```
+R2(config)# interface serial 0/0/0
+R2(config-if)# ip address 10.0.0.2 255.255.255.252
+R2(config-if)# no shutdown
+R2(config-if)# exit
+
+R2(config)# interface gigabitEthernet 0/0
+R2(config-if)# ip address 192.168.20.1 255.255.255.0
+R2(config-if)# no shutdown
+R2(config-if)# exit
+
+R2(config)# ip route 192.168.10.0 255.255.255.0 10.0.0.1
+```
+
+**Verification :**
+
+```
+R1# show ip route
+...
+S    192.168.20.0/24 [1/0] via 10.0.0.2
+C    192.168.10.0/24 is directly connected, GigabitEthernet0/0
+C    10.0.0.0/30 is directly connected, Serial0/0/0
+```
+
+---
+
+### Exercice 5 -- Route par defaut et route statique flottante
+
+**Enonce :**
+R1 possede deux liens vers Internet : un lien principal via 10.0.0.2 et un lien de secours via 10.0.1.2. Configurer une route par defaut principale et une route flottante de secours.
+
+**Correction :**
+
+```
+R1(config)# ip route 0.0.0.0 0.0.0.0 10.0.0.2
+R1(config)# ip route 0.0.0.0 0.0.0.0 10.0.1.2 200
+```
+
+**Explication :** la premiere route a une distance administrative de 1 (par defaut). La seconde a une distance administrative de 200. Tant que le lien principal est actif, seule la premiere route apparait dans la table de routage. Si le lien vers 10.0.0.2 tombe, la route flottante prend le relais.
+
+**Verification (lien principal actif) :**
+
+```
+R1# show ip route
+S*   0.0.0.0/0 [1/0] via 10.0.0.2
+```
+
+---
+
+### Exercice 6 -- Configuration OSPF mono-aire
+
+**Enonce :**
+Trois routeurs R1, R2 et R3 sont interconnectes. Configurer OSPF dans l'aire 0 pour que tous les reseaux soient accessibles.
+
+- R1 : Gi0/0 = 192.168.10.1/24, Se0/0/0 = 10.0.12.1/30
+- R2 : Se0/0/0 = 10.0.12.2/30, Se0/0/1 = 10.0.23.1/30
+- R3 : Se0/0/0 = 10.0.23.2/30, Gi0/0 = 192.168.30.1/24
+
+**Correction :**
+
+Sur R1 :
+
+```
+R1(config)# router ospf 1
+R1(config-router)# router-id 1.1.1.1
+R1(config-router)# network 192.168.10.0 0.0.0.255 area 0
+R1(config-router)# network 10.0.12.0 0.0.0.3 area 0
+R1(config-router)# exit
+```
+
+Sur R2 :
+
+```
+R2(config)# router ospf 1
+R2(config-router)# router-id 2.2.2.2
+R2(config-router)# network 10.0.12.0 0.0.0.3 area 0
+R2(config-router)# network 10.0.23.0 0.0.0.3 area 0
+R2(config-router)# exit
+```
+
+Sur R3 :
+
+```
+R3(config)# router ospf 1
+R3(config-router)# router-id 3.3.3.3
+R3(config-router)# network 192.168.30.0 0.0.0.255 area 0
+R3(config-router)# network 10.0.23.0 0.0.0.3 area 0
+R3(config-router)# exit
+```
+
+**Verification :**
+
+```
+R1# show ip ospf neighbor
+
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+2.2.2.2           0   FULL/  -        00:00:35    10.0.12.2       Serial0/0/0
+
+R1# show ip route ospf
+O    192.168.30.0/24 [110/129] via 10.0.12.2, 00:02:15, Serial0/0/0
+O    10.0.23.0/30 [110/128] via 10.0.12.2, 00:02:15, Serial0/0/0
+```
+
+---
+
+### Exercice 7 -- Configuration RIPv2
+
+**Enonce :**
+Reprendre la topologie de l'exercice 6. Configurer RIPv2 a la place d'OSPF.
+
+**Correction :**
+
+Sur R1 :
+
+```
+R1(config)# router rip
+R1(config-router)# version 2
+R1(config-router)# network 192.168.10.0
+R1(config-router)# network 10.0.0.0
+R1(config-router)# no auto-summary
+R1(config-router)# exit
+```
+
+Sur R2 :
+
+```
+R2(config)# router rip
+R2(config-router)# version 2
+R2(config-router)# network 10.0.0.0
+R2(config-router)# no auto-summary
+R2(config-router)# exit
+```
+
+Sur R3 :
+
+```
+R3(config)# router rip
+R3(config-router)# version 2
+R3(config-router)# network 192.168.30.0
+R3(config-router)# network 10.0.0.0
+R3(config-router)# no auto-summary
+R3(config-router)# exit
+```
+
+**Verification :**
+
+```
+R1# show ip route rip
+R    192.168.30.0/24 [120/2] via 10.0.12.2, 00:00:18, Serial0/0/0
+R    10.0.23.0/30 [120/1] via 10.0.12.2, 00:00:18, Serial0/0/0
+```
+
+La metrique [120/2] signifie : distance administrative 120, 2 sauts.
+
+---
+
+### Exercice 8 -- ACL standard
+
+**Enonce :**
+Interdire au poste 192.168.10.50 l'acces au reseau 192.168.20.0/24, tout en autorisant le reste du reseau 192.168.10.0/24.
+
+**Correction :**
+
+```
+R1(config)# access-list 1 deny host 192.168.10.50
+R1(config)# access-list 1 permit 192.168.10.0 0.0.0.255
+
+R1(config)# interface gigabitEthernet 0/1
+R1(config-if)# ip access-group 1 out
+R1(config-if)# exit
+```
+
+**Explication :** l'ACL est placee en sortie (out) de l'interface connectee au reseau 192.168.20.0/24 (placement pres de la destination pour une ACL standard). L'ordre des regles est important : le deny specifique avant le permit general.
+
+**Verification :**
+
+```
+R1# show access-lists
+Standard IP access list 1
+    10 deny   192.168.10.50 (3 matches)
+    20 permit 192.168.10.0, wildcard bits 0.0.0.255 (15 matches)
+```
+
+---
+
+### Exercice 9 -- ACL etendue
+
+**Enonce :**
+Autoriser uniquement le trafic HTTP (port 80) et DNS (port 53) depuis le reseau 192.168.10.0/24 vers le serveur 172.16.1.100. Bloquer tout autre trafic de ce reseau vers ce serveur.
+
+**Correction :**
+
+```
+R1(config)# access-list 100 permit tcp 192.168.10.0 0.0.0.255 host 172.16.1.100 eq 80
+R1(config)# access-list 100 permit udp 192.168.10.0 0.0.0.255 host 172.16.1.100 eq 53
+R1(config)# access-list 100 permit tcp 192.168.10.0 0.0.0.255 host 172.16.1.100 eq 53
+R1(config)# access-list 100 deny ip 192.168.10.0 0.0.0.255 host 172.16.1.100
+R1(config)# access-list 100 permit ip any any
+
+R1(config)# interface gigabitEthernet 0/0
+R1(config-if)# ip access-group 100 in
+R1(config-if)# exit
+```
+
+**Explication :**
+
+- La regle 1 autorise le TCP port 80 (HTTP).
+- Les regles 2 et 3 autorisent le DNS en UDP et TCP (le DNS utilise les deux).
+- La regle 4 bloque tout autre trafic de 192.168.10.0/24 vers le serveur.
+- La regle 5 autorise tout le reste du trafic (vers d'autres destinations). Sans cette regle, le deny implicite bloquerait tout.
+- L'ACL etendue est placee pres de la source (interface Gi0/0 cote 192.168.10.0/24, en entree).
+
+---
+
+### Exercice 10 -- Analyse d'une table de routage
+
+**Enonce :**
+Soit la table de routage suivante sur R1 :
+
+```
+C    192.168.10.0/24 is directly connected, GigabitEthernet0/0
+C    10.0.0.0/30 is directly connected, Serial0/0/0
+S    192.168.20.0/24 [1/0] via 10.0.0.2
+O    172.16.0.0/16 [110/65] via 10.0.0.2
+O    192.168.30.0/24 [110/129] via 10.0.0.2
+S*   0.0.0.0/0 [1/0] via 10.0.0.2
+```
+
+Questions :
+
+1. Combien de reseaux sont directement connectes ?
+2. Quel protocole a appris la route vers 172.16.0.0/16 ?
+3. Quelle est la distance administrative de cette route ?
+4. Si un paquet arrive pour 192.168.30.5, par ou sera-t-il achemine ?
+5. Si un paquet arrive pour 8.8.8.8, que se passe-t-il ?
+
+**Correction :**
+
+1. **Deux** reseaux directement connectes (code C) : 192.168.10.0/24 et 10.0.0.0/30.
+2. **OSPF** (code O).
+3. La distance administrative est **110** (visible dans [110/65]).
+4. Le paquet correspond a la route `O 192.168.30.0/24 [110/129] via 10.0.0.2`. Il sera achemine vers **10.0.0.2** via l'interface Serial0/0/0.
+5. Aucune route specifique ne correspond a 8.8.8.8. La **route par defaut** `S* 0.0.0.0/0 via 10.0.0.2` est utilisee. Le paquet est envoye vers 10.0.0.2.
+
+---
+
+### Exercice 11 -- EtherChannel LACP
+
+**Enonce :**
+Configurer un EtherChannel LACP entre SW1 et SW2 en utilisant les ports Fa0/1 et Fa0/2. Le lien logique doit etre en trunk et transporter les VLANs 10 et 20.
+
+**Correction :**
+
+Sur SW1 :
+
+```
+SW1(config)# interface range fastEthernet 0/1 - 2
+SW1(config-if-range)# channel-group 1 mode active
+SW1(config-if-range)# exit
+
+SW1(config)# interface port-channel 1
+SW1(config-if)# switchport mode trunk
+SW1(config-if)# switchport trunk allowed vlan 10,20
+SW1(config-if)# exit
+```
+
+Sur SW2 :
+
+```
+SW2(config)# interface range fastEthernet 0/1 - 2
+SW2(config-if-range)# channel-group 1 mode passive
+SW2(config-if-range)# exit
+
+SW2(config)# interface port-channel 1
+SW2(config-if)# switchport mode trunk
+SW2(config-if)# switchport trunk allowed vlan 10,20
+SW2(config-if)# exit
+```
+
+**Verification :**
+
+```
+SW1# show etherchannel summary
+Flags:  D - down        P - bundled in port-channel
+        I - stand-alone s - suspended
+        H - Hot-standby (LACP only)
+        R - Layer3      S - Layer2
+        U - in use
+
+Group  Port-channel  Protocol    Ports
+------+-------------+-----------+-----------------------------------------------
+1      Po1(SU)         LACP      Fa0/1(P)    Fa0/2(P)
+```
+
+Le statut `SU` indique que le port-channel est en Layer2 (S) et en service (U). Les ports membres sont marques `P` (bundled).
+
+---
+
+### Exercice 12 -- Scenario complet : VLANs, routage OSPF et ACL
+
+**Enonce :**
+Topologie : SW1 connecte a R1 (router-on-a-stick). R1 connecte a R2 via un lien serie 10.0.0.0/30. R2 gere le reseau serveur 172.16.1.0/24.
+
+- VLAN 10 (ADMIN) : 192.168.10.0/24
+- VLAN 20 (USERS) : 192.168.20.0/24
+- Lien serie R1-R2 : 10.0.0.0/30
+- Reseau serveur : 172.16.1.0/24
+
+Objectifs :
+
+1. Configurer les VLANs sur SW1.
+2. Configurer le routage inter-VLAN sur R1.
+3. Configurer OSPF entre R1 et R2.
+4. Appliquer une ACL : le VLAN USERS ne doit pas acceder au reseau serveur.
+
+**Correction :**
+
+**Etape 1 -- VLANs sur SW1 :**
+
+```
+SW1(config)# vlan 10
+SW1(config-vlan)# name ADMIN
+SW1(config-vlan)# exit
+SW1(config)# vlan 20
+SW1(config-vlan)# name USERS
+SW1(config-vlan)# exit
+
+SW1(config)# interface range fastEthernet 0/1 - 12
+SW1(config-if-range)# switchport mode access
+SW1(config-if-range)# switchport access vlan 10
+SW1(config-if-range)# exit
+
+SW1(config)# interface range fastEthernet 0/13 - 24
+SW1(config-if-range)# switchport mode access
+SW1(config-if-range)# switchport access vlan 20
+SW1(config-if-range)# exit
+
+SW1(config)# interface gigabitEthernet 0/1
+SW1(config-if)# switchport mode trunk
+SW1(config-if)# switchport trunk allowed vlan 10,20
+SW1(config-if)# exit
+```
+
+**Etape 2 -- Router-on-a-stick sur R1 :**
+
+```
+R1(config)# interface gigabitEthernet 0/0
+R1(config-if)# no shutdown
+R1(config-if)# exit
+
+R1(config)# interface gigabitEthernet 0/0.10
+R1(config-subif)# encapsulation dot1Q 10
+R1(config-subif)# ip address 192.168.10.1 255.255.255.0
+R1(config-subif)# exit
+
+R1(config)# interface gigabitEthernet 0/0.20
+R1(config-subif)# encapsulation dot1Q 20
+R1(config-subif)# ip address 192.168.20.1 255.255.255.0
+R1(config-subif)# exit
+
+R1(config)# interface serial 0/0/0
+R1(config-if)# ip address 10.0.0.1 255.255.255.252
+R1(config-if)# clock rate 128000
+R1(config-if)# no shutdown
+R1(config-if)# exit
+```
+
+**Etape 3 -- OSPF sur R1 et R2 :**
+
+Sur R1 :
+
+```
+R1(config)# router ospf 1
+R1(config-router)# router-id 1.1.1.1
+R1(config-router)# network 192.168.10.0 0.0.0.255 area 0
+R1(config-router)# network 192.168.20.0 0.0.0.255 area 0
+R1(config-router)# network 10.0.0.0 0.0.0.3 area 0
+R1(config-router)# exit
+```
+
+Sur R2 :
+
+```
+R2(config)# interface serial 0/0/0
+R2(config-if)# ip address 10.0.0.2 255.255.255.252
+R2(config-if)# no shutdown
+R2(config-if)# exit
+
+R2(config)# interface gigabitEthernet 0/0
+R2(config-if)# ip address 172.16.1.1 255.255.255.0
+R2(config-if)# no shutdown
+R2(config-if)# exit
+
+R2(config)# router ospf 1
+R2(config-router)# router-id 2.2.2.2
+R2(config-router)# network 172.16.1.0 0.0.0.255 area 0
+R2(config-router)# network 10.0.0.0 0.0.0.3 area 0
+R2(config-router)# exit
+```
+
+**Etape 4 -- ACL pour bloquer USERS vers le reseau serveur :**
+
+```
+R1(config)# access-list 101 deny ip 192.168.20.0 0.0.0.255 172.16.1.0 0.0.0.255
+R1(config)# access-list 101 permit ip any any
+
+R1(config)# interface gigabitEthernet 0/0.20
+R1(config-subif)# ip access-group 101 in
+R1(config-subif)# exit
+```
+
+**Explication :** l'ACL etendue est placee au plus pres de la source (sous-interface du VLAN 20, en entree). Le trafic du VLAN ADMIN (192.168.10.0/24) n'est pas affecte car il entre par une autre sous-interface.
+
+**Tests :**
+
+```
+! Depuis un PC ADMIN (192.168.10.10) :
+PC-ADMIN> ping 172.16.1.100
+Reply from 172.16.1.100: bytes=32 time<1ms TTL=126   [OK]
+
+! Depuis un PC USERS (192.168.20.10) :
+PC-USERS> ping 172.16.1.100
+Request timed out.                                     [BLOQUE]
+
+! Depuis un PC USERS vers un PC ADMIN :
+PC-USERS> ping 192.168.10.10
+Reply from 192.168.10.10: bytes=32 time<1ms TTL=127   [OK]
+```
+
+---
+
+## 12. Synthese des commandes essentielles
+
+| Action | Commande |
+|---|---|
+| Passer en mode privilegie | `enable` |
+| Passer en configuration globale | `configure terminal` |
+| Creer un VLAN | `vlan <id>` puis `name <nom>` |
+| Affecter un port a un VLAN | `switchport mode access` puis `switchport access vlan <id>` |
+| Configurer un trunk | `switchport mode trunk` puis `switchport trunk allowed vlan <liste>` |
+| Configurer une adresse IP | `ip address <ip> <masque>` |
+| Activer une interface | `no shutdown` |
+| Route statique | `ip route <dest> <masque> <next-hop>` |
+| Route par defaut | `ip route 0.0.0.0 0.0.0.0 <next-hop>` |
+| Activer OSPF | `router ospf <id>` puis `network <reseau> <wildcard> area <num>` |
+| Activer RIPv2 | `router rip` puis `version 2`, `network <reseau>`, `no auto-summary` |
+| ACL standard | `access-list <1-99> {permit\|deny} <source> <wildcard>` |
+| ACL etendue | `access-list <100-199> {permit\|deny} <proto> <src> <wc> <dst> <wc> [eq port]` |
+| Appliquer une ACL | `ip access-group <num\|nom> {in\|out}` |
+| EtherChannel | `channel-group <id> mode {active\|passive\|desirable\|auto\|on}` |
+| Afficher la table de routage | `show ip route` |
+| Afficher les VLANs | `show vlan brief` |
+| Afficher les voisins OSPF | `show ip ospf neighbor` |
+| Afficher les ACL | `show access-lists` |
+| Sauvegarder la configuration | `copy running-config startup-config` |
+| Afficher STP | `show spanning-tree` |
+| Afficher EtherChannel | `show etherchannel summary` |
+
+---
+
+## 13. Points de vigilance pour l'examen
+
+1. **Toujours activer les interfaces** avec `no shutdown` apres configuration.
+2. **Verifier la coherence du VLAN natif** des deux cotes d'un trunk.
+3. **Ne pas oublier `no auto-summary`** en RIPv2 pour le VLSM.
+4. **Le wildcard mask** en OSPF est l'inverse du masque de sous-reseau (0.0.0.255 pour un /24).
+5. **L'ordre des regles ACL** est determinant : la premiere correspondance gagne.
+6. **Le deny implicite** en fin d'ACL bloque tout trafic non autorise. Penser a ajouter `permit ip any any` si necessaire.
+7. **Placement des ACL** : standard pres de la destination, etendue pres de la source.
+8. **Sauvegarder la configuration** avec `copy running-config startup-config` avant de quitter.
+9. **Verifier les adjacences OSPF** avec `show ip ospf neighbor` avant de diagnostiquer un probleme de routage.
+10. **Les sous-interfaces** pour le router-on-a-stick doivent porter le meme numero de VLAN que l'encapsulation dot1Q.

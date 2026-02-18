@@ -9,11 +9,11 @@ export function Footer() {
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-3 group">
               <span className="font-display font-bold text-dark-100 tracking-tight">
-                BTS SIO <span className="text-base-blue">SLAM</span>
+                BTS SIO <span className="text-base-blue">Playbooks</span>
               </span>
             </Link>
             <p className="text-sm text-dark-300 max-w-xs leading-relaxed">
-              Le guide ultime pour reussir ton examen BTS SIO option SLAM. Gratuit pour toujours.
+              Tout le programme BTS SIO en playbooks ultra-detailles. Gratuit pour toujours.
             </p>
           </div>
 
@@ -30,7 +30,7 @@ export function Footer() {
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-dark-400">
-            &copy; {new Date().getFullYear()} BTS SIO SLAM. Tous droits reserves.
+            &copy; {new Date().getFullYear()} BTS SIO Playbooks. Tous droits reserves.
           </p>
         </div>
       </div>

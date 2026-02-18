@@ -1,0 +1,2801 @@
+---
+title: "Linux — Services"
+description: "Apache, Nginx, SSH, Samba, NFS, iptables, pare-feu, serveur web, partage de fichiers"
+category: "Systemes"
+tags: ["linux", "apache", "nginx", "ssh", "samba", "iptables", "services"]
+difficulty: "Avancé"
+---
+
+# Linux — Services
+
+Reference complete pour le BTS SIO SISR. Couvre l'ensemble des services reseau sous Debian/Ubuntu : serveurs web, acces distant, partage de fichiers, DNS, DHCP, pare-feu, proxy et messagerie.
+
+---
+
+## Table des matieres
+
+1. [Serveur web Apache](#1-serveur-web-apache)
+2. [Serveur web Nginx](#2-serveur-web-nginx)
+3. [HTTPS et SSL/TLS](#3-https-et-ssltls)
+4. [SSH avance](#4-ssh-avance)
+5. [Samba](#5-samba)
+6. [NFS](#6-nfs)
+7. [Serveur DHCP](#7-serveur-dhcp)
+8. [Serveur DNS Bind9](#8-serveur-dns-bind9)
+9. [Pare-feu iptables et nftables](#9-pare-feu-iptables-et-nftables)
+10. [Proxy Squid](#10-proxy-squid)
+11. [Serveur FTP vsftpd](#11-serveur-ftp-vsftpd)
+12. [Postfix — bases](#12-postfix--bases)
+13. [Exercices corriges](#13-exercices-corriges)
+
+---
+
+## 1. Serveur web Apache
+
+### 1.1 Presentation
+
+Apache HTTP Server (httpd) est le serveur web le plus deploye historiquement. Il fonctionne selon un modele modulaire et supporte plusieurs MPM (Multi-Processing Modules) : **prefork** (un processus par connexion), **worker** (threads), **event** (threads asynchrones, recommande).
+
+### 1.2 Installation
+
+```bash
+sudo apt update
+sudo apt install apache2
+sudo systemctl enable --now apache2
+sudo systemctl status apache2
+```
+
+Verification rapide :
+
+```bash
+curl http://localhost
+```
+
+### 1.3 Arborescence des fichiers de configuration
+
+| Chemin | Role |
+|---|---|
+| `/etc/apache2/apache2.conf` | Configuration principale |
+| `/etc/apache2/ports.conf` | Ports d'ecoute |
+| `/etc/apache2/sites-available/` | Fichiers de VirtualHosts disponibles |
+| `/etc/apache2/sites-enabled/` | Liens symboliques vers les VHosts actifs |
+| `/etc/apache2/mods-available/` | Modules disponibles |
+| `/etc/apache2/mods-enabled/` | Modules actifs (liens symboliques) |
+| `/etc/apache2/conf-available/` | Fragments de configuration disponibles |
+| `/etc/apache2/conf-enabled/` | Fragments actifs |
+| `/var/www/html/` | Racine web par defaut |
+| `/var/log/apache2/access.log` | Journal des acces |
+| `/var/log/apache2/error.log` | Journal des erreurs |
+
+### 1.4 Configuration principale
+
+Extrait commente de `/etc/apache2/apache2.conf` :
+
+```apache
+# Timeout global (secondes)
+Timeout 300
+
+# Keep-Alive : connexions persistantes
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 5
+
+# Utilisateur et groupe du processus
+User www-data
+Group www-data
+
+# Journalisation
+ErrorLog ${APACHE_LOG_DIR}/error.log
+LogLevel warn
+
+# Inclusion des modules, ports, sites et conf
+IncludeOptional mods-enabled/*.load
+IncludeOptional mods-enabled/*.conf
+Include ports.conf
+IncludeOptional conf-enabled/*.conf
+IncludeOptional sites-enabled/*.conf
+```
+
+Fichier `/etc/apache2/ports.conf` :
+
+```apache
+Listen 80
+
+<IfModule ssl_module>
+    Listen 443
+</IfModule>
+```
+
+### 1.5 VirtualHosts
+
+Un VirtualHost permet d'heberger plusieurs sites sur un seul serveur. Apache distingue les VHosts par nom (name-based, le plus courant) ou par adresse IP.
+
+#### Creation d'un VirtualHost
+
+Fichier `/etc/apache2/sites-available/monsite.conf` :
+
+```apache
+<VirtualHost *:80>
+    ServerName www.monsite.fr
+    ServerAlias monsite.fr
+    DocumentRoot /var/www/monsite
+    DirectoryIndex index.html index.php
+
+    <Directory /var/www/monsite>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/monsite-error.log
+    CustomLog ${APACHE_LOG_DIR}/monsite-access.log combined
+</VirtualHost>
+```
+
+Activation et rechargement :
+
+```bash
+sudo mkdir -p /var/www/monsite
+echo "<h1>Mon site</h1>" | sudo tee /var/www/monsite/index.html
+sudo a2ensite monsite.conf
+sudo systemctl reload apache2
+```
+
+Desactivation :
+
+```bash
+sudo a2dissite monsite.conf
+sudo systemctl reload apache2
+```
+
+#### Directives de Directory
+
+| Directive | Role |
+|---|---|
+| `Options -Indexes` | Interdit le listage du contenu si pas d'index |
+| `Options +FollowSymLinks` | Autorise le suivi des liens symboliques |
+| `AllowOverride All` | Autorise les directives dans `.htaccess` |
+| `AllowOverride None` | Ignore les fichiers `.htaccess` |
+| `Require all granted` | Acces autorise a tous |
+| `Require all denied` | Acces refuse a tous |
+| `Require ip 192.168.1.0/24` | Restreint l'acces a un sous-reseau |
+
+### 1.6 Modules
+
+Gestion des modules :
+
+```bash
+# Lister les modules charges
+apache2ctl -M
+
+# Activer un module
+sudo a2enmod rewrite
+sudo a2enmod ssl
+sudo a2enmod headers
+sudo a2enmod proxy proxy_http
+
+# Desactiver un module
+sudo a2dismod autoindex
+
+# Recharger apres modification
+sudo systemctl reload apache2
+```
+
+Modules essentiels :
+
+| Module | Role |
+|---|---|
+| `mod_rewrite` | Reecriture d'URL |
+| `mod_ssl` | Support HTTPS/TLS |
+| `mod_headers` | Manipulation des en-tetes HTTP |
+| `mod_proxy` | Reverse proxy |
+| `mod_proxy_http` | Proxy HTTP |
+| `mod_php` | Interprete PHP integre (prefork uniquement) |
+| `mod_security2` | Pare-feu applicatif web (WAF) |
+| `mod_deflate` | Compression gzip |
+| `mod_expires` | Cache navigateur |
+| `mod_auth_basic` | Authentification HTTP basique |
+
+### 1.7 Fichier .htaccess
+
+Le fichier `.htaccess` permet de definir des directives au niveau d'un repertoire sans modifier la configuration globale. Il necessite `AllowOverride All` dans le VirtualHost.
+
+Exemples courants :
+
+```apache
+# Reecriture d'URL (necessite mod_rewrite)
+RewriteEngine On
+RewriteBase /
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?q=$1 [L,QSA]
+
+# Redirection HTTP vers HTTPS
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Protection par mot de passe
+AuthType Basic
+AuthName "Zone restreinte"
+AuthUserFile /etc/apache2/.htpasswd
+Require valid-user
+
+# Interdire l'acces a un fichier
+<Files "config.php">
+    Require all denied
+</Files>
+
+# Personnaliser les pages d'erreur
+ErrorDocument 404 /erreur404.html
+ErrorDocument 403 /erreur403.html
+```
+
+Creation du fichier `.htpasswd` :
+
+```bash
+sudo apt install apache2-utils
+sudo htpasswd -c /etc/apache2/.htpasswd utilisateur1
+# Ajouter un utilisateur (sans -c pour ne pas ecraser)
+sudo htpasswd /etc/apache2/.htpasswd utilisateur2
+```
+
+### 1.8 Logs
+
+Format combined (par defaut) :
+
+```
+192.168.1.10 - user [18/Feb/2026:10:00:00 +0100] "GET /page.html HTTP/1.1" 200 1234 "http://referer.fr" "Mozilla/5.0"
+```
+
+Champs : IP client, identd, utilisateur authentifie, date, requete, code HTTP, taille reponse, referer, user-agent.
+
+Analyse des logs :
+
+```bash
+# 10 pages les plus consultees
+awk '{print $7}' /var/log/apache2/access.log | sort | uniq -c | sort -rn | head -10
+
+# Codes d'erreur 404
+grep " 404 " /var/log/apache2/access.log
+
+# IPs les plus frequentes
+awk '{print $1}' /var/log/apache2/access.log | sort | uniq -c | sort -rn | head -10
+
+# Suivi en temps reel
+tail -f /var/log/apache2/error.log
+```
+
+### 1.9 Verification de la configuration
+
+```bash
+sudo apache2ctl configtest
+# Syntaxe OK => pret a recharger
+sudo systemctl reload apache2
+```
+
+---
+
+## 2. Serveur web Nginx
+
+### 2.1 Presentation
+
+Nginx est un serveur web et reverse proxy hautes performances. Il utilise une architecture evenementielle asynchrone (non bloquante), ce qui le rend plus performant qu'Apache pour les connexions concurrentes elevees. Il consomme moins de memoire par connexion.
+
+### 2.2 Comparaison Apache / Nginx
+
+| Critere | Apache | Nginx |
+|---|---|---|
+| Architecture | Processus/threads (MPM) | Evenementielle asynchrone |
+| Configuration dynamique | `.htaccess` supporte | Pas de `.htaccess` |
+| Modules | Chargeables a chaud | Compiles ou dynamiques |
+| Performances (statique) | Bon | Excellent |
+| Reverse proxy | Via mod_proxy | Natif, tres performant |
+| PHP | mod_php ou php-fpm | php-fpm uniquement |
+| Utilisation memoire | Plus elevee sous charge | Faible et previsible |
+
+### 2.3 Installation
+
+```bash
+sudo apt update
+sudo apt install nginx
+sudo systemctl enable --now nginx
+sudo systemctl status nginx
+```
+
+### 2.4 Arborescence
+
+| Chemin | Role |
+|---|---|
+| `/etc/nginx/nginx.conf` | Configuration principale |
+| `/etc/nginx/sites-available/` | Server blocks disponibles |
+| `/etc/nginx/sites-enabled/` | Server blocks actifs (liens symboliques) |
+| `/etc/nginx/conf.d/` | Fragments de configuration |
+| `/etc/nginx/mime.types` | Types MIME |
+| `/var/www/html/` | Racine web par defaut |
+| `/var/log/nginx/access.log` | Journal des acces |
+| `/var/log/nginx/error.log` | Journal des erreurs |
+
+### 2.5 Configuration principale
+
+Extrait commente de `/etc/nginx/nginx.conf` :
+
+```nginx
+user www-data;
+worker_processes auto;          # Un worker par coeur CPU
+pid /run/nginx.pid;
+error_log /var/log/nginx/error.log;
+
+events {
+    worker_connections 1024;    # Connexions max par worker
+    multi_accept on;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+
+    # Taille max des uploads
+    client_max_body_size 64M;
+
+    # Logs
+    access_log /var/log/nginx/access.log;
+
+    # Gzip
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript;
+
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}
+```
+
+### 2.6 Server blocks (VirtualHosts Nginx)
+
+Fichier `/etc/nginx/sites-available/monsite` :
+
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name www.monsite.fr monsite.fr;
+    root /var/www/monsite;
+    index index.html index.php;
+
+    # Logs dedies
+    access_log /var/log/nginx/monsite-access.log;
+    error_log /var/log/nginx/monsite-error.log;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    # PHP via php-fpm
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+    }
+
+    # Interdire l'acces aux fichiers caches
+    location ~ /\. {
+        deny all;
+    }
+}
+```
+
+Activation :
+
+```bash
+sudo ln -s /etc/nginx/sites-available/monsite /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Desactivation :
+
+```bash
+sudo rm /etc/nginx/sites-enabled/monsite
+sudo systemctl reload nginx
+```
+
+### 2.7 Reverse proxy
+
+Nginx est souvent utilise comme reverse proxy devant une application (Node.js, Tomcat, Gunicorn, etc.).
+
+```nginx
+server {
+    listen 80;
+    server_name app.monsite.fr;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Reverse proxy avec load balancing :
+
+```nginx
+upstream backend {
+    server 192.168.1.10:8080 weight=3;
+    server 192.168.1.11:8080 weight=1;
+    server 192.168.1.12:8080 backup;
+}
+
+server {
+    listen 80;
+    server_name app.monsite.fr;
+
+    location / {
+        proxy_pass http://backend;
+    }
+}
+```
+
+### 2.8 Restriction d'acces
+
+```nginx
+# Par IP
+location /admin {
+    allow 192.168.1.0/24;
+    deny all;
+}
+
+# Par authentification HTTP basique
+location /prive {
+    auth_basic "Zone restreinte";
+    auth_basic_user_file /etc/nginx/.htpasswd;
+}
+```
+
+Creation du fichier de mots de passe :
+
+```bash
+sudo apt install apache2-utils
+sudo htpasswd -c /etc/nginx/.htpasswd utilisateur1
+```
+
+---
+
+## 3. HTTPS et SSL/TLS
+
+### 3.1 Concepts
+
+- **SSL** (Secure Sockets Layer) : protocole obsolete, remplace par TLS
+- **TLS** (Transport Layer Security) : chiffrement des communications HTTP (versions 1.2 et 1.3 recommandees)
+- **Certificat X.509** : document numerique liant une cle publique a un nom de domaine, signe par une autorite de certification (CA)
+- **CSR** (Certificate Signing Request) : demande de signature envoyee a la CA
+- **Let's Encrypt** : CA gratuite et automatisee
+
+### 3.2 Certificat auto-signe
+
+Utile en environnement de test ou en intranet.
+
+```bash
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/selfsigned.key \
+    -out /etc/ssl/certs/selfsigned.crt \
+    -subj "/C=FR/ST=IDF/L=Paris/O=MonEntreprise/CN=www.monsite.fr"
+```
+
+Options :
+- `-x509` : genere un certificat au lieu d'une CSR
+- `-nodes` : pas de mot de passe sur la cle privee
+- `-days 365` : validite d'un an
+- `-newkey rsa:2048` : genere une nouvelle cle RSA 2048 bits
+
+### 3.3 Configuration Apache avec SSL
+
+```bash
+sudo a2enmod ssl
+```
+
+Fichier `/etc/apache2/sites-available/monsite-ssl.conf` :
+
+```apache
+<VirtualHost *:443>
+    ServerName www.monsite.fr
+    DocumentRoot /var/www/monsite
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/selfsigned.crt
+    SSLCertificateKeyFile /etc/ssl/private/selfsigned.key
+
+    # Protocoles et ciphers recommandes
+    SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1
+    SSLCipherSuite HIGH:!aNULL:!MD5:!3DES
+    SSLHonorCipherOrder on
+
+    # En-tetes de securite
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    <Directory /var/www/monsite>
+        Options -Indexes
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+```
+
+Redirection HTTP vers HTTPS :
+
+```apache
+<VirtualHost *:80>
+    ServerName www.monsite.fr
+    Redirect permanent / https://www.monsite.fr/
+</VirtualHost>
+```
+
+### 3.4 Configuration Nginx avec SSL
+
+```nginx
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name www.monsite.fr;
+    root /var/www/monsite;
+
+    ssl_certificate /etc/ssl/certs/selfsigned.crt;
+    ssl_certificate_key /etc/ssl/private/selfsigned.key;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5:!3DES;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # HSTS
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+}
+
+# Redirection HTTP vers HTTPS
+server {
+    listen 80;
+    server_name www.monsite.fr;
+    return 301 https://$host$request_uri;
+}
+```
+
+### 3.5 Let's Encrypt avec Certbot
+
+```bash
+sudo apt install certbot
+
+# Pour Apache
+sudo apt install python3-certbot-apache
+sudo certbot --apache -d www.monsite.fr -d monsite.fr
+
+# Pour Nginx
+sudo apt install python3-certbot-nginx
+sudo certbot --nginx -d www.monsite.fr -d monsite.fr
+```
+
+Certbot modifie automatiquement la configuration du serveur web pour activer SSL.
+
+Renouvellement automatique :
+
+```bash
+# Test du renouvellement
+sudo certbot renew --dry-run
+
+# Le timer systemd est installe automatiquement
+sudo systemctl list-timers | grep certbot
+```
+
+Certbot installe un timer systemd (`certbot.timer`) qui tente le renouvellement deux fois par jour. Les certificats Let's Encrypt expirent apres 90 jours.
+
+---
+
+## 4. SSH avance
+
+### 4.1 Rappels
+
+SSH (Secure Shell) permet l'acces distant securise a un systeme. Le serveur est `sshd`, le client est `ssh`. Port par defaut : **22/TCP**.
+
+```bash
+sudo apt install openssh-server
+sudo systemctl enable --now ssh
+```
+
+Fichier de configuration du serveur : `/etc/ssh/sshd_config`
+Fichier de configuration du client : `/etc/ssh/ssh_config` ou `~/.ssh/config`
+
+### 4.2 Authentification par cle
+
+Generation d'une paire de cles ed25519 (recommande, plus sur et plus rapide que RSA) :
+
+```bash
+ssh-keygen -t ed25519 -C "user@machine"
+```
+
+Fichiers generes :
+- `~/.ssh/id_ed25519` : cle privee (ne jamais partager)
+- `~/.ssh/id_ed25519.pub` : cle publique
+
+Deploiement de la cle publique sur le serveur :
+
+```bash
+ssh-copy-id -i ~/.ssh/id_ed25519.pub utilisateur@serveur
+```
+
+Cela ajoute la cle dans `~/.ssh/authorized_keys` sur le serveur.
+
+Desactiver l'authentification par mot de passe (apres avoir verifie que la cle fonctionne) dans `/etc/ssh/sshd_config` :
+
+```
+PubkeyAuthentication yes
+PasswordAuthentication no
+PermitRootLogin prohibit-password
+```
+
+Puis :
+
+```bash
+sudo systemctl restart ssh
+```
+
+### 4.3 Configuration client ~/.ssh/config
+
+```
+Host serveur-prod
+    HostName 192.168.1.100
+    User admin
+    Port 2222
+    IdentityFile ~/.ssh/id_ed25519
+
+Host serveur-interne
+    HostName 10.0.0.50
+    User tech
+    ProxyJump serveur-prod
+```
+
+Utilisation : `ssh serveur-prod` ou `ssh serveur-interne` (rebond automatique).
+
+### 4.4 Tunnels SSH
+
+#### Tunnel local (Local Port Forwarding)
+
+Redirige un port local vers un service distant a travers le tunnel SSH.
+
+```bash
+ssh -L 8080:serveur-web:80 utilisateur@bastion
+```
+
+Le port 8080 local est redirige vers `serveur-web:80` a travers `bastion`. On accede ensuite a `http://localhost:8080`.
+
+#### Tunnel distant (Remote Port Forwarding)
+
+Redirige un port du serveur SSH vers un service local.
+
+```bash
+ssh -R 9090:localhost:3000 utilisateur@serveur-distant
+```
+
+Le port 9090 du serveur distant est redirige vers le port 3000 local.
+
+#### Tunnel dynamique (proxy SOCKS)
+
+```bash
+ssh -D 1080 utilisateur@serveur
+```
+
+Cree un proxy SOCKS5 local sur le port 1080. Configurer le navigateur pour utiliser `localhost:1080` comme proxy SOCKS.
+
+### 4.5 Rebond (ProxyJump)
+
+Permet d'atteindre un serveur qui n'est pas directement accessible, en passant par un intermediaire (bastion).
+
+```bash
+ssh -J bastion@10.0.0.1 utilisateur@10.0.0.50
+```
+
+Equivalent dans `~/.ssh/config` :
+
+```
+Host interne
+    HostName 10.0.0.50
+    User utilisateur
+    ProxyJump bastion@10.0.0.1
+```
+
+Chaine de rebonds multiples :
+
+```bash
+ssh -J bastion1,bastion2 utilisateur@destination
+```
+
+### 4.6 Agent forwarding
+
+Permet d'utiliser sa cle SSH locale sur les serveurs intermediaires sans copier la cle privee.
+
+```bash
+# Demarrer l'agent et ajouter la cle
+eval $(ssh-agent)
+ssh-add ~/.ssh/id_ed25519
+
+# Connexion avec agent forwarding
+ssh -A utilisateur@bastion
+# Depuis bastion, on peut faire ssh vers un autre serveur sans cle locale
+```
+
+Dans `~/.ssh/config` :
+
+```
+Host bastion
+    HostName 10.0.0.1
+    User admin
+    ForwardAgent yes
+```
+
+Attention : l'agent forwarding presente un risque si le serveur intermediaire est compromis. Ne l'activer que vers des machines de confiance.
+
+### 4.7 Fail2ban
+
+Fail2ban surveille les logs et bloque les IP qui echouent trop de fois a s'authentifier.
+
+```bash
+sudo apt install fail2ban
+sudo systemctl enable --now fail2ban
+```
+
+Configuration dans `/etc/fail2ban/jail.local` (ne pas modifier `jail.conf`) :
+
+```ini
+[DEFAULT]
+bantime = 3600
+findtime = 600
+maxretry = 5
+banaction = iptables-multiport
+
+[sshd]
+enabled = true
+port = ssh
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 7200
+```
+
+Parametres :
+- `maxretry` : nombre d'echecs avant le bannissement
+- `findtime` : fenetre de temps (secondes) pour compter les echecs
+- `bantime` : duree du bannissement (secondes), -1 pour permanent
+
+Commandes utiles :
+
+```bash
+# Statut general
+sudo fail2ban-client status
+
+# Statut du jail SSH
+sudo fail2ban-client status sshd
+
+# Debannir une IP
+sudo fail2ban-client set sshd unbanip 192.168.1.50
+
+# Liste des IP bannies
+sudo fail2ban-client get sshd banned
+```
+
+### 4.8 Durcissement sshd_config
+
+Recommandations de securite dans `/etc/ssh/sshd_config` :
+
+```
+Port 2222                          # Changer le port par defaut
+PermitRootLogin no                 # Interdire le root
+PasswordAuthentication no          # Cles uniquement
+MaxAuthTries 3                     # Tentatives max
+LoginGraceTime 30                  # Temps pour s'authentifier
+AllowUsers admin tech              # Restreindre les utilisateurs
+ClientAliveInterval 300            # Keepalive toutes les 5 min
+ClientAliveCountMax 2              # 2 echecs => deconnexion
+X11Forwarding no                   # Desactiver si inutile
+```
+
+---
+
+## 5. Samba
+
+### 5.1 Presentation
+
+Samba implemente le protocole **SMB/CIFS** pour le partage de fichiers et d'imprimantes entre Linux et Windows. Il peut aussi agir comme controleur de domaine Active Directory.
+
+### 5.2 Installation
+
+```bash
+sudo apt install samba samba-common-bin
+sudo systemctl enable --now smbd nmbd
+```
+
+Services :
+- `smbd` : partage de fichiers et imprimantes
+- `nmbd` : resolution de noms NetBIOS
+
+### 5.3 Configuration smb.conf
+
+Fichier principal : `/etc/samba/smb.conf`
+
+```ini
+[global]
+workgroup = MONGROUPE
+server string = Serveur Samba %v
+security = user
+map to guest = Bad User
+log file = /var/log/samba/log.%m
+max log size = 1000
+dns proxy = no
+
+# Partage accessible a tous
+[public]
+path = /srv/samba/public
+browsable = yes
+writable = yes
+guest ok = yes
+read only = no
+create mask = 0664
+directory mask = 0775
+
+# Partage restreint
+[projets]
+path = /srv/samba/projets
+browsable = yes
+writable = yes
+guest ok = no
+valid users = @equipe
+read only = no
+create mask = 0660
+directory mask = 0770
+force group = equipe
+```
+
+### 5.4 Directives importantes de smb.conf
+
+| Directive | Role |
+|---|---|
+| `workgroup` | Nom du groupe de travail ou du domaine |
+| `security = user` | Authentification par utilisateur Samba |
+| `path` | Chemin du repertoire partage |
+| `browsable` | Visible dans le voisinage reseau |
+| `writable` / `read only` | Autorisation d'ecriture |
+| `guest ok` | Acces sans authentification |
+| `valid users` | Liste d'utilisateurs autorises (`@groupe` pour un groupe) |
+| `write list` | Utilisateurs avec droit d'ecriture |
+| `create mask` | Permissions des fichiers crees |
+| `directory mask` | Permissions des repertoires crees |
+| `force user` | Force un utilisateur proprietaire |
+| `force group` | Force un groupe proprietaire |
+| `hosts allow` | Restreindre par IP (`192.168.1.`) |
+| `hosts deny` | Interdire par IP |
+
+### 5.5 Utilisateurs Samba
+
+Les utilisateurs Samba doivent exister au niveau systeme ET avoir un mot de passe Samba distinct.
+
+```bash
+# Creer l'utilisateur systeme (s'il n'existe pas)
+sudo adduser --no-create-home --shell /usr/sbin/nologin smbuser
+
+# Definir le mot de passe Samba
+sudo smbpasswd -a smbuser
+
+# Activer un utilisateur Samba
+sudo smbpasswd -e smbuser
+
+# Desactiver un utilisateur Samba
+sudo smbpasswd -d smbuser
+
+# Supprimer un utilisateur Samba
+sudo smbpasswd -x smbuser
+
+# Lister les utilisateurs Samba
+sudo pdbedit -L
+```
+
+### 5.6 Preparation des repertoires
+
+```bash
+sudo mkdir -p /srv/samba/public /srv/samba/projets
+sudo chown nobody:nogroup /srv/samba/public
+sudo chmod 0775 /srv/samba/public
+
+sudo groupadd equipe
+sudo usermod -aG equipe smbuser
+sudo chown root:equipe /srv/samba/projets
+sudo chmod 0770 /srv/samba/projets
+```
+
+### 5.7 Verification et test
+
+```bash
+# Verifier la syntaxe de smb.conf
+testparm
+
+# Lister les partages depuis un client Linux
+smbclient -L //serveur -U smbuser
+
+# Se connecter a un partage
+smbclient //serveur/projets -U smbuser
+
+# Monter un partage (temporaire)
+sudo mount -t cifs //serveur/projets /mnt/partage -o username=smbuser,password=motdepasse
+
+# Montage permanent dans /etc/fstab
+# //serveur/projets /mnt/partage cifs credentials=/root/.smbcredentials,uid=1000,gid=1000 0 0
+```
+
+Fichier `/root/.smbcredentials` :
+
+```
+username=smbuser
+password=motdepasse
+```
+
+```bash
+sudo chmod 600 /root/.smbcredentials
+```
+
+### 5.8 Integration Active Directory
+
+Samba peut joindre un domaine AD existant :
+
+```bash
+sudo apt install samba winbind libpam-winbind libnss-winbind krb5-user
+```
+
+Configuration dans `/etc/samba/smb.conf` :
+
+```ini
+[global]
+workgroup = DOMAINE
+security = ADS
+realm = DOMAINE.LOCAL
+idmap config * : backend = tdb
+idmap config * : range = 10000-20000
+winbind use default domain = yes
+winbind enum users = yes
+winbind enum groups = yes
+```
+
+Joindre le domaine :
+
+```bash
+sudo net ads join -U administrateur
+sudo systemctl restart smbd nmbd winbind
+```
+
+---
+
+## 6. NFS
+
+### 6.1 Presentation
+
+NFS (Network File System) est le protocole standard de partage de fichiers entre systemes Unix/Linux. Il est plus simple et performant que Samba pour des environnements homogenes Linux.
+
+### 6.2 Installation
+
+Serveur :
+
+```bash
+sudo apt install nfs-kernel-server
+sudo systemctl enable --now nfs-kernel-server
+```
+
+Client :
+
+```bash
+sudo apt install nfs-common
+```
+
+### 6.3 Configuration des exports
+
+Fichier `/etc/exports` :
+
+```
+# Syntaxe : repertoire client(options) [client2(options)]
+
+/srv/nfs/partage    192.168.1.0/24(rw,sync,no_subtree_check)
+/srv/nfs/backup     192.168.1.10(rw,sync,no_root_squash,no_subtree_check)
+/srv/nfs/public     *(ro,sync,no_subtree_check)
+```
+
+Options principales :
+
+| Option | Role |
+|---|---|
+| `rw` | Lecture et ecriture |
+| `ro` | Lecture seule |
+| `sync` | Ecritures synchrones (securite des donnees) |
+| `async` | Ecritures asynchrones (meilleures performances, risque de perte) |
+| `no_subtree_check` | Desactive la verification des sous-repertoires (recommande) |
+| `root_squash` | Mappe root distant vers nobody (defaut, securite) |
+| `no_root_squash` | Root distant garde ses droits (dangereux) |
+| `all_squash` | Mappe tous les utilisateurs vers nobody |
+| `anonuid=1000` | UID pour les utilisateurs mappes |
+| `anongid=1000` | GID pour les utilisateurs mappes |
+
+### 6.4 Appliquer les exports
+
+```bash
+sudo mkdir -p /srv/nfs/partage
+sudo chown nobody:nogroup /srv/nfs/partage
+sudo chmod 0777 /srv/nfs/partage
+
+# Appliquer les modifications sans redemarrer
+sudo exportfs -ra
+
+# Afficher les exports actifs
+sudo exportfs -v
+```
+
+### 6.5 Montage cote client
+
+Montage temporaire :
+
+```bash
+sudo mount -t nfs serveur:/srv/nfs/partage /mnt/nfs
+```
+
+Montage permanent dans `/etc/fstab` :
+
+```
+serveur:/srv/nfs/partage    /mnt/nfs    nfs    defaults,_netdev    0    0
+```
+
+L'option `_netdev` indique que le montage depend du reseau (evite les blocages au demarrage si le reseau n'est pas encore disponible).
+
+Verification :
+
+```bash
+# Lister les exports du serveur
+showmount -e serveur
+
+# Verifier les montages NFS
+mount | grep nfs
+df -hT | grep nfs
+```
+
+---
+
+## 7. Serveur DHCP
+
+### 7.1 Presentation
+
+Le serveur DHCP (Dynamic Host Configuration Protocol) attribue automatiquement des adresses IP et des parametres reseau aux clients. Le serveur de reference sous Debian est `isc-dhcp-server`.
+
+Note : `isc-dhcp-server` est en fin de vie. Son successeur est **Kea DHCP** (ISC). Toutefois, le BTS SIO utilise encore principalement isc-dhcp-server.
+
+### 7.2 Installation
+
+```bash
+sudo apt install isc-dhcp-server
+```
+
+### 7.3 Configuration
+
+Fichier `/etc/default/isc-dhcp-server` — definir l'interface d'ecoute :
+
+```
+INTERFACESv4="ens33"
+INTERFACESv6=""
+```
+
+Fichier `/etc/dhcp/dhcpd.conf` :
+
+```
+# Options globales
+option domain-name "mondomaine.local";
+option domain-name-servers 192.168.1.1, 8.8.8.8;
+default-lease-time 3600;
+max-lease-time 7200;
+authoritative;
+
+# Declaration du sous-reseau
+subnet 192.168.1.0 netmask 255.255.255.0 {
+    range 192.168.1.100 192.168.1.200;
+    option routers 192.168.1.254;
+    option subnet-mask 255.255.255.0;
+    option broadcast-address 192.168.1.255;
+    option domain-name-servers 192.168.1.1;
+    option ntp-servers 192.168.1.1;
+}
+
+# Reservation (adresse fixe basee sur l'adresse MAC)
+host poste-direction {
+    hardware ethernet 00:1A:2B:3C:4D:5E;
+    fixed-address 192.168.1.10;
+    option host-name "poste-direction";
+}
+
+host imprimante-rdc {
+    hardware ethernet AA:BB:CC:DD:EE:FF;
+    fixed-address 192.168.1.20;
+}
+
+# Second sous-reseau (necessite un relais DHCP si sur un autre VLAN)
+subnet 192.168.2.0 netmask 255.255.255.0 {
+    range 192.168.2.100 192.168.2.200;
+    option routers 192.168.2.254;
+    option subnet-mask 255.255.255.0;
+}
+```
+
+### 7.4 Options DHCP courantes
+
+| Option | Role |
+|---|---|
+| `option routers` | Passerelle par defaut |
+| `option subnet-mask` | Masque de sous-reseau |
+| `option domain-name-servers` | Serveurs DNS |
+| `option domain-name` | Nom de domaine |
+| `option broadcast-address` | Adresse de diffusion |
+| `option ntp-servers` | Serveurs de temps |
+| `default-lease-time` | Duree du bail par defaut (secondes) |
+| `max-lease-time` | Duree maximale du bail |
+| `authoritative` | Le serveur fait autorite sur le sous-reseau |
+
+### 7.5 Demarrage et verification
+
+```bash
+# Verifier la syntaxe
+sudo dhcpd -t
+
+sudo systemctl restart isc-dhcp-server
+sudo systemctl status isc-dhcp-server
+
+# Consulter les baux actifs
+cat /var/lib/dhcp/dhcpd.leases
+
+# Journaux
+sudo journalctl -u isc-dhcp-server -f
+```
+
+---
+
+## 8. Serveur DNS Bind9
+
+### 8.1 Presentation
+
+Bind9 (Berkeley Internet Name Domain) est le serveur DNS le plus repandu. Il resout les noms de domaine en adresses IP (zone directe) et les adresses IP en noms (zone inverse).
+
+Types d'enregistrements DNS essentiels :
+
+| Type | Role | Exemple |
+|---|---|---|
+| A | Nom vers IPv4 | `www IN A 192.168.1.10` |
+| AAAA | Nom vers IPv6 | `www IN AAAA 2001:db8::10` |
+| CNAME | Alias | `ftp IN CNAME www` |
+| MX | Serveur de messagerie | `@ IN MX 10 mail.mondomaine.fr.` |
+| NS | Serveur de noms | `@ IN NS ns1.mondomaine.fr.` |
+| PTR | IP vers nom (zone inverse) | `10 IN PTR www.mondomaine.fr.` |
+| SOA | Autorite de zone | (voir ci-dessous) |
+| TXT | Texte libre (SPF, DKIM) | `@ IN TXT "v=spf1 mx -all"` |
+| SRV | Service | `_ldap._tcp IN SRV 0 100 389 dc1.mondomaine.fr.` |
+
+### 8.2 Installation
+
+```bash
+sudo apt install bind9 bind9utils bind9-doc
+sudo systemctl enable --now named
+```
+
+### 8.3 Arborescence
+
+| Chemin | Role |
+|---|---|
+| `/etc/bind/named.conf` | Fichier principal (inclut les suivants) |
+| `/etc/bind/named.conf.options` | Options globales |
+| `/etc/bind/named.conf.local` | Declaration des zones |
+| `/etc/bind/named.conf.default-zones` | Zones par defaut (localhost, etc.) |
+| `/var/cache/bind/` | Fichiers de zone (emplacement recommande) |
+
+### 8.4 Configuration des options
+
+Fichier `/etc/bind/named.conf.options` :
+
+```
+options {
+    directory "/var/cache/bind";
+
+    // Redirecteurs (forwarders)
+    forwarders {
+        8.8.8.8;
+        8.8.4.4;
+    };
+
+    // Autoriser les requetes recursives depuis le reseau local
+    allow-recursion { 192.168.1.0/24; 127.0.0.1; };
+
+    // Autoriser les requetes
+    allow-query { any; };
+
+    // Masquer la version
+    version "non disponible";
+
+    // DNSSEC
+    dnssec-validation auto;
+
+    listen-on { 127.0.0.1; 192.168.1.1; };
+    listen-on-v6 { none; };
+};
+```
+
+### 8.5 Declaration des zones
+
+Fichier `/etc/bind/named.conf.local` :
+
+```
+// Zone directe
+zone "mondomaine.fr" {
+    type master;
+    file "/var/cache/bind/db.mondomaine.fr";
+    allow-transfer { 192.168.1.2; };  // Serveur DNS secondaire
+};
+
+// Zone inverse
+zone "1.168.192.in-addr.arpa" {
+    type master;
+    file "/var/cache/bind/db.192.168.1";
+    allow-transfer { 192.168.1.2; };
+};
+```
+
+### 8.6 Fichier de zone directe
+
+Fichier `/var/cache/bind/db.mondomaine.fr` :
+
+```
+$TTL 86400
+@   IN  SOA ns1.mondomaine.fr. admin.mondomaine.fr. (
+        2026021801  ; Serial (YYYYMMDDNN)
+        3600        ; Refresh (1h)
+        1800        ; Retry (30min)
+        604800      ; Expire (1 semaine)
+        86400       ; Negative Cache TTL (1 jour)
+)
+
+; Serveurs de noms
+@       IN  NS      ns1.mondomaine.fr.
+@       IN  NS      ns2.mondomaine.fr.
+
+; Enregistrements A
+ns1     IN  A       192.168.1.1
+ns2     IN  A       192.168.1.2
+@       IN  A       192.168.1.10
+www     IN  A       192.168.1.10
+mail    IN  A       192.168.1.11
+ftp     IN  CNAME   www
+
+; Messagerie
+@       IN  MX  10  mail.mondomaine.fr.
+
+; SPF
+@       IN  TXT     "v=spf1 mx -all"
+```
+
+Regles critiques :
+- Le **serial** doit etre incremente a chaque modification (sinon les secondaires ne se mettent pas a jour)
+- Les noms FQDN se terminent par un point (`.`)
+- `@` represente le nom de la zone elle-meme
+
+### 8.7 Fichier de zone inverse
+
+Fichier `/var/cache/bind/db.192.168.1` :
+
+```
+$TTL 86400
+@   IN  SOA ns1.mondomaine.fr. admin.mondomaine.fr. (
+        2026021801  ; Serial
+        3600        ; Refresh
+        1800        ; Retry
+        604800      ; Expire
+        86400       ; Negative Cache TTL
+)
+
+@       IN  NS      ns1.mondomaine.fr.
+@       IN  NS      ns2.mondomaine.fr.
+
+1       IN  PTR     ns1.mondomaine.fr.
+2       IN  PTR     ns2.mondomaine.fr.
+10      IN  PTR     www.mondomaine.fr.
+11      IN  PTR     mail.mondomaine.fr.
+```
+
+Le nom de la zone `1.168.192.in-addr.arpa` signifie que l'enregistrement `10 IN PTR www.mondomaine.fr.` correspond a l'adresse `192.168.1.10`.
+
+### 8.8 Verification et diagnostic
+
+```bash
+# Verifier la configuration globale
+sudo named-checkconf
+
+# Verifier un fichier de zone
+sudo named-checkzone mondomaine.fr /var/cache/bind/db.mondomaine.fr
+sudo named-checkzone 1.168.192.in-addr.arpa /var/cache/bind/db.192.168.1
+
+# Recharger
+sudo systemctl restart named
+# Ou recharger une zone specifique
+sudo rndc reload mondomaine.fr
+
+# Tests de resolution
+dig @192.168.1.1 www.mondomaine.fr
+dig @192.168.1.1 mondomaine.fr MX
+dig @192.168.1.1 -x 192.168.1.10
+nslookup www.mondomaine.fr 192.168.1.1
+host www.mondomaine.fr 192.168.1.1
+```
+
+### 8.9 Serveur DNS secondaire (esclave)
+
+Sur le serveur secondaire, dans `/etc/bind/named.conf.local` :
+
+```
+zone "mondomaine.fr" {
+    type slave;
+    file "/var/cache/bind/db.mondomaine.fr";
+    masters { 192.168.1.1; };
+};
+
+zone "1.168.192.in-addr.arpa" {
+    type slave;
+    file "/var/cache/bind/db.192.168.1";
+    masters { 192.168.1.1; };
+};
+```
+
+Le transfert de zone se fait automatiquement lorsque le serial augmente.
+
+---
+
+## 9. Pare-feu iptables et nftables
+
+### 9.1 Concepts
+
+Le filtrage de paquets sous Linux se fait dans le noyau via **Netfilter**. Les outils en espace utilisateur sont :
+- **iptables** : outil historique (encore tres utilise)
+- **nftables** : successeur d'iptables (syntaxe unifiee, meilleures performances)
+
+### 9.2 iptables — Tables et chaines
+
+Il existe 4 tables principales :
+
+| Table | Role | Chaines |
+|---|---|---|
+| `filter` | Filtrage (defaut) | INPUT, OUTPUT, FORWARD |
+| `nat` | Traduction d'adresse | PREROUTING, POSTROUTING, OUTPUT |
+| `mangle` | Modification de paquets | Toutes |
+| `raw` | Exceptions au suivi de connexion | PREROUTING, OUTPUT |
+
+Chaines de la table filter :
+- **INPUT** : paquets destines a la machine locale
+- **OUTPUT** : paquets emis par la machine locale
+- **FORWARD** : paquets traversant la machine (routage)
+
+Cibles (targets) :
+- **ACCEPT** : accepter le paquet
+- **DROP** : rejeter silencieusement
+- **REJECT** : rejeter avec reponse ICMP
+- **LOG** : journaliser avant de passer a la regle suivante
+- **MASQUERADE** : NAT dynamique (table nat)
+- **DNAT** : redirection de port (table nat)
+- **SNAT** : NAT source statique (table nat)
+
+### 9.3 iptables — Syntaxe et commandes
+
+```bash
+# Afficher les regles
+sudo iptables -L -n -v
+sudo iptables -t nat -L -n -v
+
+# Politique par defaut
+sudo iptables -P INPUT DROP
+sudo iptables -P FORWARD DROP
+sudo iptables -P OUTPUT ACCEPT
+
+# Autoriser le loopback
+sudo iptables -A INPUT -i lo -j ACCEPT
+
+# Autoriser les connexions etablies et associees
+sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# Autoriser SSH
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+# Autoriser HTTP et HTTPS
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+
+# Autoriser le ping (ICMP echo request)
+sudo iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+# Autoriser DNS
+sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 53 -j ACCEPT
+
+# Bloquer une IP specifique
+sudo iptables -A INPUT -s 10.0.0.5 -j DROP
+
+# Autoriser un sous-reseau
+sudo iptables -A INPUT -s 192.168.1.0/24 -p tcp --dport 3306 -j ACCEPT
+
+# Journaliser les paquets rejetes
+sudo iptables -A INPUT -j LOG --log-prefix "IPTABLES-DROP: " --log-level 4
+
+# Supprimer une regle par numero
+sudo iptables -L INPUT --line-numbers
+sudo iptables -D INPUT 3
+
+# Vider toutes les regles
+sudo iptables -F
+sudo iptables -t nat -F
+
+# Inserer une regle en position 1
+sudo iptables -I INPUT 1 -p tcp --dport 8080 -j ACCEPT
+```
+
+### 9.4 NAT et routage avec iptables
+
+Activer le routage IP :
+
+```bash
+# Temporaire
+sudo sysctl -w net.ipv4.ip_forward=1
+
+# Permanent
+echo "net.ipv4.ip_forward = 1" | sudo tee -a /etc/sysctl.d/99-forward.conf
+sudo sysctl -p /etc/sysctl.d/99-forward.conf
+```
+
+#### MASQUERADE (NAT source dynamique)
+
+Utilise pour partager une connexion Internet. L'adresse source des paquets sortants est remplacee par l'adresse de l'interface de sortie.
+
+```bash
+sudo iptables -t nat -A POSTROUTING -o ens33 -j MASQUERADE
+sudo iptables -A FORWARD -i ens34 -o ens33 -j ACCEPT
+sudo iptables -A FORWARD -i ens33 -o ens34 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+```
+
+#### SNAT (NAT source statique)
+
+Comme MASQUERADE mais avec une adresse fixe (plus performant) :
+
+```bash
+sudo iptables -t nat -A POSTROUTING -o ens33 -j SNAT --to-source 203.0.113.5
+```
+
+#### DNAT (redirection de port)
+
+Redirige le trafic entrant vers un serveur interne :
+
+```bash
+# Rediriger le port 80 public vers le serveur interne 192.168.1.10:80
+sudo iptables -t nat -A PREROUTING -i ens33 -p tcp --dport 80 -j DNAT --to-destination 192.168.1.10:80
+sudo iptables -A FORWARD -i ens33 -d 192.168.1.10 -p tcp --dport 80 -j ACCEPT
+```
+
+### 9.5 Persistence des regles iptables
+
+Les regles iptables sont perdues au redemarrage. Pour les sauvegarder :
+
+```bash
+sudo apt install iptables-persistent
+
+# Sauvegarder les regles actuelles
+sudo iptables-save | sudo tee /etc/iptables/rules.v4
+sudo ip6tables-save | sudo tee /etc/iptables/rules.v6
+
+# Restaurer manuellement
+sudo iptables-restore < /etc/iptables/rules.v4
+```
+
+Le paquet `iptables-persistent` restaure automatiquement les regles au demarrage.
+
+### 9.6 Script de pare-feu complet
+
+Exemple de script `/etc/iptables/firewall.sh` :
+
+```bash
+#!/bin/bash
+
+# Reinitialisation
+iptables -F
+iptables -X
+iptables -t nat -F
+
+# Politiques par defaut
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+
+# Loopback
+iptables -A INPUT -i lo -j ACCEPT
+
+# Connexions etablies
+iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# SSH (restreint au reseau local)
+iptables -A INPUT -s 192.168.1.0/24 -p tcp --dport 22 -j ACCEPT
+
+# HTTP / HTTPS
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+
+# DNS
+iptables -A INPUT -p udp --dport 53 -j ACCEPT
+
+# ICMP
+iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+# Journaliser le reste
+iptables -A INPUT -j LOG --log-prefix "FW-DROP: "
+
+# NAT (si routeur)
+# iptables -t nat -A POSTROUTING -o ens33 -j MASQUERADE
+# iptables -A FORWARD -i ens34 -o ens33 -j ACCEPT
+# iptables -A FORWARD -i ens33 -o ens34 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# Sauvegarde
+iptables-save > /etc/iptables/rules.v4
+
+echo "Pare-feu configure."
+```
+
+### 9.7 nftables
+
+nftables remplace iptables avec une syntaxe plus lisible et unifiee.
+
+Installation et activation :
+
+```bash
+sudo apt install nftables
+sudo systemctl enable --now nftables
+```
+
+Fichier de configuration : `/etc/nftables.conf`
+
+```
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        # Loopback
+        iif "lo" accept
+
+        # Connexions etablies
+        ct state established,related accept
+
+        # ICMP
+        ip protocol icmp accept
+        ip6 nexthdr icmpv6 accept
+
+        # SSH
+        tcp dport 22 accept
+
+        # HTTP / HTTPS
+        tcp dport { 80, 443 } accept
+
+        # DNS
+        udp dport 53 accept
+
+        # Journaliser
+        log prefix "nft-drop: " drop
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+    }
+
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}
+
+# NAT
+table inet nat {
+    chain postrouting {
+        type nat hook postrouting priority 100;
+        oifname "ens33" masquerade
+    }
+
+    chain prerouting {
+        type nat hook prerouting priority -100;
+        # DNAT : redirection port 80 vers serveur interne
+        iifname "ens33" tcp dport 80 dnat to 192.168.1.10:80
+    }
+}
+```
+
+Commandes nftables :
+
+```bash
+# Afficher les regles
+sudo nft list ruleset
+
+# Appliquer la configuration
+sudo nft -f /etc/nftables.conf
+
+# Ajouter une regle
+sudo nft add rule inet filter input tcp dport 8080 accept
+
+# Supprimer toutes les regles
+sudo nft flush ruleset
+```
+
+### 9.8 Correspondance iptables / nftables
+
+| iptables | nftables |
+|---|---|
+| `iptables -A INPUT` | `nft add rule inet filter input` |
+| `-p tcp --dport 80` | `tcp dport 80` |
+| `-j ACCEPT` | `accept` |
+| `-j DROP` | `drop` |
+| `-j MASQUERADE` | `masquerade` |
+| `-j DNAT --to-destination` | `dnat to` |
+| `-m conntrack --ctstate` | `ct state` |
+| `-t nat -A POSTROUTING` | `chain postrouting` dans `table inet nat` |
+
+---
+
+## 10. Proxy Squid
+
+### 10.1 Presentation
+
+Squid est un serveur proxy et cache HTTP. Il permet de :
+- Filtrer l'acces a Internet (par URL, domaine, horaire, IP)
+- Mettre en cache les contenus web (economies de bande passante)
+- Journaliser les acces des utilisateurs
+- Authentifier les utilisateurs
+
+Port par defaut : **3128/TCP**
+
+### 10.2 Installation
+
+```bash
+sudo apt install squid
+sudo systemctl enable --now squid
+```
+
+### 10.3 Configuration
+
+Fichier principal : `/etc/squid/squid.conf`
+
+```squid
+# Port d'ecoute
+http_port 3128
+
+# Nom d'hote visible
+visible_hostname proxy.mondomaine.fr
+
+# ACL (Access Control Lists) - definitions
+acl reseau_local src 192.168.1.0/24
+acl heures_bureau time MTWHF 08:00-18:00
+acl sites_interdits dstdomain .facebook.com .youtube.com .tiktok.com
+acl extensions_bloquees urlpath_regex -i \.(mp3|mp4|avi|mkv)$
+acl SSL_ports port 443
+acl Safe_ports port 80 443 21 70 210 280 488 591 777 1025-65535
+
+# Regles d'acces
+http_access deny !Safe_ports
+http_access deny CONNECT !SSL_ports
+http_access deny sites_interdits
+http_access deny extensions_bloquees
+http_access allow reseau_local heures_bureau
+http_access allow reseau_local
+http_access deny all
+
+# Cache
+cache_mem 256 MB
+maximum_object_size 100 MB
+cache_dir ufs /var/spool/squid 10000 16 256
+# Format : type repertoire taille(MB) L1 L2
+
+# Logs
+access_log /var/log/squid/access.log squid
+cache_log /var/log/squid/cache.log
+
+# Anonymisation
+forwarded_for off
+request_header_access Via deny all
+request_header_access X-Forwarded-For deny all
+```
+
+### 10.4 Types d'ACL
+
+| Type | Role | Exemple |
+|---|---|---|
+| `src` | IP source | `acl lan src 192.168.1.0/24` |
+| `dst` | IP destination | `acl serveur dst 10.0.0.5` |
+| `dstdomain` | Domaine destination | `acl blocked dstdomain .facebook.com` |
+| `url_regex` | Expression reguliere sur l'URL | `acl adult url_regex -i sex` |
+| `urlpath_regex` | Regex sur le chemin | `acl video urlpath_regex -i \.mp4$` |
+| `time` | Plage horaire | `acl bureau time MTWHF 08:00-18:00` |
+| `port` | Port destination | `acl ssl port 443` |
+| `proto` | Protocole | `acl ftp proto FTP` |
+| `browser` | User-Agent | `acl ie browser MSIE` |
+| `proxy_auth` | Utilisateur authentifie | `acl users proxy_auth REQUIRED` |
+
+Jours de la semaine : S (dimanche), M (lundi), T (mardi), W (mercredi), H (jeudi), F (vendredi), A (samedi).
+
+### 10.5 Authentification
+
+```squid
+# Authentification par fichier htpasswd
+auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
+auth_param basic realm Proxy Squid
+auth_param basic credentialsttl 2 hours
+
+acl utilisateurs_auth proxy_auth REQUIRED
+http_access allow utilisateurs_auth
+```
+
+Creation des utilisateurs :
+
+```bash
+sudo apt install apache2-utils
+sudo htpasswd -c /etc/squid/passwd utilisateur1
+sudo htpasswd /etc/squid/passwd utilisateur2
+```
+
+### 10.6 Filtrage par fichier externe
+
+Pour une liste longue de domaines, utiliser un fichier :
+
+```squid
+acl sites_interdits dstdomain "/etc/squid/sites-interdits.txt"
+http_access deny sites_interdits
+```
+
+Fichier `/etc/squid/sites-interdits.txt` :
+
+```
+.facebook.com
+.youtube.com
+.tiktok.com
+.twitter.com
+```
+
+### 10.7 Proxy transparent
+
+Le proxy transparent intercepte le trafic HTTP sans configuration cote client. Il necessite une regle iptables pour rediriger le trafic.
+
+```squid
+# Dans squid.conf
+http_port 3128 transparent
+```
+
+```bash
+# Rediriger le trafic HTTP vers Squid
+sudo iptables -t nat -A PREROUTING -i ens34 -p tcp --dport 80 -j REDIRECT --to-port 3128
+```
+
+Note : le proxy transparent ne fonctionne pas avec HTTPS (le proxy ne peut pas intercepter le trafic chiffre sans casser le certificat).
+
+### 10.8 Commandes utiles
+
+```bash
+# Verifier la configuration
+sudo squid -k parse
+
+# Recharger la configuration
+sudo squid -k reconfigure
+
+# Analyser les logs
+tail -f /var/log/squid/access.log
+
+# Statistiques du cache
+sudo squidclient mgr:info
+```
+
+### 10.9 Configuration client
+
+Sur les postes clients, configurer le proxy dans les parametres reseau ou par variable d'environnement :
+
+```bash
+export http_proxy="http://192.168.1.1:3128"
+export https_proxy="http://192.168.1.1:3128"
+```
+
+---
+
+## 11. Serveur FTP vsftpd
+
+### 11.1 Presentation
+
+vsftpd (Very Secure FTP Daemon) est le serveur FTP le plus utilise sous Linux. FTP utilise les ports **21/TCP** (controle) et **20/TCP** (donnees en mode actif) ou un port aleatoire (mode passif).
+
+### 11.2 Installation
+
+```bash
+sudo apt install vsftpd
+sudo systemctl enable --now vsftpd
+```
+
+### 11.3 Configuration
+
+Fichier `/etc/vsftpd.conf` :
+
+```ini
+# Ecoute en mode standalone
+listen=YES
+listen_ipv6=NO
+
+# Interdire les connexions anonymes
+anonymous_enable=NO
+
+# Autoriser les utilisateurs locaux
+local_enable=YES
+
+# Autoriser l'ecriture
+write_enable=YES
+
+# Masque de creation de fichiers (022 => fichiers en 644)
+local_umask=022
+
+# Chroot : enfermer les utilisateurs dans leur repertoire home
+chroot_local_user=YES
+allow_writeable_chroot=YES
+
+# Liste d'utilisateurs
+userlist_enable=YES
+userlist_file=/etc/vsftpd.userlist
+userlist_deny=NO
+# NO = seuls les utilisateurs listes sont autorises
+
+# Mode passif
+pasv_enable=YES
+pasv_min_port=30000
+pasv_max_port=31000
+
+# Banniere
+ftpd_banner=Bienvenue sur le serveur FTP.
+
+# Logs
+xferlog_enable=YES
+xferlog_file=/var/log/vsftpd.log
+log_ftp_protocol=YES
+
+# SSL/TLS
+ssl_enable=YES
+rsa_cert_file=/etc/ssl/certs/vsftpd.pem
+rsa_private_key_file=/etc/ssl/private/vsftpd.key
+force_local_data_ssl=YES
+force_local_logins_ssl=YES
+ssl_tlsv1=YES
+ssl_sslv2=NO
+ssl_sslv3=NO
+```
+
+### 11.4 Liste d'utilisateurs
+
+Fichier `/etc/vsftpd.userlist` :
+
+```
+ftpuser1
+ftpuser2
+```
+
+Creation d'un utilisateur FTP dedie :
+
+```bash
+sudo adduser --home /srv/ftp/ftpuser1 --shell /usr/sbin/nologin ftpuser1
+echo "ftpuser1" | sudo tee -a /etc/vsftpd.userlist
+```
+
+Ajouter `/usr/sbin/nologin` dans `/etc/shells` si necessaire :
+
+```bash
+echo "/usr/sbin/nologin" | sudo tee -a /etc/shells
+```
+
+### 11.5 Utilisateurs virtuels
+
+Les utilisateurs virtuels n'ont pas de compte systeme. Ils utilisent PAM et une base de donnees de mots de passe.
+
+```bash
+sudo apt install libpam-pwdfile
+```
+
+Creer la base de mots de passe :
+
+```bash
+sudo apt install apache2-utils
+sudo htpasswd -c -d /etc/vsftpd/virtual_users.db vuser1
+sudo htpasswd -d /etc/vsftpd/virtual_users.db vuser2
+```
+
+Fichier PAM `/etc/pam.d/vsftpd.virtual` :
+
+```
+auth required pam_pwdfile.so pwdfile /etc/vsftpd/virtual_users.db
+account required pam_permit.so
+```
+
+Ajouts dans `/etc/vsftpd.conf` :
+
+```ini
+guest_enable=YES
+guest_username=ftp
+virtual_use_local_privs=YES
+pam_service_name=vsftpd.virtual
+user_sub_token=$USER
+local_root=/srv/ftp/virtual/$USER
+```
+
+Creer les repertoires :
+
+```bash
+sudo mkdir -p /srv/ftp/virtual/vuser1 /srv/ftp/virtual/vuser2
+sudo chown ftp:ftp /srv/ftp/virtual/vuser1 /srv/ftp/virtual/vuser2
+```
+
+### 11.6 Pare-feu pour FTP
+
+```bash
+# Mode passif
+sudo iptables -A INPUT -p tcp --dport 21 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 30000:31000 -j ACCEPT
+```
+
+### 11.7 Commandes client
+
+```bash
+# Connexion
+ftp serveur
+lftp -u ftpuser1 serveur
+
+# Commandes FTP
+ls          # Lister
+get fichier # Telecharger
+put fichier # Envoyer
+mget *.txt  # Telecharger plusieurs fichiers
+cd /dossier # Changer de repertoire
+bye         # Quitter
+```
+
+---
+
+## 12. Postfix — bases
+
+### 12.1 Presentation
+
+Postfix est un MTA (Mail Transfer Agent) qui assure l'envoi et le relais de courriels via le protocole **SMTP** (port **25/TCP**, **587/TCP** pour submission, **465/TCP** pour SMTPS).
+
+Architecture simplifiee de la messagerie :
+- **MTA** (Postfix, Exim) : transfert entre serveurs
+- **MDA** (Dovecot) : livraison dans les boites aux lettres
+- **MUA** (Thunderbird, Outlook) : client de messagerie
+
+### 12.2 Installation
+
+```bash
+sudo apt install postfix
+# Choisir "Site Internet" lors de la configuration interactive
+sudo systemctl enable --now postfix
+```
+
+### 12.3 Configuration
+
+Fichier principal : `/etc/postfix/main.cf`
+
+```ini
+# Nom d'hote complet
+myhostname = mail.mondomaine.fr
+
+# Domaine
+mydomain = mondomaine.fr
+myorigin = $mydomain
+
+# Interfaces d'ecoute
+inet_interfaces = all
+inet_protocols = ipv4
+
+# Destinations acceptees
+mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
+
+# Reseaux autorises a relayer
+mynetworks = 127.0.0.0/8, 192.168.1.0/24
+
+# Relais SMTP externe (pour envoyer via un prestataire)
+# relayhost = [smtp.fournisseur.fr]:587
+
+# Format des boites aux lettres
+home_mailbox = Maildir/
+
+# Taille max des messages (10 Mo)
+message_size_limit = 10485760
+
+# Banniere
+smtpd_banner = $myhostname ESMTP
+
+# TLS pour les connexions entrantes
+smtpd_tls_cert_file = /etc/ssl/certs/mail.pem
+smtpd_tls_key_file = /etc/ssl/private/mail.key
+smtpd_use_tls = yes
+smtpd_tls_security_level = may
+
+# TLS pour les connexions sortantes
+smtp_tls_security_level = may
+
+# Authentification SASL (avec Dovecot)
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+smtpd_recipient_restrictions =
+    permit_mynetworks,
+    permit_sasl_authenticated,
+    reject_unauth_destination
+```
+
+### 12.4 Relais SMTP avec authentification
+
+Pour utiliser un relais externe (Gmail, OVH, etc.) :
+
+Dans `/etc/postfix/main.cf` :
+
+```ini
+relayhost = [smtp.gmail.com]:587
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_tls_security_level = encrypt
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+```
+
+Fichier `/etc/postfix/sasl_passwd` :
+
+```
+[smtp.gmail.com]:587 utilisateur@gmail.com:motdepasse_application
+```
+
+```bash
+sudo postmap /etc/postfix/sasl_passwd
+sudo chmod 600 /etc/postfix/sasl_passwd /etc/postfix/sasl_passwd.db
+sudo systemctl restart postfix
+```
+
+### 12.5 Commandes utiles
+
+```bash
+# Verifier la configuration
+sudo postfix check
+
+# Afficher la configuration effective
+postconf -n
+
+# Envoyer un mail de test
+echo "Corps du message" | mail -s "Sujet" destinataire@exemple.fr
+
+# Voir la file d'attente
+mailq
+sudo postqueue -p
+
+# Forcer l'envoi de la file
+sudo postqueue -f
+
+# Supprimer tous les messages en file
+sudo postsuper -d ALL
+
+# Journaux
+sudo tail -f /var/log/mail.log
+```
+
+### 12.6 Enregistrements DNS pour la messagerie
+
+Pour que le serveur de messagerie fonctionne correctement, les enregistrements DNS suivants sont necessaires :
+
+```
+@       IN  MX  10  mail.mondomaine.fr.
+mail    IN  A       203.0.113.10
+@       IN  TXT     "v=spf1 mx -all"
+```
+
+- **MX** : indique le serveur de messagerie du domaine
+- **SPF** : indique quelles machines sont autorisees a envoyer des mails pour le domaine
+
+---
+
+## 13. Exercices corriges
+
+### Exercice 1 — Apache VirtualHost
+
+**Enonce** : Creer un VirtualHost Apache pour le site `www.entreprise.local` avec racine `/var/www/entreprise`, logs dedies, interdiction du listage de repertoires et support de `.htaccess`.
+
+**Correction** :
+
+```bash
+sudo mkdir -p /var/www/entreprise
+echo "<h1>Entreprise</h1>" | sudo tee /var/www/entreprise/index.html
+```
+
+Fichier `/etc/apache2/sites-available/entreprise.conf` :
+
+```apache
+<VirtualHost *:80>
+    ServerName www.entreprise.local
+    ServerAlias entreprise.local
+    DocumentRoot /var/www/entreprise
+
+    <Directory /var/www/entreprise>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/entreprise-error.log
+    CustomLog ${APACHE_LOG_DIR}/entreprise-access.log combined
+</VirtualHost>
+```
+
+```bash
+sudo a2ensite entreprise.conf
+sudo systemctl reload apache2
+```
+
+---
+
+### Exercice 2 — Nginx reverse proxy
+
+**Enonce** : Configurer Nginx en reverse proxy pour le domaine `app.societe.local`, qui redirige vers une application Node.js sur `127.0.0.1:3000`. Ajouter les en-tetes proxy standard.
+
+**Correction** :
+
+Fichier `/etc/nginx/sites-available/app-societe` :
+
+```nginx
+server {
+    listen 80;
+    server_name app.societe.local;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+```bash
+sudo ln -s /etc/nginx/sites-available/app-societe /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+---
+
+### Exercice 3 — Certificat auto-signe et HTTPS Apache
+
+**Enonce** : Generer un certificat auto-signe pour `www.entreprise.local` et configurer Apache en HTTPS avec redirection automatique depuis HTTP.
+
+**Correction** :
+
+```bash
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/entreprise.key \
+    -out /etc/ssl/certs/entreprise.crt \
+    -subj "/C=FR/ST=IDF/L=Paris/O=Entreprise/CN=www.entreprise.local"
+
+sudo a2enmod ssl headers
+```
+
+Fichier `/etc/apache2/sites-available/entreprise-ssl.conf` :
+
+```apache
+<VirtualHost *:80>
+    ServerName www.entreprise.local
+    Redirect permanent / https://www.entreprise.local/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName www.entreprise.local
+    DocumentRoot /var/www/entreprise
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/entreprise.crt
+    SSLCertificateKeyFile /etc/ssl/private/entreprise.key
+    SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1
+
+    Header always set Strict-Transport-Security "max-age=31536000"
+
+    <Directory /var/www/entreprise>
+        Options -Indexes
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+```
+
+```bash
+sudo a2ensite entreprise-ssl.conf
+sudo systemctl reload apache2
+```
+
+---
+
+### Exercice 4 — Regles iptables pour un serveur web
+
+**Enonce** : Ecrire un jeu de regles iptables pour un serveur web qui :
+- Politique par defaut : DROP en INPUT et FORWARD, ACCEPT en OUTPUT
+- Autorise le loopback
+- Autorise les connexions etablies
+- Autorise SSH uniquement depuis 192.168.1.0/24
+- Autorise HTTP et HTTPS depuis partout
+- Autorise le ping
+- Journalise les paquets rejetes
+
+**Correction** :
+
+```bash
+# Reinitialisation
+sudo iptables -F
+sudo iptables -X
+
+# Politiques par defaut
+sudo iptables -P INPUT DROP
+sudo iptables -P FORWARD DROP
+sudo iptables -P OUTPUT ACCEPT
+
+# Loopback
+sudo iptables -A INPUT -i lo -j ACCEPT
+
+# Connexions etablies
+sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# SSH depuis le LAN uniquement
+sudo iptables -A INPUT -s 192.168.1.0/24 -p tcp --dport 22 -j ACCEPT
+
+# HTTP et HTTPS
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+
+# Ping
+sudo iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+# Log
+sudo iptables -A INPUT -j LOG --log-prefix "IPT-DROP: " --log-level 4
+
+# Sauvegarder
+sudo iptables-save | sudo tee /etc/iptables/rules.v4
+```
+
+---
+
+### Exercice 5 — NAT et MASQUERADE
+
+**Enonce** : Un routeur Linux possede deux interfaces : `ens33` (WAN, IP publique) et `ens34` (LAN, 192.168.1.1/24). Configurer le NAT pour que le LAN accede a Internet.
+
+**Correction** :
+
+```bash
+# Activer le routage
+sudo sysctl -w net.ipv4.ip_forward=1
+echo "net.ipv4.ip_forward = 1" | sudo tee /etc/sysctl.d/99-forward.conf
+
+# NAT
+sudo iptables -t nat -A POSTROUTING -o ens33 -j MASQUERADE
+
+# Autoriser le trafic LAN vers WAN
+sudo iptables -A FORWARD -i ens34 -o ens33 -j ACCEPT
+
+# Autoriser le trafic retour
+sudo iptables -A FORWARD -i ens33 -o ens34 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# Sauvegarder
+sudo iptables-save | sudo tee /etc/iptables/rules.v4
+```
+
+---
+
+### Exercice 6 — Partage Samba
+
+**Enonce** : Creer un partage Samba nomme `comptabilite` accessible uniquement aux membres du groupe `compta` en lecture/ecriture, avec chroot et permissions 0770.
+
+**Correction** :
+
+```bash
+sudo groupadd compta
+sudo adduser --no-create-home --shell /usr/sbin/nologin user-compta
+sudo usermod -aG compta user-compta
+sudo smbpasswd -a user-compta
+
+sudo mkdir -p /srv/samba/comptabilite
+sudo chown root:compta /srv/samba/comptabilite
+sudo chmod 0770 /srv/samba/comptabilite
+```
+
+Ajout dans `/etc/samba/smb.conf` :
+
+```ini
+[comptabilite]
+path = /srv/samba/comptabilite
+browsable = yes
+writable = yes
+guest ok = no
+valid users = @compta
+force group = compta
+create mask = 0660
+directory mask = 0770
+```
+
+```bash
+testparm
+sudo systemctl restart smbd
+```
+
+---
+
+### Exercice 7 — Zone DNS Bind9
+
+**Enonce** : Creer une zone DNS directe pour `labo.local` avec :
+- Serveur de noms : ns1.labo.local (192.168.10.1)
+- Serveur web : www.labo.local (192.168.10.10)
+- Serveur mail : mail.labo.local (192.168.10.11), priorite MX 10
+- Alias : ftp.labo.local pointe vers www
+
+Creer aussi la zone inverse correspondante.
+
+**Correction** :
+
+Dans `/etc/bind/named.conf.local` :
+
+```
+zone "labo.local" {
+    type master;
+    file "/var/cache/bind/db.labo.local";
+};
+
+zone "10.168.192.in-addr.arpa" {
+    type master;
+    file "/var/cache/bind/db.192.168.10";
+};
+```
+
+Fichier `/var/cache/bind/db.labo.local` :
+
+```
+$TTL 86400
+@   IN  SOA ns1.labo.local. admin.labo.local. (
+        2026021801  ; Serial
+        3600        ; Refresh
+        1800        ; Retry
+        604800      ; Expire
+        86400       ; Negative Cache TTL
+)
+
+@       IN  NS      ns1.labo.local.
+ns1     IN  A       192.168.10.1
+www     IN  A       192.168.10.10
+mail    IN  A       192.168.10.11
+ftp     IN  CNAME   www.labo.local.
+@       IN  MX  10  mail.labo.local.
+```
+
+Fichier `/var/cache/bind/db.192.168.10` :
+
+```
+$TTL 86400
+@   IN  SOA ns1.labo.local. admin.labo.local. (
+        2026021801  ; Serial
+        3600        ; Refresh
+        1800        ; Retry
+        604800      ; Expire
+        86400       ; Negative Cache TTL
+)
+
+@       IN  NS      ns1.labo.local.
+1       IN  PTR     ns1.labo.local.
+10      IN  PTR     www.labo.local.
+11      IN  PTR     mail.labo.local.
+```
+
+```bash
+sudo named-checkconf
+sudo named-checkzone labo.local /var/cache/bind/db.labo.local
+sudo named-checkzone 10.168.192.in-addr.arpa /var/cache/bind/db.192.168.10
+sudo systemctl restart named
+
+# Test
+dig @192.168.10.1 www.labo.local
+dig @192.168.10.1 labo.local MX
+dig @192.168.10.1 -x 192.168.10.10
+```
+
+---
+
+### Exercice 8 — Serveur DHCP avec reservation
+
+**Enonce** : Configurer un serveur DHCP pour le reseau 192.168.5.0/24 avec :
+- Plage : 192.168.5.100 a 192.168.5.200
+- Passerelle : 192.168.5.254
+- DNS : 192.168.5.1
+- Reservation pour le poste du directeur (MAC 00:11:22:33:44:55, IP 192.168.5.10)
+
+**Correction** :
+
+Fichier `/etc/default/isc-dhcp-server` :
+
+```
+INTERFACESv4="ens33"
+```
+
+Fichier `/etc/dhcp/dhcpd.conf` :
+
+```
+option domain-name "entreprise.local";
+option domain-name-servers 192.168.5.1;
+default-lease-time 3600;
+max-lease-time 7200;
+authoritative;
+
+subnet 192.168.5.0 netmask 255.255.255.0 {
+    range 192.168.5.100 192.168.5.200;
+    option routers 192.168.5.254;
+    option subnet-mask 255.255.255.0;
+    option broadcast-address 192.168.5.255;
+}
+
+host poste-directeur {
+    hardware ethernet 00:11:22:33:44:55;
+    fixed-address 192.168.5.10;
+    option host-name "poste-directeur";
+}
+```
+
+```bash
+sudo dhcpd -t
+sudo systemctl restart isc-dhcp-server
+```
+
+---
+
+### Exercice 9 — SSH tunnel et ProxyJump
+
+**Enonce** : Un serveur de base de donnees MySQL (port 3306) est accessible uniquement depuis un bastion (10.0.0.1). Depuis votre poste, ecrire :
+1. La commande SSH pour acceder a MySQL via un tunnel local
+2. La configuration `~/.ssh/config` pour un acces au serveur interne (10.0.0.50) via le bastion avec ProxyJump
+
+**Correction** :
+
+1. Tunnel local :
+
+```bash
+ssh -L 3306:serveur-bdd:3306 admin@10.0.0.1
+# Puis : mysql -h 127.0.0.1 -P 3306 -u dbuser -p
+```
+
+2. Configuration `~/.ssh/config` :
+
+```
+Host bastion
+    HostName 10.0.0.1
+    User admin
+    IdentityFile ~/.ssh/id_ed25519
+
+Host serveur-interne
+    HostName 10.0.0.50
+    User tech
+    ProxyJump bastion
+```
+
+Utilisation : `ssh serveur-interne`
+
+---
+
+### Exercice 10 — NFS : partage et montage permanent
+
+**Enonce** : Partager `/srv/donnees` en lecture/ecriture pour le reseau 192.168.1.0/24 avec `root_squash`. Sur le client, monter le partage dans `/mnt/donnees` de maniere permanente.
+
+**Correction** :
+
+Serveur :
+
+```bash
+sudo mkdir -p /srv/donnees
+sudo chown nobody:nogroup /srv/donnees
+sudo chmod 0777 /srv/donnees
+```
+
+Fichier `/etc/exports` :
+
+```
+/srv/donnees    192.168.1.0/24(rw,sync,root_squash,no_subtree_check)
+```
+
+```bash
+sudo exportfs -ra
+sudo exportfs -v
+```
+
+Client :
+
+```bash
+sudo mkdir -p /mnt/donnees
+sudo mount -t nfs serveur:/srv/donnees /mnt/donnees
+```
+
+Montage permanent dans `/etc/fstab` :
+
+```
+serveur:/srv/donnees    /mnt/donnees    nfs    defaults,_netdev    0    0
+```
+
+---
+
+### Exercice 11 — Proxy Squid avec filtrage
+
+**Enonce** : Configurer Squid pour :
+- Autoriser uniquement le reseau 192.168.1.0/24
+- Bloquer les domaines facebook.com et youtube.com
+- Autoriser l'acces du lundi au vendredi de 8h a 18h uniquement
+- Journaliser tous les acces
+
+**Correction** :
+
+Extraits de `/etc/squid/squid.conf` :
+
+```squid
+http_port 3128
+
+acl reseau_local src 192.168.1.0/24
+acl heures_bureau time MTWHF 08:00-18:00
+acl sites_bloques dstdomain .facebook.com .youtube.com
+
+http_access deny sites_bloques
+http_access allow reseau_local heures_bureau
+http_access deny all
+
+access_log /var/log/squid/access.log squid
+```
+
+```bash
+sudo squid -k parse
+sudo systemctl restart squid
+```
+
+---
+
+### Exercice 12 — nftables complet avec NAT
+
+**Enonce** : Ecrire une configuration nftables complete pour un routeur Linux avec :
+- Filtrage INPUT : DROP par defaut, autoriser loopback, etablies, SSH (LAN), DNS, DHCP
+- Filtrage FORWARD : autoriser LAN vers WAN et retour
+- NAT MASQUERADE sur l'interface WAN `ens33`
+- DNAT : rediriger le port 80 entrant vers 192.168.1.10
+
+**Correction** :
+
+Fichier `/etc/nftables.conf` :
+
+```
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        iif "lo" accept
+        ct state established,related accept
+
+        # SSH depuis le LAN
+        iifname "ens34" tcp dport 22 accept
+
+        # DNS et DHCP
+        udp dport 53 accept
+        tcp dport 53 accept
+        udp dport 67 accept
+
+        # ICMP
+        ip protocol icmp accept
+
+        log prefix "nft-input-drop: " drop
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+
+        ct state established,related accept
+
+        # LAN vers WAN
+        iifname "ens34" oifname "ens33" accept
+
+        # DNAT vers serveur web interne
+        iifname "ens33" ip daddr 192.168.1.10 tcp dport 80 accept
+
+        log prefix "nft-forward-drop: " drop
+    }
+
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}
+
+table inet nat {
+    chain postrouting {
+        type nat hook postrouting priority 100;
+        oifname "ens33" masquerade
+    }
+
+    chain prerouting {
+        type nat hook prerouting priority -100;
+        iifname "ens33" tcp dport 80 dnat to 192.168.1.10:80
+    }
+}
+```
+
+```bash
+sudo nft -f /etc/nftables.conf
+sudo nft list ruleset
+sudo systemctl enable nftables
+```
+
+---
+
+### Exercice 13 — Fail2ban pour SSH et Apache
+
+**Enonce** : Configurer fail2ban pour proteger SSH (max 3 tentatives, bannissement 2 heures) et Apache (max 5 erreurs d'authentification, bannissement 1 heure).
+
+**Correction** :
+
+Fichier `/etc/fail2ban/jail.local` :
+
+```ini
+[DEFAULT]
+bantime = 3600
+findtime = 600
+maxretry = 5
+banaction = iptables-multiport
+
+[sshd]
+enabled = true
+port = ssh
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 7200
+findtime = 600
+
+[apache-auth]
+enabled = true
+port = http,https
+logpath = /var/log/apache2/error.log
+maxretry = 5
+bantime = 3600
+findtime = 600
+```
+
+```bash
+sudo systemctl restart fail2ban
+sudo fail2ban-client status
+sudo fail2ban-client status sshd
+sudo fail2ban-client status apache-auth
+```
+
+---
+
+### Exercice 14 — Postfix relais SMTP
+
+**Enonce** : Configurer Postfix pour envoyer des mails via le relais `smtp.fournisseur.fr` sur le port 587 avec authentification TLS (utilisateur : `admin@entreprise.fr`, mot de passe : `S3cur3!`).
+
+**Correction** :
+
+Dans `/etc/postfix/main.cf` :
+
+```ini
+relayhost = [smtp.fournisseur.fr]:587
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_tls_security_level = encrypt
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+```
+
+Fichier `/etc/postfix/sasl_passwd` :
+
+```
+[smtp.fournisseur.fr]:587 admin@entreprise.fr:S3cur3!
+```
+
+```bash
+sudo postmap /etc/postfix/sasl_passwd
+sudo chmod 600 /etc/postfix/sasl_passwd /etc/postfix/sasl_passwd.db
+sudo systemctl restart postfix
+
+# Test
+echo "Test envoi" | mail -s "Test Postfix" destinataire@exemple.fr
+sudo tail -f /var/log/mail.log
+```
+
+---
+
+### Exercice 15 — vsftpd avec chroot et SSL
+
+**Enonce** : Configurer vsftpd pour que l'utilisateur `ftpuser` soit enferme dans son repertoire home (`/srv/ftp/ftpuser`) avec chiffrement TLS obligatoire et mode passif (ports 30000-31000).
+
+**Correction** :
+
+```bash
+sudo adduser --home /srv/ftp/ftpuser --shell /usr/sbin/nologin ftpuser
+echo "/usr/sbin/nologin" | sudo tee -a /etc/shells
+
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/vsftpd.key \
+    -out /etc/ssl/certs/vsftpd.pem \
+    -subj "/CN=ftp.entreprise.local"
+```
+
+Fichier `/etc/vsftpd.conf` :
+
+```ini
+listen=YES
+listen_ipv6=NO
+anonymous_enable=NO
+local_enable=YES
+write_enable=YES
+local_umask=022
+chroot_local_user=YES
+allow_writeable_chroot=YES
+pasv_enable=YES
+pasv_min_port=30000
+pasv_max_port=31000
+ssl_enable=YES
+rsa_cert_file=/etc/ssl/certs/vsftpd.pem
+rsa_private_key_file=/etc/ssl/private/vsftpd.key
+force_local_data_ssl=YES
+force_local_logins_ssl=YES
+ssl_tlsv1_2=YES
+ssl_sslv2=NO
+ssl_sslv3=NO
+userlist_enable=YES
+userlist_file=/etc/vsftpd.userlist
+userlist_deny=NO
+```
+
+Fichier `/etc/vsftpd.userlist` :
+
+```
+ftpuser
+```
+
+```bash
+sudo systemctl restart vsftpd
+
+# Pare-feu
+sudo iptables -A INPUT -p tcp --dport 21 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 30000:31000 -j ACCEPT
+```
+
+---
+
+## Aide-memoire des commandes essentielles
+
+| Service | Verification config | Demarrage | Logs |
+|---|---|---|---|
+| Apache | `apache2ctl configtest` | `systemctl restart apache2` | `/var/log/apache2/` |
+| Nginx | `nginx -t` | `systemctl restart nginx` | `/var/log/nginx/` |
+| SSH | `sshd -t` | `systemctl restart ssh` | `/var/log/auth.log` |
+| Samba | `testparm` | `systemctl restart smbd` | `/var/log/samba/` |
+| NFS | `exportfs -v` | `systemctl restart nfs-kernel-server` | `journalctl -u nfs-kernel-server` |
+| DHCP | `dhcpd -t` | `systemctl restart isc-dhcp-server` | `journalctl -u isc-dhcp-server` |
+| Bind9 | `named-checkconf` | `systemctl restart named` | `/var/log/syslog` |
+| Squid | `squid -k parse` | `systemctl restart squid` | `/var/log/squid/` |
+| vsftpd | (verifier les logs) | `systemctl restart vsftpd` | `/var/log/vsftpd.log` |
+| Postfix | `postfix check` | `systemctl restart postfix` | `/var/log/mail.log` |
+| Fail2ban | `fail2ban-client status` | `systemctl restart fail2ban` | `/var/log/fail2ban.log` |
+| iptables | `iptables -L -n -v` | `iptables-restore < rules` | `dmesg` ou `journalctl -k` |
+| nftables | `nft list ruleset` | `systemctl restart nftables` | `dmesg` ou `journalctl -k` |

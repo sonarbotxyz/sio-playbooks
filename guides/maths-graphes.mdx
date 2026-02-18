@@ -1,0 +1,2365 @@
+---
+title: "Mathématiques — Théorie des graphes"
+description: "Graphes orientés et non orientés, parcours, plus court chemin, ordonnancement, coloration"
+category: "Mathematiques"
+tags: ["graphes", "dijkstra", "ordonnancement", "coloration", "maths"]
+difficulty: "Intermédiaire"
+---
+
+# Theorie des graphes — Playbook BTS SIO SLAM
+
+---
+
+## Table des matieres
+
+1. Definitions fondamentales
+2. Vocabulaire essentiel
+3. Representations d'un graphe
+4. Proprietes fondamentales
+5. Parcours de graphes (BFS, DFS)
+6. Plus court chemin — Algorithme de Dijkstra
+7. Ordonnancement — Methode MPM / PERT
+8. Coloration de graphes
+9. Arbres et arbres couvrants
+10. Flot dans un reseau
+11. Lien avec les matrices
+12. Applications informatiques
+13. Exercices d'examen corriges (15+)
+
+---
+
+## 1. Definitions fondamentales
+
+### 1.1 Qu'est-ce qu'un graphe ?
+
+Un **graphe** G est un couple G = (S, A) ou :
+- **S** est un ensemble fini non vide de **sommets** (aussi appeles noeuds ou vertices).
+- **A** est un ensemble de liens entre ces sommets.
+
+Un graphe modelise des relations entre objets. Chaque objet est un sommet, chaque relation est un lien.
+
+### 1.2 Sommet
+
+Un **sommet** (ou noeud) est un element de l'ensemble S. On le represente graphiquement par un point ou un cercle.
+
+Exemple : dans un reseau informatique, chaque machine est un sommet.
+
+### 1.3 Arete (graphe non oriente)
+
+Une **arete** est un lien entre deux sommets sans notion de direction. Si une arete relie les sommets u et v, on peut la parcourir de u vers v ou de v vers u indifferemment.
+
+Notation : {u, v} ou simplement u--v.
+
+### 1.4 Arc (graphe oriente)
+
+Un **arc** est un lien oriente d'un sommet u vers un sommet v. Il a un sens : on va de u (origine) vers v (extremite).
+
+Notation : (u, v) ou u -> v. Attention : (u, v) est different de (v, u).
+
+### 1.5 Graphe non oriente
+
+Un **graphe non oriente** est un graphe dont les liens sont des aretes. La relation est symetrique : si u est relie a v, alors v est relie a u.
+
+```
+Exemple : graphe non oriente G1
+
+    A --- B
+    |     |
+    C --- D
+```
+
+Ici S = {A, B, C, D} et A = { {A,B}, {A,C}, {B,D}, {C,D} }.
+
+### 1.6 Graphe oriente
+
+Un **graphe oriente** (ou digraphe) est un graphe dont les liens sont des arcs. Chaque lien a un sens.
+
+```
+Exemple : graphe oriente G2
+
+    A ---> B
+    |      |
+    v      v
+    C ---> D
+```
+
+Ici S = {A, B, C, D} et A = { (A,B), (A,C), (B,D), (C,D) }.
+
+### 1.7 Graphe pondere (value)
+
+Un **graphe pondere** (ou value) est un graphe dont chaque arete ou arc porte une valeur numerique appelee **poids** (ou cout, distance, capacite...).
+
+```
+Exemple : graphe pondere non oriente
+
+    A ---3--- B
+    |         |
+    2         5
+    |         |
+    C ---1--- D
+```
+
+Le poids de l'arete {A,B} est 3, celui de {C,D} est 1, etc.
+
+### 1.8 Boucle et multigraphe
+
+- **Boucle** : arete ou arc reliant un sommet a lui-meme.
+- **Multigraphe** : graphe admettant plusieurs aretes/arcs entre la meme paire de sommets.
+- **Graphe simple** : ni boucle, ni aretes multiples (cas standard au BTS SIO).
+
+---
+
+## 2. Vocabulaire essentiel
+
+### 2.1 Degre d'un sommet
+
+**Graphe non oriente** : le **degre** d(v) d'un sommet v est le nombre d'aretes incidentes a v. Une boucle compte pour 2.
+
+```
+    A --- B
+    |   / |
+    C --- D
+
+d(A) = 2   (aretes {A,B} et {A,C})
+d(B) = 3   (aretes {A,B}, {B,C} et {B,D})
+d(C) = 3   (aretes {A,C}, {B,C} et {C,D})
+d(D) = 2   (aretes {B,D} et {C,D})
+```
+
+**Graphe oriente** : on distingue :
+- **Degre entrant** d-(v) : nombre d'arcs arrivant en v.
+- **Degre sortant** d+(v) : nombre d'arcs partant de v.
+- **Degre total** : d(v) = d-(v) + d+(v).
+
+```
+    A ---> B
+    |      |
+    v      v
+    C ---> D
+
+d+(A) = 2, d-(A) = 0
+d+(B) = 1, d-(B) = 1
+d+(C) = 1, d-(C) = 1
+d+(D) = 0, d-(D) = 2
+```
+
+### 2.2 Voisins (sommets adjacents)
+
+Deux sommets sont **adjacents** (ou voisins) s'ils sont relies par une arete (graphe non oriente) ou un arc (graphe oriente).
+
+L'ensemble des voisins de v se note V(v) ou N(v) (pour "neighbourhood").
+
+### 2.3 Chaine et chemin
+
+**Graphe non oriente** :
+- Une **chaine** est une suite de sommets v0, v1, ..., vk telle que chaque paire consecutive {vi, vi+1} est une arete.
+- **Longueur** de la chaine : nombre d'aretes parcourues (k).
+- **Chaine simple** : chaque arete apparait au plus une fois.
+- **Chaine elementaire** : chaque sommet apparait au plus une fois.
+
+**Graphe oriente** :
+- Un **chemin** est une suite de sommets v0, v1, ..., vk telle que chaque couple (vi, vi+1) est un arc.
+- Memes definitions de "simple" et "elementaire".
+
+### 2.4 Cycle et circuit
+
+- **Cycle** (graphe non oriente) : chaine dont le premier et le dernier sommet sont identiques, de longueur >= 3, sans repetition de sommet intermediaire.
+- **Circuit** (graphe oriente) : chemin dont le premier et le dernier sommet sont identiques.
+
+```
+Exemple de cycle :
+
+    A --- B
+    |     |
+    C --- D
+
+Le cycle A - B - D - C - A est de longueur 4.
+```
+
+### 2.5 Graphe connexe
+
+Un graphe non oriente est **connexe** si, pour toute paire de sommets (u, v), il existe une chaine de u a v.
+
+Un graphe oriente est **fortement connexe** si, pour toute paire (u, v), il existe un chemin de u a v ET un chemin de v a u.
+
+### 2.6 Composantes connexes
+
+Si un graphe n'est pas connexe, il se decompose en **composantes connexes** : sous-graphes maximaux connexes.
+
+```
+Exemple : graphe a 2 composantes connexes
+
+    A --- B       E --- F
+    |             |
+    C             G
+
+Composante 1 : {A, B, C}
+Composante 2 : {E, F, G}
+```
+
+### 2.7 Tableau recapitulatif du vocabulaire
+
+| Terme              | Non oriente         | Oriente              |
+|--------------------|---------------------|----------------------|
+| Lien               | Arete               | Arc                  |
+| Suite de sommets   | Chaine              | Chemin               |
+| Retour au depart   | Cycle               | Circuit              |
+| Connectivite       | Connexe             | Fortement connexe    |
+| Degre              | d(v)                | d+(v) et d-(v)       |
+
+---
+
+## 3. Representations d'un graphe
+
+On considere le graphe suivant pour toutes les representations :
+
+```
+Graphe G (non oriente pondere) :
+
+    A ---4--- B
+    |       / |
+    2     3   6
+    |   /     |
+    C ---5--- D
+```
+
+Sommets : {A, B, C, D}
+Aretes : {A,B}=4, {A,C}=2, {B,C}=3, {B,D}=6, {C,D}=5
+
+### 3.1 Representation graphique (dessin)
+
+C'est le dessin ci-dessus. Chaque sommet est un point, chaque arete un trait. Utile pour visualiser mais ambigue pour les gros graphes.
+
+### 3.2 Matrice d'adjacence
+
+C'est un tableau carre n x n (n = nombre de sommets).
+
+**Graphe non pondere** : M[i][j] = 1 si l'arete {i,j} existe, 0 sinon.
+**Graphe pondere** : M[i][j] = poids de l'arete {i,j}, ou infinity (ou 0, ou -) si l'arete n'existe pas.
+**Graphe non oriente** : la matrice est **symetrique** (M[i][j] = M[j][i]).
+
+Matrice d'adjacence de G (version ponderee, "-" = pas d'arete) :
+
+```
+      A    B    C    D
+A  [  -    4    2    -  ]
+B  [  4    -    3    6  ]
+C  [  2    3    -    5  ]
+D  [  -    6    5    -  ]
+```
+
+Matrice d'adjacence de G (version non ponderee) :
+
+```
+      A    B    C    D
+A  [  0    1    1    0  ]
+B  [  1    0    1    1  ]
+C  [  1    1    0    1  ]
+D  [  0    1    1    0  ]
+```
+
+**Pour un graphe oriente**, la matrice n'est generalement PAS symetrique. M[i][j] = 1 signifie qu'il existe un arc de i vers j.
+
+### 3.3 Liste d'adjacence
+
+Pour chaque sommet, on donne la liste de ses voisins (avec poids si pondere).
+
+```
+A : B(4), C(2)
+B : A(4), C(3), D(6)
+C : A(2), B(3), D(5)
+D : B(6), C(5)
+```
+
+Avantage : economique en memoire pour les graphes peu denses (creux).
+
+### 3.4 Tableau des successeurs et predecesseurs (graphe oriente)
+
+Pour un graphe oriente, on distingue :
+
+```
+Graphe oriente G' :
+    A ---> B
+    A ---> C
+    B ---> D
+    C ---> D
+
+Successeurs :
+A : B, C
+B : D
+C : D
+D : (aucun)
+
+Predecesseurs :
+A : (aucun)
+B : A
+C : A
+D : B, C
+```
+
+---
+
+## 4. Proprietes fondamentales
+
+### 4.1 Theoreme des degres (lemme des poignees de mains)
+
+**Enonce** : dans un graphe non oriente G = (S, A), la somme des degres de tous les sommets vaut deux fois le nombre d'aretes.
+
+```
+Somme des d(v) = 2 * |A|
+```
+
+**Consequence** : le nombre de sommets de degre impair est toujours pair.
+
+**Verification sur G** :
+d(A) + d(B) + d(C) + d(D) = 2 + 3 + 3 + 2 = 10
+Nombre d'aretes = 5
+2 * 5 = 10. Verifie.
+
+**Pour un graphe oriente** :
+```
+Somme des d+(v) = Somme des d-(v) = nombre d'arcs
+```
+
+### 4.2 Graphe complet
+
+Un graphe complet Kn est un graphe non oriente simple a n sommets ou chaque paire de sommets distincts est reliee par une arete.
+
+Nombre d'aretes de Kn = n(n-1)/2.
+
+```
+K3 :       K4 :
+A---B      A---B
+ \ /       |\ /|
+  C        | X |
+           |/ \|
+           C---D
+
+K3 : 3 aretes
+K4 : 6 aretes
+K5 : 10 aretes
+```
+
+Degre de chaque sommet dans Kn : n - 1.
+
+### 4.3 Theoreme d'Euler (chaines et circuits euleriens)
+
+**Chaine eulerienne** : chaine passant par chaque arete exactement une fois.
+**Circuit eulerien** : chaine eulerienne fermee (retour au sommet de depart).
+
+**Theoreme** :
+- Un graphe connexe admet un **circuit eulerien** si et seulement si **tous** les sommets sont de degre pair.
+- Un graphe connexe admet une **chaine eulerienne** (non fermee) si et seulement si il possede **exactement 2** sommets de degre impair (ce sont les extremites de la chaine).
+
+**Exemple** :
+
+```
+    A --- B
+    |   / |
+    C --- D
+    
+d(A)=2, d(B)=3, d(C)=3, d(D)=2
+```
+
+Sommets de degre impair : B et C (exactement 2).
+Donc il existe une chaine eulerienne de B a C (ou de C a B).
+Une chaine eulerienne possible : B - A - C - B - D - C.
+
+### 4.4 Graphe hamiltonien
+
+- **Chaine hamiltonienne** : chaine passant par chaque sommet exactement une fois.
+- **Cycle hamiltonien** : cycle passant par chaque sommet exactement une fois.
+
+Il n'existe pas de condition simple necessaire et suffisante (probleme NP-complet). Retenir la definition.
+
+### 4.5 Sous-graphe et graphe partiel
+
+- **Sous-graphe** : on retire des sommets (et les aretes incidentes).
+- **Graphe partiel** : on retire des aretes (mais on garde tous les sommets).
+
+---
+
+## 5. Parcours de graphes
+
+### 5.1 Parcours en largeur (BFS — Breadth-First Search)
+
+**Principe** : on explore les sommets par niveaux de proximite. On visite d'abord tous les voisins directs du sommet de depart, puis les voisins de ces voisins, etc.
+
+**Structure de donnees** : une **file** (FIFO).
+
+**Algorithme** :
+1. Enfiler le sommet de depart, le marquer comme visite.
+2. Tant que la file n'est pas vide :
+   a. Defiler un sommet u.
+   b. Pour chaque voisin v de u non visite :
+      - Marquer v comme visite.
+      - Enfiler v.
+
+**Exemple pas a pas** :
+
+```
+Graphe :
+    A --- B --- E
+    |     |
+    C --- D --- F
+
+Depart : A
+```
+
+| Etape | File (avant defilement) | Sommet defile | Voisins non visites enfiles | Visites             |
+|-------|-------------------------|---------------|-----------------------------|---------------------|
+| 0     | [A]                     | -             | -                           | {A}                 |
+| 1     | [A]                     | A             | B, C                        | {A, B, C}           |
+| 2     | [B, C]                  | B             | D, E                        | {A, B, C, D, E}     |
+| 3     | [C, D, E]               | C             | (D deja visite)             | {A, B, C, D, E}     |
+| 4     | [D, E]                  | D             | F                           | {A, B, C, D, E, F}  |
+| 5     | [E, F]                  | E             | (aucun)                     | {A, B, C, D, E, F}  |
+| 6     | [F]                     | F             | (aucun)                     | {A, B, C, D, E, F}  |
+| 7     | []                      | -             | FIN                         |                     |
+
+**Ordre de visite BFS : A, B, C, D, E, F**
+
+Le BFS donne les plus courts chemins (en nombre d'aretes) depuis le sommet de depart.
+
+### 5.2 Parcours en profondeur (DFS — Depth-First Search)
+
+**Principe** : on explore le plus loin possible avant de revenir en arriere (backtracking).
+
+**Structure de donnees** : une **pile** (LIFO), ou bien la recursivite.
+
+**Algorithme** (iteratif) :
+1. Empiler le sommet de depart.
+2. Tant que la pile n'est pas vide :
+   a. Depiler un sommet u.
+   b. Si u n'est pas visite :
+      - Marquer u comme visite.
+      - Pour chaque voisin v de u non visite, empiler v.
+
+**Exemple pas a pas** (meme graphe, depart A) :
+
+```
+Graphe :
+    A --- B --- E
+    |     |
+    C --- D --- F
+```
+
+| Etape | Pile (avant depilement) | Sommet depile | Voisins empiles | Visites             |
+|-------|-------------------------|---------------|-----------------|---------------------|
+| 0     | [A]                     | -             | -               | {}                  |
+| 1     | [A]                     | A             | C, B            | {A}                 |
+| 2     | [C, B]                  | B             | E, D            | {A, B}              |
+| 3     | [C, E, D]               | D             | F, C            | {A, B, D}           |
+| 4     | [C, E, F, C]            | C             | (A deja visite) | {A, B, D, C}        |
+| 5     | [C, E, F]               | F             | (D deja visite) | {A, B, D, C, F}     |
+| 6     | [C, E]                  | E             | (B deja visite) | {A, B, D, C, F, E}  |
+| 7     | [C]                     | C             | deja visite     | {A, B, D, C, F, E}  |
+| 8     | []                      | -             | FIN             |                     |
+
+**Ordre de visite DFS : A, B, D, C, F, E**
+
+Note : l'ordre exact depend de l'ordre dans lequel on traite les voisins.
+
+### 5.3 Comparaison BFS / DFS
+
+| Critere              | BFS                | DFS                |
+|----------------------|--------------------|--------------------|
+| Structure            | File (FIFO)        | Pile (LIFO)        |
+| Exploration          | Par niveaux        | En profondeur      |
+| Plus court chemin    | Oui (non pondere)  | Non                |
+| Memoire              | Plus gourmand      | Moins gourmand     |
+| Detection de cycles  | Possible           | Oui (classique)    |
+
+---
+
+## 6. Plus court chemin — Algorithme de Dijkstra
+
+### 6.1 Principe
+
+L'algorithme de Dijkstra trouve le plus court chemin depuis un sommet source vers tous les autres sommets dans un graphe pondere a **poids positifs ou nuls**.
+
+**Idee** : a chaque etape, on selectionne le sommet non visite ayant la plus petite distance provisoire, puis on met a jour les distances de ses voisins.
+
+### 6.2 Algorithme detaille
+
+```
+Entree : graphe G = (S, A) pondere (poids >= 0), sommet source s.
+Sortie : distance minimale de s a chaque sommet, et predecesseur pour reconstruire le chemin.
+
+1. Initialisation :
+   - Pour tout sommet v : distance[v] = +infini, predecesseur[v] = null
+   - distance[s] = 0
+   - Ensemble des sommets non visites = S
+
+2. Tant qu'il reste des sommets non visites :
+   a. Choisir u = sommet non visite avec distance[u] minimale.
+   b. Marquer u comme visite.
+   c. Pour chaque voisin v de u non visite :
+      - Si distance[u] + poids(u,v) < distance[v] :
+        - distance[v] = distance[u] + poids(u,v)
+        - predecesseur[v] = u
+
+3. Reconstruction du chemin de s a t :
+   - Partir de t, remonter les predecesseurs jusqu'a s.
+   - Inverser la sequence obtenue.
+```
+
+### 6.3 Exemple 1 — Graphe a 6 sommets
+
+```
+Graphe :
+
+        7
+   A ---------> B
+   |  \         |  \
+   |    2       |    1
+  10     \      3     \
+   |      v     |      v
+   |       C    |       E
+   |      / \   |      ^
+   |    4    8  |     /
+   v  /       \ v   6
+   D ----------> F
+         5
+
+Aretes (non oriente, pondere) :
+A-B : 7     A-C : 2     A-D : 10
+B-C : 3     B-E : 1
+C-D : 4     C-F : 8
+D-F : 5
+F-E : 6
+```
+
+**Source : A. Trouver le plus court chemin vers tous les sommets.**
+
+**Initialisation** :
+
+| Sommet | Distance | Predecesseur | Visite |
+|--------|----------|--------------|--------|
+| A      | 0        | -            | Non    |
+| B      | +inf     | -            | Non    |
+| C      | +inf     | -            | Non    |
+| D      | +inf     | -            | Non    |
+| E      | +inf     | -            | Non    |
+| F      | +inf     | -            | Non    |
+
+---
+
+**Iteration 1** : Sommet de distance minimale non visite = **A (distance 0)**
+
+On visite A. Voisins de A : B (poids 7), C (poids 2), D (poids 10).
+
+- B : 0 + 7 = 7 < +inf => distance[B] = 7, pred[B] = A
+- C : 0 + 2 = 2 < +inf => distance[C] = 2, pred[C] = A
+- D : 0 + 10 = 10 < +inf => distance[D] = 10, pred[D] = A
+
+| Sommet | Distance | Predecesseur | Visite |
+|--------|----------|--------------|--------|
+| A      | 0        | -            | **Oui**|
+| B      | 7        | A            | Non    |
+| C      | 2        | A            | Non    |
+| D      | 10       | A            | Non    |
+| E      | +inf     | -            | Non    |
+| F      | +inf     | -            | Non    |
+
+---
+
+**Iteration 2** : Sommet de distance minimale non visite = **C (distance 2)**
+
+On visite C. Voisins non visites de C : B (poids 3), D (poids 4), F (poids 8).
+
+- B : 2 + 3 = 5 < 7 => distance[B] = 5, pred[B] = C
+- D : 2 + 4 = 6 < 10 => distance[D] = 6, pred[D] = C
+- F : 2 + 8 = 10 < +inf => distance[F] = 10, pred[F] = C
+
+| Sommet | Distance | Predecesseur | Visite |
+|--------|----------|--------------|--------|
+| A      | 0        | -            | Oui    |
+| B      | 5        | C            | Non    |
+| C      | 2        | A            | **Oui**|
+| D      | 6        | C            | Non    |
+| E      | +inf     | -            | Non    |
+| F      | 10       | C            | Non    |
+
+---
+
+**Iteration 3** : Sommet de distance minimale non visite = **B (distance 5)**
+
+On visite B. Voisins non visites de B : E (poids 1).
+
+(A et C deja visites.)
+
+- E : 5 + 1 = 6 < +inf => distance[E] = 6, pred[E] = B
+
+| Sommet | Distance | Predecesseur | Visite |
+|--------|----------|--------------|--------|
+| A      | 0        | -            | Oui    |
+| B      | 5        | C            | **Oui**|
+| C      | 2        | A            | Oui    |
+| D      | 6        | C            | Non    |
+| E      | 6        | B            | Non    |
+| F      | 10       | C            | Non    |
+
+---
+
+**Iteration 4** : Sommet de distance minimale non visite = **D (distance 6)** (ou E, egalite, on prend D par ordre alphabetique)
+
+On visite D. Voisins non visites de D : F (poids 5).
+
+- F : 6 + 5 = 11 > 10 => pas de mise a jour.
+
+| Sommet | Distance | Predecesseur | Visite |
+|--------|----------|--------------|--------|
+| A      | 0        | -            | Oui    |
+| B      | 5        | C            | Oui    |
+| C      | 2        | A            | Oui    |
+| D      | 6        | C            | **Oui**|
+| E      | 6        | B            | Non    |
+| F      | 10       | C            | Non    |
+
+---
+
+**Iteration 5** : Sommet de distance minimale non visite = **E (distance 6)**
+
+On visite E. Voisins non visites de E : F (poids 6).
+
+- F : 6 + 6 = 12 > 10 => pas de mise a jour.
+
+| Sommet | Distance | Predecesseur | Visite |
+|--------|----------|--------------|--------|
+| A      | 0        | -            | Oui    |
+| B      | 5        | C            | Oui    |
+| C      | 2        | A            | Oui    |
+| D      | 6        | C            | Oui    |
+| E      | 6        | B            | **Oui**|
+| F      | 10       | C            | Non    |
+
+---
+
+**Iteration 6** : Sommet de distance minimale non visite = **F (distance 10)**
+
+On visite F. Plus de voisins non visites.
+
+| Sommet | Distance | Predecesseur | Visite |
+|--------|----------|--------------|--------|
+| A      | 0        | -            | Oui    |
+| B      | 5        | C            | Oui    |
+| C      | 2        | A            | Oui    |
+| D      | 6        | C            | Oui    |
+| E      | 6        | B            | Oui    |
+| F      | 10       | C            | **Oui**|
+
+---
+
+**Tableau final** :
+
+| Sommet | Distance depuis A | Predecesseur | Plus court chemin         |
+|--------|-------------------|--------------|---------------------------|
+| A      | 0                 | -            | A                         |
+| B      | 5                 | C            | A -> C -> B               |
+| C      | 2                 | A            | A -> C                    |
+| D      | 6                 | C            | A -> C -> D               |
+| E      | 6                 | B            | A -> C -> B -> E          |
+| F      | 10                | C            | A -> C -> F               |
+
+**Reconstruction du chemin A vers E** :
+- E, predecesseur = B
+- B, predecesseur = C
+- C, predecesseur = A
+- Chemin : A -> C -> B -> E, distance = 6.
+
+### 6.4 Exemple 2 — Graphe a 7 sommets
+
+```
+Graphe :
+
+    S ---2--- A ---4--- T
+    |         |         |
+    5         1         3
+    |         |         |
+    B ---3--- C ---2--- D
+
+Source : S, Destination : T
+```
+
+Aretes : S-A:2, S-B:5, A-C:1, A-T:4, B-C:3, C-D:2, D-T:3.
+
+**Initialisation** :
+
+| Sommet | Distance | Pred | Visite |
+|--------|----------|------|--------|
+| S      | 0        | -    | Non    |
+| A      | +inf     | -    | Non    |
+| B      | +inf     | -    | Non    |
+| C      | +inf     | -    | Non    |
+| D      | +inf     | -    | Non    |
+| T      | +inf     | -    | Non    |
+
+**Iteration 1** : visite **S** (dist 0)
+- A : 0+2=2, B : 0+5=5
+
+| Sommet | Distance | Pred | Visite |
+|--------|----------|------|--------|
+| S      | 0        | -    | Oui    |
+| A      | 2        | S    | Non    |
+| B      | 5        | S    | Non    |
+| C      | +inf     | -    | Non    |
+| D      | +inf     | -    | Non    |
+| T      | +inf     | -    | Non    |
+
+**Iteration 2** : visite **A** (dist 2)
+- C : 2+1=3, T : 2+4=6
+
+| Sommet | Distance | Pred | Visite |
+|--------|----------|------|--------|
+| S      | 0        | -    | Oui    |
+| A      | 2        | S    | Oui    |
+| B      | 5        | S    | Non    |
+| C      | 3        | A    | Non    |
+| D      | +inf     | -    | Non    |
+| T      | 6        | A    | Non    |
+
+**Iteration 3** : visite **C** (dist 3)
+- B : 3+3=6 > 5, pas de MAJ
+- D : 3+2=5
+
+| Sommet | Distance | Pred | Visite |
+|--------|----------|------|--------|
+| S      | 0        | -    | Oui    |
+| A      | 2        | S    | Oui    |
+| B      | 5        | S    | Non    |
+| C      | 3        | A    | Oui    |
+| D      | 5        | C    | Non    |
+| T      | 6        | A    | Non    |
+
+**Iteration 4** : visite **B** (dist 5) — egalite avec D, ordre alphabetique
+- C deja visite.
+
+Pas de mise a jour.
+
+| Sommet | Distance | Pred | Visite |
+|--------|----------|------|--------|
+| S      | 0        | -    | Oui    |
+| A      | 2        | S    | Oui    |
+| B      | 5        | S    | Oui    |
+| C      | 3        | A    | Oui    |
+| D      | 5        | C    | Non    |
+| T      | 6        | A    | Non    |
+
+**Iteration 5** : visite **D** (dist 5)
+- T : 5+3=8 > 6, pas de MAJ
+
+| Sommet | Distance | Pred | Visite |
+|--------|----------|------|--------|
+| S      | 0        | -    | Oui    |
+| A      | 2        | S    | Oui    |
+| B      | 5        | S    | Oui    |
+| C      | 3        | A    | Oui    |
+| D      | 5        | C    | Oui    |
+| T      | 6        | A    | Non    |
+
+**Iteration 6** : visite **T** (dist 6). Fin.
+
+**Plus court chemin S -> T** : T, pred=A, pred=S. Chemin : **S -> A -> T**, distance **6**.
+
+### 6.5 Points cles Dijkstra pour l'examen
+
+1. **Toujours** choisir le sommet non visite de distance minimale.
+2. Les poids doivent etre **positifs ou nuls**.
+3. Le tableau doit montrer l'etat apres **chaque** iteration.
+4. Ne pas oublier de **reconstruire le chemin** en remontant les predecesseurs.
+5. En cas d'egalite, choisir par ordre alphabetique (sauf consigne contraire).
+
+---
+
+## 7. Ordonnancement — Methode MPM / PERT
+
+### 7.1 Concepts de base
+
+L'ordonnancement permet de planifier un projet compose de taches ayant des durees et des contraintes d'anteriorite.
+
+**Termes** :
+- **Tache** : activite elementaire du projet, de duree connue.
+- **Contrainte d'anteriorite** : la tache B ne peut commencer que si la tache A est terminee.
+- **Date au plus tot (to)** : date la plus precoce a laquelle une tache peut commencer.
+- **Date au plus tard (ta)** : date la plus tardive a laquelle une tache peut commencer sans retarder le projet.
+- **Marge totale (MT)** : MT = ta - to. Retard maximal sans impacter la duree totale du projet.
+- **Marge libre (ML)** : retard maximal sans impacter la date au plus tot des successeurs.
+- **Chemin critique** : ensemble des taches de marge nulle. Tout retard sur ces taches retarde le projet.
+
+### 7.2 Methode de calcul — Etape par etape
+
+#### Etape 1 : Tableau des taches
+
+On etablit le tableau des taches avec durees et anteriorites.
+
+#### Etape 2 : Graphe d'ordonnancement (methode MPM — potentiels-taches)
+
+En methode MPM (Methode des Potentiels Metra) :
+- Chaque **sommet** represente une **tache**.
+- Chaque **arc** represente une contrainte d'anteriorite.
+- On ajoute un sommet "Debut" et un sommet "Fin".
+
+#### Etape 3 : Calcul des dates au plus tot (passage avant)
+
+On parcourt le graphe de gauche a droite (du Debut vers la Fin).
+
+```
+to(tache) = MAX( to(predecesseur) + duree(predecesseur) )
+            pour tous les predecesseurs de la tache
+```
+
+On prend le **maximum** car la tache ne peut commencer que quand TOUS ses predecesseurs sont termines.
+
+#### Etape 4 : Calcul des dates au plus tard (passage arriere)
+
+On parcourt le graphe de droite a gauche (de la Fin vers le Debut).
+
+```
+ta(tache) = MIN( ta(successeur) ) - duree(tache)
+            pour tous les successeurs de la tache
+```
+
+On prend le **minimum** car la tache doit etre terminee avant le debut au plus tard de chacun de ses successeurs.
+
+Pour la tache "Fin" : ta(Fin) = to(Fin).
+
+#### Etape 5 : Calcul des marges
+
+```
+Marge totale :  MT(tache) = ta(tache) - to(tache)
+Marge libre  :  ML(tache) = MIN( to(successeur) ) - to(tache) - duree(tache)
+```
+
+#### Etape 6 : Chemin critique
+
+Le chemin critique est constitue des taches dont la **marge totale = 0**.
+
+### 7.3 Exemple complet 1
+
+**Enonce** :
+
+| Tache | Duree (jours) | Anteriorites |
+|-------|---------------|--------------|
+| A     | 3             | -            |
+| B     | 2             | -            |
+| C     | 4             | A            |
+| D     | 3             | A, B         |
+| E     | 2             | C            |
+| F     | 5             | D            |
+| G     | 1             | E, F         |
+
+**Etape 1 : Graphe MPM**
+
+```
+          +---+     +---+     +---+
+    +---->| A |---->| C |---->| E |----+
+    |     | 3 |     | 4 |     | 2 |    |
+    |     +---+     +---+     +---+    |
+    |       |                          v
+  +---+     +-------->+---+     +---+----+---+
+  |Deb|               | D |---->| F |    | G |---->FIN
+  | 0 |     +-------->| 3 |     | 5 |    | 1 |
+  +---+     |         +---+     +---+    +---+
+    |       |                          ^
+    |     +---+                        |
+    +---->| B |------------------------+
+          | 2 |
+          +---+
+```
+
+Note : G depend de E et F. Debut n'a pas d'anteriorite. Fin est apres G.
+
+**Etape 2 : Dates au plus tot (to) — passage avant**
+
+On traite les taches dans l'ordre topologique.
+
+```
+to(Debut) = 0
+
+to(A) = to(Debut) + 0 = 0
+to(B) = to(Debut) + 0 = 0
+
+to(C) = to(A) + duree(A) = 0 + 3 = 3
+to(D) = MAX( to(A) + duree(A), to(B) + duree(B) )
+      = MAX( 0 + 3, 0 + 2 )
+      = MAX( 3, 2 )
+      = 3
+
+to(E) = to(C) + duree(C) = 3 + 4 = 7
+to(F) = to(D) + duree(D) = 3 + 3 = 6
+
+to(G) = MAX( to(E) + duree(E), to(F) + duree(F) )
+      = MAX( 7 + 2, 6 + 5 )
+      = MAX( 9, 11 )
+      = 11
+
+to(Fin) = to(G) + duree(G) = 11 + 1 = 12
+```
+
+**Duree totale du projet : 12 jours.**
+
+**Etape 3 : Dates au plus tard (ta) — passage arriere**
+
+```
+ta(Fin) = to(Fin) = 12
+
+ta(G) = ta(Fin) - duree(G) = 12 - 1 = 11
+
+ta(E) = ta(G) - duree(E) = 11 - 2 = 9
+ta(F) = ta(G) - duree(F) = 11 - 5 = 6
+
+ta(C) = ta(E) - duree(C) = 9 - 4 = 5
+ta(D) = ta(F) - duree(D) = 6 - 3 = 3
+
+ta(A) = MIN( ta(C) - duree(A), ta(D) - duree(A) )
+      Attention, formule correcte :
+      ta(A) = MIN( ta(C), ta(D) ) - duree(A)
+      = MIN( 5, 3 ) - 3
+      = 3 - 3 = 0
+
+      Non, reprenons. La formule est :
+      ta(A) = MIN( ta(successeur_de_A) ) - duree(A)
+      Les successeurs de A sont C et D.
+      ta(A) = MIN( ta(C), ta(D) ) - duree(A) = MIN(5, 3) - 3 = 3 - 3 = 0
+
+ta(B) = ta(D) - duree(B) = 3 - 2 = 1
+```
+
+**Etape 4 : Tableau recapitulatif**
+
+| Tache | Duree | to  | ta  | MT (ta-to) | Critique ? |
+|-------|-------|-----|-----|------------|------------|
+| A     | 3     | 0   | 0   | 0          | OUI        |
+| B     | 2     | 0   | 1   | 1          | Non        |
+| C     | 4     | 3   | 5   | 2          | Non        |
+| D     | 3     | 3   | 3   | 0          | OUI        |
+| E     | 2     | 7   | 9   | 2          | Non        |
+| F     | 5     | 6   | 6   | 0          | OUI        |
+| G     | 1     | 11  | 11  | 0          | OUI        |
+
+**Chemin critique : A -> D -> F -> G (duree : 3 + 3 + 5 + 1 = 12 jours)**
+
+**Etape 5 : Marges libres**
+
+```
+ML(A) = MIN(to(C), to(D)) - to(A) - duree(A)
+      = MIN(3, 3) - 0 - 3 = 0
+
+ML(B) = to(D) - to(B) - duree(B) = 3 - 0 - 2 = 1
+
+ML(C) = to(E) - to(C) - duree(C) = 7 - 3 - 4 = 0
+
+ML(D) = to(F) - to(D) - duree(D) = 6 - 3 - 3 = 0
+
+ML(E) = to(G) - to(E) - duree(E) = 11 - 7 - 2 = 2
+
+ML(F) = to(G) - to(F) - duree(F) = 11 - 6 - 5 = 0
+
+ML(G) = to(Fin) - to(G) - duree(G) = 12 - 11 - 1 = 0
+```
+
+| Tache | MT | ML |
+|-------|----|----|
+| A     | 0  | 0  |
+| B     | 1  | 1  |
+| C     | 2  | 0  |
+| D     | 0  | 0  |
+| E     | 2  | 2  |
+| F     | 0  | 0  |
+| G     | 0  | 0  |
+
+**Etape 6 : Diagramme de Gantt (au plus tot)**
+
+```
+Jours:  0  1  2  3  4  5  6  7  8  9  10 11 12
+        |  |  |  |  |  |  |  |  |  |  |  |  |
+A       [=====]                                    (0-3) *critique*
+B       [===]                                      (0-2)
+C                [===========]                     (3-7)
+D                [========]                        (3-6) *critique*
+E                               [===]             (7-9)
+F                         [==============]        (6-11) *critique*
+G                                           [=]   (11-12) *critique*
+
+Legende : [===] = duree de la tache, * = critique
+```
+
+### 7.4 Exemple complet 2
+
+**Enonce** :
+
+| Tache | Designation           | Duree | Anteriorites |
+|-------|-----------------------|-------|--------------|
+| A     | Analyse des besoins   | 5     | -            |
+| B     | Conception BDD        | 3     | A            |
+| C     | Conception IHM        | 4     | A            |
+| D     | Developpement back    | 6     | B            |
+| E     | Developpement front   | 5     | C            |
+| F     | Integration           | 3     | D, E         |
+| G     | Tests                 | 4     | F            |
+| H     | Documentation         | 2     | F            |
+| I     | Deploiement           | 1     | G, H         |
+
+**Dates au plus tot (passage avant)** :
+
+```
+to(A) = 0
+to(B) = to(A) + 5 = 5
+to(C) = to(A) + 5 = 5
+to(D) = to(B) + 3 = 8
+to(E) = to(C) + 4 = 9
+to(F) = MAX(to(D)+6, to(E)+5) = MAX(14, 14) = 14
+to(G) = to(F) + 3 = 17
+to(H) = to(F) + 3 = 17
+to(I) = MAX(to(G)+4, to(H)+2) = MAX(21, 19) = 21
+to(Fin) = to(I) + 1 = 22
+```
+
+**Duree totale : 22 jours.**
+
+**Dates au plus tard (passage arriere)** :
+
+```
+ta(Fin) = 22
+ta(I) = 22 - 1 = 21
+ta(G) = 21 - 4 = 17
+ta(H) = 21 - 2 = 19
+ta(F) = MIN(ta(G), ta(H)) - 3 = MIN(17, 19) - 3 = 14
+ta(D) = ta(F) - 6 = 8
+ta(E) = ta(F) - 5 = 9
+ta(B) = ta(D) - 3 = 5
+ta(C) = ta(E) - 4 = 5
+ta(A) = MIN(ta(B), ta(C)) - 5 = MIN(5, 5) - 5 = 0
+```
+
+**Tableau recapitulatif** :
+
+| Tache | Duree | to  | ta  | MT  | Critique ? |
+|-------|-------|-----|-----|-----|------------|
+| A     | 5     | 0   | 0   | 0   | OUI        |
+| B     | 3     | 5   | 5   | 0   | OUI        |
+| C     | 4     | 5   | 5   | 0   | OUI        |
+| D     | 6     | 8   | 8   | 0   | OUI        |
+| E     | 5     | 9   | 9   | 0   | OUI        |
+| F     | 3     | 14  | 14  | 0   | OUI        |
+| G     | 4     | 17  | 17  | 0   | OUI        |
+| H     | 2     | 17  | 19  | 2   | Non        |
+| I     | 1     | 21  | 21  | 0   | OUI        |
+
+**Chemins critiques** :
+- A -> B -> D -> F -> G -> I (5+3+6+3+4+1 = 22)
+- A -> C -> E -> F -> G -> I (5+4+5+3+4+1 = 22)
+
+Deux chemins critiques de meme longueur !
+
+**Diagramme de Gantt** :
+
+```
+Jours: 0    5    10   15   20  22
+       |    |    |    |    |   |
+A      [====]                       (0-5)*
+B           [==]                    (5-8)*
+C           [===]                   (5-9)*
+D                [=====]            (8-14)*
+E                [====]             (9-14)*
+F                     [==]          (14-17)*
+G                        [===]     (17-21)*
+H                        [=]..     (17-19) marge 2
+I                             [=]  (21-22)*
+```
+
+### 7.5 Points cles ordonnancement pour l'examen
+
+1. Passage avant : toujours prendre le **MAX** pour les dates au plus tot.
+2. Passage arriere : toujours prendre le **MIN** pour les dates au plus tard.
+3. Le chemin critique passe par les taches de **marge totale = 0**.
+4. La duree du projet = to(Fin) = somme des durees sur le chemin critique.
+5. Un projet peut avoir **plusieurs** chemins critiques.
+6. Montrer **chaque calcul** de to et ta dans la copie d'examen.
+
+---
+
+## 8. Coloration de graphes
+
+### 8.1 Definition
+
+La **coloration** d'un graphe consiste a attribuer une couleur a chaque sommet de sorte que deux sommets adjacents n'aient jamais la meme couleur.
+
+Le **nombre chromatique** chi(G) est le nombre minimum de couleurs necessaires pour colorer le graphe G.
+
+### 8.2 Proprietes
+
+- chi(Kn) = n (graphe complet a n sommets).
+- Si le graphe contient un sous-graphe complet Kp, alors chi(G) >= p.
+- chi(G) <= Delta(G) + 1, ou Delta(G) est le degre maximum du graphe (theoreme de Brooks : on peut souvent faire mieux).
+- Si le graphe est biparti (pas de cycle de longueur impaire), chi(G) = 2.
+- Un arbre a au moins 2 sommets a chi = 2.
+
+### 8.3 Algorithme glouton de coloration
+
+L'algorithme glouton ne garantit pas d'obtenir chi(G) mais donne une coloration valide.
+
+**Algorithme** :
+1. Ordonner les sommets (par degre decroissant de preference).
+2. Pour chaque sommet dans l'ordre :
+   - Attribuer la plus petite couleur non utilisee par ses voisins deja colories.
+
+**Exemple** :
+
+```
+Graphe :
+    A --- B
+    |   / |
+    | /   |
+    C --- D --- E
+
+Degres : B=3, C=3, D=3, A=2, E=1
+Ordre de traitement : B, C, D, A, E
+```
+
+**Etape 1** : B -> couleur 1 (aucun voisin colorie)
+
+**Etape 2** : C -> voisins colories : B(1). Plus petite couleur differente de {1} -> couleur 2.
+
+**Etape 3** : D -> voisins colories : B(1), C(2). Plus petite couleur differente de {1,2} -> couleur 3.
+
+**Etape 4** : A -> voisins colories : B(1), C(2). Plus petite couleur differente de {1,2} -> couleur 3.
+
+**Etape 5** : E -> voisins colories : D(3). Plus petite couleur differente de {3} -> couleur 1.
+
+**Resultat** : 3 couleurs utilisees.
+
+```
+    A(3) --- B(1)
+    |      / |
+    |    /   |
+    C(2) --- D(3) --- E(1)
+```
+
+Verification : aucune arete ne relie deux sommets de meme couleur. chi(G) = 3.
+
+### 8.4 Applications
+
+**Emplois du temps** : chaque cours est un sommet, une arete relie deux cours qui ne peuvent pas avoir lieu en meme temps (meme salle, meme enseignant, memes etudiants). Les couleurs representent les creneaux horaires. Le nombre chromatique donne le nombre minimal de creneaux.
+
+**Allocation de registres (compilation)** : chaque variable est un sommet, une arete relie deux variables "vivantes" en meme temps. Les couleurs sont des registres processeur. Le nombre chromatique donne le nombre minimal de registres necessaires.
+
+**Attribution de frequences** : chaque antenne est un sommet, une arete relie deux antennes proches (interference). Les couleurs sont des frequences. Le nombre chromatique donne le nombre minimal de frequences.
+
+---
+
+## 9. Arbres et arbres couvrants
+
+### 9.1 Definitions
+
+Un **arbre** est un graphe connexe sans cycle.
+
+Proprietes d'un arbre a n sommets :
+- Il possede exactement n - 1 aretes.
+- Il existe un unique chemin entre toute paire de sommets.
+- La suppression d'une arete le deconnecte.
+- L'ajout d'une arete cree un cycle.
+
+Une **foret** est un graphe sans cycle (pas forcement connexe) : c'est une union d'arbres.
+
+### 9.2 Arbre couvrant
+
+Un **arbre couvrant** (ou arbre recouvrant) d'un graphe connexe G = (S, A) est un sous-graphe de G qui est un arbre et qui contient tous les sommets de G.
+
+Un graphe connexe a n sommets possede au moins un arbre couvrant, ayant exactement n - 1 aretes.
+
+### 9.3 Arbre couvrant de poids minimum (ACM)
+
+Pour un graphe pondere, l'**arbre couvrant de poids minimum** est l'arbre couvrant dont la somme des poids des aretes est minimale.
+
+Deux algorithmes classiques : **Kruskal** et **Prim**.
+
+### 9.4 Algorithme de Kruskal
+
+**Principe** : trier les aretes par poids croissant, les ajouter une par une si elles ne creent pas de cycle.
+
+**Algorithme** :
+1. Trier toutes les aretes par poids croissant.
+2. Pour chaque arete (dans l'ordre) :
+   - Si l'ajout de cette arete ne cree pas de cycle, l'ajouter a l'arbre.
+   - Sinon, la rejeter.
+3. S'arreter quand l'arbre a n - 1 aretes.
+
+**Exemple** :
+
+```
+Graphe :
+    A ---4--- B
+    |       / | \
+    2     3   6   8
+    |   /     |     \
+    C ---5--- D ---7--- E
+```
+
+Aretes triees : {A,C}=2, {B,C}=3, {A,B}=4, {C,D}=5, {B,D}=6, {D,E}=7, {B,E}=8.
+
+n = 5 sommets, on veut 4 aretes.
+
+| Etape | Arete       | Poids | Action                                      | Arbre                          |
+|-------|-------------|-------|---------------------------------------------|--------------------------------|
+| 1     | {A,C}       | 2     | Ajoutee (pas de cycle)                      | {A,C}                          |
+| 2     | {B,C}       | 3     | Ajoutee (pas de cycle)                      | {A,C}, {B,C}                   |
+| 3     | {A,B}       | 4     | Rejetee (cycle A-C-B-A)                     | {A,C}, {B,C}                   |
+| 4     | {C,D}       | 5     | Ajoutee (pas de cycle)                      | {A,C}, {B,C}, {C,D}            |
+| 5     | {B,D}       | 6     | Rejetee (cycle B-C-D-B)                     | {A,C}, {B,C}, {C,D}            |
+| 6     | {D,E}       | 7     | Ajoutee (pas de cycle)                      | {A,C}, {B,C}, {C,D}, {D,E}     |
+
+4 aretes obtenues, STOP.
+
+**Arbre couvrant de poids minimum** :
+```
+    A       B
+    |     /
+    2   3
+    | /
+    C ---5--- D ---7--- E
+
+Poids total = 2 + 3 + 5 + 7 = 17
+```
+
+### 9.5 Algorithme de Prim
+
+**Principe** : partir d'un sommet, et a chaque etape ajouter l'arete de poids minimum qui relie un sommet deja dans l'arbre a un sommet hors de l'arbre.
+
+**Algorithme** :
+1. Choisir un sommet de depart, l'ajouter a l'arbre.
+2. Tant que l'arbre n'a pas n - 1 aretes :
+   - Parmi toutes les aretes ayant une extremite dans l'arbre et l'autre hors de l'arbre, choisir celle de poids minimum.
+   - Ajouter cette arete et le nouveau sommet a l'arbre.
+
+**Exemple** (meme graphe, depart A) :
+
+| Etape | Sommets dans l'arbre | Arete ajoutee | Poids | Nouveau sommet |
+|-------|----------------------|---------------|-------|----------------|
+| 0     | {A}                  | -             | -     | A              |
+| 1     | {A}                  | {A,C}         | 2     | C              |
+| 2     | {A,C}                | {B,C}         | 3     | B              |
+| 3     | {A,B,C}              | {C,D}         | 5     | D              |
+| 4     | {A,B,C,D}            | {D,E}         | 7     | E              |
+
+Detail de l'etape 2 : aretes candidates depuis {A,C} :
+- {A,B}=4, {B,C}=3, {C,D}=5 -> minimum = {B,C}=3.
+
+Detail de l'etape 3 : aretes candidates depuis {A,B,C} :
+- {A,B}=4 (les deux dans l'arbre, ignoree), {C,D}=5, {B,D}=6, {B,E}=8 -> minimum = {C,D}=5.
+
+Detail de l'etape 4 : aretes candidates depuis {A,B,C,D} :
+- {B,D}=6 (les deux dans l'arbre, ignoree), {D,E}=7, {B,E}=8 -> minimum = {D,E}=7.
+
+**Poids total = 2 + 3 + 5 + 7 = 17.** Meme resultat que Kruskal.
+
+---
+
+## 10. Flot dans un reseau
+
+### 10.1 Definitions
+
+Un **reseau** est un graphe oriente pondere ou :
+- Il existe un sommet **source** s (pas d'arc entrant, ou defini comme tel).
+- Il existe un sommet **puits** t (pas d'arc sortant, ou defini comme tel).
+- Chaque arc (u,v) a une **capacite** c(u,v) >= 0 : quantite maximale pouvant transiter.
+
+Un **flot** f est une fonction qui associe a chaque arc un debit f(u,v) tel que :
+1. **Contrainte de capacite** : 0 <= f(u,v) <= c(u,v) pour tout arc.
+2. **Conservation du flot** : pour tout sommet v (sauf s et t), la somme des flots entrants = somme des flots sortants.
+
+La **valeur du flot** = somme des flots sortant de s = somme des flots entrant dans t.
+
+Le **flot maximal** est le flot de valeur maximale.
+
+### 10.2 Theoreme coupe-min / flot-max
+
+La valeur du flot maximal est egale a la capacite de la coupe minimale.
+
+Une **coupe** est une partition des sommets en deux ensembles S et T tels que s est dans S et t dans T. La capacite de la coupe est la somme des capacites des arcs allant de S vers T.
+
+### 10.3 Algorithme de Ford-Fulkerson (simplifie)
+
+**Principe** : trouver un chemin augmentant de s a t dans le graphe residuel, et augmenter le flot le long de ce chemin.
+
+**Algorithme** :
+1. Initialiser f(u,v) = 0 pour tout arc.
+2. Tant qu'il existe un chemin de s a t dans le graphe residuel :
+   a. Trouver un tel chemin (par BFS ou DFS).
+   b. Determiner le goulot d'etranglement : delta = min des capacites residuelles sur le chemin.
+   c. Augmenter le flot de delta sur chaque arc du chemin.
+   d. Mettre a jour le graphe residuel.
+3. Renvoyer le flot total.
+
+**Graphe residuel** : pour chaque arc (u,v) de capacite c et flot f :
+- Arc direct (u,v) de capacite residuelle c - f (si c - f > 0).
+- Arc retour (v,u) de capacite residuelle f (si f > 0).
+
+**Exemple simplifie** :
+
+```
+Reseau :
+    s ---10---> A ---8---> t
+    |           ^          ^
+    5           3          6
+    |           |          |
+    +---------> B ---6-----+
+
+Capacites : s->A:10, s->B:5, A->t:8, B->A:3, B->t:6
+```
+
+**Iteration 1** : chemin s -> A -> t, goulot = min(10, 8) = 8.
+Flot : s->A : 8, A->t : 8. Flot total = 8.
+
+**Iteration 2** : chemin s -> B -> t, goulot = min(5, 6) = 5.
+Flot : s->B : 5, B->t : 5. Flot total = 8 + 5 = 13.
+
+**Iteration 3** : chemin s -> B -> A -> t ? Capacite residuelle s->B : 0 (deja 5/5). Non.
+Chemin s -> A -> t ? Capacite residuelle s->A : 10-8=2, A->t : 8-8=0. Non.
+
+Pas de chemin augmentant restant. Le probleme ici necessite d'utiliser les arcs retour.
+
+Verifions : s -> A (capacite residuelle 2), A -> t (capacite residuelle 0). On tente s->B->A->t : s->B residuel 0. Pas possible.
+
+**Flot maximal = 13.**
+
+---
+
+## 11. Lien avec les matrices
+
+### 11.1 Matrice d'adjacence et chemins
+
+Soit M la matrice d'adjacence (non ponderee) d'un graphe. Le coefficient (i,j) de la matrice M^k (M puissance k) donne le **nombre de chemins de longueur exactement k** allant du sommet i au sommet j.
+
+### 11.2 Exemple
+
+```
+Graphe :
+    A --- B
+    |     |
+    C --- D
+
+Matrice M :
+      A  B  C  D
+A  [  0  1  1  0  ]
+B  [  1  0  0  1  ]
+C  [  1  0  0  1  ]
+D  [  0  1  1  0  ]
+```
+
+Calcul de M^2 = M x M :
+
+```
+M^2[A][A] = 0*0 + 1*1 + 1*1 + 0*0 = 2
+```
+
+Cela signifie qu'il y a 2 chemins de longueur 2 de A a A : A-B-A et A-C-A.
+
+```
+M^2 :
+      A  B  C  D
+A  [  2  0  0  2  ]
+B  [  0  2  2  0  ]
+C  [  0  2  2  0  ]
+D  [  2  0  0  2  ]
+```
+
+M^2[A][D] = 2 : il y a 2 chemins de longueur 2 de A a D : A-B-D et A-C-D.
+
+**M^3** donnerait le nombre de chemins de longueur 3, etc.
+
+### 11.3 Application
+
+Pour savoir s'il existe un chemin de longueur au plus k entre i et j, on calcule :
+```
+R = M + M^2 + M^3 + ... + M^k
+```
+Si R[i][j] > 0, alors il existe au moins un tel chemin.
+
+### 11.4 Matrice d'adjacence d'un graphe oriente
+
+Pour un graphe oriente, M[i][j] = 1 signifie arc de i vers j. La matrice n'est pas symetrique. L'interpretation de M^k est : nombre de chemins orientes de longueur k de i a j.
+
+---
+
+## 12. Applications informatiques
+
+### 12.1 Reseaux informatiques
+
+Les graphes modelisent les reseaux : les sommets sont les machines (routeurs, serveurs, postes), les aretes/arcs sont les connexions physiques ou logiques, les poids representent la bande passante, la latence ou le cout.
+
+### 12.2 Routage
+
+L'algorithme de Dijkstra est utilise dans les protocoles de routage (OSPF — Open Shortest Path First) pour trouver le plus court chemin dans un reseau.
+
+Le protocole BGP utilise des variantes de parcours de graphes pour le routage inter-domaines.
+
+### 12.3 Planification de projets IT
+
+L'ordonnancement (MPM/PERT) est utilise pour planifier des projets de developpement logiciel :
+- Les taches sont les phases du projet (analyse, conception, dev, tests...).
+- Le chemin critique indique la duree incompressible.
+- Les marges permettent de gerer les ressources.
+
+### 12.4 Organisation de bases de donnees
+
+Le modele entite-association est un graphe : les entites sont des sommets, les associations des aretes. Les schemas de dependances fonctionnelles forment des graphes orientes utiles pour la normalisation.
+
+### 12.5 Dependances logicielles
+
+Les gestionnaires de paquets (npm, pip, apt) modelisent les dependances comme un graphe oriente acyclique (DAG). L'ordre d'installation est un **tri topologique** de ce graphe.
+
+### 12.6 Arbres et structures de donnees
+
+Les arbres (binaires, B-arbres, etc.) sont omnipresents en informatique : systemes de fichiers, index de bases de donnees, arbres syntaxiques des compilateurs.
+
+---
+
+## 13. Exercices d'examen corriges
+
+---
+
+### Exercice 1 — Vocabulaire et proprietes
+
+**Enonce** : Soit le graphe G suivant :
+
+```
+    A --- B --- C
+    |   / |     |
+    | /   |     |
+    D --- E --- F
+```
+
+1. G est-il oriente ou non oriente ?
+2. Donner le degre de chaque sommet.
+3. Verifier le theoreme des degres.
+4. G est-il connexe ?
+5. G possede-t-il un cycle ? Si oui, en donner un.
+
+**Correction** :
+
+1. G est **non oriente** (les liens n'ont pas de sens).
+
+2. Degres :
+   - d(A) = 2 (voisins : B, D)
+   - d(B) = 4 (voisins : A, C, D, E)
+   - d(C) = 2 (voisins : B, F)
+   - d(D) = 3 (voisins : A, B, E)
+   - d(E) = 3 (voisins : B, D, F)
+   - d(F) = 2 (voisins : C, E)
+
+3. Somme des degres = 2 + 4 + 2 + 3 + 3 + 2 = 16.
+   Nombre d'aretes : {A,B}, {A,D}, {B,C}, {B,D}, {B,E}, {C,F}, {D,E}, {E,F} = 8 aretes.
+   2 x 8 = 16. Verifie.
+
+4. Oui, G est **connexe** : on peut relier n'importe quelle paire de sommets par une chaine.
+
+5. Oui. Exemple : A - B - D - A (longueur 3). Autre exemple : B - D - E - B.
+
+---
+
+### Exercice 2 — Matrice d'adjacence
+
+**Enonce** : Ecrire la matrice d'adjacence du graphe oriente suivant :
+
+```
+    A ---> B
+    |      |
+    v      v
+    C ---> D
+    ^      |
+    |      v
+    E <--- F
+```
+
+**Correction** :
+
+Arcs : (A,B), (A,C), (B,D), (C,D), (D,F), (F,E), (E,C).
+
+```
+      A  B  C  D  E  F
+A  [  0  1  1  0  0  0  ]
+B  [  0  0  0  1  0  0  ]
+C  [  0  0  0  1  0  0  ]
+D  [  0  0  0  0  0  1  ]
+E  [  0  0  1  0  0  0  ]
+F  [  0  0  0  0  1  0  ]
+```
+
+La matrice n'est pas symetrique : c'est bien un graphe oriente.
+
+Degres :
+- d+(A)=2, d-(A)=0
+- d+(B)=1, d-(B)=1
+- d+(C)=1, d-(C)=2
+- d+(D)=1, d-(D)=2
+- d+(E)=1, d-(E)=1
+- d+(F)=1, d-(F)=1
+
+---
+
+### Exercice 3 — Parcours BFS
+
+**Enonce** : Effectuer un parcours en largeur a partir de S sur le graphe :
+
+```
+    S --- A --- D
+    |     |     |
+    B --- C --- E
+```
+
+**Correction** :
+
+Adjacences (ordre alphabetique) :
+- S : A, B
+- A : S, C, D
+- B : S, C
+- C : A, B, E
+- D : A, E
+- E : C, D
+
+| Etape | File           | Defile | Enfile      | Visites            |
+|-------|----------------|--------|-------------|--------------------|
+| 0     | [S]            | -      | -           | {S}                |
+| 1     | [S]            | S      | A, B        | {S, A, B}          |
+| 2     | [A, B]         | A      | C, D        | {S, A, B, C, D}    |
+| 3     | [B, C, D]      | B      | (rien)      | {S, A, B, C, D}    |
+| 4     | [C, D]         | C      | E           | {S, A, B, C, D, E} |
+| 5     | [D, E]         | D      | (rien)      | {S, A, B, C, D, E} |
+| 6     | [E]            | E      | (rien)      | {S, A, B, C, D, E} |
+
+**Ordre BFS : S, A, B, C, D, E**
+
+---
+
+### Exercice 4 — Parcours DFS
+
+**Enonce** : Meme graphe, parcours en profondeur a partir de S.
+
+**Correction** (version iterative, pile, voisins empiles en ordre alphabetique inverse pour visiter dans l'ordre alphabetique) :
+
+| Etape | Pile              | Depile | Empile    | Visites            |
+|-------|-------------------|--------|-----------|--------------------|
+| 0     | [S]               | -      | -         | {}                 |
+| 1     | [S]               | S      | B, A      | {S}                |
+| 2     | [B, A]            | A      | D, C      | {S, A}             |
+| 3     | [B, D, C]         | C      | E, B      | {S, A, C}          |
+| 4     | [B, D, E, B]      | B      | (S,C vis) | {S, A, C, B}       |
+| 5     | [B, D, E]         | E      | D         | {S, A, C, B, E}    |
+| 6     | [B, D, D]         | D      | (A,E vis) | {S, A, C, B, E, D} |
+| 7     | [B, D]            | D      | deja vis   | {S, A, C, B, E, D} |
+| 8     | [B]               | B      | deja vis   | {S, A, C, B, E, D} |
+
+**Ordre DFS : S, A, C, B, E, D**
+
+---
+
+### Exercice 5 — Dijkstra (graphe 6 sommets)
+
+**Enonce** : Trouver le plus court chemin de A a F dans le graphe pondere :
+
+```
+    A ---3--- B ---1--- C
+    |         |         |
+    7         2         5
+    |         |         |
+    D ---4--- E ---3--- F
+```
+
+**Correction** :
+
+Aretes : A-B:3, A-D:7, B-C:1, B-E:2, C-F:5, D-E:4, E-F:3.
+
+**Initialisation** :
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| A      | 0    | -    | Non    |
+| B      | inf  | -    | Non    |
+| C      | inf  | -    | Non    |
+| D      | inf  | -    | Non    |
+| E      | inf  | -    | Non    |
+| F      | inf  | -    | Non    |
+
+**Iteration 1 : visite A (0)**
+- B : 0+3=3, D : 0+7=7.
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| A      | 0    | -    | Oui    |
+| B      | 3    | A    | Non    |
+| C      | inf  | -    | Non    |
+| D      | 7    | A    | Non    |
+| E      | inf  | -    | Non    |
+| F      | inf  | -    | Non    |
+
+**Iteration 2 : visite B (3)**
+- C : 3+1=4, E : 3+2=5.
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| A      | 0    | -    | Oui    |
+| B      | 3    | A    | Oui    |
+| C      | 4    | B    | Non    |
+| D      | 7    | A    | Non    |
+| E      | 5    | B    | Non    |
+| F      | inf  | -    | Non    |
+
+**Iteration 3 : visite C (4)**
+- F : 4+5=9.
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| A      | 0    | -    | Oui    |
+| B      | 3    | A    | Oui    |
+| C      | 4    | B    | Oui    |
+| D      | 7    | A    | Non    |
+| E      | 5    | B    | Non    |
+| F      | 9    | C    | Non    |
+
+**Iteration 4 : visite E (5)**
+- D : 5+4=9 > 7, pas de MAJ.
+- F : 5+3=8 < 9 => F=8, pred=E.
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| A      | 0    | -    | Oui    |
+| B      | 3    | A    | Oui    |
+| C      | 4    | B    | Oui    |
+| D      | 7    | A    | Non    |
+| E      | 5    | B    | Oui    |
+| F      | 8    | E    | Non    |
+
+**Iteration 5 : visite D (7)**
+- E deja visite. Pas de MAJ.
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| A      | 0    | -    | Oui    |
+| B      | 3    | A    | Oui    |
+| C      | 4    | B    | Oui    |
+| D      | 7    | A    | Oui    |
+| E      | 5    | B    | Oui    |
+| F      | 8    | E    | Non    |
+
+**Iteration 6 : visite F (8)**. Fin.
+
+**Plus court chemin A -> F** : F(pred=E) -> E(pred=B) -> B(pred=A) -> A.
+Chemin : **A -> B -> E -> F**, distance **8**.
+
+---
+
+### Exercice 6 — Dijkstra (graphe 8 sommets)
+
+**Enonce** :
+
+```
+    S ---2--- A ---6--- E
+    |       / |         |
+    4     1   3         2
+    |   /     |         |
+    B ---5--- C ---4--- F
+              |         |
+              7         1
+              |         |
+              D ---3--- T
+```
+
+Trouver le plus court chemin de S a T.
+
+Aretes : S-A:2, S-B:4, A-B:1, A-C:3, A-E:6, B-C:5, C-D:7, C-F:4, E-F:2, F-T:1, D-T:3.
+
+**Initialisation** :
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| S      | 0    | -    | Non    |
+| A      | inf  | -    | Non    |
+| B      | inf  | -    | Non    |
+| C      | inf  | -    | Non    |
+| D      | inf  | -    | Non    |
+| E      | inf  | -    | Non    |
+| F      | inf  | -    | Non    |
+| T      | inf  | -    | Non    |
+
+**It. 1 : S (0)** : A=2(S), B=4(S).
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| S      | 0    | -    | Oui    |
+| A      | 2    | S    | Non    |
+| B      | 4    | S    | Non    |
+| C      | inf  | -    | Non    |
+| D      | inf  | -    | Non    |
+| E      | inf  | -    | Non    |
+| F      | inf  | -    | Non    |
+| T      | inf  | -    | Non    |
+
+**It. 2 : A (2)** : B: 2+1=3<4, MAJ B=3(A). C: 2+3=5. E: 2+6=8.
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| S      | 0    | -    | Oui    |
+| A      | 2    | S    | Oui    |
+| B      | 3    | A    | Non    |
+| C      | 5    | A    | Non    |
+| D      | inf  | -    | Non    |
+| E      | 8    | A    | Non    |
+| F      | inf  | -    | Non    |
+| T      | inf  | -    | Non    |
+
+**It. 3 : B (3)** : C: 3+5=8>5, pas de MAJ. (A et S deja visites.)
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| S      | 0    | -    | Oui    |
+| A      | 2    | S    | Oui    |
+| B      | 3    | A    | Oui    |
+| C      | 5    | A    | Non    |
+| D      | inf  | -    | Non    |
+| E      | 8    | A    | Non    |
+| F      | inf  | -    | Non    |
+| T      | inf  | -    | Non    |
+
+**It. 4 : C (5)** : D: 5+7=12. F: 5+4=9. (B et A deja visites.)
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| S      | 0    | -    | Oui    |
+| A      | 2    | S    | Oui    |
+| B      | 3    | A    | Oui    |
+| C      | 5    | A    | Oui    |
+| D      | 12   | C    | Non    |
+| E      | 8    | A    | Non    |
+| F      | 9    | C    | Non    |
+| T      | inf  | -    | Non    |
+
+**It. 5 : E (8)** : F: 8+2=10>9, pas de MAJ.
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| S      | 0    | -    | Oui    |
+| A      | 2    | S    | Oui    |
+| B      | 3    | A    | Oui    |
+| C      | 5    | A    | Oui    |
+| D      | 12   | C    | Non    |
+| E      | 8    | A    | Oui    |
+| F      | 9    | C    | Non    |
+| T      | inf  | -    | Non    |
+
+**It. 6 : F (9)** : T: 9+1=10. E deja visite. C deja visite.
+
+| Sommet | Dist | Pred | Visite |
+|--------|------|------|--------|
+| S      | 0    | -    | Oui    |
+| A      | 2    | S    | Oui    |
+| B      | 3    | A    | Oui    |
+| C      | 5    | A    | Oui    |
+| D      | 12   | C    | Non    |
+| E      | 8    | A    | Oui    |
+| F      | 9    | C    | Oui    |
+| T      | 10   | F    | Non    |
+
+**It. 7 : T (10)** : D: 10+3=13>12, pas de MAJ.
+
+**It. 8 : D (12)** : Fin.
+
+**Plus court chemin S -> T** : T(F) -> F(C) -> C(A) -> A(S) -> S.
+Chemin : **S -> A -> C -> F -> T**, distance **10**.
+
+---
+
+### Exercice 7 — Ordonnancement complet
+
+**Enonce** :
+
+| Tache | Duree | Anteriorites |
+|-------|-------|--------------|
+| A     | 4     | -            |
+| B     | 3     | -            |
+| C     | 5     | A            |
+| D     | 2     | A, B         |
+| E     | 6     | C            |
+| F     | 3     | D            |
+| G     | 4     | E, F         |
+
+Determiner les dates au plus tot, au plus tard, les marges, le chemin critique et tracer le Gantt.
+
+**Correction** :
+
+**Dates au plus tot** :
+```
+to(A) = 0
+to(B) = 0
+to(C) = to(A) + 4 = 4
+to(D) = MAX(to(A)+4, to(B)+3) = MAX(4, 3) = 4
+to(E) = to(C) + 5 = 9
+to(F) = to(D) + 2 = 6
+to(G) = MAX(to(E)+6, to(F)+3) = MAX(15, 9) = 15
+to(Fin) = to(G) + 4 = 19
+```
+
+**Duree du projet : 19 jours.**
+
+**Dates au plus tard** :
+```
+ta(G) = 19 - 4 = 15
+ta(E) = 15 - 6 = 9
+ta(F) = 15 - 3 = 12
+ta(C) = 9 - 5 = 4
+ta(D) = 12 - 2 = 10
+ta(A) = MIN(ta(C), ta(D)) - 4 = MIN(4, 10) - 4 = 0
+ta(B) = ta(D) - 3 = 10 - 3 = 7
+```
+
+**Tableau** :
+
+| Tache | Duree | to | ta | MT  | Critique ? |
+|-------|-------|----|----|-----|------------|
+| A     | 4     | 0  | 0  | 0   | OUI        |
+| B     | 3     | 0  | 7  | 7   | Non        |
+| C     | 5     | 4  | 4  | 0   | OUI        |
+| D     | 2     | 4  | 10 | 6   | Non        |
+| E     | 6     | 9  | 9  | 0   | OUI        |
+| F     | 3     | 6  | 12 | 6   | Non        |
+| G     | 4     | 15 | 15 | 0   | OUI        |
+
+**Chemin critique : A -> C -> E -> G (4+5+6+4 = 19)**
+
+**Marges libres** :
+```
+ML(A) = MIN(to(C), to(D)) - to(A) - 4 = MIN(4,4) - 0 - 4 = 0
+ML(B) = to(D) - to(B) - 3 = 4 - 0 - 3 = 1
+ML(C) = to(E) - to(C) - 5 = 9 - 4 - 5 = 0
+ML(D) = to(F) - to(D) - 2 = 6 - 4 - 2 = 0
+ML(E) = to(G) - to(E) - 6 = 15 - 9 - 6 = 0
+ML(F) = to(G) - to(F) - 3 = 15 - 6 - 3 = 6
+ML(G) = to(Fin) - to(G) - 4 = 0
+```
+
+**Diagramme de Gantt** :
+
+```
+Jours:  0    4    8    12   16  19
+        |    |    |    |    |   |
+A       [===]                        (0-4)*
+B       [==]                         (0-3)
+C            [====]                  (4-9)*
+D            [=]                     (4-6)
+E                 [=====]            (9-15)*
+F                  [==]              (6-9)
+G                        [===]      (15-19)*
+```
+
+---
+
+### Exercice 8 — Coloration
+
+**Enonce** :
+
+```
+    A --- B
+    |   X   |
+    C --- D
+    |     |
+    E --- F
+```
+
+Aretes : A-B, A-C, A-D, B-C, B-D, C-D, C-E, D-F, E-F.
+
+1. Donner les degres.
+2. Colorer le graphe avec l'algorithme glouton (ordre : degres decroissants).
+3. Determiner le nombre chromatique.
+
+**Correction** :
+
+1. Degres :
+   - d(A) = 3 (B, C, D)
+   - d(B) = 3 (A, C, D)
+   - d(C) = 4 (A, B, D, E)
+   - d(D) = 4 (A, B, C, F)
+   - d(E) = 2 (C, F)
+   - d(F) = 2 (D, E)
+
+2. Ordre par degre decroissant : C(4), D(4), A(3), B(3), E(2), F(2).
+
+   - C -> couleur 1 (aucun voisin colorie)
+   - D -> voisins colories : C(1). Couleur 2.
+   - A -> voisins colories : C(1), D(2). Couleur 3.
+   - B -> voisins colories : C(1), D(2), A(3). Couleur 4.
+   - E -> voisins colories : C(1). Couleur 2.
+   - F -> voisins colories : D(2), E(2). Couleur 1.
+
+   Resultat : C=1, D=2, A=3, B=4, E=2, F=1. 4 couleurs.
+
+3. Le sous-graphe {A, B, C, D} est un graphe complet K4 (toute paire est reliee). Donc chi(G) >= 4. On a trouve une coloration a 4 couleurs. Donc **chi(G) = 4**.
+
+---
+
+### Exercice 9 — Arbre couvrant (Kruskal)
+
+**Enonce** :
+
+```
+    A ---2--- B ---6--- C
+    |         |       / |
+    3         4     5   7
+    |         |   /     |
+    D ---1--- E ---8--- F
+```
+
+Aretes triees : {D,E}=1, {A,B}=2, {A,D}=3, {B,E}=4, {C,E}=5, {B,C}=6, {C,F}=7, {E,F}=8.
+
+n = 6 sommets, on veut 5 aretes.
+
+| Etape | Arete   | Poids | Action                          | Composantes                    |
+|-------|---------|-------|---------------------------------|--------------------------------|
+| 1     | {D,E}   | 1     | Ajoutee                         | {D,E}, {A}, {B}, {C}, {F}     |
+| 2     | {A,B}   | 2     | Ajoutee                         | {D,E}, {A,B}, {C}, {F}        |
+| 3     | {A,D}   | 3     | Ajoutee (fusionne {A,B} et {D,E}) | {A,B,D,E}, {C}, {F}          |
+| 4     | {B,E}   | 4     | Rejetee (cycle dans {A,B,D,E}) | {A,B,D,E}, {C}, {F}           |
+| 5     | {C,E}   | 5     | Ajoutee                         | {A,B,C,D,E}, {F}              |
+| 6     | {B,C}   | 6     | Rejetee (cycle)                 | {A,B,C,D,E}, {F}              |
+| 7     | {C,F}   | 7     | Ajoutee                         | {A,B,C,D,E,F}                 |
+
+**ACM** :
+```
+    A ---2--- B           C
+    |                   / |
+    3                 5   7
+    |               /     |
+    D ---1--- E         F
+
+Poids = 1 + 2 + 3 + 5 + 7 = 18
+```
+
+---
+
+### Exercice 10 — Arbre couvrant (Prim)
+
+**Enonce** : Meme graphe, depart A.
+
+| Etape | Arbre         | Candidates                                    | Ajoutee   | Poids |
+|-------|---------------|-----------------------------------------------|-----------|-------|
+| 0     | {A}           | A-B:2, A-D:3                                  | {A,B}     | 2     |
+| 1     | {A,B}         | A-D:3, B-E:4, B-C:6                           | {A,D}     | 3     |
+| 2     | {A,B,D}       | B-E:4, D-E:1, B-C:6                           | {D,E}     | 1     |
+| 3     | {A,B,D,E}     | B-C:6, C-E:5, E-F:8                           | {C,E}     | 5     |
+| 4     | {A,B,C,D,E}   | C-F:7, E-F:8                                  | {C,F}     | 7     |
+
+**Poids = 2 + 3 + 1 + 5 + 7 = 18.** Meme resultat.
+
+---
+
+### Exercice 11 — Euler
+
+**Enonce** :
+
+```
+    A --- B --- C
+    |     |     |
+    D --- E --- F
+```
+
+1. Donner les degres.
+2. Existe-t-il un circuit eulerien ? Une chaine eulerienne ?
+
+**Correction** :
+
+1. d(A)=2, d(B)=3, d(C)=2, d(D)=2, d(E)=3, d(F)=2.
+
+2. Sommets de degre impair : B et E (exactement 2).
+   - Pas de circuit eulerien (il faudrait 0 sommet de degre impair).
+   - Il existe une **chaine eulerienne** de B a E (ou de E a B).
+   - Exemple : B - A - D - E - B - C - F - E.
+
+Verification : 7 aretes ({A,B}, {A,D}, {B,C}, {B,E}, {C,F}, {D,E}, {E,F}), la chaine utilise 7 aretes.
+
+---
+
+### Exercice 12 — Puissance de matrice d'adjacence
+
+**Enonce** : Soit le graphe oriente :
+
+```
+    1 ---> 2
+    ^    / |
+    |  /   v
+    3 <--- 4
+```
+
+Arcs : (1,2), (2,3), (2,4), (4,3), (3,1).
+
+1. Ecrire la matrice d'adjacence M.
+2. Calculer M^2 et interpreter.
+
+**Correction** :
+
+1. Matrice :
+```
+      1  2  3  4
+1  [  0  1  0  0  ]
+2  [  0  0  1  1  ]
+3  [  1  0  0  0  ]
+4  [  0  0  1  0  ]
+```
+
+2. M^2 = M x M :
+
+M^2[1][1] = 0*0+1*0+0*1+0*0 = 0
+M^2[1][2] = 0*1+1*0+0*0+0*0 = 0
+M^2[1][3] = 0*0+1*1+0*0+0*1 = 1
+M^2[1][4] = 0*0+1*1+0*0+0*0 = 1
+
+M^2[2][1] = 0*0+0*0+1*1+1*0 = 1
+M^2[2][2] = 0*1+0*0+1*0+1*0 = 0
+M^2[2][3] = 0*0+0*1+1*0+1*1 = 1
+M^2[2][4] = 0*0+0*1+1*0+1*0 = 0
+
+M^2[3][1] = 1*0+0*0+0*1+0*0 = 0
+M^2[3][2] = 1*1+0*0+0*0+0*0 = 1
+M^2[3][3] = 1*0+0*1+0*0+0*1 = 0
+M^2[3][4] = 1*0+0*1+0*0+0*0 = 0
+
+M^2[4][1] = 0*0+0*0+1*1+0*0 = 1
+M^2[4][2] = 0*1+0*0+1*0+0*0 = 0
+M^2[4][3] = 0*0+0*1+1*0+0*1 = 0
+M^2[4][4] = 0*0+0*1+1*0+0*0 = 0
+
+```
+M^2 :
+      1  2  3  4
+1  [  0  0  1  1  ]
+2  [  1  0  1  0  ]
+3  [  0  1  0  0  ]
+4  [  1  0  0  0  ]
+```
+
+**Interpretation** : M^2[i][j] = nombre de chemins de longueur 2 de i a j.
+
+- M^2[1][3] = 1 : un chemin de longueur 2 de 1 a 3 : 1->2->3.
+- M^2[1][4] = 1 : un chemin de longueur 2 de 1 a 4 : 1->2->4.
+- M^2[2][1] = 1 : un chemin de longueur 2 de 2 a 1 : 2->3->1.
+- M^2[2][3] = 1 : un chemin de longueur 2 de 2 a 3 : 2->4->3.
+- M^2[4][1] = 1 : un chemin de longueur 2 de 4 a 1 : 4->3->1.
+
+---
+
+### Exercice 13 — Ordonnancement avec Gantt
+
+**Enonce** :
+
+| Tache | Duree | Anteriorites |
+|-------|-------|--------------|
+| A     | 2     | -            |
+| B     | 4     | -            |
+| C     | 3     | A            |
+| D     | 1     | A            |
+| E     | 5     | B, D         |
+| F     | 2     | C, E         |
+
+**Correction** :
+
+**Dates au plus tot** :
+```
+to(A) = 0
+to(B) = 0
+to(C) = 0 + 2 = 2
+to(D) = 0 + 2 = 2
+to(E) = MAX(to(B)+4, to(D)+1) = MAX(4, 3) = 4
+to(F) = MAX(to(C)+3, to(E)+5) = MAX(5, 9) = 9
+to(Fin) = 9 + 2 = 11
+```
+
+**Dates au plus tard** :
+```
+ta(F) = 11 - 2 = 9
+ta(C) = 9 - 3 = 6
+ta(E) = 9 - 5 = 4
+ta(D) = ta(E) - 1 = 3
+ta(B) = ta(E) - 4 = 0
+ta(A) = MIN(ta(C), ta(D)) - 2 = MIN(6, 3) - 2 = 1
+```
+
+**Tableau** :
+
+| Tache | Duree | to | ta | MT | Critique ? |
+|-------|-------|----|----|----|------------|
+| A     | 2     | 0  | 1  | 1  | Non        |
+| B     | 4     | 0  | 0  | 0  | OUI        |
+| C     | 3     | 2  | 6  | 4  | Non        |
+| D     | 1     | 2  | 3  | 1  | Non        |
+| E     | 5     | 4  | 4  | 0  | OUI        |
+| F     | 2     | 9  | 9  | 0  | OUI        |
+
+**Chemin critique : B -> E -> F (4+5+2 = 11)**
+
+**Diagramme de Gantt** :
+
+```
+Jours: 0  1  2  3  4  5  6  7  8  9  10 11
+       |  |  |  |  |  |  |  |  |  |  |  |
+A      [=]                                  (0-2)
+B      [=====]                              (0-4)*
+C         [===]                             (2-5)
+D         [=]                               (2-3)
+E               [========]                  (4-9)*
+F                           [===]           (9-11)*
+```
+
+---
+
+### Exercice 14 — Dijkstra avec reconstruction
+
+**Enonce** : Graphe pondere oriente :
+
+```
+    A --5--> B --2--> E
+    |        |        ^
+    3        1        4
+    v        v        |
+    C --6--> D --4--> F --1--> G
+```
+
+Arcs : A->B:5, A->C:3, B->D:1, B->E:2, C->D:6, D->F:4, F->E:4, F->G:1.
+Source A, trouver les plus courts chemins vers tous les sommets.
+
+**It. 1 : A (0)** : B=5(A), C=3(A).
+
+| S | Dist | Pred | V |
+|---|------|------|---|
+| A | 0    | -    | O |
+| B | 5    | A    |   |
+| C | 3    | A    |   |
+| D | inf  | -    |   |
+| E | inf  | -    |   |
+| F | inf  | -    |   |
+| G | inf  | -    |   |
+
+**It. 2 : C (3)** : D=3+6=9.
+
+| S | Dist | Pred | V |
+|---|------|------|---|
+| C | 3    | A    | O |
+| B | 5    | A    |   |
+| D | 9    | C    |   |
+
+**It. 3 : B (5)** : D=5+1=6<9 MAJ. E=5+2=7.
+
+| S | Dist | Pred | V |
+|---|------|------|---|
+| B | 5    | A    | O |
+| D | 6    | B    |   |
+| E | 7    | B    |   |
+
+**It. 4 : D (6)** : F=6+4=10.
+
+| S | Dist | Pred | V |
+|---|------|------|---|
+| D | 6    | B    | O |
+| E | 7    | B    |   |
+| F | 10   | D    |   |
+
+**It. 5 : E (7)** : pas de successeur.
+
+| S | Dist | Pred | V |
+|---|------|------|---|
+| E | 7    | B    | O |
+| F | 10   | D    |   |
+
+**It. 6 : F (10)** : E=10+4=14>7, pas de MAJ. G=10+1=11.
+
+| S | Dist | Pred | V |
+|---|------|------|---|
+| F | 10   | D    | O |
+| G | 11   | F    |   |
+
+**It. 7 : G (11)**. Fin.
+
+**Tableau final** :
+
+| Sommet | Distance | Chemin                  |
+|--------|----------|-------------------------|
+| A      | 0        | A                       |
+| B      | 5        | A -> B                  |
+| C      | 3        | A -> C                  |
+| D      | 6        | A -> B -> D             |
+| E      | 7        | A -> B -> E             |
+| F      | 10       | A -> B -> D -> F        |
+| G      | 11       | A -> B -> D -> F -> G   |
+
+---
+
+### Exercice 15 — Coloration et emploi du temps
+
+**Enonce** : Six cours doivent etre planifies. Certains ne peuvent pas avoir lieu en meme temps (meme enseignant ou memes etudiants). Les incompatibilites sont :
+
+- Maths est incompatible avec Info et Physique.
+- Info est incompatible avec Maths, Anglais et Reseau.
+- Physique est incompatible avec Maths et Chimie.
+- Anglais est incompatible avec Info et Chimie.
+- Reseau est incompatible avec Info.
+- Chimie est incompatible avec Physique et Anglais.
+
+1. Construire le graphe d'incompatibilites.
+2. Colorer le graphe.
+3. Determiner le nombre minimum de creneaux horaires.
+
+**Correction** :
+
+1. Graphe :
+```
+    Maths --- Info --- Anglais
+      |         |         |
+    Physique  Reseau   Chimie
+      |                   |
+      +-------------------+
+
+Aretes :
+Maths-Info, Maths-Physique,
+Info-Anglais, Info-Reseau,
+Physique-Chimie,
+Anglais-Chimie
+```
+
+2. Degres :
+   - Maths: 2, Info: 3, Physique: 2, Anglais: 2, Reseau: 1, Chimie: 2.
+
+   Ordre decroissant : Info(3), Maths(2), Physique(2), Anglais(2), Chimie(2), Reseau(1).
+
+   - Info -> couleur 1
+   - Maths -> voisins : Info(1). Couleur 2.
+   - Physique -> voisins : Maths(2). Couleur 1.
+   - Anglais -> voisins : Info(1). Couleur 2.
+   - Chimie -> voisins : Physique(1), Anglais(2). Couleur 3.
+   - Reseau -> voisins : Info(1). Couleur 2.
+
+   Resultat :
+   - Couleur 1 (creneau 1) : Info, Physique
+   - Couleur 2 (creneau 2) : Maths, Anglais, Reseau
+   - Couleur 3 (creneau 3) : Chimie
+
+3. **3 creneaux horaires** suffisent. Verification : aucune incompatibilite n'est violee dans chaque creneau.
+
+Est-ce le minimum ? Le graphe contient-il un triangle (K3) ? Maths-Info-Anglais : Maths-Anglais n'existe pas. Info-Anglais-Chimie : Info-Chimie n'existe pas. Pas de K3 evident.
+
+Mais peut-on colorer en 2 couleurs ? Le graphe est-il biparti ? Verifions : Maths(c1)-Info(c2)-Anglais(c1)-Chimie(c2)-Physique(c1)-Maths. La chaine Physique(c1)-Maths(c1) : deux voisins de meme couleur. Donc pas biparti. Il faut au moins 3 couleurs. **chi(G) = 3**.
+
+---
+
+### Exercice 16 — Flot maximal
+
+**Enonce** :
+
+```
+         4
+    s ---------> A ---3---> t
+    |            ^          ^
+    |     2      |    5     |
+    +----------> B -------->+
+                 ^
+    +-----7------+
+    s
+
+Correction du schema :
+    s --4--> A --3--> t
+    |                 ^
+    7                 5
+    |                 |
+    +------> B ------+
+         aussi B->A : 2
+```
+
+Arcs et capacites : s->A:4, s->B:7, A->t:3, B->A:2, B->t:5.
+
+**Iteration 1** : chemin s->A->t, goulot = min(4,3) = 3.
+Flot : s->A:3, A->t:3. Total = 3.
+
+**Iteration 2** : chemin s->B->t, goulot = min(7,5) = 5.
+Flot : s->B:5, B->t:5. Total = 3+5 = 8.
+
+**Iteration 3** : chemin s->B->A->t ? Residuels : s->B:7-5=2, B->A:2, A->t:3-3=0. A->t sature. Non.
+
+Chemin s->A->t ? Residuel s->A:4-3=1, A->t:0. Non.
+
+**Flot maximal = 8.**
+
+Verification par coupe minimale : coupe {s} / {A,B,t}. Capacite = c(s,A)+c(s,B) = 4+7 = 11. Trop grand.
+Coupe {s,B} / {A,t}. Capacite = c(s,A)+c(B,A)+c(B,t) = 4+2+5 = 11. Trop grand.
+Coupe {s,A,B} / {t}. Capacite = c(A,t)+c(B,t) = 3+5 = 8. C'est la coupe minimale.
+
+Flot max = coupe min = 8. Verifie.
+
+---
+
+### Exercice 17 — Composantes connexes et connexite
+
+**Enonce** : Soit le graphe :
+
+```
+    1 --- 2       5 --- 6
+          |             |
+          3       7 --- 8
+    
+    4 (isole)
+```
+
+Aretes : {1,2}, {2,3}, {5,6}, {6,8}, {7,8}.
+
+1. Le graphe est-il connexe ?
+2. Donner les composantes connexes.
+3. Combien d'aretes faut-il ajouter au minimum pour rendre le graphe connexe ?
+
+**Correction** :
+
+1. Non, le graphe n'est **pas connexe** (pas de chaine de 1 a 5 par exemple).
+
+2. Composantes connexes :
+   - CC1 = {1, 2, 3}
+   - CC2 = {5, 6, 7, 8}
+   - CC3 = {4}
+
+3. Il y a 3 composantes connexes. Pour les relier, il faut au minimum **2 aretes** (par exemple {3,4} et {4,5}, ou {3,5} et {3,4}).
+
+Regle generale : pour relier k composantes connexes, il faut au minimum k-1 aretes.
+
+---
+
+## Recapitulatif des formules et theoremes essentiels
+
+| Formule / Theoreme                              | Enonce                                                    |
+|-------------------------------------------------|-----------------------------------------------------------|
+| Somme des degres                                | Somme d(v) = 2 * nombre d'aretes                         |
+| Nombre d'aretes de Kn                           | n(n-1)/2                                                  |
+| Arbre a n sommets                               | n-1 aretes, connexe, sans cycle                           |
+| Circuit eulerien                                | Tous les sommets de degre pair                            |
+| Chaine eulerienne                               | Exactement 2 sommets de degre impair                     |
+| Dijkstra                                        | Plus court chemin, poids >= 0                             |
+| to (ordonnancement)                             | to = MAX(to predecesseurs + duree predecesseurs)          |
+| ta (ordonnancement)                             | ta = MIN(ta successeurs) - duree tache                    |
+| Marge totale                                    | MT = ta - to                                              |
+| Marge libre                                     | ML = MIN(to successeurs) - to - duree                     |
+| Chemin critique                                 | Taches avec MT = 0                                        |
+| Nombre chromatique                              | chi(Kn) = n, chi(arbre) = 2                               |
+| M^k[i][j]                                       | Nombre de chemins de longueur k de i a j                  |
+| Flot max = Coupe min                            | Theoreme de Ford-Fulkerson                                |
+| Composantes connexes a relier                   | k composantes => k-1 aretes minimum                       |
+
+---
+
+## Conseils pour l'examen
+
+1. **Dijkstra** : toujours presenter le tableau complet a chaque iteration. Indiquer clairement le sommet selectionne, les mises a jour, et reconstituer le chemin a la fin.
+
+2. **Ordonnancement** : detailler chaque calcul de to et ta. Ne pas oublier la marge libre si demandee. Tracer le diagramme de Gantt proprement avec une echelle temporelle.
+
+3. **Coloration** : commencer par calculer les degres, ordonner les sommets, appliquer l'algorithme glouton, puis verifier si le resultat est optimal (chercher un sous-graphe complet).
+
+4. **Matrice d'adjacence** : verifier la symetrie pour un graphe non oriente. Pour M^k, poser le calcul matriciel proprement.
+
+5. **Euler** : compter les degres impairs. 0 => circuit eulerien, 2 => chaine eulerienne, autre => aucun des deux.
+
+6. **Kruskal** : bien trier les aretes au depart. Justifier chaque rejet (creation de cycle).
+
+7. **Lire attentivement l'enonce** : graphe oriente ou non ? Pondere ou non ? Source indiquee ?
