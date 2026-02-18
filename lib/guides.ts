@@ -21,7 +21,6 @@ const CATEGORY_MAP: Record<string, string> = {
   'html-css': 'Fondamentaux',
   'git-github': 'Fondamentaux',
   'projet-e5': 'Fondamentaux',
-  'projet-e5-sisr': 'Fondamentaux',
   // SLAM — Programmation
   'poo': 'Programmation',
   'javascript-vanilla': 'Programmation',
