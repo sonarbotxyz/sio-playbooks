@@ -6,30 +6,6 @@ tags: ["logique", "boole", "tables de verite", "portes logiques", "maths"]
 difficulty: "Debutant"
 ---
 
-# Logique booleenne
-
-
-
-## Table des matieres
-
-1. [1. Propositions logiques](#1-propositions-logiques)
-2. [2. Connecteurs logiques](#2-connecteurs-logiques)
-3. [3. Tables de verite](#3-tables-de-verite)
-4. [4. Priorite des operateurs logiques](#4-priorite-des-operateurs-logiques)
-5. [5. Tautologie, contradiction, contingence](#5-tautologie-contradiction-contingence)
-6. [6. Lois de l'algebre de Boole](#6-lois-de-lalgebre-de-boole)
-7. [7. Simplification d'expressions booleennes -- Methode algebrique](#7-simplification-dexpressions-booleennes-methode-algebrique)
-8. [8. Formes canoniques](#8-formes-canoniques)
-9. [9. Tableaux de Karnaugh](#9-tableaux-de-karnaugh)
-10. [10. Portes logiques](#10-portes-logiques)
-11. [11. Circuits logiques](#11-circuits-logiques)
-12. [12. Applications informatiques](#12-applications-informatiques)
-13. [13. Exercices corriges](#13-exercices-corriges)
-14. [14. Recapitulatif des formules essentielles](#14-recapitulatif-des-formules-essentielles)
-15. [15. Methode de resolution type examen](#15-methode-de-resolution-type-examen)
-
-
-
 ## 1. Propositions logiques
 
 ### Definition
@@ -55,6 +31,7 @@ On designe les propositions par des lettres : **a**, **b**, **c** ou **P**, **Q*
 
 Chaque variable peut prendre la valeur 0 ou 1.
 
+---
 
 ## 2. Connecteurs logiques
 
@@ -158,6 +135,7 @@ Formule equivalente : a <=> b = (a => b) ET (b => a)
 
 Autre forme : a <=> b = NON (a XOR b)
 
+---
 
 ## 3. Tables de verite
 
@@ -219,6 +197,7 @@ Autre forme : a <=> b = NON (a XOR b)
 | 1 | 1 | 1 | 0 | 1 | 0 | 1 |
 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
 
+---
 
 ## 4. Priorite des operateurs logiques
 
@@ -242,6 +221,7 @@ Etape par etape :
 2. ET s'applique ensuite : on calcule b ET c.
 3. OU s'applique en dernier : on calcule (NON a) OU (b ET c).
 
+---
 
 ## 5. Tautologie, contradiction, contingence
 
@@ -277,6 +257,7 @@ Une expression qui n'est **ni une tautologie ni une contradiction** : elle prend
 
 Exemple : a OU b est une contingence (vaut 0 quand a=0 et b=0, vaut 1 sinon).
 
+---
 
 ## 6. Lois de l'algebre de Boole
 
@@ -409,6 +390,7 @@ NON (a . b . c . ...) = NON a + NON b + NON c + ...
 | De Morgan | NON(a+b) = NON a . NON b | NON(a.b) = NON a + NON b |
 | Involution | NON(NON a) = a | NON(NON a) = a |
 
+---
 
 ## 7. Simplification d'expressions booleennes -- Methode algebrique
 
@@ -469,6 +451,7 @@ F = (a + b) . (a + NON b)
   = a                             [element neutre]
 ```
 
+---
 
 ## 8. Formes canoniques
 
@@ -529,6 +512,7 @@ Notation abregee : F = Produit(0, 3)
 
 **Verification** : les deux formes donnent la meme fonction (c'est le XOR).
 
+---
 
 ## 9. Tableaux de Karnaugh
 
@@ -668,6 +652,7 @@ Etape 4 : expression simplifiee.
 
 **F = NON b . NON d + NON b . NON c + NON a . NON c . d**
 
+---
 
 ## 10. Portes logiques
 
@@ -785,6 +770,7 @@ Symbole : OR avec une double courbe a l'entree.
 
 S = a XOR b
 
+---
 
 ## 11. Circuits logiques
 
@@ -874,6 +860,7 @@ Un multiplexeur 4 vers 1 possede 4 entrees (e0, e1, e2, e3) et 2 bits de selecti
 S = (NON s1 . NON s0 . e0) + (NON s1 . s0 . e1) + (s1 . NON s0 . e2) + (s1 . s0 . e3)
 ```
 
+---
 
 ## 12. Applications informatiques
 
@@ -998,6 +985,7 @@ print(bin(a << 2))  # 0b110000 = 48
 print(bin(a >> 1))  # 0b110 = 6
 ```
 
+---
 
 ## 13. Exercices corriges
 
@@ -1016,6 +1004,7 @@ Construire la table de verite de F = (a => b) ET (b => a).
 
 Conclusion : F = a <=> b. L'equivalence est la conjonction des deux implications.
 
+---
 
 ### Exercice 2 : Tautologie ou non ?
 
@@ -1032,6 +1021,7 @@ Montrer que F = (a => b) OU (b => a) est une tautologie.
 
 F vaut 1 pour toutes les combinaisons. C'est une tautologie.
 
+---
 
 ### Exercice 3 : Simplification algebrique
 
@@ -1052,6 +1042,7 @@ F = a.b.c + a.b.NON c + a.NON b.c
 
 **F = a.b + a.c**
 
+---
 
 ### Exercice 4 : Lois de De Morgan
 
@@ -1075,6 +1066,7 @@ Developpons :
 
 **F = a.b + NON a . NON b** (c'est l'equivalence a <=> b, autrement dit NON(a XOR b)).
 
+---
 
 ### Exercice 5 : Karnaugh 2 variables
 
@@ -1096,6 +1088,7 @@ La case (a=0, b=1) est couverte par les deux groupes (chevauchement autorise).
 
 **F = NON a + b**
 
+---
 
 ### Exercice 6 : Karnaugh 3 variables
 
@@ -1151,6 +1144,7 @@ Verification : NON b couvre 0,1,4,5. NON a . NON c couvre 0,2. Union = {0,1,2,4,
 
 **F = NON b + NON a . NON c**
 
+---
 
 ### Exercice 7 : Karnaugh 4 variables
 
@@ -1191,6 +1185,7 @@ Verification : G1 couvre {0,2,8,10}, G2 couvre {5,7,13,15}. Union = tous les 1. 
 
 Observation : c'est l'equivalence b <=> d, autrement dit NON(b XOR d).
 
+---
 
 ### Exercice 8 : Simplification algebrique avancee
 
@@ -1210,6 +1205,7 @@ F = NON a.NON b.NON c + NON a.b.NON c + a.NON b.NON c + a.b.NON c
 
 **F = NON c**
 
+---
 
 ### Exercice 9 : Forme canonique
 
@@ -1234,6 +1230,7 @@ F = M0 = a + b = Produit(0)
 
 Remarque : dans ce cas, le produit de maxtermes est directement l'expression minimale.
 
+---
 
 ### Exercice 10 : Circuit demi-additionneur
 
@@ -1266,6 +1263,7 @@ Schema :
 
 Le circuit utilise exactement 2 portes : 1 XOR et 1 AND.
 
+---
 
 ### Exercice 11 : Circuit avec portes NAND uniquement
 
@@ -1292,6 +1290,7 @@ Circuit :
 
 Total : 3 portes NAND.
 
+---
 
 ### Exercice 12 : Masque binaire
 
@@ -1373,6 +1372,7 @@ AND :      0 0 0 0 0 1 0 0 = 4
 ```
 Le resultat est 4 (non nul), donc le bit 2 est a 1. **Oui.**
 
+---
 
 ### Exercice 13 : Permissions Unix
 
@@ -1409,6 +1409,7 @@ OR  = 110 101 101 = 655
 
 Resultat : **0o655** (rw-r-xr-x).
 
+---
 
 ### Exercice 14 : Simplification par Karnaugh 4 variables
 
@@ -1441,6 +1442,7 @@ Un seul groupe de 8 cases (les deux colonnes centrales). Variables constantes : 
 
 Observation : tous les indices sont impairs, ce qui correspond exactement a d=1.
 
+---
 
 ### Exercice 15 : Karnaugh avec simplification non triviale
 
@@ -1537,6 +1539,7 @@ Verification reussie.
 
 **F = NON c + NON a . NON d + b . NON d**
 
+---
 
 ### Exercice 16 : Multiplexeur
 
@@ -1565,6 +1568,7 @@ Verifions : NON s0 + s1.
 
 Correct. **S = NON s0 + s1**
 
+---
 
 ### Exercice 17 : Operateurs bit a bit en Python
 
@@ -1611,6 +1615,7 @@ e) Decalage a droite de 1 position :
 ```
 Cela revient a diviser par 2 (division entiere). Verification : 13 / 2 = 6 (reste 1, perdu).
 
+---
 
 ### Exercice 18 : Equivalence entre formules
 
@@ -1629,6 +1634,7 @@ Les colonnes "a => b" et "NON a + b" sont identiques. CQFD.
 
 Cette equivalence est fondamentale : elle permet de transformer toute implication en une expression n'utilisant que NON et OU (ou NON et ET via De Morgan).
 
+---
 
 ### Exercice 19 : Expression a partir d'une table de verite
 
@@ -1669,6 +1675,7 @@ Verification : b couvre {2,3,6,7}. NON c couvre {0,2,4,6}. Union = {0,2,3,4,6,7}
 
 Verification rapide : F=0 seulement quand b=0 ET c=1, soit aux indices 1 et 5. C'est bien le cas.
 
+---
 
 ## 14. Recapitulatif des formules essentielles
 
@@ -1688,6 +1695,7 @@ a <=> b = a.b + NON a.NON b
 a XOR b = a.NON b + NON a.b
 ```
 
+---
 
 ## 15. Methode de resolution type examen
 

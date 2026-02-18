@@ -6,29 +6,27 @@ tags: ["node.js", "express", "mongodb", "api", "rest", "jwt"]
 difficulty: "Intermediaire"
 ---
 
-# API REST avec Node.js, Express et MongoDB
-
-
 ## Table des matieres
 
-1. [1. Introduction aux API REST](#1-introduction-aux-api-rest)
-2. [2. Installation et configuration](#2-installation-et-configuration)
-3. [3. Structure d'un projet Express](#3-structure-dun-projet-express)
-4. [4. Mongoose : schemas, modeles, validations](#4-mongoose-schemas-modeles-validations)
-5. [5. CRUD complet](#5-crud-complet)
-6. [6. Middleware Express](#6-middleware-express)
-7. [7. Authentification JWT](#7-authentification-jwt)
-8. [8. Validation des donnees](#8-validation-des-donnees)
-9. [9. Gestion d'erreurs](#9-gestion-derreurs)
-10. [10. Relations MongoDB](#10-relations-mongodb)
-11. [11. Pagination, filtrage, tri](#11-pagination-filtrage-tri)
-12. [12. Upload de fichiers avec Multer](#12-upload-de-fichiers-avec-multer)
-13. [13. Variables d'environnement](#13-variables-denvironnement)
-14. [14. Tests avec Postman](#14-tests-avec-postman)
-15. [15. Securite](#15-securite)
-16. [16. Deploiement](#16-deploiement)
-17. [17. Exercices d'examen corriges](#17-exercices-dexamen-corriges)
+1. [Introduction aux API REST](#1-introduction-aux-api-rest)
+2. [Installation et configuration](#2-installation-et-configuration)
+3. [Structure d'un projet Express](#3-structure-dun-projet-express)
+4. [Mongoose : schemas, modeles, validations](#4-mongoose--schemas-modeles-validations)
+5. [CRUD complet](#5-crud-complet)
+6. [Middleware Express](#6-middleware-express)
+7. [Authentification JWT](#7-authentification-jwt)
+8. [Validation des donnees](#8-validation-des-donnees)
+9. [Gestion d'erreurs](#9-gestion-derreurs)
+10. [Relations MongoDB](#10-relations-mongodb)
+11. [Pagination, filtrage, tri](#11-pagination-filtrage-tri)
+12. [Upload de fichiers avec Multer](#12-upload-de-fichiers-avec-multer)
+13. [Variables d'environnement](#13-variables-denvironnement)
+14. [Tests avec Postman](#14-tests-avec-postman)
+15. [Securite](#15-securite)
+16. [Deploiement](#16-deploiement)
+17. [Exercices d'examen corriges](#17-exercices-dexamen-corriges)
 
+---
 
 ## 1. Introduction aux API REST
 
@@ -149,6 +147,7 @@ JSON (JavaScript Object Notation) est le format d'echange standard des API REST 
 - `Content-Type: application/json` -- indique que le corps de la requete est du JSON
 - `Accept: application/json` -- indique que le client attend du JSON en reponse
 
+---
 
 ## 2. Installation et configuration
 
@@ -315,6 +314,7 @@ Lancer le serveur :
 npm run dev
 ```
 
+---
 
 ## 3. Structure d'un projet Express
 
@@ -433,6 +433,7 @@ app.listen(PORT, () => {
 });
 ```
 
+---
 
 ## 4. Mongoose : schemas, modeles, validations
 
@@ -738,6 +739,7 @@ module.exports = mongoose.model('Utilisateur', utilisateurSchema);
 | sparse | Tous | Index sparse (ignore les documents sans ce champ) |
 | select | Tous | Inclure ou exclure le champ par defaut dans les requetes |
 
+---
 
 ## 5. CRUD complet
 
@@ -957,6 +959,7 @@ exports.supprimer = async (req, res, next) => {
 | `limit(n)` | Limiter a n documents |
 | `lean()` | Retourner des objets JS simples (plus performant) |
 
+---
 
 ## 6. Middleware Express
 
@@ -1115,6 +1118,7 @@ app.all('*', (req, res) => {
 app.use(errorHandler);
 ```
 
+---
 
 ## 7. Authentification JWT
 
@@ -1413,6 +1417,7 @@ module.exports = router;
 | 6 | Le middleware `autoriser` verifie le role | |
 | 7 | A expiration, le client rafraichit le token | POST /api/auth/rafraichir |
 
+---
 
 ## 8. Validation des donnees
 
@@ -1576,6 +1581,7 @@ body('tags').customSanitizer(value => {   // Sanitizer personnalise
 });
 ```
 
+---
 
 ## 9. Gestion d'erreurs
 
@@ -1721,6 +1727,7 @@ exports.obtenirParId = catchAsync(async (req, res, next) => {
 
 Avec `catchAsync`, toute erreur dans la fonction async est automatiquement transmise a `next()`, qui la dirige vers le middleware de gestion d'erreurs.
 
+---
 
 ## 10. Relations MongoDB
 
@@ -1897,6 +1904,7 @@ await Livre.findByIdAndUpdate(livreId, {
 });
 ```
 
+---
 
 ## 11. Pagination, filtrage, tri
 
@@ -2015,6 +2023,7 @@ GET /api/livres?recherche=victor+hugo                     -> Recherche textuelle
 GET /api/livres?enStock=true&tri=-noteMoyenne&limite=10   -> Top 10 en stock
 ```
 
+---
 
 ## 12. Upload de fichiers avec Multer
 
@@ -2119,6 +2128,7 @@ exports.uploaderCouverture = catchAsync(async (req, res, next) => {
 | `path` | Chemin complet du fichier |
 | `size` | Taille en octets |
 
+---
 
 ## 13. Variables d'environnement
 
@@ -2179,6 +2189,7 @@ JWT_EXPIRES_IN=
 JWT_REFRESH_EXPIRES_IN=
 ```
 
+---
 
 ## 14. Tests avec Postman
 
@@ -2319,6 +2330,7 @@ pm.test("Temps de reponse < 500ms", function() {
 });
 ```
 
+---
 
 ## 15. Securite
 
@@ -2446,6 +2458,7 @@ app.use(hpp({
 | Journalisation | Logger les requetes et erreurs |
 | Mise a jour des dependances | `npm audit` regulier |
 
+---
 
 ## 16. Deploiement
 
@@ -2556,9 +2569,11 @@ app.listen(PORT, () => {
 }
 ```
 
+---
 
 ## 17. Exercices d'examen corriges
 
+---
 
 ### Exercice 1 -- Creer un schema Mongoose
 
@@ -2640,6 +2655,7 @@ etudiantSchema.virtual('moyenne').get(function() {
 module.exports = mongoose.model('Etudiant', etudiantSchema);
 ```
 
+---
 
 ### Exercice 2 -- Routes CRUD basiques
 
@@ -2668,6 +2684,7 @@ router.delete('/:id', etudiantController.supprimer);
 module.exports = router;
 ```
 
+---
 
 ### Exercice 3 -- Controleur avec gestion d'erreurs
 
@@ -2788,6 +2805,7 @@ exports.supprimer = catchAsync(async (req, res, next) => {
 });
 ```
 
+---
 
 ### Exercice 4 -- Middleware d'authentification JWT
 
@@ -2844,6 +2862,7 @@ const proteger = async (req, res, next) => {
 module.exports = proteger;
 ```
 
+---
 
 ### Exercice 5 -- Validation avec express-validator
 
@@ -2899,6 +2918,7 @@ const validerProduit = [
 module.exports = { validerProduit };
 ```
 
+---
 
 ### Exercice 6 -- Middleware de gestion d'erreurs
 
@@ -2962,6 +2982,7 @@ const errorHandler = (err, req, res, next) => {
 module.exports = errorHandler;
 ```
 
+---
 
 ### Exercice 7 -- Populate et relations
 
@@ -3048,6 +3069,7 @@ exports.obtenirProfesseurAvecCours = catchAsync(async (req, res, next) => {
 });
 ```
 
+---
 
 ### Exercice 8 -- Pagination et filtrage avance
 
@@ -3130,6 +3152,7 @@ GET /api/produits?categorie=electronique&prixMin=50&prixMax=500&tri=-prix&page=1
 GET /api/produits?recherche=clavier&enStock=true
 ```
 
+---
 
 ### Exercice 9 -- Systeme d'authentification complet
 
@@ -3257,6 +3280,7 @@ exports.connexion = catchAsync(async (req, res, next) => {
 });
 ```
 
+---
 
 ### Exercice 10 -- Upload de fichier et middleware personnalise
 
@@ -3344,6 +3368,7 @@ exports.uploaderAvatar = catchAsync(async (req, res, next) => {
 });
 ```
 
+---
 
 ### Exercice 11 -- API complete : gestion de taches (mini-projet)
 
@@ -3541,6 +3566,7 @@ exports.supprimer = catchAsync(async (req, res, next) => {
 });
 ```
 
+---
 
 ### Exercice 12 -- Questions theoriques d'examen
 

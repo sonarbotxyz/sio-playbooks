@@ -1,34 +1,8 @@
 ---
-title: "Node.js et Express (Partie 2/3)"
-description: "JavaScript cote serveur : Node.js, npm, Express, routes, middleware, MySQL, API REST"
-category: "Programmation"
-difficulty: "Intermediaire"
+title: "JavaScript -- Node.js et Express"
+description: "Partie 2/3 -- JavaScript cote serveur avec Node.js, Express et MySQL"
+sidebar_position: 2
 ---
-
-# JavaScript -- Node.js et Express
-
-
-
-## Table des matieres
-
-1. [1. Node.js](#1-nodejs)
-2. [2. Express.js](#2-expressjs)
-3. [3. API REST complete](#3-api-rest-complete)
-4. [4. Connexion MySQL](#4-connexion-mysql)
-5. [5. Architecture MVC avec Express](#5-architecture-mvc-avec-express)
-6. [6. Authentification](#6-authentification)
-7. [7. Gestion des fichiers (upload)](#7-gestion-des-fichiers-upload)
-8. [8. Validation des donnees](#8-validation-des-donnees)
-9. [9. CORS](#9-cors)
-10. [10. Tests d'API](#10-tests-dapi)
-11. [11. Deploiement (notions)](#11-deploiement-notions)
-12. [12. Exercices d'examen corriges](#12-exercices-dexamen-corriges)
-13. [Recapitulatif des commandes essentielles](#recapitulatif-des-commandes-essentielles)
-14. [Recapitulatif des points de securite](#recapitulatif-des-points-de-securite)
-
-
-Partie 2 sur 3 des playbooks JavaScript. Ce document couvre le developpement cote serveur avec Node.js, le framework Express et la base de donnees MySQL. Le lecteur est suppose maitriser JavaScript Vanilla (voir Partie 1).
-
 
 ## 1. Node.js
 
@@ -449,6 +423,7 @@ console.log(process.env.DB_PASSWORD); // "motdepasse123"
 - Les valeurs sont toujours des chaines de caracteres (penser a convertir si besoin : `parseInt(process.env.PORT)`)
 - `require("dotenv").config()` doit etre appele **au tout debut** du fichier principal, avant tout autre import
 
+---
 
 ## 2. Express.js
 
@@ -875,6 +850,7 @@ Avec cette organisation :
 - `GET /api/produits/42` appelle `router.get("/:id")`
 - `POST /api/produits` appelle `router.post("/")`
 
+---
 
 ## 3. API REST complete
 
@@ -1034,6 +1010,7 @@ app.listen(PORT, function () {
 });
 ```
 
+---
 
 ## 4. Connexion MySQL
 
@@ -1375,6 +1352,7 @@ app.listen(PORT, function () {
 });
 ```
 
+---
 
 ## 5. Architecture MVC avec Express
 
@@ -1673,6 +1651,7 @@ models/ --> controllers/ --> res.json() --> Client
 
 Pour un traitement approfondi du pattern MVC et de ses principes generaux, consulter le playbook Architecture MVC.
 
+---
 
 ## 6. Authentification
 
@@ -2147,6 +2126,7 @@ router.get("/profil", verifierToken, authController.profil);
 module.exports = router;
 ```
 
+---
 
 ## 7. Gestion des fichiers (upload)
 
@@ -2261,6 +2241,7 @@ app.use(function (err, req, res, next) {
 });
 ```
 
+---
 
 ## 8. Validation des donnees
 
@@ -2379,6 +2360,7 @@ Methodes de validation courantes d'express-validator :
 | `escape()` | Echappe les caracteres HTML (sanitizer) |
 | `toInt()` | Convertit en entier (sanitizer) |
 
+---
 
 ## 9. CORS
 
@@ -2426,6 +2408,7 @@ CORS est necessaire quand le frontend et le backend sont sur des origines differ
 
 CORS n'est pas necessaire quand le frontend et l'API sont sur la meme origine (meme protocole, meme domaine, meme port).
 
+---
 
 ## 10. Tests d'API
 
@@ -2570,6 +2553,7 @@ Lancer les tests :
 npm test
 ```
 
+---
 
 ## 11. Deploiement (notions)
 
@@ -2658,6 +2642,7 @@ server {
 }
 ```
 
+---
 
 ## 12. Exercices d'examen corriges
 
@@ -2680,6 +2665,7 @@ app.listen(3000, function () {
 });
 ```
 
+---
 
 ### Exercice 2 : Creer des routes CRUD pour une ressource "clients"
 
@@ -2709,6 +2695,7 @@ router.delete("/:id", clientController.supprimerClient);
 module.exports = router;
 ```
 
+---
 
 ### Exercice 3 : Ecrire le modele d'acces a la base de donnees
 
@@ -2759,6 +2746,7 @@ async function supprimer(id) {
 module.exports = { trouverTous, trouverParId, creer, modifier, supprimer };
 ```
 
+---
 
 ### Exercice 4 : Completer un controleur
 
@@ -2801,6 +2789,7 @@ async function creerClient(req, res) {
 }
 ```
 
+---
 
 ### Exercice 5 : Identifier les failles de securite
 
@@ -2917,6 +2906,7 @@ app.post("/connexion", async function (req, res) {
 app.listen(3000);
 ```
 
+---
 
 ### Exercice 6 : Ecrire un middleware de journalisation
 
@@ -2940,6 +2930,7 @@ app.get("/api/produits", function (req, res) { /* ... */ });
 
 Le middleware doit etre declare avant les routes car Express execute les middleware dans l'ordre de declaration. S'il est place apres les routes, il ne sera jamais execute (la route aura deja envoye la reponse). L'appel a `next()` est obligatoire pour passer la main au middleware ou a la route suivante.
 
+---
 
 ### Exercice 7 : Middleware de verification de role
 
@@ -2969,6 +2960,7 @@ app.get("/api/rapports", verifierRole("admin"), rapportController.generer);
 
 La fonction `verifierRole` est une **fabrique de middleware** : elle retourne une fonction middleware. Cela permet de parametrer le middleware avec le role souhaite.
 
+---
 
 ### Exercice 8 : Requete SQL avec jointure dans un modele
 
@@ -3022,6 +3014,7 @@ async function trouverCommandesParClient(clientId) {
 module.exports = { trouverCommandesAvecClient, trouverCommandesParClient };
 ```
 
+---
 
 ### Exercice 9 : Gestion de l'upload d'image avec validation
 
@@ -3093,6 +3086,7 @@ app.post("/api/avatar", upload.single("avatar"), function (req, res) {
 });
 ```
 
+---
 
 ### Exercice 10 : Architecture MVC complete
 
@@ -3324,6 +3318,7 @@ app.listen(PORT, function () {
 });
 ```
 
+---
 
 ### Exercice 11 : Proteger des routes avec JWT
 
@@ -3380,6 +3375,7 @@ router.get("/", articleController.listerArticles);
 router.get("/:id", articleController.obtenirArticle);
 ```
 
+---
 
 ### Exercice 12 : Recherche et pagination
 
@@ -3454,6 +3450,7 @@ Exemple d'appels :
 - `GET /api/produits?q=clavier` : recherche "clavier"
 - `GET /api/produits?q=souris&page=1&limite=20` : recherche paginee
 
+---
 
 ## Recapitulatif des commandes essentielles
 
@@ -3475,6 +3472,7 @@ Exemple d'appels :
 | `npm run dev` | Lancer avec nodemon |
 | `npm test` | Lancer les tests |
 
+---
 
 ## Recapitulatif des points de securite
 

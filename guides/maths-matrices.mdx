@@ -1,32 +1,10 @@
 ---
 title: "Mathématiques — Calcul matriciel"
 description: "Opérations sur les matrices, inverse, déterminant, systèmes linéaires, applications aux graphes"
-category: "Mathematiques"
+category: "Mathématiques"
 tags: ["matrices", "calcul matriciel", "déterminant", "systèmes linéaires", "maths"]
 difficulty: "Intermédiaire"
 ---
-
-# Calcul matriciel
-
-
-
-## Table des matieres
-
-1. [1. Definitions fondamentales](#1-definitions-fondamentales)
-2. [2. Operations sur les matrices](#2-operations-sur-les-matrices)
-3. [3. Multiplication de matrices](#3-multiplication-de-matrices)
-4. [4. Transposee d'une matrice](#4-transposee-dune-matrice)
-5. [5. Determinant](#5-determinant)
-6. [6. Matrice inverse](#6-matrice-inverse)
-7. [7. Systemes d'equations lineaires](#7-systemes-dequations-lineaires)
-8. [8. Puissances de matrices](#8-puissances-de-matrices)
-9. [9. Matrices et graphes](#9-matrices-et-graphes)
-10. [10. Applications informatiques](#10-applications-informatiques)
-11. [11. Exercices d'examen corriges](#11-exercices-dexamen-corriges)
-12. [12. Resume des formules essentielles](#12-resume-des-formules-essentielles)
-13. [13. Erreurs frequentes a eviter](#13-erreurs-frequentes-a-eviter)
-
-
 
 ## 1. Definitions fondamentales
 
@@ -127,6 +105,7 @@ S = [ 1  3  5 ]
     [ 5  7  4 ]
 ```
 
+---
 
 ## 2. Operations sur les matrices
 
@@ -221,6 +200,7 @@ C = 3A = [ 6   -3 ]
          [ -9  15 ]
 ```
 
+---
 
 ## 3. Multiplication de matrices
 
@@ -382,6 +362,7 @@ AB = [ 2  7  2 ]
      [ 4  1  4 ]
 ```
 
+---
 
 ## 4. Transposee d'une matrice
 
@@ -407,6 +388,7 @@ A est 2 x 3              Aᵀ est 3 x 2
 - (kA)ᵀ = k(Aᵀ)
 - (AB)ᵀ = BᵀAᵀ (attention a l'inversion de l'ordre)
 
+---
 
 ## 5. Determinant
 
@@ -580,6 +562,7 @@ On retrouve bien 27, comme avec la regle de Sarrus.
 - det(Aᵀ) = det(A)
 - det(kA) = kⁿ x det(A) pour une matrice n x n
 
+---
 
 ## 6. Matrice inverse
 
@@ -766,6 +749,7 @@ Calculons le coefficient (1,2) :
 
 Les autres coefficients se verifient de la meme maniere. Le produit donne bien I₃.
 
+---
 
 ## 7. Systemes d'equations lineaires
 
@@ -1147,6 +1131,7 @@ Verification dans l'equation 3 :
 3 x (18/5) + (11/5) + 2 x 1 = 54/5 + 11/5 + 10/5 = 75/5 = 15. Correct.
 ```
 
+---
 
 ## 8. Puissances de matrices
 
@@ -1208,6 +1193,7 @@ D = [ 2  0 ]      D³ = [ 2³  0  ] = [ 8   0 ]
     [ 0  5 ]           [ 0   5³ ]   [ 0  125 ]
 ```
 
+---
 
 ## 9. Matrices et graphes
 
@@ -1321,6 +1307,7 @@ composante 2 : 0.3 x 0.7 + 0.7 x 0.6 = 0.21 + 0.42 = 0.63
 P₂ = [ 0.37  0.63 ]
 ```
 
+---
 
 ## 10. Applications informatiques
 
@@ -1438,6 +1425,7 @@ pi₂ = 1.6 x (5/13) = 8/13
 
 Distribution stationnaire : pi = [5/13, 8/13], soit environ [0.385, 0.615].
 
+---
 
 ## 11. Exercices d'examen corriges
 
@@ -1465,6 +1453,7 @@ Etape 3 : additionner.
           [ 6 + (-6)    8 + 0  ]   [ 0    8 ]
 ```
 
+---
 
 ### Exercice 2 : Multiplication 2 x 2
 
@@ -1498,6 +1487,7 @@ BA = [ -1  -7 ]
 
 AB est different de BA. La multiplication matricielle n'est pas commutative.
 
+---
 
 ### Exercice 3 : Determinant 2 x 2
 
@@ -1511,6 +1501,7 @@ det(M) = 4 x 2 - (-3) x 6
        = 26
 ```
 
+---
 
 ### Exercice 4 : Determinant 3 x 3 par Sarrus
 
@@ -1544,6 +1535,7 @@ det(A) = (-2) + 4 + 0 - (-3) - 16 - 0
        = -11
 ```
 
+---
 
 ### Exercice 5 : Inverse d'une matrice 2 x 2
 
@@ -1577,6 +1569,7 @@ A x A⁻¹ = [ 1  0 ] = I₂. Verifie.
           [ 0  1 ]
 ```
 
+---
 
 ### Exercice 6 : Systeme 2 x 2 par inversion
 
@@ -1602,6 +1595,7 @@ Solution : x = 2, y = 1.
 
 Verification : 5(2) + 2(1) = 10 + 2 = 12. Correct. 3(2) + 1 = 7. Correct.
 
+---
 
 ### Exercice 7 : Systeme 2 x 2 par Cramer
 
@@ -1634,6 +1628,7 @@ y = 74 / 26 = 37/13
 
 Verification : 4 x (31/13) - 3 x (37/13) = 124/13 - 111/13 = 13/13 = 1. Correct.
 
+---
 
 ### Exercice 8 : Pivot de Gauss 3 x 3
 
@@ -1693,6 +1688,7 @@ Solution : x = -8, y = 8, z = 6.
 Verification equation 2 : 2(-8) + 3(8) + 6 = -16 + 24 + 6 = 14. Correct.
 Verification equation 3 : (-8) + 2(8) - 6 = -8 + 16 - 6 = 2. Correct.
 
+---
 
 ### Exercice 9 : Puissance de matrice et graphe
 
@@ -1732,6 +1728,7 @@ Reponse a) : le coefficient m²₃₁ = 0. Il n'existe aucun chemin de longueur 
 
 Reponse b) : m²₃₃ = 1 signifie qu'il existe 1 chemin de longueur 2 du sommet 3 a lui-meme (3 -> 1 -> ... non, verifions : 3 -> 2 -> 3 ? arc 3->2 existe (m₃₂=1), arc 2->3 existe (m₂₃=1). Oui, le chemin 3 -> 2 -> 3 est de longueur 2).
 
+---
 
 ### Exercice 10 : Chaine de Markov
 
@@ -1787,6 +1784,7 @@ Distribution stationnaire : pi = [6/7, 1/7], soit environ [0.857, 0.143].
 
 Interpretation : a long terme, la machine est en fonctionnement environ 85.7% du temps.
 
+---
 
 ### Exercice 11 : Determinant et inversibilite
 
@@ -1820,6 +1818,7 @@ k = (2 + racine(12)) / 2  ou  k = (2 - racine(12)) / 2
 
 Conclusion : A est inversible pour tout k different de 1 + racine(3) et 1 - racine(3).
 
+---
 
 ### Exercice 12 : Inverse 3 x 3 et systeme
 
@@ -1926,6 +1925,7 @@ Verification equation 1 : 2(9/5) + 7/5 = 18/5 + 7/5 = 25/5 = 5. Correct.
 Verification equation 2 : 9/5 + 2(8/5) = 9/5 + 16/5 = 25/5 = 5. Correct.
 Verification equation 3 : 7/5 + 8/5 = 15/5 = 3. Correct.
 
+---
 
 ### Exercice 13 : Multiplication et transposee
 
@@ -1971,6 +1971,7 @@ BᵀAᵀ = [ -2  -4 ]
 
 On verifie bien que (AB)ᵀ = BᵀAᵀ.
 
+---
 
 ### Exercice 14 : Matrice d'adjacence et chemins
 
@@ -2029,6 +2030,7 @@ Reponse : m²₁₃ = 2. Il existe 2 chemins de longueur 2 du sommet 1 au sommet
 - Chemin 1 : 1 -> 2 -> 3
 - Chemin 2 : 1 -> 4 -> 3
 
+---
 
 ### Exercice 15 : Systeme 3 x 3 complet par Gauss
 
@@ -2105,6 +2107,7 @@ Verification equation 1 : 2(6/5) + 1 - (12/5) = 12/5 + 5/5 - 12/5 = 5/5 = 1. Cor
 Verification equation 2 : (6/5) - 1 + 2(12/5) = 6/5 - 5/5 + 24/5 = 25/5 = 5. Correct.
 Verification equation 3 : 3(6/5) + 2(1) + (12/5) = 18/5 + 10/5 + 12/5 = 40/5 = 8. Correct.
 
+---
 
 ### Exercice 16 : Transformation geometrique
 
@@ -2139,6 +2142,7 @@ Sommet C(0, 3) :
 ```
 C' = (-3, 0).
 
+---
 
 ### Exercice 17 : Matrice de transition et PageRank
 
@@ -2197,6 +2201,7 @@ P₁ = [3/8, 1/8, 1/8, 3/8].
 
 La page A et la page D ont les scores les plus eleves, ce qui est coherent car elles recoivent le plus de liens entrants.
 
+---
 
 ## 12. Resume des formules essentielles
 
@@ -2213,6 +2218,7 @@ La page A et la page D ont les scores les plus eleves, ce qui est coherent car e
 | Condition inversibilite | det(A) different de 0 |
 | Compatibilite produit | Colonnes de A = Lignes de B |
 
+---
 
 ## 13. Erreurs frequentes a eviter
 

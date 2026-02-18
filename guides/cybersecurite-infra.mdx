@@ -6,34 +6,6 @@ tags: ["cybersécurité", "pare-feu", "vpn", "pfsense", "ssl", "ids", "durcissem
 difficulty: "Avancé"
 ---
 
-# Cybersécurité infrastructure
-
-
-
-## Table des matieres
-
-1. [Table des matières](#table-des-matires)
-2. [1. Menaces et vulnérabilités](#1-menaces-et-vulnrabilits)
-3. [2. Principes de sécurité](#2-principes-de-scurit)
-4. [3. Pare-feu : concepts et types](#3-pare-feu-concepts-et-types)
-5. [4. pfSense](#4-pfsense)
-6. [5. DMZ](#5-dmz)
-7. [6. VPN](#6-vpn)
-8. [7. OpenVPN en pratique](#7-openvpn-en-pratique)
-9. [8. Proxy et filtrage web](#8-proxy-et-filtrage-web)
-10. [9. IDS/IPS](#9-idsips)
-11. [10. Chiffrement](#10-chiffrement)
-12. [11. PKI et certificats](#11-pki-et-certificats)
-13. [12. SSL/TLS](#12-ssltls)
-14. [13. Durcissement des systèmes](#13-durcissement-des-systmes)
-15. [14. Analyse de logs](#14-analyse-de-logs)
-16. [15. Wi-Fi sécurisé](#15-wi-fi-scuris)
-17. [16. Exercices corrigés](#16-exercices-corrigs)
-
-
-Ce playbook couvre l'ensemble des connaissances requises en sécurité des infrastructures pour le BTS SIO option SISR. Il constitue une référence exhaustive allant des fondamentaux théoriques aux configurations pratiques.
-
-
 ## Table des matières
 
 1. [Menaces et vulnérabilités](#1-menaces-et-vulnérabilités)
@@ -53,6 +25,7 @@ Ce playbook couvre l'ensemble des connaissances requises en sécurité des infra
 15. [Wi-Fi sécurisé](#15-wi-fi-sécurisé)
 16. [Exercices corrigés](#16-exercices-corrigés)
 
+---
 
 ## 1. Menaces et vulnérabilités
 
@@ -150,6 +123,7 @@ Contre-mesures : filtrage en entrée (ingress filtering, BCP38), SPF/DKIM/DMARC,
 - **PSSI** : Politique de Sécurité du Système d'Information, document interne définissant les règles de sécurité.
 - **ISO 27001** : norme internationale de gestion de la sécurité de l'information.
 
+---
 
 ## 2. Principes de sécurité
 
@@ -202,6 +176,7 @@ Applications pratiques :
 - **Security by design** : intégrer la sécurité dès la conception, pas en tant qu'ajout ultérieur.
 - **KISS (Keep It Simple)** : un système simple est plus facile à sécuriser et à auditer.
 
+---
 
 ## 3. Pare-feu : concepts et types
 
@@ -304,6 +279,7 @@ Principes de rédaction des règles :
 - Documenter chaque règle (description).
 - Journaliser les règles de blocage pour la détection d'anomalies.
 
+---
 
 ## 4. pfSense
 
@@ -448,6 +424,7 @@ Cas d'utilisation : autoriser l'accès Internet uniquement pendant les heures de
 
 Configuration : Firewall > Schedules > Add, puis associer le schedule à une règle via le champ "Schedule" dans les options avancées de la règle.
 
+---
 
 ## 5. DMZ
 
@@ -549,6 +526,7 @@ Pass TCP  DMZ_net  -> *  port 25       (envoi mail)
 Block *   DMZ_net  -> *  *             (tout le reste)
 ```
 
+---
 
 ## 6. VPN
 
@@ -643,6 +621,7 @@ Caractéristiques :
 | Intégration pfSense | Oui (natif) | Oui (natif) | Oui (package) |
 | Cas d'usage BTS SIO | Site-à-site | Client-à-site, site-à-site | Client-à-site |
 
+---
 
 ## 7. OpenVPN en pratique
 
@@ -837,6 +816,7 @@ verb 3
 - **Full tunneling** : tout le trafic du client passe par le VPN. Ajouter `push "redirect-gateway def1 bypass-dhcp"` dans la configuration serveur.
 - **Split tunneling** : seul le trafic destiné au réseau de l'entreprise passe par le VPN. Le reste sort directement par la connexion Internet du client. Configurer avec `push "route ..."`.
 
+---
 
 ## 8. Proxy et filtrage web
 
@@ -980,6 +960,7 @@ Décomposition :
 
 Outils d'analyse : SARG (Squid Analysis Report Generator), Lightsquid, grep/awk pour l'analyse manuelle.
 
+---
 
 ## 9. IDS/IPS
 
@@ -1102,6 +1083,7 @@ Il est essentiel de :
 - Ajuster les seuils de détection.
 - Ne pas activer toutes les règles : sélectionner celles pertinentes pour l'environnement.
 
+---
 
 ## 10. Chiffrement
 
@@ -1231,6 +1213,7 @@ En pratique, on combine chiffrement asymétrique et symétrique :
 
 C'est le principe utilisé par TLS, SSH, IPSec, PGP.
 
+---
 
 ## 11. PKI et certificats
 
@@ -1360,6 +1343,7 @@ certbot certonly --standalone -d www.entreprise.fr
 certbot renew --dry-run
 ```
 
+---
 
 ## 12. SSL/TLS
 
@@ -1498,6 +1482,7 @@ Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
 - **nmap** : `nmap --script ssl-enum-ciphers -p 443 exemple.fr`
 - **openssl s_client** : `openssl s_client -connect exemple.fr:443 -tls1_3`
 
+---
 
 ## 13. Durcissement des systèmes
 
@@ -1729,6 +1714,7 @@ lynis audit system
 nmap -sS -sV -O -p- 192.168.1.0/24
 ```
 
+---
 
 ## 14. Analyse de logs
 
@@ -1856,6 +1842,7 @@ Corrélation : ces quatre événements, pris individuellement, pourraient passer
 - Protéger l'intégrité des logs (serveur dédié, droits restreints, horodatage fiable).
 - Synchroniser les horloges de tous les équipements (NTP) pour garantir la cohérence temporelle.
 
+---
 
 ## 15. Wi-Fi sécurisé
 
@@ -1974,6 +1961,7 @@ Sur le point d'accès Wi-Fi ou le contrôleur :
 - Surveiller les points d'accès non autorisés (rogue AP) avec un WIDS.
 - Désactiver le WPS (Wi-Fi Protected Setup), vulnérable aux attaques par brute force du PIN.
 
+---
 
 ## 16. Exercices corrigés
 
@@ -2028,6 +2016,7 @@ Règles sur l'interface DMZ :
 
 La règle de blocage DMZ vers LAN doit être placée avant la règle d'autorisation sortante.
 
+---
 
 ### Exercice 2 : Analyse d'une attaque par brute force SSH
 
@@ -2067,6 +2056,7 @@ Feb 15 14:30:15 srv01 sshd[4891]: pam_unix(sshd:session): session opened for use
    - Limiter les utilisateurs autorisés à se connecter en SSH (`AllowUsers`).
    - Mettre en place un système d'alerte sur les tentatives de connexion échouées.
 
+---
 
 ### Exercice 3 : Mise en place d'un VPN OpenVPN client-à-site
 
@@ -2133,6 +2123,7 @@ Pass | * | 10.8.0.0/24 | 192.168.1.0/24 | * | VPN vers LAN
 - Vérifier la connectivité : `ping 192.168.1.1` depuis le poste distant.
 - Vérifier dans pfSense : Status > OpenVPN pour voir les clients connectés.
 
+---
 
 ### Exercice 4 : Règles IDS/IPS Suricata
 
@@ -2179,6 +2170,7 @@ alert dns $HOME_NET any -> any any (msg:"MALWARE DNS query to malware.example.co
 
 Explication : alerte sur toute requête DNS contenant le domaine "malware.example.com". Le mot-clé `dns.query` cible spécifiquement le champ de requête DNS.
 
+---
 
 ### Exercice 5 : Chiffrement et PKI
 
@@ -2224,6 +2216,7 @@ openssl verify -CAfile ca.crt serveur.crt
 # Résultat attendu : serveur.crt: OK
 ```
 
+---
 
 ### Exercice 6 : Handshake TLS
 
@@ -2256,6 +2249,7 @@ openssl verify -CAfile ca.crt serveur.crt
 
 3. **Perfect Forward Secrecy** : grâce à l'utilisation d'ECDHE (clés éphémères), chaque session TLS utilise des clés uniques qui sont détruites après la session. Si la clé privée RSA du serveur est compromise ultérieurement, les sessions passées restent protégées car les clés éphémères ECDHE n'existent plus. Sans PFS (échange de clé RSA statique), la compromission de la clé privée du serveur permettrait de déchiffrer toutes les sessions passées capturées.
 
+---
 
 ### Exercice 7 : Proxy Squid
 
@@ -2301,6 +2295,7 @@ openssl verify -CAfile ca.crt serveur.crt
    - Tester avec `curl -v http://example.com` depuis un poste client et observer les en-têtes HTTP : la présence de `X-Forwarded-For` ou `Via` indique le passage par le proxy.
    - Dans les logs d'accès, vérifier que les requêtes du client apparaissent avec son adresse IP source.
 
+---
 
 ### Exercice 8 : Architecture DMZ
 
@@ -2368,6 +2363,7 @@ PORTS_WEB  : 80, 443
 | 4 | Pass | TCP | SRV_MAIL | * | 25 | Envoi de mail sortant |
 | 5 | Pass | TCP | DMZ net | * | 123 | NTP |
 
+---
 
 ### Exercice 9 : Durcissement d'un serveur Linux
 
@@ -2454,7 +2450,329 @@ PORTS_WEB  : 80, 443
     ```
     Justification : en cas de compromission, l'attaquant pourrait effacer les logs locaux. Les logs centralisés sur un serveur distinct garantissent la traçabilité.
 
+---
 
 ### Exercice 10 : Analyse de capture réseau
 
-**Enoncé** : Lors d'une analyse avec Wi
+**Enoncé** : Lors d'une analyse avec Wireshark sur le réseau LAN, vous observez le trafic suivant :
+
+```
+No.  Time     Source          Dest            Protocol  Info
+1    0.000    192.168.1.50    192.168.1.1     ARP       Who has 192.168.1.1? Tell 192.168.1.50
+2    0.001    192.168.1.1     192.168.1.50    ARP       192.168.1.1 is at aa:bb:cc:dd:ee:ff
+3    0.500    192.168.1.99    192.168.1.50    ARP       192.168.1.1 is at 11:22:33:44:55:66
+4    0.501    192.168.1.99    192.168.1.1     ARP       192.168.1.50 is at 11:22:33:44:55:66
+5    1.000    192.168.1.50    192.168.1.99    TCP       49152 -> 443 [SYN]
+6    1.001    192.168.1.99    93.184.216.34   TCP       49152 -> 443 [SYN]
+```
+
+1. Identifiez l'attaque en cours.
+2. Expliquez le mécanisme.
+3. Proposez des contre-mesures.
+
+**Corrigé** :
+
+1. **Type d'attaque** : attaque Man-in-the-Middle par ARP spoofing (ARP poisoning).
+
+2. **Mécanisme** :
+   - Trame 1-2 : échange ARP légitime. Le poste 192.168.1.50 demande l'adresse MAC de la passerelle 192.168.1.1 et reçoit la bonne réponse (aa:bb:cc:dd:ee:ff).
+   - Trame 3 : la machine attaquante (192.168.1.99) envoie une réponse ARP non sollicitée (gratuitous ARP) au poste 192.168.1.50, affirmant que l'IP 192.168.1.1 (la passerelle) correspond à l'adresse MAC 11:22:33:44:55:66 (qui est celle de l'attaquant). Le poste victime met à jour son cache ARP.
+   - Trame 4 : l'attaquant envoie également un ARP falsifié à la passerelle, affirmant que l'IP 192.168.1.50 correspond à son adresse MAC. La passerelle met à jour son cache ARP.
+   - Résultat (trames 5-6) : tout le trafic entre le poste victime et la passerelle transite désormais par la machine de l'attaquant. L'attaquant peut intercepter, lire et modifier les communications.
+
+3. **Contre-mesures** :
+   - **Entrées ARP statiques** : figer l'association IP/MAC de la passerelle sur les postes critiques (`arp -s 192.168.1.1 aa:bb:cc:dd:ee:ff`). Peu pratique à grande échelle.
+   - **Dynamic ARP Inspection (DAI)** : fonctionnalité des commutateurs managés qui vérifie les réponses ARP par rapport à la table DHCP snooping. Les réponses ARP frauduleuses sont bloquées.
+   - **DHCP Snooping** : le commutateur enregistre les associations IP/MAC/port légitimes attribuées par le serveur DHCP.
+   - **802.1X** : authentification de chaque machine avant l'accès au réseau, empêchant les machines non autorisées.
+   - **Outil de détection** : arpwatch surveille les changements d'association IP/MAC et alerte l'administrateur.
+   - **Chiffrement** : HTTPS, SSH, VPN. Même si le trafic est intercepté, il reste chiffré.
+
+---
+
+### Exercice 11 : Configuration WPA2-Enterprise avec RADIUS
+
+**Enoncé** : Vous mettez en place un réseau Wi-Fi sécurisé en WPA2-Enterprise pour 200 employés. L'authentification se fait via FreeRADIUS couplé à l'Active Directory. Décrivez l'architecture et les étapes de configuration.
+
+**Corrigé** :
+
+**Architecture** :
+
+```
+[Postes Wi-Fi] <--802.11/EAP--> [Bornes Wi-Fi] <--RADIUS--> [FreeRADIUS] <--LDAP--> [Active Directory]
+  (Supplicants)                   (Authenticators)            (Auth Server)            (192.168.1.10)
+                                  (192.168.1.50-55)           (192.168.1.20)
+```
+
+**Etape 1 : Installation de FreeRADIUS**
+
+```bash
+apt install freeradius freeradius-ldap freeradius-utils
+```
+
+**Etape 2 : Configuration des clients RADIUS** (`/etc/freeradius/3.0/clients.conf`)
+
+```
+client borne-rdc {
+    ipaddr    = 192.168.1.50
+    secret    = R4d1usS3cret2024!
+    shortname = borne-rdc
+}
+
+client borne-etage1 {
+    ipaddr    = 192.168.1.51
+    secret    = R4d1usS3cret2024!
+    shortname = borne-etage1
+}
+```
+
+**Etape 3 : Configuration du module LDAP** (`/etc/freeradius/3.0/mods-enabled/ldap`)
+
+```
+ldap {
+    server   = "192.168.1.10"
+    port     = 389
+    identity = "CN=svc-radius,OU=Services,DC=entreprise,DC=local"
+    password = "MotDePasseService2024!"
+    base_dn  = "DC=entreprise,DC=local"
+
+    user {
+        base_dn = "OU=Utilisateurs,DC=entreprise,DC=local"
+        filter  = "(sAMAccountName=%{%{Stripped-User-Name}:-%{User-Name}})"
+    }
+}
+```
+
+**Etape 4 : Certificat serveur RADIUS**
+
+Un certificat serveur est nécessaire pour PEAP. Utiliser les certificats générés par FreeRADIUS (`/etc/freeradius/3.0/certs/`) ou créer un certificat signé par la CA interne de l'entreprise.
+
+**Etape 5 : Configuration du site** (`/etc/freeradius/3.0/sites-enabled/default`)
+
+Dans la section `authorize` :
+```
+ldap
+if (ok) {
+    update control {
+        Auth-Type := ldap
+    }
+}
+```
+
+**Etape 6 : Configuration des bornes Wi-Fi**
+
+- SSID : ENTREPRISE-CORP
+- Sécurité : WPA2-Enterprise
+- Serveur RADIUS : 192.168.1.20
+- Port : 1812
+- Secret : R4d1usS3cret2024!
+- Méthode EAP : PEAP
+
+**Etape 7 : Configuration des postes clients**
+
+Via GPO (Active Directory) ou manuellement :
+- Réseau : ENTREPRISE-CORP
+- Sécurité : WPA2-Enterprise
+- Méthode EAP : PEAP (EAP-MSCHAPv2)
+- Certificat serveur : valider le certificat du serveur RADIUS (installer le certificat CA)
+- Identifiants : utiliser les identifiants Windows (SSO)
+
+**Etape 8 : Test**
+
+```bash
+# Test d'authentification
+radtest dupont MotDePasse2024! 127.0.0.1 0 testing123
+
+# Vérification des logs
+tail -f /var/log/freeradius/radius.log
+```
+
+**Etape 9 : Réseau invité**
+
+Créer un SSID séparé "ENTREPRISE-INVITE" sur un VLAN distinct (ex : VLAN 50, 10.50.0.0/24) avec un portail captif, isolé du réseau interne par des règles de pare-feu.
+
+---
+
+### Exercice 12 : VPN site-à-site IPSec
+
+**Enoncé** : Deux sites d'une entreprise doivent être interconnectés par un VPN IPSec :
+- Site A : LAN 192.168.1.0/24, IP publique 203.0.113.10 (pfSense)
+- Site B : LAN 192.168.2.0/24, IP publique 198.51.100.20 (pfSense)
+
+Configurez le tunnel IPSec sur les deux pare-feu pfSense.
+
+**Corrigé** :
+
+**Configuration sur pfSense Site A** :
+
+VPN > IPSec > Tunnels > Add Phase 1
+
+```
+Key Exchange version  : IKEv2
+Internet Protocol     : IPv4
+Interface             : WAN
+Remote Gateway        : 198.51.100.20
+Authentication Method : Mutual PSK
+Pre-Shared Key        : ClePartageeVPN2024!TresLongue
+Encryption Algorithm  : AES 256
+Hash Algorithm        : SHA256
+DH Group              : 14 (2048 bit)
+Lifetime              : 28800
+```
+
+Phase 2 (Show Phase 2 Entries > Add) :
+
+```
+Mode                  : Tunnel IPv4
+Local Network         : LAN subnet (192.168.1.0/24)
+Remote Network        : 192.168.2.0/24
+Protocol              : ESP
+Encryption Algorithms : AES 256-GCM (128 bits)
+Hash Algorithms       : SHA256
+PFS Key Group         : 14 (2048 bit)
+Lifetime              : 3600
+```
+
+**Configuration sur pfSense Site B** :
+
+VPN > IPSec > Tunnels > Add Phase 1
+
+```
+Key Exchange version  : IKEv2
+Internet Protocol     : IPv4
+Interface             : WAN
+Remote Gateway        : 203.0.113.10
+Authentication Method : Mutual PSK
+Pre-Shared Key        : ClePartageeVPN2024!TresLongue
+Encryption Algorithm  : AES 256
+Hash Algorithm        : SHA256
+DH Group              : 14 (2048 bit)
+Lifetime              : 28800
+```
+
+Phase 2 :
+
+```
+Mode                  : Tunnel IPv4
+Local Network         : LAN subnet (192.168.2.0/24)
+Remote Network        : 192.168.1.0/24
+Protocol              : ESP
+Encryption Algorithms : AES 256-GCM (128 bits)
+Hash Algorithms       : SHA256
+PFS Key Group         : 14 (2048 bit)
+Lifetime              : 3600
+```
+
+**Règles de pare-feu (sur les deux pfSense)** :
+
+Interface IPSec :
+
+| # | Action | Proto | Source | Dest | Port | Description |
+|---|---|---|---|---|---|---|
+| 1 | Pass | * | 192.168.1.0/24 | 192.168.2.0/24 | * | Trafic inter-sites |
+| 2 | Pass | * | 192.168.2.0/24 | 192.168.1.0/24 | * | Trafic inter-sites |
+
+**Vérification** :
+
+- Status > IPSec : le tunnel doit être affiché comme "Established".
+- Depuis un poste du Site A : `ping 192.168.2.1` (passerelle du Site B).
+- Si le tunnel ne monte pas, vérifier :
+  - La cohérence des paramètres Phase 1 et Phase 2 entre les deux sites.
+  - La clé pré-partagée (identique des deux côtés).
+  - Les règles de pare-feu WAN autorisant le trafic IPSec (UDP 500, UDP 4500, protocole ESP).
+  - Les journaux : Status > System Logs > IPSec.
+
+---
+
+### Exercice 13 : Incident de sécurité complet
+
+**Enoncé** : Le lundi matin, plusieurs utilisateurs signalent que leurs fichiers sont inaccessibles et portent l'extension ".locked". Un fichier "LISEZ_MOI.txt" demande 2 BTC pour récupérer les données.
+
+1. Identifiez le type d'attaque.
+2. Décrivez la procédure de réponse à incident.
+3. Quelles mesures auraient pu prévenir cette attaque ?
+
+**Corrigé** :
+
+1. **Type d'attaque** : ransomware (rançongiciel). Le logiciel malveillant a chiffré les fichiers des utilisateurs et exige une rançon en cryptomonnaie.
+
+2. **Procédure de réponse à incident** :
+
+   **Phase 1 : Confinement (immédiat)**
+   - Isoler les machines infectées du réseau (débrancher le câble réseau, désactiver le Wi-Fi).
+   - Isoler les partages réseau (couper l'accès au serveur de fichiers).
+   - Ne pas éteindre les machines (préservation des preuves en mémoire).
+   - Identifier le périmètre de l'infection : quels postes, quels serveurs, quels partages sont touchés.
+
+   **Phase 2 : Investigation**
+   - Identifier le vecteur d'infection : courriel de phishing, pièce jointe malveillante, exploitation de vulnérabilité, accès RDP exposé.
+   - Identifier le ransomware (extension des fichiers, contenu de la demande de rançon). Consulter les bases comme ID Ransomware (id-ransomware.malwarehunterteam.com).
+   - Examiner les logs : pare-feu, proxy, IDS, antivirus, journaux Windows (Event Viewer).
+   - Déterminer le "patient zéro" (première machine infectée) et la chronologie de propagation.
+
+   **Phase 3 : Eradication**
+   - Identifier et supprimer le logiciel malveillant sur toutes les machines infectées.
+   - Analyser les binaires malveillants (sandbox, VirusTotal).
+   - Changer tous les mots de passe (comptes compromis, comptes administrateurs).
+   - Corriger la vulnérabilité exploitée (patch, fermeture de port).
+
+   **Phase 4 : Restauration**
+   - Restaurer les fichiers depuis les sauvegardes (vérifier leur intégrité avant restauration).
+   - Réinstaller les systèmes compromis si nécessaire.
+   - Remettre les services en ligne progressivement.
+   - Surveiller attentivement le réseau pendant les jours suivants.
+
+   **Phase 5 : Post-incident**
+   - Rédiger un rapport d'incident détaillé.
+   - Notifier la CNIL si des données personnelles sont concernées (72h, RGPD).
+   - Déposer plainte (gendarmerie ou police, OCLCTIC).
+   - Organiser un retour d'expérience (RETEX) et mettre à jour la PSSI.
+   - Ne jamais payer la rançon (aucune garantie de récupération, financement de la criminalité).
+
+3. **Mesures préventives** :
+   - **Sauvegardes** : stratégie 3-2-1 (3 copies, 2 supports différents, 1 hors site). Tester régulièrement la restauration. Sauvegardes déconnectées du réseau.
+   - **Mises à jour** : appliquer les correctifs de sécurité sans délai.
+   - **Segmentation réseau** : limiter la propagation latérale par VLAN et règles de pare-feu.
+   - **Filtrage mail** : antispam, analyse des pièces jointes en sandbox, blocage des macros Office.
+   - **EDR/Antivirus** : solution de détection comportementale sur tous les postes.
+   - **Sensibilisation** : formation régulière des utilisateurs au phishing.
+   - **Moindre privilège** : les utilisateurs ne doivent pas être administrateurs de leur poste.
+   - **IDS/IPS** : détection des communications vers les serveurs de commande et contrôle (C2).
+   - **Désactiver RDP** ou le restreindre via VPN uniquement.
+   - **Plan de reprise d'activité (PRA)** : procédure documentée et testée.
+
+---
+
+### Exercice 14 : Comparaison de protocoles VPN
+
+**Enoncé** : Le directeur technique vous demande de recommander un protocole VPN pour deux cas d'usage :
+1. Interconnexion permanente entre le siège et une succursale.
+2. Accès distant pour 50 télétravailleurs.
+
+Comparez IPSec, OpenVPN et WireGuard pour chaque cas.
+
+**Corrigé** :
+
+**Cas 1 : Interconnexion site-à-site (siège - succursale)**
+
+| Critère | IPSec | OpenVPN | WireGuard |
+|---|---|---|---|
+| Adapté au site-à-site | Excellent (conçu pour) | Possible mais moins courant | Possible |
+| Intégration pfSense | Natif, interface dédiée | Natif | Package |
+| Performance | Très bonne (noyau) | Moyenne (espace utilisateur) | Excellente (noyau) |
+| Interopérabilité | Standard, multi-constructeurs | Nécessite OpenVPN des 2 côtés | Nécessite WireGuard des 2 côtés |
+| Complexité | Elevée (Phase 1/Phase 2) | Moyenne | Faible |
+
+**Recommandation** : IPSec (IKEv2). C'est le standard industriel pour le site-à-site, supporté nativement par tous les pare-feu professionnels. Si les deux sites utilisent pfSense, WireGuard est une alternative plus simple et plus performante.
+
+**Cas 2 : Accès distant pour 50 télétravailleurs**
+
+| Critère | IPSec | OpenVPN | WireGuard |
+|---|---|---|---|
+| Client multiplateforme | Variable selon l'OS | Excellent (tous OS) | Bon (tous OS) |
+| Traversée NAT/pare-feu | Peut être bloqué (ESP) | TCP 443 = passe partout | UDP uniquement |
+| Authentification | PSK ou certificats | Certificats + login/mdp | Clés publiques |
+| Gestion des utilisateurs | Complexe | Facile (User Manager pfSense) | Manuelle (paire de clés) |
+| Révocation d'accès | Complexe | Simple (révoquer certificat) | Supprimer la clé du pair |
+
+**Recommandation** : OpenVPN. Il offre la meilleure combinaison de flexibilité, compatibilité et facilité de gestion pour un accès distant avec de nombreux utilisateurs. Le mode SSL/TLS + User Auth permet une authentification forte (certificat + identifiant/mot de passe). La possibilité d'utiliser TCP 443 garantit le fonctionnement même depuis des réseaux restrictifs (hôtels, aéroports).

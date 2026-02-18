@@ -1,17 +1,10 @@
 ---
 title: "React (Partie 3/3)"
 description: "Composants, props, state, hooks, useEffect, routing, appels API, formulaires"
-category: "Programmation"
-difficulty: "Avance"
+sidebar_position: 1
+level: "Avance"
+reading_time: 59
 ---
-
-{/* javascript-react.mdx — BTS SIO SLAM — Bible React */}
-
-# JavaScript - React (Partie 3/3)
-
-> Bibliotheque JavaScript pour construire des interfaces utilisateur.
-> Prerequis : JavaScript Vanilla (Partie 1) et Node/Express (Partie 2).
-
 
 ## Table des matieres
 
@@ -29,6 +22,7 @@ difficulty: "Avance"
 12. [Bonnes pratiques](#bonnes-pratiques)
 13. [Exercices d'examen corriges](#exercices-dexamen-corriges)
 
+---
 
 ## Introduction a React
 
@@ -163,6 +157,7 @@ root.render(
 
 **Le fichier `index.html`** contient un unique `<div id="root"></div>`. Toute l'application React sera injectee dans ce div. C'est une **Single Page Application** (SPA) : une seule page HTML, le contenu change dynamiquement via JavaScript.
 
+---
 
 ## JSX
 
@@ -313,6 +308,7 @@ function CarteProduit() {
 }
 ```
 
+---
 
 ## Composants
 
@@ -577,6 +573,7 @@ function App() {
 }
 ```
 
+---
 
 ## State avec useState
 
@@ -824,6 +821,7 @@ function ListeDynamique() {
 }
 ```
 
+---
 
 ## Evenements en React
 
@@ -1141,6 +1139,7 @@ function RechercheProduits() {
 
 Ce pattern est tres courant : on ne stocke pas les resultats filtres dans un state. On **derive** la liste filtree a chaque rendu a partir du state de recherche et des donnees. C'est le concept de **donnee derivee** (computed value).
 
+---
 
 ## useEffect
 
@@ -1397,6 +1396,7 @@ function Meteo() {
 }
 ```
 
+---
 
 ## Listes et rendu conditionnel
 
@@ -1556,6 +1556,7 @@ function CatalogueProduits() {
 }
 ```
 
+---
 
 ## Communication entre composants
 
@@ -1704,6 +1705,7 @@ Ce schema est fondamental. Il represente le flux de donnees unidirectionnel de R
 - Les donnees descendent (parent vers enfant via props).
 - Les actions remontent (enfant vers parent via callback props).
 
+---
 
 ## React Router
 
@@ -1945,6 +1947,7 @@ src/
   main.jsx
 ```
 
+---
 
 ## Appels API avec React
 
@@ -2197,6 +2200,7 @@ Ce composant illustre le pattern CRUD complet :
 - **Update** : mode edition (le formulaire se remplit, le bouton change de texte), appel PUT.
 - **Delete** : confirmation, appel DELETE, rechargement de la liste.
 
+---
 
 ## Hooks supplementaires
 
@@ -2564,6 +2568,7 @@ function FormulaireContact() {
 }
 ```
 
+---
 
 ## Bonnes pratiques
 
@@ -2654,6 +2659,7 @@ function ListeProduits({ produits }) {
 
 **Toujours gerer les 3 etats d'un appel API :** chargement, erreur, donnees. Ne jamais supposer que le fetch reussira.
 
+---
 
 ## Exercices d'examen corriges
 
@@ -3658,5 +3664,6 @@ function Panier() {
 export default Panier;
 ```
 
+---
 
 Fin du playbook React. Ce document couvre l'integralite du programme React pour le BTS SIO SLAM : composants, props, state, evenements, formulaires controles, useEffect, appels API, React Router, hooks avances, et bonnes pratiques. Les 12 exercices corriges representent les types de questions que l'on retrouve a l'examen.

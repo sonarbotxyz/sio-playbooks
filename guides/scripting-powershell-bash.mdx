@@ -6,18 +6,6 @@ tags: ["powershell", "bash", "scripting", "automatisation", "administration"]
 difficulty: "Intermediaire"
 ---
 
-# Scripting — PowerShell et Bash
-
-
-
-## Table des matieres
-
-1. [Partie 1 — Bash](#partie-1-bash)
-2. [Partie 2 — PowerShell](#partie-2-powershell)
-3. [Partie 3 — Exercices corriges](#partie-3-exercices-corriges)
-
-
-
 ## Partie 1 — Bash
 
 ### 1.1 Fondamentaux du shell Bash
@@ -749,6 +737,7 @@ crontab -u www-data -e
 /var/spool/cron/crontabs/  # crontabs des utilisateurs
 ```
 
+---
 
 ## Partie 2 — PowerShell
 
@@ -2107,6 +2096,7 @@ $Error.Clear()           # vider le journal d'erreurs
 $ErrorActionPreference = "Stop"    # toute erreur devient exception
 ```
 
+---
 
 ## Partie 3 — Exercices corriges
 
@@ -2150,6 +2140,7 @@ echo "Proprietaire : $(ls -ld "$CHEMIN" | awk '{print $3":"$4}')"
 [ -x "$CHEMIN" ] && echo "  Executable : oui" || echo "  Executable : non"
 ```
 
+---
 
 ### Exercice 2 — Bash : Boucle et traitement de texte
 
@@ -2175,6 +2166,7 @@ echo ""
 echo "Total : $(awk -F: '$3 >= 1000 {count++} END {print count}' /etc/passwd) utilisateur(s)"
 ```
 
+---
 
 ### Exercice 3 — Bash : Sauvegarde conditionnelle
 
@@ -2227,6 +2219,7 @@ else
 fi
 ```
 
+---
 
 ### Exercice 4 — Bash : Analyse de logs avec grep, awk, sort
 
@@ -2269,6 +2262,7 @@ awk -F'[\\[/: ]' '{print $5}' "$LOG" | sort | uniq -c | \
     awk '{printf "  %sh : %6d requetes\n", $2, $1}'
 ```
 
+---
 
 ### Exercice 5 — Bash : Fonction et menu interactif
 
@@ -2379,6 +2373,7 @@ while true; do
 done
 ```
 
+---
 
 ### Exercice 6 — PowerShell : Variables et operateurs
 
@@ -2418,6 +2413,7 @@ if ($age -ge 18) {
 }
 ```
 
+---
 
 ### Exercice 7 — PowerShell : Boucles et tableaux
 
@@ -2465,6 +2461,7 @@ $total = $resultats.Count
 Write-Host "Resultat : $joignables/$total serveurs joignables"
 ```
 
+---
 
 ### Exercice 8 — PowerShell : Fonctions et gestion de fichiers
 
@@ -2535,6 +2532,7 @@ Find-LargeFiles -Chemin "C:\Users" -SeuilMB 50
 # Find-LargeFiles -Chemin "C:\Temp" -SeuilMB 10 -Supprimer
 ```
 
+---
 
 ### Exercice 9 — PowerShell : Pipeline et objets
 
@@ -2603,6 +2601,7 @@ $htmlComplet | Out-File $Sortie -Encoding UTF8
 Write-Host "Rapport genere : $Sortie"
 ```
 
+---
 
 ### Exercice 10 — PowerShell : Active Directory en masse
 
@@ -2664,6 +2663,7 @@ $comptesInactifs | Export-Csv -Path $RapportCSV -NoTypeInformation -Delimiter ";
 Write-Host "Rapport exporte : $RapportCSV"
 ```
 
+---
 
 ### Exercice 11 — PowerShell : Gestion a distance
 
@@ -2716,6 +2716,7 @@ foreach ($err in $erreurs) {
 }
 ```
 
+---
 
 ### Exercice 12 — PowerShell : Taches planifiees
 
@@ -2827,6 +2828,7 @@ Write-Host "=== Taches de maintenance planifiees ==="
 Get-ScheduledTask -TaskName "Maintenance_*" | Format-Table TaskName, State, @{N='Prochain';E={(Get-ScheduledTaskInfo -InputObject $_).NextRunTime}} -AutoSize
 ```
 
+---
 
 ### Exercice 13 — Bash : Surveillance avec alerte par mail
 
@@ -2888,6 +2890,7 @@ for ip in "${!echecs[@]}"; do
 done | sort -t: -k2 -rn
 ```
 
+---
 
 ### Exercice 14 — Mixte : Script de deploiement complet
 
@@ -3016,6 +3019,7 @@ verifier_deploiement
 log "=== Deploiement termine avec succes ==="
 ```
 
+---
 
 ### Exercice 15 — Mixte : Correspondance Bash / PowerShell
 
@@ -3131,6 +3135,7 @@ $trigger = New-ScheduledTaskTrigger -Daily -At "02:00"
 Register-ScheduledTask -TaskName "Sauvegarde" -Action $action -Trigger $trigger -User "SYSTEM"
 ```
 
+---
 
 ### Exercice 16 — PowerShell : Gestion des erreurs et journalisation
 
@@ -3184,4 +3189,114 @@ try {
 
     foreach ($f in $fichiersTemp) {
         try {
-            Remove
+            Remove-Item $f.FullName -Force -ErrorAction Stop
+            $compteur++
+        } catch {
+            # Fichier verrouille, on ignore
+        }
+    }
+
+    $totalApres = (Get-ChildItem -Path $env:TEMP -Recurse -File -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum
+    $economieMB = [math]::Round(($totalAvant - $totalApres) / 1MB, 2)
+    Write-Log "$compteur fichiers supprimes ($economieMB Mo liberes)" "OK"
+} catch {
+    Write-Log "Erreur nettoyage temporaires : $($_.Exception.Message)" "ERROR"
+}
+
+# Etape 2 : Verification de l'espace disque
+Write-Log "Etape 2 : Verification espace disque"
+try {
+    $disques = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3"
+    foreach ($d in $disques) {
+        $pourcent = [math]::Round(100 - ($d.FreeSpace / $d.Size * 100), 1)
+        $libreGB = [math]::Round($d.FreeSpace / 1GB, 2)
+
+        if ($pourcent -gt 90) {
+            Write-Log "$($d.DeviceID) a ${pourcent}% (${libreGB} Go libre) - CRITIQUE" "ERROR"
+        } elseif ($pourcent -gt 80) {
+            Write-Log "$($d.DeviceID) a ${pourcent}% (${libreGB} Go libre) - Attention" "WARN"
+        } else {
+            Write-Log "$($d.DeviceID) a ${pourcent}% (${libreGB} Go libre)" "OK"
+        }
+    }
+} catch {
+    Write-Log "Erreur verification disque : $($_.Exception.Message)" "ERROR"
+}
+
+# Etape 3 : Verification des services critiques
+Write-Log "Etape 3 : Verification des services"
+$servicesCritiques = @("W32Time", "EventLog", "Winmgmt", "LanmanServer")
+foreach ($svc in $servicesCritiques) {
+    try {
+        $etat = Get-Service -Name $svc -ErrorAction Stop
+        if ($etat.Status -ne "Running") {
+            Write-Log "$svc arrete, tentative de redemarrage..." "WARN"
+            Start-Service -Name $svc -ErrorAction Stop
+            Write-Log "$svc redemarrage reussi" "OK"
+        } else {
+            Write-Log "$svc : en cours d'execution" "OK"
+        }
+    } catch {
+        Write-Log "Erreur service $svc : $($_.Exception.Message)" "ERROR"
+    }
+}
+
+# Etape 4 : Rotation des logs anciens
+Write-Log "Etape 4 : Rotation des logs"
+try {
+    $seuilJours = 30
+    $logsAnciens = Get-ChildItem "C:\Logs" -Filter "*.log" -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-$seuilJours) }
+
+    if ($logsAnciens.Count -gt 0) {
+        $tailleTotale = [math]::Round(($logsAnciens | Measure-Object Length -Sum).Sum / 1MB, 2)
+        $logsAnciens | Remove-Item -Force
+        Write-Log "$($logsAnciens.Count) logs anciens supprimes ($tailleTotale Mo)" "OK"
+    } else {
+        Write-Log "Aucun log ancien a supprimer" "INFO"
+    }
+} catch {
+    Write-Log "Erreur rotation logs : $($_.Exception.Message)" "ERROR"
+}
+
+Write-Log "=== Maintenance terminee ==="
+```
+
+---
+
+## Aide-memoire rapide
+
+### Equivalences Bash / PowerShell
+
+| Tache | Bash | PowerShell |
+|-------|------|------------|
+| Lister fichiers | `ls -la` | `Get-ChildItem` |
+| Changer repertoire | `cd /chemin` | `Set-Location C:\chemin` |
+| Afficher contenu | `cat fichier` | `Get-Content fichier` |
+| Copier | `cp src dest` | `Copy-Item src dest` |
+| Deplacer | `mv src dest` | `Move-Item src dest` |
+| Supprimer | `rm fichier` | `Remove-Item fichier` |
+| Creer repertoire | `mkdir dossier` | `New-Item -ItemType Directory dossier` |
+| Processus | `ps aux` | `Get-Process` |
+| Services | `systemctl status svc` | `Get-Service svc` |
+| Reseau | `ip addr` | `Get-NetIPAddress` |
+| Ping | `ping -c 4 host` | `Test-NetConnection host` |
+| DNS | `nslookup host` | `Resolve-DnsName host` |
+| Utilisateurs | `cat /etc/passwd` | `Get-ADUser -Filter *` |
+| Disque | `df -h` | `Get-PSDrive` ou `Get-CimInstance Win32_LogicalDisk` |
+| Recherche texte | `grep motif fichier` | `Select-String -Pattern motif fichier` |
+| Trier | `sort fichier` | `Get-Content fichier \| Sort-Object` |
+| Compter lignes | `wc -l fichier` | `(Get-Content fichier).Count` |
+| Variable env | `export VAR=val` | `$env:VAR = "val"` |
+| Taches planifiees | `crontab -e` | `Register-ScheduledTask` |
+| Execution distante | `ssh user@host cmd` | `Invoke-Command -ComputerName host` |
+
+### Codes de retour et gestion d'erreur
+
+| Concept | Bash | PowerShell |
+|---------|------|------------|
+| Code retour | `$?` (0=succes) | `$LASTEXITCODE` |
+| Derniere erreur | `$?` | `$Error[0]` |
+| Arreter sur erreur | `set -e` | `$ErrorActionPreference = "Stop"` |
+| Try/catch | Pas natif (if/then) | `try { } catch { } finally { }` |
+| Rediriger erreurs | `2>/dev/null` | `-ErrorAction SilentlyContinue` |

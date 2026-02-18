@@ -1,35 +1,29 @@
 ---
 title: "Mathématiques — Probabilités conditionnelles"
 description: "Événements, probabilités conditionnelles, arbres, formule de Bayes, loi binomiale"
-category: "Mathematiques"
+category: "Mathématiques"
 tags: ["probabilités", "bayes", "loi binomiale", "arbres", "maths"]
 difficulty: "Intermédiaire"
 ---
 
-# Mathematiques -- Probabilites conditionnelles
-
-> Bible de revision BTS SIO SLAM. Chaque formule est demontree, chaque calcul est detaille fraction par fraction.
-
-
 ## Table des matieres
 
-1. [1. Rappels fondamentaux](#1-rappels-fondamentaux)
-2. [2. Probabilite d'un evenement](#2-probabilite-dun-evenement)
-3. [3. Probabilite de la reunion](#3-probabilite-de-la-reunion)
-4. [4. Probabilite conditionnelle](#4-probabilite-conditionnelle)
-5. [5. Independance de deux evenements](#5-independance-de-deux-evenements)
-6. [6. Arbres ponderes](#6-arbres-ponderes)
-7. [7. Formule des probabilites totales](#7-formule-des-probabilites-totales)
-8. [8. Formule de Bayes](#8-formule-de-bayes)
-9. [9. Variables aleatoires discretes](#9-variables-aleatoires-discretes)
-10. [10. Loi de Bernoulli](#10-loi-de-bernoulli)
-11. [11. Loi binomiale](#11-loi-binomiale)
-12. [12. Calculatrice et tableur](#12-calculatrice-et-tableur)
-13. [13. Applications informatiques](#13-applications-informatiques)
-14. [14. Exercices corriges](#14-exercices-corriges)
-15. [Fiche de formules recapitulative](#fiche-de-formules-recapitulative)
-16. [Methode de resolution type examen](#methode-de-resolution-type-examen)
+1. [Rappels fondamentaux](#1-rappels-fondamentaux)
+2. [Probabilite d'un evenement](#2-probabilite-dun-evenement)
+3. [Probabilite de la reunion](#3-probabilite-de-la-reunion)
+4. [Probabilite conditionnelle](#4-probabilite-conditionnelle)
+5. [Independance de deux evenements](#5-independance-de-deux-evenements)
+6. [Arbres ponderes](#6-arbres-ponderes)
+7. [Formule des probabilites totales](#7-formule-des-probabilites-totales)
+8. [Formule de Bayes](#8-formule-de-bayes)
+9. [Variables aleatoires discretes](#9-variables-aleatoires-discretes)
+10. [Loi de Bernoulli](#10-loi-de-bernoulli)
+11. [Loi binomiale](#11-loi-binomiale)
+12. [Calculatrice et tableur](#12-calculatrice-et-tableur)
+13. [Applications informatiques](#13-applications-informatiques)
+14. [Exercices corriges](#14-exercices-corriges)
 
+---
 
 ## 1. Rappels fondamentaux
 
@@ -84,6 +78,7 @@ Exemple : sur un de, A = "obtenir 1" et B = "obtenir 6" sont incompatibles. On n
 
 Contre-exemple : A = "obtenir un nombre pair" = {2, 4, 6} et B = "obtenir un nombre superieur a 4" = {5, 6}. Ici A inter B = {6}, donc A et B ne sont PAS incompatibles.
 
+---
 
 ## 2. Probabilite d'un evenement
 
@@ -126,6 +121,7 @@ Si A et B incompatibles : P(A union B) = P(A) + P(B)
 Dans tous les cas : P(A union B) = P(A) + P(B) - P(A inter B)
 ```
 
+---
 
 ## 3. Probabilite de la reunion
 
@@ -191,6 +187,7 @@ P(S union M) = 3/5 + 2/5 - 1/6
 
 Donc 25 eleves sur 30 font du sport ou de la musique (ou les deux).
 
+---
 
 ## 4. Probabilite conditionnelle
 
@@ -274,6 +271,7 @@ Pour B fixe avec P(B) > 0 :
 - P(Omega | B) = 1
 - P(A barre | B) = 1 - P(A | B)
 
+---
 
 ## 5. Independance de deux evenements
 
@@ -325,6 +323,7 @@ Verification par la conditionnelle : P(A | B) = P(A inter B)/P(B) = (1/6)/(1/2) 
 
 Si A et B sont incompatibles et de probabilites non nulles, alors P(A inter B) = 0 mais P(A)P(B) > 0, donc ils ne sont PAS independants.
 
+---
 
 ## 6. Arbres ponderes
 
@@ -375,6 +374,7 @@ A partir de cet arbre, on peut lire directement :
 - P(D barre inter T+) = 0.0285
 - P(D barre inter T-) = 0.9215
 
+---
 
 ## 7. Formule des probabilites totales
 
@@ -423,6 +423,7 @@ P(Panne) = 0.041
 
 Le taux de panne global est de 4.1%.
 
+---
 
 ## 8. Formule de Bayes
 
@@ -548,6 +549,7 @@ P(H | E) = 7/11
 
 7/11 = 0.6363... soit environ 63.6%.
 
+---
 
 ## 9. Variables aleatoires discretes
 
@@ -625,6 +627,7 @@ sigma(X) = racine carree de V(X)
 
 Exemple : sigma(X) = racine(1/2) = racine(2)/2 = 0.7071 environ.
 
+---
 
 ## 10. Loi de Bernoulli
 
@@ -665,6 +668,7 @@ X ~ B(0.03) avec X = 1 si defectueux, X = 0 si bon.
 E(X) = 0.03
 V(X) = 0.03 x 0.97 = 0.0291
 
+---
 
 ## 11. Loi binomiale
 
@@ -797,6 +801,7 @@ P(X >= 2) = 1 - P(X <= 1) = 1 - P(X=0) - P(X=1)
 = 33/81
 = 11/27
 
+---
 
 ## 12. Calculatrice et tableur
 
@@ -867,6 +872,7 @@ print(binom.cdf(k, n, p))  # P(X <= 4)
 print(1 - binom.cdf(k - 1, n, p))  # P(X >= 4)
 ```
 
+---
 
 ## 13. Applications informatiques
 
@@ -944,9 +950,11 @@ P(Spam | mots) = 0.144 / (0.144 + 0.0007) = 0.144 / 0.1447 = 0.9952
 
 Probabilite de spam : 99.5%. L'email est classe spam.
 
+---
 
 ## 14. Exercices corriges
 
+---
 
 ### Exercice 1 : Probabilites de base avec un de
 
@@ -975,6 +983,7 @@ On lance un de equilibre a 6 faces. Soient :
    P(A inter B) = 1/6.
    1/4 est different de 1/6, donc A et B ne sont PAS independants.
 
+---
 
 ### Exercice 2 : Probabilite conditionnelle avec tableau
 
@@ -1014,6 +1023,7 @@ Total              200              200            400
    1/5 = 4/20. Or 3/20 est different de 4/20.
    Donc S et F ne sont PAS independants.
 
+---
 
 ### Exercice 3 : Arbre pondre -- tirage sans remise
 
@@ -1055,6 +1065,7 @@ Verification : 12/90 + 24/90 + 24/90 + 30/90 = 90/90 = 1. Correct.
    Simplifions : PGCD(48, 90). 48 = 2^4 x 3. 90 = 2 x 3^2 x 5. PGCD = 6.
    48/90 = 8/15
 
+---
 
 ### Exercice 4 : Probabilites totales et Bayes -- pieces de monnaie
 
@@ -1101,6 +1112,7 @@ Verification : 1/4 + 1/4 + 3/8 + 1/8 = 2/8 + 2/8 + 3/8 + 1/8 = 8/8 = 1. Correct.
 
    La probabilite que ce soit la piece truquee sachant qu'on a obtenu Pile est 3/5 = 0.6.
 
+---
 
 ### Exercice 5 : Test de depistage (Bayes classique)
 
@@ -1150,6 +1162,7 @@ Verification : 0.0196 + 0.0004 + 0.0490 + 0.9310 = 1.0000. Correct.
 
    Pratiquement 100% : un resultat negatif est tres fiable.
 
+---
 
 ### Exercice 6 : Loi binomiale -- controle qualite
 
@@ -1188,6 +1201,7 @@ Un lot de cles USB contient 10% de cles defectueuses. On preleve 8 cles au hasar
 
    P(X >= 2) = 0.1869 environ 18.69%.
 
+---
 
 ### Exercice 7 : Bayes -- diagnostic de panne serveur
 
@@ -1232,6 +1246,7 @@ Verification : 32/57 + 35/114 + 5/38
 
 La cause la plus probable est le disque dur (56.1%).
 
+---
 
 ### Exercice 8 : Variable aleatoire -- jeu de des
 
@@ -1276,6 +1291,7 @@ V(X) = E(X^2) - [E(X)]^2 = 329/6 - 49 = 329/6 - 294/6 = 35/6
 V(X) = 35/6 (environ 5.833)
 sigma(X) = racine(35/6) environ 2.415
 
+---
 
 ### Exercice 9 : Loi binomiale -- QCM
 
@@ -1345,6 +1361,7 @@ Un QCM comporte 10 questions. Chaque question propose 4 reponses dont une seule 
 
    Un eleve repondant au hasard a moins de 8% de chances d'avoir au moins la moitie des reponses correctes.
 
+---
 
 ### Exercice 10 : Filtre anti-spam a deux criteres
 
@@ -1385,6 +1402,7 @@ Un email contient "promo" et vient d'un expediteur inconnu.
 
    Probabilite de 96% que ce soit du spam.
 
+---
 
 ### Exercice 11 : Systeme informatique avec redondance
 
@@ -1413,6 +1431,7 @@ Soit D1 = "disque 1 en panne" et D2 = "disque 2 en panne". P(D1) = P(D2) = 0.05.
 
    Fiabilite : 99.9875%.
 
+---
 
 ### Exercice 12 : Evenement contraire et probabilites totales
 
@@ -1439,6 +1458,7 @@ Dans un reseau, un paquet traverse 3 routeurs en serie. Chaque routeur, independ
 
    E(X) = 100 x 0.941192 = 94.12 paquets en moyenne arrivent.
 
+---
 
 ### Exercice 13 : Arbre a trois niveaux
 
@@ -1483,6 +1503,7 @@ Parmi les inscrits, le taux de premier achat :
 
    1.41% des visiteurs s'inscrivent ET effectuent un achat.
 
+---
 
 ### Exercice 14 : Loi binomiale -- mot de passe
 
@@ -1512,6 +1533,7 @@ Un mot de passe est compose de 6 caracteres. Chaque caractere est choisi indepen
 
    Environ 86% des mots de passe aleatoires contiennent au moins un chiffre.
 
+---
 
 ### Exercice 15 : Exercice complet de synthese -- controle de production
 
@@ -1597,6 +1619,7 @@ Verification : 0.0760 + 0.0040 + 0.0276 + 0.8924 = 1.0000. Correct.
 
    Environ 12% de chances que 2 cartes ou plus soient rejetees a tort dans le lot.
 
+---
 
 ### Exercice 16 : Exercice type examen -- entreprise informatique
 
@@ -1660,6 +1683,7 @@ Verification : 0.315 + 0.135 + 0.495 + 0.055 = 1.000. Correct.
 
    En moyenne, environ 10 interventions sur 12 sont resolues en une seule visite.
 
+---
 
 ### Exercice 17 : Complement -- P("au moins un") avec le complementaire
 
@@ -1681,6 +1705,7 @@ P(X >= 1) = 1 - 0.3642 = 0.6358
 
 Il y a environ 63.6% de chances que l'application plante au moins une fois en 50 lancements.
 
+---
 
 ## Fiche de formules recapitulative
 
@@ -1720,6 +1745,7 @@ Il y a environ 63.6% de chances que l'application plante au moins une fois en 50
 +-----------------------------------------------------------+
 ```
 
+---
 
 ## Methode de resolution type examen
 

@@ -6,30 +6,6 @@ tags: ["glpi", "gestion de parc", "tickets", "inventaire", "itil", "ocs"]
 difficulty: "Intermédiaire"
 ---
 
-# GLPI et gestion de parc informatique
-
-
-
-## Table des matieres
-
-1. [1. Presentation de GLPI](#1-presentation-de-glpi)
-2. [2. Installation de GLPI sur un serveur LAMP](#2-installation-de-glpi-sur-un-serveur-lamp)
-3. [3. Inventaire du parc informatique](#3-inventaire-du-parc-informatique)
-4. [4. Fiches materielles et types d'equipements](#4-fiches-materielles-et-types-dequipements)
-5. [5. Gestion des logiciels et des licences](#5-gestion-des-logiciels-et-des-licences)
-6. [6. Gestion financiere](#6-gestion-financiere)
-7. [7. Module d'assistance (Helpdesk)](#7-module-dassistance-helpdesk)
-8. [8. Workflow des tickets](#8-workflow-des-tickets)
-9. [9. Base de connaissances](#9-base-de-connaissances)
-10. [10. Utilisateurs et gestion des droits](#10-utilisateurs-et-gestion-des-droits)
-11. [11. Plugins utiles](#11-plugins-utiles)
-12. [12. Rapports et statistiques](#12-rapports-et-statistiques)
-13. [13. ITIL dans GLPI](#13-itil-dans-glpi)
-14. [14. Exercices d'integration](#14-exercices-dintegration)
-15. [Synthese des commandes et chemins importants](#synthese-des-commandes-et-chemins-importants)
-16. [Points cles pour l'examen BTS SIO SISR](#points-cles-pour-lexamen-bts-sio-sisr)
-
-
 ## 1. Presentation de GLPI
 
 ### 1.1 Definition et role
@@ -63,6 +39,7 @@ L'acces se fait via un navigateur web. Aucun client lourd n'est necessaire pour 
 - GLPI 9.x : refonte de l'interface, support ITIL renforce
 - GLPI 10.x : nouvelle interface moderne, abandon du support PHP 7, integration native de l'inventaire (remplacement progressif de FusionInventory)
 
+---
 
 ## 2. Installation de GLPI sur un serveur LAMP
 
@@ -210,6 +187,7 @@ Comptes par defaut a modifier immediatement :
 
 Changer tous les mots de passe par defaut. Supprimer ou desactiver les comptes inutiles.
 
+---
 
 ## 3. Inventaire du parc informatique
 
@@ -399,6 +377,7 @@ Le plugin OCS Inventory pour GLPI permet d'importer les donnees d'inventaire col
 | Maintenance | Communaute GLPI | Communaute OCS independante |
 | GLPI 10.x | Inventaire natif integre | Plugin OCS maintenu |
 
+---
 
 ## 4. Fiches materielles et types d'equipements
 
@@ -492,6 +471,7 @@ GLPI gere egalement les telephones (fixes IP, mobiles) avec les champs :
 - **Consommables** : papier, cles USB, cables (gestion par lot avec stock)
 - **Cartouches** : associees aux modeles d'imprimantes, suivi des niveaux
 
+---
 
 ## 5. Gestion des logiciels et des licences
 
@@ -539,6 +519,7 @@ Configuration : **Configuration > Notifications > Alertes sur les licences**
 
 Les alertes sont envoyees par courriel aux administrateurs ou aux responsables de contrats.
 
+---
 
 ## 6. Gestion financiere
 
@@ -606,6 +587,7 @@ Champs de gestion financiere dans chaque fiche :
 - Valeur nette comptable (calculee automatiquement)
 - Date de fin de garantie
 
+---
 
 ## 7. Module d'assistance (Helpdesk)
 
@@ -741,6 +723,7 @@ Parametres :
 
 Les resultats sont consultables dans les statistiques du helpdesk.
 
+---
 
 ## 8. Workflow des tickets
 
@@ -815,6 +798,7 @@ Fonctionnement :
 3. Le valideur peut approuver ou refuser avec commentaire
 4. Le traitement du ticket reprend ou est arrete selon la decision
 
+---
 
 ## 9. Base de connaissances
 
@@ -880,6 +864,7 @@ Configuration :
 2. L'article apparait dans la section FAQ de l'interface simplifiee
 3. Les utilisateurs peuvent consulter la FAQ avant de creer un ticket
 
+---
 
 ## 10. Utilisateurs et gestion des droits
 
@@ -985,6 +970,7 @@ Regles d'affectation d'habilitations :
    - Si `memberOf` contient `CN=IT-Support` --> Profil Technicien, Entite Direction informatique
    - Si `department` = `Comptabilite` --> Profil Self-Service, Entite Direction financiere
 
+---
 
 ## 11. Plugins utiles
 
@@ -1042,6 +1028,7 @@ Depuis GLPI 10.x, un systeme de tableaux de bord est integre nativement avec la 
 | TimelineTicket | Visualisation chronologique du cycle de vie d'un ticket |
 | Reports | Rapports supplementaires parametrables |
 
+---
 
 ## 12. Rapports et statistiques
 
@@ -1090,6 +1077,7 @@ Indicateurs cles a suivre pour piloter le service informatique :
 | Taux de reouverture | Tickets rouverts apres resolution | Inferieur a 5% |
 | Nombre d'incidents par poste | Ratio incidents / nombre de postes | Inferieur a 2 par trimestre |
 
+---
 
 ## 13. ITIL dans GLPI
 
@@ -1175,6 +1163,7 @@ Incidents multiples --> Detection d'un probleme
                     Cloture du probleme et des incidents associes
 ```
 
+---
 
 ## 14. Exercices d'integration
 
@@ -1248,6 +1237,7 @@ sudo rm /var/www/html/glpi/install/install.php
 ```
 Changer les quatre mots de passe par defaut (glpi, tech, normal, post-only).
 
+---
 
 ### Exercice 2 : Configuration de l'inventaire automatise
 
@@ -1283,6 +1273,7 @@ sudo fusioninventory-agent --force
    - Les deux postes doivent apparaitre avec toutes les informations collectees
    - Verifier les composants, logiciels, ports reseau
 
+---
 
 ### Exercice 3 : Creation et traitement d'un ticket d'incident
 
@@ -1319,6 +1310,7 @@ sudo fusioninventory-agent --force
    - L'utilisateur approuve la solution
    - Le ticket passe au statut "Clos"
 
+---
 
 ### Exercice 4 : Configuration des SLA
 
@@ -1354,6 +1346,7 @@ sudo fusioninventory-agent --force
    - Configuration > Regles > Regles metier pour les tickets
    - Creer une regle : Si priorite = Haute, alors SLA TTO = "SLA Haute - TTO" et SLA TTR = "SLA Haute - TTR"
 
+---
 
 ### Exercice 5 : Gestion des entites et des droits
 
@@ -1379,6 +1372,7 @@ sudo fusioninventory-agent --force
 
 3. Verification : chaque technicien ne voit que les tickets et le parc de son site. L'administrateur voit tout.
 
+---
 
 ### Exercice 6 : Synchronisation LDAP
 
@@ -1411,6 +1405,7 @@ sudo fusioninventory-agent --force
    - Administration > Utilisateurs > Liaison annuaire LDAP > Importation de nouveaux utilisateurs
    - Selectionner l'annuaire, lancer la recherche, importer les utilisateurs
 
+---
 
 ### Exercice 7 : Gestion des licences logicielles
 
@@ -1438,6 +1433,7 @@ sudo fusioninventory-agent --force
    - Si desinstallation : relancer l'inventaire pour mettre a jour le compteur
    - Configurer une alerte de seuil pour etre prevenu en cas de nouveau depassement
 
+---
 
 ### Exercice 8 : Gestion financiere d'un renouvellement de parc
 
@@ -1481,6 +1477,7 @@ sudo fusioninventory-agent --force
    - Budget : 20 x 850 = 17 000 euros engages sur 20 000
    - Valeur nette comptable apres 1 an : 850 - 170 = 680 euros par poste
 
+---
 
 ### Exercice 9 : Creation d'un article de base de connaissances
 
@@ -1529,6 +1526,7 @@ en precisant les etapes deja realisees.
 
 4. Lier l'article au ticket de l'exercice 3 pour tracabilite.
 
+---
 
 ### Exercice 10 : Gestion d'un probleme ITIL
 
@@ -1563,6 +1561,7 @@ en precisant les etapes deja realisees.
 
 6. Apres remplacement : cloturer le changement, le probleme et les 8 incidents.
 
+---
 
 ### Exercice 11 : Deploiement massif de l'agent d'inventaire par GPO
 
@@ -1601,6 +1600,7 @@ en precisant les etapes deja realisees.
    - Dans GLPI, suivre le nombre d'ordinateurs inventories au fil des jours
    - Identifier les postes n'ayant pas recu l'agent (eteints, hors domaine)
 
+---
 
 ### Exercice 12 : Redaction d'une procedure de gestion de parc
 
@@ -1655,6 +1655,7 @@ en precisant les etapes deja realisees.
    - Mettre a jour le plan de parc ou le plan de cablage si necessaire
    - Archiver les documents (bon de livraison, facture, formulaire de remise)
 
+---
 
 ## Synthese des commandes et chemins importants
 
@@ -1712,6 +1713,7 @@ Taches automatiques importantes :
 | reservation | Alerte reservations | Quotidienne |
 | ldap_mass_sync | Synchronisation LDAP | Quotidienne |
 
+---
 
 ## Points cles pour l'examen BTS SIO SISR
 

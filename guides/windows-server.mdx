@@ -1,34 +1,10 @@
 ---
 title: "Windows Server"
 description: "Active Directory, GPO, DNS/DHCP Windows, partage de fichiers, NTFS, gestion des utilisateurs"
-category: "Systemes"
+category: "Systèmes"
 tags: ["windows server", "active directory", "gpo", "ntfs", "domaine"]
 difficulty: "Intermédiaire"
 ---
-
-# Windows Server -- Administration complete
-
-
-
-## Table des matieres
-
-1. [1. Installation de Windows Server](#1-installation-de-windows-server)
-2. [2. Outils d'administration](#2-outils-dadministration)
-3. [3. Active Directory (AD DS)](#3-active-directory-ad-ds)
-4. [4. Objets Active Directory](#4-objets-active-directory)
-5. [5. Strategies de groupe (GPO)](#5-strategies-de-groupe-gpo)
-6. [6. DNS Windows Server](#6-dns-windows-server)
-7. [7. DHCP Windows Server](#7-dhcp-windows-server)
-8. [8. Partage de fichiers et permissions NTFS](#8-partage-de-fichiers-et-permissions-ntfs)
-9. [9. Gestion des profils](#9-gestion-des-profils)
-10. [10. Impression reseau](#10-impression-reseau)
-11. [11. Sauvegarde et restauration](#11-sauvegarde-et-restauration)
-12. [12. WSUS (Windows Server Update Services)](#12-wsus-windows-server-update-services)
-13. [13. Hyper-V](#13-hyper-v)
-14. [14. Exercices corriges](#14-exercices-corriges)
-15. [15. Aide-memoire des commandes PowerShell essentielles](#15-aide-memoire-des-commandes-powershell-essentielles)
-16. [16. Bonnes pratiques pour l'examen BTS SIO SISR](#16-bonnes-pratiques-pour-lexamen-bts-sio-sisr)
-
 
 ## 1. Installation de Windows Server
 
@@ -80,6 +56,7 @@ New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress 192.168.1.10 -PrefixLengt
 Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses 192.168.1.10,192.168.1.11
 ```
 
+---
 
 ## 2. Outils d'administration
 
@@ -137,6 +114,7 @@ Get-WindowsCapability -Name RSAT* -Online | Add-WindowsCapability -Online
 Add-WindowsCapability -Online -Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0
 ```
 
+---
 
 ## 3. Active Directory (AD DS)
 
@@ -241,6 +219,7 @@ Le niveau fonctionnel du domaine et de la foret determine les fonctionnalites di
 
 On peut elever le niveau fonctionnel mais jamais le redescendre.
 
+---
 
 ## 4. Objets Active Directory
 
@@ -393,6 +372,7 @@ New-ADComputer -Name "PC-COMPTA01" `
     -Enabled $true
 ```
 
+---
 
 ## 5. Strategies de groupe (GPO)
 
@@ -507,6 +487,7 @@ Backup-GPO -All -Path "C:\Backup\GPO"
 New-GPO -Name "GPO_MotDePasse" | New-GPLink -Target "DC=entreprise,DC=local"
 ```
 
+---
 
 ## 6. DNS Windows Server
 
@@ -578,6 +559,7 @@ Add-DnsServerResourceRecordCName -ZoneName "entreprise.local" -Name "intranet" -
 Resolve-DnsName -Name "srv-dc01.entreprise.local" -Type A
 ```
 
+---
 
 ## 7. DHCP Windows Server
 
@@ -656,6 +638,7 @@ Windows Server permet de configurer un basculement DHCP entre deux serveurs pour
 - **Mode equilibrage de charge (Load Balance)** : les deux serveurs distribuent les adresses (repartition configurable, 50/50 par defaut)
 - **Mode veille a chaud (Hot Standby)** : un serveur principal et un serveur de secours qui prend le relais en cas de panne
 
+---
 
 ## 8. Partage de fichiers et permissions NTFS
 
@@ -778,6 +761,7 @@ New-DfsnRoot -TargetPath "\\SRV-FICHIERS\Partages" -Type DomainV2 -Path "\\entre
 New-DfsnFolder -Path "\\entreprise.local\Partages\Comptabilite" -TargetPath "\\SRV-FICHIERS\Comptabilite"
 ```
 
+---
 
 ## 9. Gestion des profils
 
@@ -828,6 +812,7 @@ fsutil quota modify D: 2147483648 1932735283 ENTREPRISE\jdupont
 
 Depuis Windows Server 2012, le **Gestionnaire de ressources du serveur de fichiers (FSRM)** offre des quotas plus avancees avec des modeles et des notifications par email.
 
+---
 
 ## 10. Impression reseau
 
@@ -864,6 +849,7 @@ Ou via la console de gestion de l'impression : clic droit sur l'imprimante > Dep
 
 L'imprimante partagee est automatiquement ajoutee sur les postes des utilisateurs concernes.
 
+---
 
 ## 11. Sauvegarde et restauration
 
@@ -918,6 +904,7 @@ vssadmin add shadowstorage /for=D: /on=D: /maxsize=10GB
 vssadmin create shadow /for=D:
 ```
 
+---
 
 ## 12. WSUS (Windows Server Update Services)
 
@@ -960,6 +947,7 @@ Parametres essentiels :
 | Autoriser le ciblage cote client | Active, nom du groupe cible |
 | Pas de redemarrage automatique avec des utilisateurs connectes | Active |
 
+---
 
 ## 13. Hyper-V
 
@@ -1048,6 +1036,7 @@ Export-VM -Name "SRV-TEST01" -Path "D:\Export"
 
 Formats : **VHD** (ancien, limite a 2 To) et **VHDX** (jusqu'a 64 To, resilient aux pannes).
 
+---
 
 ## 14. Exercices corriges
 
@@ -1096,6 +1085,7 @@ New-ADOrganizationalUnit -Name "Postes_Dev" -Path $basePC
 New-ADOrganizationalUnit -Name "Postes_Commercial" -Path $basePC
 ```
 
+---
 
 ### Exercice 2 : Creer des utilisateurs et des groupes selon la strategie AGDLP
 
@@ -1150,6 +1140,7 @@ Add-ADGroupMember -Identity "DL_Projets_Lecture" -Members "GG_Commercial"
 # P : Les permissions NTFS seront attribuees aux groupes DL (voir exercice suivant)
 ```
 
+---
 
 ### Exercice 3 : Configurer les permissions NTFS sur un partage
 
@@ -1191,6 +1182,7 @@ New-SmbShare -Name "Projets" -Path "D:\Partages\Projets" `
     -Description "Dossier projets"
 ```
 
+---
 
 ### Exercice 4 : Configurer une GPO de politique de mot de passe
 
@@ -1223,6 +1215,7 @@ Set-ADDefaultDomainPasswordPolicy -Identity "technosoft.local" `
     -PasswordHistoryCount 12
 ```
 
+---
 
 ### Exercice 5 : Configurer une GPO de mappage de lecteur reseau
 
@@ -1247,6 +1240,7 @@ gpupdate /force
 # Le lecteur P: doit apparaitre dans l'Explorateur de fichiers
 ```
 
+---
 
 ### Exercice 6 : Configurer le DNS avec zone inversee et redirecteur conditionnel
 
@@ -1274,6 +1268,7 @@ Resolve-DnsName -Name "10.1.168.192.in-addr.arpa" -Type PTR
 nslookup 192.168.1.10
 ```
 
+---
 
 ### Exercice 7 : Installer et configurer le DHCP
 
@@ -1324,6 +1319,7 @@ Get-DhcpServerv4ExclusionRange -ScopeId 192.168.1.0
 Get-DhcpServerv4Reservation -ScopeId 192.168.1.0
 ```
 
+---
 
 ### Exercice 8 : Deployer une imprimante par GPO
 
@@ -1347,6 +1343,7 @@ gpupdate /force
 Get-Printer
 ```
 
+---
 
 ### Exercice 9 : Configurer les cliches instantanes et la sauvegarde
 
@@ -1382,6 +1379,7 @@ Set-WBPolicy -Policy $politique
 Get-WBPolicy
 ```
 
+---
 
 ### Exercice 10 : Configurer WSUS et le deploiement des mises a jour
 
@@ -1421,6 +1419,7 @@ wuauclt /detectnow /reportnow
 Get-WindowsUpdate
 ```
 
+---
 
 ### Exercice 11 : Creer une machine virtuelle sous Hyper-V
 
@@ -1461,6 +1460,7 @@ Start-VM -Name "SRV-WEB01"
 Get-VM -Name "SRV-WEB01" | Format-List *
 ```
 
+---
 
 ### Exercice 12 : Configurer DFS et la redirection de dossiers
 
@@ -1521,6 +1521,7 @@ gpupdate /force
 # Le dossier Documents pointe maintenant vers le partage reseau
 ```
 
+---
 
 ### Exercice 13 : Creer des utilisateurs en masse par CSV
 
@@ -1568,6 +1569,7 @@ Get-ADUser -Filter * -SearchBase "OU=Utilisateurs,$base" -Properties Department 
     Format-Table Name, SamAccountName, Department, DistinguishedName
 ```
 
+---
 
 ### Exercice 14 : Restriction par AppLocker
 
@@ -1594,6 +1596,7 @@ Get-ADUser -Filter * -SearchBase "OU=Utilisateurs,$base" -Properties Department 
 
 4. Pour tester, copier un executable sur le Bureau d'un utilisateur standard et tenter de l'executer : l'acces doit etre refuse.
 
+---
 
 ## 15. Aide-memoire des commandes PowerShell essentielles
 
@@ -1649,6 +1652,7 @@ Get-ADUser -Filter * -SearchBase "OU=Utilisateurs,$base" -Properties Department 
 | `Remove-VMSnapshot -VMName "SRV-TEST01" -Name "Ancien"` | Supprimer un snapshot |
 | `Get-VMNetworkAdapter -VMName "SRV-TEST01"` | Cartes reseau de la VM |
 
+---
 
 ## 16. Bonnes pratiques pour l'examen BTS SIO SISR
 

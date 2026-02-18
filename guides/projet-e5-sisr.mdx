@@ -1,0 +1,883 @@
+---
+title: "Projet E5 SISR — Méthodologie de l'épreuve"
+description: "Réussir l'oral E5 option SISR : portfolio infrastructure, documenter ses réalisations, anticiper le jury"
+category: "Fondamentaux"
+tags: ["e5", "sisr", "oral", "portfolio", "infrastructure", "examen"]
+difficulty: "Intermédiaire"
+---
+
+## 1. Comprendre l'epreuve E5 SISR
+
+### 1.1. Cadre reglementaire
+
+L'epreuve E5 s'intitule officiellement "Production et fourniture de services informatiques". Elle porte sur le Bloc 2 de competences, specifique a l'option choisie (SISR ou SLAM). Pour l'option SISR, le Bloc 2 s'intitule "Administration des systemes et des reseaux".
+
+- **Coefficient** : 4
+- **Forme** : epreuve orale et pratique
+- **Duree totale** : 40 minutes
+  - 10 minutes de presentation par le candidat (sans interruption du jury)
+  - 30 minutes d'entretien avec le jury (questions techniques, demonstration, recul critique)
+- **Support** : le portfolio numerique du candidat, depose en amont selon les consignes du centre d'examen
+- **Jury** : deux membres minimum, dont au moins un enseignant de specialite et, dans la mesure du possible, un professionnel du secteur
+
+### 1.2. Ce que le jury evalue
+
+Le jury dispose d'une grille nationale d'evaluation articulee autour de plusieurs criteres :
+
+| Critere | Ce qui est observe |
+|---|---|
+| Pertinence des realisations | Les projets couvrent-ils les competences du Bloc 2 ? |
+| Qualite de la documentation | Schemas, procedures, captures, bilans sont-ils rigoureux ? |
+| Maitrise technique | Le candidat sait-il reproduire et expliquer ses actions ? |
+| Analyse et recul | Le candidat justifie-t-il ses choix et identifie-t-il les limites ? |
+| Expression et communication | Le discours est-il clair, structure, professionnel ? |
+
+Le jury ne cherche pas la perfection technique. Il cherche un candidat capable de concevoir, deployer, documenter et defendre une infrastructure reelle.
+
+### 1.3. Repartition indicative des points
+
+La grille officielle repartit les points sur les competences du Bloc 2. Les grandes masses sont :
+
+- Capacite a installer et configurer un service reseau ou systeme
+- Capacite a administrer et maintenir une infrastructure
+- Capacite a securiser un systeme ou un reseau
+- Capacite a superviser et depanner
+- Qualite du portfolio et de la communication
+
+Chaque competence est evaluee selon quatre niveaux : non acquis, insuffisant, satisfaisant, tres satisfaisant.
+
+---
+
+## 2. Competences evaluees -- Bloc 2 SISR
+
+Le referentiel du BTS SIO definit les competences du Bloc 2 SISR. Voici leur detail et ce que le jury attend concretement.
+
+### 2.1. Installer et configurer
+
+- Installer un systeme d'exploitation serveur (Windows Server, Debian, Rocky Linux)
+- Configurer les roles et services (AD DS, DNS, DHCP, serveur de fichiers, serveur web)
+- Mettre en place une infrastructure reseau (VLAN, routage inter-VLAN, adressage IP)
+- Deployer des equipements reseau (switch, routeur, pare-feu)
+
+**Ce que le jury verifie** : le candidat sait-il installer un service de zero et expliquer chaque etape ?
+
+### 2.2. Administrer
+
+- Gerer les comptes utilisateurs et les droits (Active Directory, LDAP, GPO)
+- Administrer un serveur a distance (SSH, RDP, console web)
+- Gerer le stockage (RAID, partages reseau, quotas)
+- Automatiser des taches (scripts PowerShell, Bash, planification)
+
+**Ce que le jury verifie** : le candidat comprend-il la logique d'administration au quotidien ?
+
+### 2.3. Securiser
+
+- Mettre en place un pare-feu (pfSense, iptables, Windows Firewall)
+- Configurer un VPN (site-a-site, client-a-site, OpenVPN, IPsec)
+- Gerer les certificats et le chiffrement (PKI, HTTPS, TLS)
+- Appliquer une politique de mots de passe et de droits
+- Sauvegarder et restaurer (strategie 3-2-1, outils de backup)
+
+**Ce que le jury verifie** : le candidat a-t-il une approche methodique de la securite ?
+
+### 2.4. Superviser
+
+- Deployer un outil de supervision (Zabbix, PRTG, Nagios, Grafana)
+- Configurer des alertes et des seuils
+- Analyser des logs (journaux systeme, syslog, ELK)
+- Produire des tableaux de bord
+
+**Ce que le jury verifie** : le candidat sait-il detecter un probleme avant qu'il ne devienne critique ?
+
+### 2.5. Maintenir et depanner
+
+- Diagnostiquer une panne reseau (ping, traceroute, nslookup, Wireshark)
+- Mettre a jour un systeme ou un service
+- Rediger une procedure de maintenance
+- Mettre en oeuvre un plan de reprise d'activite (PRA) ou un plan de continuite (PCA)
+
+**Ce que le jury verifie** : le candidat a-t-il la methode pour isoler et corriger un dysfonctionnement ?
+
+---
+
+## 3. Le portfolio numerique
+
+### 3.1. Definition et role
+
+Le portfolio est le document central de l'epreuve E5. Il rassemble l'ensemble des realisations professionnelles du candidat realisees en stage, en cours ou en projet personnel. C'est le support sur lequel le jury s'appuie pour mener l'entretien.
+
+### 3.2. Format attendu
+
+Le portfolio peut prendre plusieurs formes :
+
+- **Site web statique** (recommande) : Hugo, Jekyll, MkDocs, simple HTML/CSS. Heberge sur GitHub Pages, un serveur personnel ou une cle USB.
+- **Document PDF structure** : acceptable mais moins dynamique pour la navigation.
+- **Application web** : WordPress, Notion exporte -- fonctionnel mais attention a la dependance reseau le jour J.
+
+Quelle que soit la forme, le portfolio doit etre **consultable hors ligne**. Prevoir une version locale sur cle USB ou sur le poste de demonstration.
+
+### 3.3. Structure recommandee
+
+```
+Portfolio E5 SISR
+|
+|-- Page d'accueil
+|   |-- Presentation du candidat
+|   |-- Parcours (formation, stages, certifications)
+|   |-- Tableau de synthese des realisations
+|
+|-- Realisation 1 : [Titre explicite]
+|   |-- Contexte et besoin
+|   |-- Schema reseau AVANT / APRES
+|   |-- Technologies et outils
+|   |-- Etapes de mise en oeuvre
+|   |-- Tests et validation
+|   |-- Captures d'ecran commentees
+|   |-- Bilan et perspectives
+|
+|-- Realisation 2 : [Titre explicite]
+|   |-- (meme structure)
+|
+|-- ... (4 a 6 realisations)
+|
+|-- Veille technologique
+|   |-- Sujets suivis
+|   |-- Sources
+|   |-- Synthese
+|
+|-- Annexes
+    |-- Tableau de competences croisees
+    |-- CV
+    |-- Attestations de stage
+```
+
+### 3.4. Combien de realisations ?
+
+Le referentiel ne fixe pas de nombre minimum, mais la pratique recommande **4 a 6 realisations** couvrant l'ensemble des competences du Bloc 2. Mieux vaut 4 realisations approfondies que 8 superficielles.
+
+### 3.5. Tableau de synthese des competences
+
+Chaque realisation doit etre reliee aux competences du Bloc 2. Un tableau croise permet au jury de verifier la couverture :
+
+| Realisation | Installer | Administrer | Securiser | Superviser | Maintenir |
+|---|---|---|---|---|---|
+| Deploiement AD | X | X | X | | |
+| Infrastructure reseau VLAN | X | | X | | X |
+| Supervision Zabbix | | X | | X | |
+| VPN site-a-site | X | | X | | |
+| PRA et sauvegarde | | X | X | | X |
+
+Le jury apprecie ce type de vue d'ensemble.
+
+---
+
+## 4. Realisations typiques SISR
+
+Voici des exemples de realisations pertinentes, classes par domaine. Chaque candidat doit adapter en fonction de son experience reelle (stage, TP, projets).
+
+### 4.1. Active Directory et services d'annuaire
+
+- Installation de Windows Server et promotion en controleur de domaine
+- Creation d'une arborescence d'unites d'organisation (OU)
+- Mise en place de GPO (restriction USB, deploiement de fond d'ecran, mappage de lecteurs)
+- Jonction de postes au domaine
+- Configuration de la replication entre deux DC
+
+### 4.2. Infrastructure reseau
+
+- Plan d'adressage IP complet (sous-reseaux, masques, passerelles)
+- Configuration de VLAN sur switches manageables (Cisco, HP)
+- Routage inter-VLAN (router-on-a-stick ou switch L3)
+- Mise en place de DHCP avec relais inter-VLAN
+- Configuration de DNS interne et zones de recherche
+
+### 4.3. Deploiement serveur
+
+- Installation et configuration d'un serveur web (Apache, Nginx, IIS)
+- Deploiement d'un serveur de fichiers avec quotas et permissions NTFS
+- Mise en place d'un serveur de messagerie ou d'un proxy (Squid)
+- Configuration d'un serveur GLPI pour la gestion de parc
+
+### 4.4. VPN et acces distants
+
+- Configuration d'un VPN site-a-site (IPsec entre deux pfSense)
+- Mise en place d'un VPN client-a-site (OpenVPN)
+- Configuration du split tunneling
+- Tests de connectivite et verification du chiffrement
+
+### 4.5. Supervision et monitoring
+
+- Deploiement de Zabbix, Nagios ou PRTG
+- Ajout d'hotes et de templates de supervision
+- Configuration d'alertes (email, seuils critiques)
+- Creation de tableaux de bord et de graphiques
+- Centralisation des logs (rsyslog, Graylog)
+
+### 4.6. Plan de reprise d'activite et sauvegarde
+
+- Definition d'une strategie de sauvegarde (3-2-1)
+- Mise en place de Veeam Backup, Bacula ou scripts rsync
+- Test de restauration complete
+- Documentation du PRA : RTO, RPO, procedure de bascule
+
+### 4.7. Virtualisation
+
+- Deploiement d'un hyperviseur (Proxmox, VMware ESXi, Hyper-V)
+- Creation et gestion de machines virtuelles
+- Configuration du stockage virtuel et du reseau virtuel (vSwitch)
+- Migration a chaud, snapshots, templates
+
+### 4.8. Securisation
+
+- Durcissement d'un serveur Linux (desactivation de services, fail2ban, sudo)
+- Mise en place d'un pare-feu pfSense avec regles de filtrage
+- Configuration HTTPS avec certificats Let's Encrypt ou PKI interne
+- Mise en oeuvre d'un RADIUS pour l'authentification Wi-Fi (802.1X)
+
+---
+
+## 5. Documenter une realisation infrastructure
+
+La qualite de la documentation fait la difference entre un candidat moyen et un candidat convaincant. Voici la methode detaillee.
+
+### 5.1. Contexte et besoin
+
+Decrire en quelques paragraphes :
+
+- L'entreprise ou le contexte (stage, TP, projet personnel)
+- Le besoin exprime : quel probleme resoudre ? Quelle demande du client ou de l'equipe ?
+- Les contraintes : budget, delais, materiel existant, nombre d'utilisateurs
+- Le perimetre : ce qui est dans le scope et ce qui ne l'est pas
+
+**Exemple** : "L'entreprise X dispose de 50 postes repartis sur deux etages. Les utilisateurs partagent un meme reseau a plat, sans segmentation. La direction souhaite isoler les services comptabilite et production pour des raisons de securite. Le projet consiste a mettre en place une segmentation VLAN."
+
+### 5.2. Schema reseau AVANT
+
+Produire un schema de l'existant :
+
+- Topologie physique (equipements, cablage)
+- Topologie logique (adressage, VLAN existants ou absence de VLAN)
+- Points faibles identifies
+
+Ce schema montre au jury que le candidat a analyse la situation initiale.
+
+### 5.3. Architecture cible (APRES)
+
+Produire un schema de la solution deployee :
+
+- Nouvelle topologie (VLAN, sous-reseaux, equipements ajoutes)
+- Adressage IP detaille
+- Flux reseau (fleches indiquant les communications autorisees)
+- Legende claire
+
+La comparaison AVANT/APRES est un element fort de la presentation.
+
+### 5.4. Technologies choisies et justification
+
+Pour chaque technologie ou outil utilise, expliquer :
+
+- Pourquoi ce choix et pas un autre (pfSense plutot qu'iptables ? Zabbix plutot que Nagios ?)
+- Les criteres de selection : cout, communaute, fonctionnalites, compatibilite
+- Les alternatives envisagees
+
+Le jury pose systematiquement la question "pourquoi ce choix ?". Y repondre dans la documentation anticipe l'entretien.
+
+### 5.5. Etapes de mise en oeuvre
+
+Detailler chaque etape technique dans l'ordre chronologique :
+
+1. Preparation de l'environnement (telechargement ISO, creation VM, cablage)
+2. Installation du systeme ou du service
+3. Configuration initiale (reseau, nom de machine, mises a jour)
+4. Configuration du service principal (avec commandes ou captures)
+5. Configuration complementaire (securite, optimisation)
+6. Integration dans l'infrastructure existante
+7. Tests intermediaires a chaque etape
+
+Inclure les commandes executees, les fichiers de configuration modifies, les parametres choisis. Le niveau de detail doit permettre a un collegue de reproduire le deploiement.
+
+### 5.6. Tests de validation
+
+Documenter les tests realises pour prouver le bon fonctionnement :
+
+- Test de connectivite (ping, traceroute)
+- Test fonctionnel (connexion au service, creation d'un utilisateur)
+- Test de securite (tentative d'acces non autorise, scan de ports)
+- Test de performance (debit, temps de reponse)
+- Test de resilience (coupure d'un lien, redemarrage d'un service)
+
+Chaque test doit etre accompagne du resultat obtenu (capture d'ecran, sortie de commande).
+
+### 5.7. Captures d'ecran commentees
+
+Les captures d'ecran sont indispensables. Regles a suivre :
+
+- Chaque capture doit avoir un titre et une legende explicative
+- Encadrer ou surligner la zone importante
+- Ne pas multiplier les captures inutiles : une capture = une information
+- Privilegier les captures de configuration et de resultats de tests
+- Format lisible : resolution suffisante, texte non tronque
+
+**Mauvais exemple** : une capture plein ecran du bureau Windows sans annotation.
+
+**Bon exemple** : une capture de la console pfSense montrant les regles de pare-feu, avec une fleche indiquant la regle ajoutee et une legende "Regle autorisant le trafic HTTPS du VLAN 10 vers le serveur web en DMZ".
+
+### 5.8. Bilan et perspectives
+
+Conclure chaque realisation par :
+
+- Ce qui a fonctionne
+- Les difficultes rencontrees et comment elles ont ete resolues
+- Les limites de la solution
+- Les ameliorations possibles (redondance, scalabilite, automatisation)
+- Les competences acquises
+
+Le bilan demontre la capacite de recul du candidat.
+
+---
+
+## 6. Schemas reseau
+
+### 6.1. Pourquoi le schema est capital
+
+Le schema reseau est le premier element que le jury regarde. Un candidat SISR sans schema reseau est comme un architecte sans plan. C'est redhibitoire.
+
+### 6.2. Conventions a respecter
+
+- Utiliser des icones normalisees (routeur, switch, serveur, poste client, pare-feu, cloud)
+- Indiquer les adresses IP sur chaque interface
+- Indiquer les noms de VLAN et leurs identifiants
+- Utiliser des couleurs pour differencier les sous-reseaux ou les VLAN
+- Inclure une legende
+- Orienter le schema : Internet en haut, reseau interne en bas (ou inversement, mais de maniere coherente)
+- Indiquer les protocoles sur les liens (trunk 802.1Q, lien WAN, VPN)
+
+### 6.3. Outils recommandes
+
+| Outil | Usage | Avantage |
+|---|---|---|
+| draw.io (diagrams.net) | Schemas logiques et physiques | Gratuit, export PNG/SVG/PDF, bibliotheques reseau |
+| Cisco Packet Tracer | Schemas + simulation | Simulation fonctionnelle, ideal pour les demos |
+| GNS3 | Emulation reseau avancee | Images reelles d'equipements |
+| Microsoft Visio | Schemas professionnels | Standard en entreprise |
+| Excalidraw | Schemas rapides, style tableau blanc | Leger, collaboratif |
+
+**Recommandation** : draw.io est le meilleur compromis pour le BTS. Gratuit, hors ligne, export propre.
+
+### 6.4. Ce que le jury attend d'un schema
+
+- Lisibilite : le schema doit etre comprehensible en 10 secondes
+- Exactitude : les IP, masques, VLAN doivent correspondre a la realite deployee
+- Completude : tous les equipements presents dans la demo doivent figurer sur le schema
+- Coherence : le schema AVANT et le schema APRES doivent etre comparables
+
+### 6.5. Erreur frequente
+
+Ne pas confondre schema physique et schema logique. Le schema physique montre les equipements et le cablage. Le schema logique montre les sous-reseaux, les VLAN et les flux. Idealement, fournir les deux.
+
+---
+
+## 7. La demonstration technique
+
+### 7.1. Principe
+
+Pendant 20 minutes, le candidat doit montrer au jury qu'il maitrise concretement les technologies de ses realisations. Ce n'est pas un expose theorique : le jury veut voir les mains sur le clavier.
+
+### 7.2. Preparer l'environnement de demonstration
+
+- **Machines virtuelles pretes** : toutes les VM necessaires doivent etre demarrees et fonctionnelles AVANT l'epreuve
+- **Hyperviseur** : Proxmox, VirtualBox, VMware Workstation -- peu importe, mais il doit tourner sans accroc
+- **Reseau** : les VM doivent communiquer entre elles (reseau interne VirtualBox, vSwitch, bridge)
+- **Snapshots** : prendre un snapshot de chaque VM dans un etat fonctionnel la veille de l'epreuve
+- **Poste** : verifier RAM, espace disque, ventilation. Un poste qui rame ou surchauffe est un risque
+
+### 7.3. Scenarios de demonstration
+
+Preparer 3 a 5 scenarios courts et percutants :
+
+**Scenario 1 : Administration Active Directory**
+- Creer un utilisateur dans une OU
+- L'ajouter a un groupe de securite
+- Verifier qu'il peut se connecter sur un poste du domaine
+- Montrer l'application d'une GPO
+
+**Scenario 2 : Reseau et VLAN**
+- Montrer la configuration des VLAN sur le switch (show vlan brief)
+- Prouver l'isolation : ping entre VLAN differents bloque
+- Montrer le routage inter-VLAN fonctionnel via la passerelle
+
+**Scenario 3 : VPN**
+- Montrer le tunnel VPN etabli (statut, logs)
+- Depuis un poste distant, acceder a une ressource du reseau interne
+- Montrer le chiffrement (capture Wireshark)
+
+**Scenario 4 : Supervision**
+- Ouvrir le tableau de bord Zabbix/PRTG
+- Montrer un hote supervise avec ses metriques (CPU, RAM, disque, reseau)
+- Declencher une alerte (arreter un service) et montrer la notification
+- Redemarrer le service et montrer le retour a la normale
+
+**Scenario 5 : Securite**
+- Montrer les regles de pare-feu
+- Tenter un acces bloque et montrer le rejet dans les logs
+- Montrer un certificat HTTPS valide sur un service web interne
+
+### 7.4. Le plan B
+
+Les incidents techniques arrivent. Preparer des solutions de repli :
+
+| Probleme | Plan B |
+|---|---|
+| VM qui ne demarre pas | Avoir un snapshot de secours ; avoir des captures video de la demo |
+| Reseau non fonctionnel entre VM | Avoir un schema de l'adressage et pouvoir reconfigurer en direct |
+| Service plante | Connaitre la commande de redemarrage par coeur ; avoir un script de reinitialisation |
+| Poste lent | Reduire le nombre de VM actives ; prioriser les demos les plus importantes |
+| Oubli de mot de passe | Avoir un fichier (chiffre) avec tous les identifiants de l'infra de demo |
+
+Le jury apprecie un candidat capable de gerer un imprévu calmement.
+
+### 7.5. Repeter la demonstration
+
+Effectuer au moins 3 repetitions completes de la demonstration :
+
+- Une premiere repetition pour identifier les blocages
+- Une deuxieme en se chronometrant (20 minutes maximum)
+- Une troisieme devant un camarade ou un enseignant
+
+---
+
+## 8. L'entretien avec le jury
+
+### 8.1. Deroulement
+
+Les 10 dernieres minutes sont consacrees aux questions du jury. Elles portent sur :
+
+- Les choix techniques du candidat
+- La comprehension des protocoles et mecanismes sous-jacents
+- La capacite a envisager des evolutions ou des alternatives
+- La culture professionnelle en infrastructure
+
+### 8.2. Questions types SISR et comment y repondre
+
+**"Pourquoi avez-vous choisi cette architecture ?"**
+
+Ne pas repondre "parce qu'on me l'a dit en cours". Expliquer les criteres : cout, performance, securite, simplicite, compatibilite avec l'existant. Mentionner les alternatives ecartees et pourquoi.
+
+**"Comment securisez-vous votre infrastructure ?"**
+
+Aborder plusieurs couches : segmentation reseau (VLAN, pare-feu), authentification (AD, RADIUS), chiffrement (VPN, HTTPS), supervision (alertes), sauvegarde. Montrer une approche de defense en profondeur.
+
+**"Que se passe-t-il si le serveur principal tombe ?"**
+
+Decrire le scenario de panne : impact sur les utilisateurs, temps d'arret acceptable (RTO), procedure de restauration (PRA), existence ou non d'une redondance (cluster, replication, bascule). Si la redondance n'est pas en place, expliquer ce qui serait recommande.
+
+**"Expliquez le routage dans votre infrastructure."**
+
+Decrire le trajet d'un paquet depuis un poste client jusqu'a Internet : passerelle par defaut, routage inter-VLAN (switch L3 ou routeur), NAT, sortie vers le WAN. Utiliser le schema reseau comme support.
+
+**"Montrez-moi les logs."**
+
+Ouvrir les journaux du service concerne (journalctl, Event Viewer, logs pfSense, logs Zabbix). Identifier une entree pertinente, l'expliquer (date, source, niveau de gravite, message). Montrer que les logs sont un outil de diagnostic au quotidien.
+
+**"Quelle est la difference entre un VLAN et un sous-reseau ?"**
+
+Le VLAN est un concept de couche 2 (segmentation logique du switch). Le sous-reseau est un concept de couche 3 (plage d'adresses IP). En pratique, chaque VLAN est associe a un sous-reseau, mais les deux notions sont distinctes.
+
+**"Comment gerez-vous les mises a jour ?"**
+
+Expliquer la politique : WSUS pour Windows, apt/yum pour Linux, planification hors heures de production, tests prealables sur un serveur de qualification, snapshots avant mise a jour.
+
+**"Si vous deviez refaire ce projet, que changeriez-vous ?"**
+
+Question piege si on n'y a pas reflechi. Preparer une reponse honnete : meilleure documentation initiale, choix d'un outil plus adapte, ajout de redondance, automatisation de certaines taches.
+
+**"Parlez-moi du modele OSI en lien avec votre projet."**
+
+Relier concretement : couche 1 (cablage), couche 2 (VLAN, adresses MAC), couche 3 (IP, routage), couche 4 (TCP/UDP, ports), couche 7 (HTTP, DNS, DHCP). Ne pas reciter le modele abstraitement.
+
+**"Comment fonctionne le DHCP dans votre infrastructure ?"**
+
+Decrire le processus DORA (Discover, Offer, Request, Acknowledge). Indiquer quel serveur distribue les adresses, quelle plage est configuree, quelle est la duree du bail, et comment le relais DHCP fonctionne si le serveur est sur un autre VLAN.
+
+### 8.3. Regles d'or pour l'entretien
+
+- Repondre avec assurance mais sans arrogance
+- Si on ne sait pas, le dire clairement plutot que d'inventer
+- S'appuyer sur le schema reseau pour illustrer les reponses
+- Donner des exemples concrets tires de ses realisations
+- Ne jamais lire ses notes (les consulter brievement si besoin, mais ne pas lire)
+
+---
+
+## 9. Veille technologique
+
+### 9.1. Pourquoi la veille est evaluee
+
+Le referentiel BTS SIO inclut la veille technologique comme competence transversale. Le jury peut interroger le candidat sur les tendances actuelles en infrastructure.
+
+### 9.2. Sujets a maitriser en 2025-2026
+
+**Cloud et hybridation**
+- IaaS, PaaS, SaaS : definitions et exemples (AWS EC2, Azure, Google Cloud)
+- Infrastructure hybride : partie on-premise, partie cloud
+- Migration vers le cloud : enjeux, risques, methodologie
+
+**Conteneurs et orchestration**
+- Docker : principe des conteneurs vs machines virtuelles
+- Docker Compose : deploiement multi-conteneurs
+- Kubernetes : orchestration a grande echelle (notions de base)
+- Cas d'usage : deploiement d'applications, CI/CD
+
+**Zero Trust**
+- Principe : "ne jamais faire confiance, toujours verifier"
+- Micro-segmentation du reseau
+- Authentification forte (MFA) pour chaque acces
+- Controle d'acces base sur l'identite et le contexte
+
+**Infrastructure as Code (IaC)**
+- Ansible : automatisation de la configuration
+- Terraform : provisionnement d'infrastructure
+- Interet : reproductibilite, versionnement, rapidite de deploiement
+
+**Securite offensive et defensive**
+- SOC (Security Operations Center) : role et fonctionnement
+- SIEM (Security Information and Event Management) : collecte et correlation de logs
+- EDR (Endpoint Detection and Response) : protection des postes
+- Ransomware : vecteurs d'attaque, mesures de prevention
+
+**Autres sujets pertinents**
+- IPv6 : adoption croissante, double pile
+- Wi-Fi 6/7 : nouvelles normes, impact sur l'infrastructure
+- SD-WAN : remplacement des liens MPLS
+- Green IT : sobriete numerique, PUE des datacenters
+
+### 9.3. Comment presenter sa veille
+
+- Citer ses sources (sites, blogs, podcasts, flux RSS)
+- Montrer une synthese structuree dans le portfolio
+- Etre capable de relier un sujet de veille a une realisation ("j'ai mis en place Docker parce que...")
+- Ne pas se contenter de lister des technologies : expliquer pourquoi elles sont pertinentes
+
+---
+
+## 10. Erreurs fatales a eviter
+
+Ces erreurs sont les plus frequemment observees par les jurys. Chacune peut couter des points significatifs.
+
+### 10.1. Pas de schema reseau
+
+C'est la faute la plus grave pour un candidat SISR. Sans schema, le jury ne peut pas evaluer la comprehension de l'architecture. Meme un schema imparfait vaut mieux que pas de schema du tout.
+
+### 10.2. VM qui ne demarre pas le jour J
+
+Causes habituelles : poste sous-dimensionne, hyperviseur mal configure, fichier VM corrompu. Prevention : tester la veille, prendre des snapshots, avoir des captures video en secours.
+
+### 10.3. Ne pas connaitre les IP de son infrastructure
+
+Si le jury demande "quelle est l'adresse du serveur DNS ?" et que le candidat ne sait pas repondre, c'est un signal fort de manque de maitrise. Connaitre par coeur les adresses des equipements principaux de son infra de demo.
+
+### 10.4. Lire ses notes
+
+L'epreuve est un oral. Le candidat peut avoir un support visuel (portfolio, schema), mais ne doit pas lire un texte. Le jury evalue la capacite a communiquer, pas a reciter.
+
+### 10.5. Realisations hors sujet
+
+Presenter un site web en PHP alors qu'on est en option SISR ne convainc personne. Toutes les realisations doivent relever de l'infrastructure : systemes, reseaux, securite, supervision.
+
+### 10.6. Absence de demonstration fonctionnelle
+
+Parler d'une infrastructure sans la montrer est insuffisant. La demonstration prouve la maitrise. Si la demo est impossible (materiel indisponible), avoir au minimum des captures video.
+
+### 10.7. Realisations identiques entre candidats
+
+Si deux candidats d'un meme centre presentent des realisations strictement identiques, le jury en deduit qu'aucun n'a fait de travail personnel. Personnaliser ses realisations : adapter l'adressage, ajouter un service, changer un outil.
+
+### 10.8. Ignorer la securite
+
+Ne presenter aucune action de securisation est une lacune. Meme minime (mot de passe fort, pare-feu basique, sauvegarde), la securite doit apparaitre dans au moins une realisation.
+
+### 10.9. Portfolio inaccessible
+
+Le portfolio est sur un site en ligne et le reseau du centre d'examen ne fonctionne pas. Toujours avoir une version hors ligne (cle USB, disque local).
+
+### 10.10. Gestion du temps catastrophique
+
+Passer 8 minutes sur la premiere realisation et survoler les autres en 5 minutes. Repeter avec un chronometre est la seule solution.
+
+---
+
+## 11. Planning de preparation
+
+### 11.1. M-3 (trois mois avant l'epreuve)
+
+- Lister toutes les realisations effectuees (stages, TP, projets)
+- Selectionner 4 a 6 realisations couvrant les competences du Bloc 2
+- Verifier le tableau de synthese des competences : identifier les manques
+- Si une competence n'est pas couverte, lancer un projet complementaire (TP maison, lab personnel)
+- Choisir le format du portfolio et commencer la structure
+
+### 11.2. M-2 (deux mois avant)
+
+- Rediger la documentation de chaque realisation (contexte, schemas, etapes, tests, bilan)
+- Creer ou mettre a jour tous les schemas reseau (AVANT/APRES)
+- Commencer a monter l'environnement de demonstration (VM, reseau)
+- Rediger la partie veille technologique
+- Relire le referentiel officiel du Bloc 2 pour verifier la couverture
+
+### 11.3. M-1 (un mois avant)
+
+- Finaliser le portfolio : relecture, correction, mise en forme
+- Tester l'integralite de l'environnement de demonstration
+- Preparer les scenarios de demonstration (scripts de demo, ordre des actions)
+- Commencer les repetitions de la presentation orale (10 minutes chrono)
+- Preparer les reponses aux questions types du jury
+- Faire relire le portfolio par un enseignant ou un camarade
+
+### 11.4. S-2 (deux semaines avant)
+
+- Premiere repetition complete (presentation + demo + questions) devant un public
+- Corriger les points faibles identifies
+- Prendre les snapshots definitifs des VM
+- Verifier le poste qui sera utilise le jour J (si possible)
+- Preparer le materiel : cle USB avec portfolio hors ligne, chargeur, adaptateur
+
+### 11.5. S-1 (une semaine avant)
+
+- Deuxieme et troisieme repetitions completes
+- Chronometrer strictement : 10 minutes presentation + 30 minutes entretien
+- Verifier une derniere fois que toutes les VM demarrent et communiquent
+- Preparer une fiche aide-memoire avec les IP, identifiants, commandes cles
+- Relire la liste des erreurs fatales ci-dessus
+
+### 11.6. J-1 (la veille)
+
+- Demarrer toutes les VM, verifier le bon fonctionnement de chaque service
+- Prendre un dernier snapshot
+- Copier le portfolio sur cle USB
+- Preparer son sac : poste portable (si autorise), cle USB, cable ethernet, adaptateur, chargeur
+- Ne pas reviser jusqu'a l'epuisement : une bonne nuit de sommeil est plus utile qu'une heure de revision
+
+### 11.7. Jour J
+
+- Arriver 30 minutes en avance
+- Installer le poste, demarrer les VM, ouvrir le portfolio
+- Verifier que tout fonctionne avant le passage devant le jury
+- Respirer, se concentrer sur la structure de la presentation
+- Commencer par le schema reseau : c'est le meilleur point d'entree
+
+---
+
+## 12. Exercices et mises en situation
+
+Les exercices suivants simulent des situations reelles de l'epreuve. Les traiter systematiquement pour etre pret le jour J.
+
+### Exercice 1 : Rediger une fiche de realisation SISR
+
+**Consigne** : choisir une realisation effectuee en stage ou en TP. Rediger la fiche complete selon la structure du chapitre 5 (contexte, schema AVANT, schema APRES, technologies, etapes, tests, captures, bilan). Temps imparti : 3 heures.
+
+**Criteres de reussite** :
+- Le contexte explique clairement le besoin
+- Les deux schemas (AVANT/APRES) sont presents et lisibles
+- Les etapes de mise en oeuvre sont reproductibles
+- Au moins 3 tests de validation sont documentes
+- Le bilan inclut des pistes d'amelioration
+
+### Exercice 2 : Creer un schema reseau complet
+
+**Consigne** : a partir du cahier des charges suivant, produire un schema reseau logique avec draw.io.
+
+Cahier des charges : une PME de 80 postes, 3 services (direction, commercial, technique), un serveur de fichiers, un controleur de domaine, un acces Internet via un pare-feu, un VLAN par service, un VLAN serveurs, un VLAN d'administration.
+
+**Criteres de reussite** :
+- Chaque VLAN est identifie (numero, nom, sous-reseau)
+- L'adressage IP est coherent et documente
+- Le pare-feu est positionne entre le LAN et Internet
+- La legende est presente
+- Le schema est lisible sans explication orale
+
+### Exercice 3 : Preparer une demonstration AD en 5 minutes
+
+**Consigne** : sur un environnement virtualise, preparer et executer la sequence suivante en moins de 5 minutes :
+1. Ouvrir la console Active Directory Users and Computers
+2. Creer une OU "Stagiaires"
+3. Creer un utilisateur "Jean Dupont" dans cette OU
+4. L'ajouter au groupe "Utilisateurs du domaine"
+5. Se connecter avec ce compte sur un poste client du domaine
+6. Verifier l'application d'une GPO (ex : fond d'ecran impose)
+
+**Criteres de reussite** :
+- La sequence est fluide, sans hesitation
+- Le candidat commente chaque action a voix haute
+- Le resultat final est visible (connexion reussie, GPO appliquee)
+
+### Exercice 4 : Repondre a 10 questions jury en 10 minutes
+
+**Consigne** : demander a un camarade ou un enseignant de poser les questions suivantes. Repondre sans consulter de notes, en s'appuyant sur un schema reseau imprime.
+
+1. Decrivez l'architecture globale de votre infrastructure.
+2. Pourquoi avez-vous choisi pfSense plutot qu'un autre pare-feu ?
+3. Comment fonctionne le DHCP dans votre reseau ?
+4. Que se passe-t-il si le controleur de domaine tombe en panne ?
+5. Expliquez le mecanisme de NAT dans votre infrastructure.
+6. Comment un poste du VLAN 10 communique-t-il avec un serveur du VLAN 20 ?
+7. Montrez-moi les logs d'un service de votre choix et interpretez une entree.
+8. Quelle est votre politique de sauvegarde ?
+9. Comment securisez-vous l'acces a distance a votre infrastructure ?
+10. Si vous deviez faire evoluer cette infrastructure pour 200 utilisateurs, que changeriez-vous ?
+
+**Criteres de reussite** :
+- Reponses claires et structurees
+- Utilisation du schema reseau pour illustrer
+- Pas de reponse du type "je ne sais pas" sans tentative d'explication
+- Chaque reponse dure entre 30 secondes et 1 minute 30
+
+### Exercice 5 : Simuler une panne et la resoudre en direct
+
+**Consigne** : demander a un tiers de provoquer une panne dans l'infrastructure de demo (arreter un service, changer une IP, couper un lien reseau). Sans information sur la panne, diagnostiquer et corriger le probleme en moins de 10 minutes.
+
+**Methode de diagnostic** :
+1. Identifier le symptome (quel service est impacte ?)
+2. Verifier la connectivite reseau (ping passerelle, ping serveur)
+3. Verifier le service (statut, logs)
+4. Identifier la cause (configuration modifiee, service arrete, erreur reseau)
+5. Corriger et tester
+
+**Criteres de reussite** :
+- Approche methodique (pas de tentatives aleatoires)
+- Utilisation des bons outils de diagnostic
+- Resolution effective de la panne
+- Capacite a expliquer la demarche au jury
+
+### Exercice 6 : Presenter sa veille technologique en 3 minutes
+
+**Consigne** : preparer une presentation orale de 3 minutes sur un sujet de veille (ex : Zero Trust, conteneurs Docker, SD-WAN). Structure imposee :
+
+1. Qu'est-ce que c'est ? (definition en 30 secondes)
+2. Pourquoi c'est pertinent pour l'infrastructure ? (1 minute)
+3. Lien avec vos realisations ou votre experience (1 minute)
+4. Sources utilisees (30 secondes)
+
+**Criteres de reussite** :
+- Le sujet est maitrise, pas simplement recite
+- Le lien avec la pratique SISR est explicite
+- Les sources sont professionnelles (pas uniquement Wikipedia)
+
+### Exercice 7 : Chronometrer sa presentation complete
+
+**Consigne** : realiser une presentation complete de 10 minutes couvrant :
+- Presentation personnelle (30 secondes)
+- Vue d'ensemble du portfolio (1 minute)
+- Realisation principale detaillee (5 minutes)
+- Survol des autres realisations (2 minutes 30)
+- Transition vers la demonstration (1 minute)
+
+Se filmer ou se faire observer par un tiers. Analyser : rythme, clarte, gestion du temps, posture.
+
+**Criteres de reussite** :
+- Duree respectee (entre 9 et 11 minutes)
+- Pas de lecture de notes
+- Contact visuel avec le jury (simuler en regardant l'objectif ou l'observateur)
+- Transition fluide entre les parties
+
+### Exercice 8 : Rediger un plan de reprise d'activite
+
+**Consigne** : pour une infrastructure comprenant un controleur de domaine, un serveur de fichiers et un pare-feu, rediger un PRA repondant aux questions suivantes :
+
+- Quels sont les services critiques ?
+- Quel est le RTO (temps de reprise maximal) accepte pour chaque service ?
+- Quel est le RPO (perte de donnees maximale) accepte ?
+- Quelle strategie de sauvegarde est en place ?
+- Quelle est la procedure de restauration, etape par etape ?
+- Comment tester le PRA ?
+
+**Criteres de reussite** :
+- Le document est clair et utilisable en situation d'urgence
+- Les RTO et RPO sont definis et justifies
+- La procedure de restauration est detaillee (pas de "restaurer la sauvegarde" sans preciser comment)
+
+### Exercice 9 : Expliquer un concept technique au tableau
+
+**Consigne** : sans support numerique, expliquer au tableau (ou sur papier) l'un des concepts suivants en 5 minutes maximum :
+
+- Le fonctionnement du DHCP (processus DORA)
+- Le routage inter-VLAN
+- Le mecanisme du VPN IPsec (tunnel, chiffrement, authentification)
+- La resolution DNS (recursive, iterative, cache)
+- Le fonctionnement d'une GPO (application, heritage, filtrage)
+
+**Criteres de reussite** :
+- Le schema dessine au tableau est clair
+- Les etapes du processus sont dans le bon ordre
+- Le candidat repond aux questions de clarification sans hesiter
+
+### Exercice 10 : Audit de securite express
+
+**Consigne** : realiser un audit rapide de son infrastructure de demonstration. Pour chaque element, verifier :
+
+| Element | Verification |
+|---|---|
+| Mots de passe | Sont-ils forts ? Politique de complexite en place ? |
+| Pare-feu | Les regles sont-elles restrictives (deny by default) ? |
+| Mises a jour | Les systemes sont-ils a jour ? |
+| Services inutiles | Y a-t-il des services actifs non necessaires ? |
+| Sauvegardes | Existent-elles ? Ont-elles ete testees ? |
+| Acces distants | SSH par cle ? RDP restreint ? VPN obligatoire ? |
+| Logs | La journalisation est-elle active et consultee ? |
+| Comptes | Y a-t-il des comptes par defaut encore actifs ? |
+
+Rediger un rapport d'audit d'une page avec les constats et les recommandations.
+
+**Criteres de reussite** :
+- Chaque point est verifie concretement (pas de reponse theorique)
+- Les failles identifiees sont accompagnees de recommandations
+- Le rapport est professionnel et synthetique
+
+### Exercice 11 : Preparer un plan B complet
+
+**Consigne** : pour chaque realisation du portfolio, identifier les 3 problemes les plus probables le jour de l'epreuve et preparer une solution de repli.
+
+| Realisation | Probleme probable | Solution de repli |
+|---|---|---|
+| AD | VM DC ne demarre pas | Snapshot de secours + video de la demo |
+| Reseau VLAN | Communication inter-VLAN echoue | Fichier de configuration de reference a reimporter |
+| VPN | Tunnel ne s'etablit pas | Logs de debug prepares + configuration de reference |
+| Supervision | Interface web inaccessible | Redemarrer le service + acces en CLI |
+
+**Criteres de reussite** :
+- Chaque realisation a au moins 2 plans B documentes
+- Les solutions de repli ont ete testees au moins une fois
+
+### Exercice 12 : Entretien croise entre candidats
+
+**Consigne** : se mettre en binome avec un autre candidat SISR. Chacun a son tour joue le role du jury pendant 10 minutes. Le "jury" pose des questions en s'appuyant sur le portfolio de l'autre candidat.
+
+Questions a poser obligatoirement :
+1. Presentez-moi votre realisation principale en 2 minutes.
+2. Montrez-moi le schema reseau et expliquez le trajet d'un paquet.
+3. Quelle est la plus grosse difficulte technique que vous avez rencontree ?
+4. Comment reagiriez-vous si [scenario de panne specifique a la realisation] ?
+5. Quel lien faites-vous entre cette realisation et votre veille technologique ?
+
+Apres chaque passage, debriefer : points forts, points a ameliorer, questions qui ont destabilise.
+
+**Criteres de reussite** :
+- Le candidat interroge repond sans panique
+- Les reponses sont illustrees par des exemples concrets
+- Le debrief identifie au moins 3 axes d'amelioration
+
+---
+
+## 13. Resume des points cles
+
+Pour finir, les elements non negociables pour reussir l'epreuve E5 SISR :
+
+1. Avoir un portfolio structure, complet et accessible hors ligne
+2. Couvrir toutes les competences du Bloc 2 avec ses realisations
+3. Documenter chaque realisation avec rigueur : contexte, schemas, etapes, tests, bilan
+4. Produire des schemas reseau lisibles, exacts et complets
+5. Preparer un environnement de demonstration fonctionnel avec des VM pretes
+6. Repeter la presentation orale et la demonstration au moins 3 fois
+7. Anticiper les questions du jury et preparer des reponses argumentees
+8. Connaitre par coeur les adresses IP, identifiants et commandes de son infrastructure
+9. Avoir un plan B pour chaque demonstration
+10. Ne pas lire ses notes, parler avec assurance, rester professionnel

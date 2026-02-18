@@ -1,34 +1,10 @@
 ---
 title: "Réseaux — Routage et commutation"
 description: "Switches, VLANs, trunking, routage statique et dynamique, ACL, Packet Tracer"
-category: "Reseaux"
+category: "Réseaux"
 tags: ["routage", "commutation", "vlan", "ospf", "acl", "cisco"]
 difficulty: "Intermédiaire"
 ---
-
-# Routage et commutation
-
-
-
-## Table des matieres
-
-1. [1. Commutation -- Fonctionnement d'un switch](#1-commutation-fonctionnement-dun-switch)
-2. [2. VLANs (Virtual Local Area Networks)](#2-vlans-virtual-local-area-networks)
-3. [3. Protocole STP (Spanning Tree Protocol)](#3-protocole-stp-spanning-tree-protocol)
-4. [4. Principes du routage](#4-principes-du-routage)
-5. [5. Routage statique](#5-routage-statique)
-6. [6. Routage dynamique](#6-routage-dynamique)
-7. [7. ACL (Access Control Lists)](#7-acl-access-control-lists)
-8. [8. Cisco IOS -- Commandes essentielles](#8-cisco-ios-commandes-essentielles)
-9. [9. Agregation de liens -- EtherChannel](#9-agregation-de-liens-etherchannel)
-10. [10. Packet Tracer](#10-packet-tracer)
-11. [11. Exercices corriges](#11-exercices-corriges)
-12. [12. Synthese des commandes essentielles](#12-synthese-des-commandes-essentielles)
-13. [13. Points de vigilance pour l'examen](#13-points-de-vigilance-pour-lexamen)
-
-
-Ce playbook couvre l'ensemble des notions de commutation et de routage au programme du BTS SIO option SISR. Chaque section est conçue pour servir de reference directe lors des revisions et des epreuves pratiques.
-
 
 ## 1. Commutation -- Fonctionnement d'un switch
 
@@ -79,6 +55,7 @@ Switch# show mac address-table
 
 Les switches Cisco Catalyst utilisent **Store-and-Forward** par defaut.
 
+---
 
 ## 2. VLANs (Virtual Local Area Networks)
 
@@ -216,6 +193,7 @@ Switch(config-if)# exit
 
 La commande `ip routing` active les fonctions de routage sur le switch L3.
 
+---
 
 ## 3. Protocole STP (Spanning Tree Protocol)
 
@@ -295,6 +273,7 @@ Switch# show spanning-tree
 Switch# show spanning-tree vlan 10
 ```
 
+---
 
 ## 4. Principes du routage
 
@@ -359,6 +338,7 @@ Configuration sur un poste client :
 - Masque : `255.255.255.0`
 - Passerelle par defaut : `192.168.10.1`
 
+---
 
 ## 5. Routage statique
 
@@ -410,6 +390,7 @@ Ici, la distance administrative est fixee a 200 (superieure a la valeur par defa
 | Securise (pas de diffusion d'informations de routage) | Necessite une intervention manuelle en cas de panne |
 | Controle total de l'administrateur | Risque d'erreur humaine |
 
+---
 
 ## 6. Routage dynamique
 
@@ -575,6 +556,7 @@ Router# show ip route ospf
 | Standard | RFC 2453 (RIPv2) | RFC 2328 (OSPFv2) |
 | Distance administrative | 120 | 110 |
 
+---
 
 ## 7. ACL (Access Control Lists)
 
@@ -679,6 +661,7 @@ Router# show ip interface gigabitEthernet 0/0
 
 La derniere commande affiche les ACL appliquees sur l'interface (inbound et outbound).
 
+---
 
 ## 8. Cisco IOS -- Commandes essentielles
 
@@ -792,6 +775,7 @@ SW1(config-line)# exit
 SW1(config)# ip ssh version 2
 ```
 
+---
 
 ## 9. Agregation de liens -- EtherChannel
 
@@ -853,6 +837,7 @@ Switch# show etherchannel summary
 Switch# show etherchannel port-channel
 ```
 
+---
 
 ## 10. Packet Tracer
 
@@ -898,6 +883,7 @@ Dans les versions recentes, l'option **auto-detect** choisit automatiquement le 
 8. Tester avec `ping` et `traceroute`.
 9. Sauvegarder les configurations (`copy running-config startup-config`).
 
+---
 
 ## 11. Exercices corriges
 
@@ -939,6 +925,7 @@ VLAN Name                             Status    Ports
 20   USERS                            active    Fa0/3, Fa0/4
 ```
 
+---
 
 ### Exercice 2 -- Configuration d'un trunk
 
@@ -979,6 +966,7 @@ Port        Vlans allowed on trunk
 Gi0/1       10,20,99
 ```
 
+---
 
 ### Exercice 3 -- Router-on-a-stick
 
@@ -1016,6 +1004,7 @@ SW1(config-if)# exit
 
 **Test :** un PC du VLAN 10 (192.168.10.10, passerelle 192.168.10.1) doit pouvoir pinger un PC du VLAN 20 (192.168.20.10, passerelle 192.168.20.1).
 
+---
 
 ### Exercice 4 -- Routage statique entre deux reseaux
 
@@ -1067,6 +1056,7 @@ C    192.168.10.0/24 is directly connected, GigabitEthernet0/0
 C    10.0.0.0/30 is directly connected, Serial0/0/0
 ```
 
+---
 
 ### Exercice 5 -- Route par defaut et route statique flottante
 
@@ -1089,6 +1079,7 @@ R1# show ip route
 S*   0.0.0.0/0 [1/0] via 10.0.0.2
 ```
 
+---
 
 ### Exercice 6 -- Configuration OSPF mono-aire
 
@@ -1144,6 +1135,7 @@ O    192.168.30.0/24 [110/129] via 10.0.12.2, 00:02:15, Serial0/0/0
 O    10.0.23.0/30 [110/128] via 10.0.12.2, 00:02:15, Serial0/0/0
 ```
 
+---
 
 ### Exercice 7 -- Configuration RIPv2
 
@@ -1194,6 +1186,7 @@ R    10.0.23.0/30 [120/1] via 10.0.12.2, 00:00:18, Serial0/0/0
 
 La metrique [120/2] signifie : distance administrative 120, 2 sauts.
 
+---
 
 ### Exercice 8 -- ACL standard
 
@@ -1222,6 +1215,7 @@ Standard IP access list 1
     20 permit 192.168.10.0, wildcard bits 0.0.0.255 (15 matches)
 ```
 
+---
 
 ### Exercice 9 -- ACL etendue
 
@@ -1250,6 +1244,7 @@ R1(config-if)# exit
 - La regle 5 autorise tout le reste du trafic (vers d'autres destinations). Sans cette regle, le deny implicite bloquerait tout.
 - L'ACL etendue est placee pres de la source (interface Gi0/0 cote 192.168.10.0/24, en entree).
 
+---
 
 ### Exercice 10 -- Analyse d'une table de routage
 
@@ -1281,6 +1276,7 @@ Questions :
 4. Le paquet correspond a la route `O 192.168.30.0/24 [110/129] via 10.0.0.2`. Il sera achemine vers **10.0.0.2** via l'interface Serial0/0/0.
 5. Aucune route specifique ne correspond a 8.8.8.8. La **route par defaut** `S* 0.0.0.0/0 via 10.0.0.2` est utilisee. Le paquet est envoye vers 10.0.0.2.
 
+---
 
 ### Exercice 11 -- EtherChannel LACP
 
@@ -1332,6 +1328,7 @@ Group  Port-channel  Protocol    Ports
 
 Le statut `SU` indique que le port-channel est en Layer2 (S) et en service (U). Les ports membres sont marques `P` (bundled).
 
+---
 
 ### Exercice 12 -- Scenario complet : VLANs, routage OSPF et ACL
 
@@ -1464,6 +1461,7 @@ PC-USERS> ping 192.168.10.10
 Reply from 192.168.10.10: bytes=32 time<1ms TTL=127   [OK]
 ```
 
+---
 
 ## 12. Synthese des commandes essentielles
 
@@ -1492,6 +1490,7 @@ Reply from 192.168.10.10: bytes=32 time<1ms TTL=127   [OK]
 | Afficher STP | `show spanning-tree` |
 | Afficher EtherChannel | `show etherchannel summary` |
 
+---
 
 ## 13. Points de vigilance pour l'examen
 

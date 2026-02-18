@@ -1,28 +1,10 @@
 ---
-title: "Tests unitaires et de non-regression"
-description: "Pourquoi tester, tests unitaires, TDD, couverture de code, tests de non-regression, outils"
-category: "Qualite et Securite"
-difficulty: "Intermediaire"
+title: "Tests unitaires et non-regression"
+description: "Jest, assertions, mocks, couverture, TDD, tests d'integration"
+sidebar_position: 1
+level: "Intermediaire"
+reading_time: 44
 ---
-
-# Tests unitaires et de non-regression
-
-
-
-## Table des matieres
-
-1. [Pourquoi tester ?](#pourquoi-tester-)
-2. [Tests unitaires](#tests-unitaires)
-3. [Tests de non-regression](#tests-de-non-regression)
-4. [Tests d'integration](#tests-dintegration)
-5. [Jeux de donnees de test](#jeux-de-donnees-de-test)
-6. [TDD (Test-Driven Development) -- notions](#tdd-test-driven-development-notions)
-7. [Bonnes pratiques](#bonnes-pratiques)
-8. [Methodologie d'examen](#methodologie-dexamen)
-9. [Exercices d'examen corriges](#exercices-dexamen-corriges)
-10. [Resume des concepts cles pour l'examen](#resume-des-concepts-cles-pour-lexamen)
-
-
 
 ## Pourquoi tester ?
 
@@ -39,32 +21,7 @@ Un medecin qui prescrit un medicament sans verifier les interactions avec les au
 ### Le cout d'un bug selon le moment de sa decouverte
 
 | Moment de decouverte | Cout relatif | Exemple concret |
-|---|---|---|
-| En developpement | 1x | Le developpeur corrige immediatement |
-| En phase de test | 10x | Il faut identifier, reproduire, corriger, re-tester |
-| En production | 100x | Perte de donnees, perte de clients, image degradee |
-
-Un bug decouvert en production peut couter des milliers d'euros (arret de service, support client, correctif en urgence, deploiement hors horaires). Le meme bug detecte par un test unitaire aurait coute 5 minutes de correction.
-
-### La pyramide des tests
-
-```
-         /\
-        /  \
-       / E2E\        ← Peu nombreux, lents, couteux
-      /------\
-     / Integr.\      ← Nombre moyen, vitesse moyenne
-    /----------\
-   /  Unitaires \    ← Tres nombreux, tres rapides, peu couteux
-  /--------------\
-```
-
-- **Tests unitaires** : testent UNE fonction ou UNE methode, isoles du reste. Rapides (millisecondes). On en ecrit des centaines.
-- **Tests d'integration** : testent que plusieurs composants fonctionnent ensemble (controleur + service + base de donnees). Plus lents.
-- **Tests E2E (end-to-end)** : testent l'application complete du point de vue de l'utilisateur (simuler des clics dans un navigateur). Les plus lents et les plus fragiles.
-
-La base de la pyramide doit etre la plus large : la majorite de vos tests doivent etre des tests unitaires.
-
+|---
 
 ## Tests unitaires
 
@@ -82,6 +39,7 @@ Tout test unitaire suit la meme structure en trois etapes :
 
 Ce pattern est universel. Il s'applique en JavaScript, en C#, en Python, en Java, dans tous les langages.
 
+---
 
 ### Exemple introductif : le bug qui aurait pu etre evite
 
@@ -100,6 +58,7 @@ Autre probleme : `calculerTTC(100, null)` renvoie `100` (car `100 * null` vaut `
 
 Si des tests unitaires avaient ete ecrits des le depart, ces bugs auraient ete detectes immediatement.
 
+---
 
 ### Tests unitaires en JavaScript avec Jest
 
@@ -328,6 +287,7 @@ describe('CompteBancaire', () => {
 
 **Regle importante** : utiliser `beforeEach` plutot que `beforeAll` pour garantir l'independance des tests. Chaque test doit partir d'un etat propre.
 
+---
 
 ### Tests unitaires en C# avec MSTest
 
@@ -512,6 +472,7 @@ public class CompteBancaireTests
 }
 ```
 
+---
 
 ### Que tester ? Les trois categories de cas
 
@@ -603,6 +564,7 @@ public void CalculerMoyenne_Null_LeveException()
 - Que se passe-t-il avec un tres grand nombre ?
 - Que se passe-t-il avec le mauvais type de donnee ?
 
+---
 
 ### Couverture de code
 
@@ -625,6 +587,7 @@ npx jest --coverage
 
 Jest genere un rapport indiquant, fichier par fichier, le pourcentage de lignes couvertes, de branches couvertes et de fonctions couvertes.
 
+---
 
 ## Tests de non-regression
 
@@ -996,6 +959,7 @@ Principe : a chaque fois qu'un developpeur pousse du code, un serveur (GitHub Ac
 
 Cela garantit qu'aucune regression n'atteint la branche principale ou la production.
 
+---
 
 ## Tests d'integration
 
@@ -1187,6 +1151,7 @@ public class UtilisateurServiceTests
 
 Installation de Moq : `Install-Package Moq` dans le gestionnaire de packages NuGet.
 
+---
 
 ## Jeux de donnees de test
 
@@ -1284,6 +1249,7 @@ describe('operations BDD', () => {
 });
 ```
 
+---
 
 ## TDD (Test-Driven Development) -- notions
 
@@ -1365,6 +1331,7 @@ On peut ameliorer le code (ajouter des validations, factoriser) tant que les tes
 - Le test definit le comportement attendu avant l'implementation : on reflechit d'abord a "quoi" avant "comment"
 - Le design du code est guide par les tests : les fonctions trop complexes sont difficiles a tester, ce qui force a les simplifier
 
+---
 
 ## Bonnes pratiques
 
@@ -1471,6 +1438,7 @@ describe('Panier', () => {
 });
 ```
 
+---
 
 ## Methodologie d'examen
 
@@ -1507,6 +1475,7 @@ Les exercices sur les tests se presentent sous plusieurs formes :
 - [ ] La syntaxe `expect(() => fn()).toThrow()` est utilisee pour les exceptions
 - [ ] En C#, `[TestClass]` et `[TestMethod]` sont presents
 
+---
 
 ## Exercices d'examen corriges
 
@@ -1667,6 +1636,7 @@ describe('CompteBancaire', () => {
 });
 ```
 
+---
 
 ### Exercice 2 : ecrire les tests pour CompteBancaire (C#)
 
@@ -1831,6 +1801,7 @@ namespace Banque.Tests
 }
 ```
 
+---
 
 ### Exercice 3 : identifier les tests manquants
 
@@ -1898,6 +1869,7 @@ test('undefined leve une erreur', () => {
 
 Les tests les plus importants qui manquaient : les **cas limites** (17 et 18 ans, la frontiere exacte) et les **cas d'erreur** (types invalides).
 
+---
 
 ### Exercice 4 : lire un test et expliquer ce qu'il verifie
 
@@ -1939,6 +1911,7 @@ describe('GestionStock', () => {
 - **Test 3** : Verifie que la vente d'un produit inexistant (reference P999) leve une exception.
 - **Test 4** : Verifie que la vente de la totalite du stock (50 sur 50) met la quantite a 0. C'est un cas limite : la vente de l'exacte quantite disponible doit fonctionner.
 
+---
 
 ### Exercice 5 : corriger un test qui ne fonctionne pas
 
@@ -1985,6 +1958,7 @@ expect(() => calc.diviser(10, 0)).toThrow();
 expect(resultat).toEqual({ valeur: 12 });
 ```
 
+---
 
 ### Exercice 6 : ecrire les tests pour une classe GestionNotes (C#)
 
@@ -2153,6 +2127,7 @@ namespace Ecole.Tests
 }
 ```
 
+---
 
 ### Exercice 7 : test de non-regression -- ajouter une fonctionnalite
 
@@ -2230,6 +2205,7 @@ describe('vider', () => {
 
 Verification de non-regression : les 3 anciens tests + les 3 nouveaux tests doivent tous passer.
 
+---
 
 ### Exercice 8 : corriger un test C# qui ne fonctionne pas
 
@@ -2300,6 +2276,7 @@ public void Diviser_ParZero_LeveException()
 }
 ```
 
+---
 
 ### Exercice 9 : exercice de synthese -- GestionUtilisateurs
 
@@ -2456,6 +2433,7 @@ class GestionUtilisateurs {
 module.exports = { GestionUtilisateurs };
 ```
 
+---
 
 ### Exercice 10 : identifier ce que teste un fichier de test complet
 
@@ -2504,6 +2482,7 @@ public class ConvertisseurTests
 
 5. **Quel test manque-t-il ?** Un test avec une valeur positive simple (ex: 25 degres Celsius = 298.15 Kelvin) et un test avec des decimales (ex: 36.6 degres Celsius).
 
+---
 
 ## Resume des concepts cles pour l'examen
 

@@ -1,28 +1,26 @@
 ---
-title: "SQL (MySQL)"
-description: "SELECT, JOIN, sous-requetes, GROUP BY, INSERT, UPDATE, DELETE, vues, index, optimisation"
-category: "Bases de donnees"
-difficulty: "Debutant"
+title: "SQL"
+description: "SELECT, JOIN, sous-requetes, GROUP BY, DDL, DML, vues, index, transactions"
+sidebar_position: 1
+level: "Debutant"
+reading_time: 76
 ---
-
-# SQL -- Le guide ultime BTS SIO SLAM
-
 
 ## Table des matieres
 
-1. [1. Introduction aux bases de donnees relationnelles](#1-introduction-aux-bases-de-donnees-relationnelles)
-2. [2. Creation de base et de tables (DDL)](#2-creation-de-base-et-de-tables-ddl)
-3. [3. Insertion, modification, suppression (DML)](#3-insertion-modification-suppression-dml)
-4. [4. SELECT -- Les requetes de lecture](#4-select-les-requetes-de-lecture)
-5. [5. Jointures](#5-jointures)
-6. [6. Sous-requetes](#6-sous-requetes)
-7. [7. Vues](#7-vues)
-8. [8. Index](#8-index)
-9. [9. Transactions](#9-transactions)
-10. [10. Methodologie d'examen](#10-methodologie-dexamen)
-11. [11. Exercices d'examen corriges](#11-exercices-dexamen-corriges)
-12. [Resume final](#resume-final)
+1. [Introduction aux bases de donnees relationnelles](#1-introduction-aux-bases-de-donnees-relationnelles)
+2. [Creation de base et de tables (DDL)](#2-creation-de-base-et-de-tables-ddl)
+3. [Insertion, modification, suppression (DML)](#3-insertion-modification-suppression-dml)
+4. [SELECT -- Les requetes de lecture](#4-select--les-requetes-de-lecture)
+5. [Jointures](#5-jointures)
+6. [Sous-requetes](#6-sous-requetes)
+7. [Vues](#7-vues)
+8. [Index](#8-index)
+9. [Transactions](#9-transactions)
+10. [Methodologie d'examen](#10-methodologie-dexamen)
+11. [Exercices d'examen corriges](#11-exercices-dexamen-corriges)
 
+---
 
 ## 1. Introduction aux bases de donnees relationnelles
 
@@ -97,6 +95,7 @@ Un SGBD (Systeme de Gestion de Bases de Donnees) est le logiciel qui gere la bas
 
 **En BTS SIO SLAM, on utilise MySQL.** Toute la syntaxe de ce document est en MySQL.
 
+---
 
 ## 2. Creation de base et de tables (DDL)
 
@@ -446,6 +445,7 @@ ALTER TABLE clients RENAME TO utilisateurs;
 - `TRUNCATE` : on veut vider la table rapidement et repartir a zero (compteur AUTO_INCREMENT remis a 1).
 - `DELETE` : on veut supprimer des lignes specifiques (avec WHERE) ou pouvoir annuler (ROLLBACK).
 
+---
 
 ## 3. Insertion, modification, suppression (DML)
 
@@ -635,6 +635,7 @@ DELETE FROM commandes
 WHERE statut = 'annulee';
 ```
 
+---
 
 ## 4. SELECT -- Les requetes de lecture
 
@@ -1608,6 +1609,7 @@ Resultat :
 | Petit | Thomas | 1 | 0 |
 | Durand | Emma | 0 | 0 |
 
+---
 
 ## 5. Jointures
 
@@ -2082,6 +2084,7 @@ Resultat corrige :
 | Informatique | 4 | 725.38 |
 | Bureautique | 2 | 111.00 |
 
+---
 
 ## 6. Sous-requetes
 
@@ -2338,6 +2341,7 @@ WHERE prix = (
 );
 ```
 
+---
 
 ## 7. Vues
 
@@ -2402,6 +2406,7 @@ WHERE p.est_actif = TRUE AND p.stock > 0;
 DROP VIEW IF EXISTS v_produits_actifs;
 ```
 
+---
 
 ## 8. Index
 
@@ -2476,6 +2481,7 @@ DROP INDEX idx_produits_nom ON produits;
 
 Les cles primaires et les contraintes UNIQUE creent automatiquement un index. On ne les supprime pas avec DROP INDEX mais avec ALTER TABLE.
 
+---
 
 ## 9. Transactions
 
@@ -2564,6 +2570,7 @@ SET AUTOCOMMIT = 0;
 
 Ou utiliser `BEGIN` / `START TRANSACTION` qui desactive temporairement l'autocommit pour cette transaction.
 
+---
 
 ## 10. Methodologie d'examen
 
@@ -2626,6 +2633,7 @@ clients ---[id_client]--- commandes ---[id_commande]--- lignes_commande ---[id_p
 9. Les noms de table et de colonne sont corrects (verifier le schema fourni) ?
 10. Le ORDER BY est present si l'enonce demande un tri ?
 
+---
 
 ## 11. Exercices d'examen corriges
 
@@ -2645,6 +2653,7 @@ lignes_commande (id_commande PK/FK, id_produit PK/FK, quantite, prix_unitaire)
 
 Les donnees sont celles definies dans la section 4.1 (tables `produits`, `clients`, `commandes`, `lignes_commande`, `categories`).
 
+---
 
 ### Exercice 1
 
@@ -2671,6 +2680,7 @@ Resultat :
 | Cahier A4 | 3.50 |
 | Stylo bleu | 1.20 |
 
+---
 
 ### Exercice 2
 
@@ -2696,6 +2706,7 @@ Resultat :
 | 3 | 2 |
 | 4 | 1 |
 
+---
 
 ### Exercice 3
 
@@ -2718,6 +2729,7 @@ Resultat :
 | Casque audio | 129.99 | 0 |
 | Webcam HD | 59.90 | 15 |
 
+---
 
 ### Exercice 4
 
@@ -2741,6 +2753,7 @@ Resultat :
 | Martin | Lucas |
 | Petit | Thomas |
 
+---
 
 ### Exercice 5
 
@@ -2768,6 +2781,7 @@ Resultat :
 | Dupont | Marie | 103 | 2024-04-05 | 65.90 |
 | Petit | Thomas | 105 | 2024-04-12 | 45.50 |
 
+---
 
 ### Exercice 6
 
@@ -2793,6 +2807,7 @@ Resultat :
 | Bernard | Sophie | 384.00 |
 | Martin | Lucas | 159.99 |
 
+---
 
 ### Exercice 7
 
@@ -2827,6 +2842,7 @@ WHERE NOT EXISTS (
 
 Meme resultat.
 
+---
 
 ### Exercice 8
 
@@ -2854,6 +2870,7 @@ Resultat :
 | Petit | Thomas | 1 |
 | Durand | Emma | 0 |
 
+---
 
 ### Exercice 9
 
@@ -2876,6 +2893,7 @@ Resultat :
 |---|---|
 | Cahier A4 | 30 |
 
+---
 
 ### Exercice 10
 
@@ -2900,6 +2918,7 @@ Resultat :
 | Informatique | 725.38 |
 | Bureautique | 111.00 |
 
+---
 
 ### Exercice 11
 
@@ -2936,6 +2955,7 @@ Resultat :
 | 103 | 2 |
 | 104 | 2 |
 
+---
 
 ### Exercice 12
 
@@ -2964,6 +2984,7 @@ Resultat :
 | Stylo bleu | 1 | 1.20 |
 | Webcam HD | 1 | 59.90 |
 
+---
 
 ### Exercice 13
 
@@ -2999,6 +3020,7 @@ Resultat :
 | Martin | Lucas |
 | Petit | Thomas |
 
+---
 
 ### Exercice 14
 
@@ -3030,6 +3052,7 @@ Resultat :
 | Informatique | 725.38 | 86.73 |
 | Bureautique | 111.00 | 13.27 |
 
+---
 
 ### Exercice 15
 
@@ -3067,6 +3090,7 @@ Resultat :
 | 101 | 2024-04-01 | Marie Dupont | livree | 2 | 180.99 |
 | 104 | 2024-04-10 | Lucas Martin | expediee | 2 | 159.99 |
 
+---
 
 ## Resume final
 

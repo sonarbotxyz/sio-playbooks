@@ -1,28 +1,10 @@
 ---
-title: "Procedures stockees et triggers (MySQL)"
-description: "Procedures, fonctions, curseurs, triggers, variables, structures de controle en SQL"
-category: "Bases de donnees"
-difficulty: "Intermediaire"
+title: "Procedures stockees et Triggers"
+description: "Procedures, fonctions, curseurs, triggers MySQL — syntaxe et exercices corriges"
+sidebar_position: 1
+level: "Avance"
+reading_time: 40
 ---
-
-# Procedures stockees et triggers (MySQL)
-
-
-
-## Table des matieres
-
-1. [Schema de reference](#schema-de-reference)
-2. [1. Pourquoi les procedures stockees ?](#1-pourquoi-les-procedures-stockees-)
-3. [2. Syntaxe des procedures stockees](#2-syntaxe-des-procedures-stockees)
-4. [3. Structures de controle dans les procedures](#3-structures-de-controle-dans-les-procedures)
-5. [4. Fonctions stockees](#4-fonctions-stockees)
-6. [5. Triggers (declencheurs)](#5-triggers-declencheurs)
-7. [6. Transactions dans les procedures](#6-transactions-dans-les-procedures)
-8. [7. Methodologie d'examen](#7-methodologie-dexamen)
-9. [8. Exercices d'examen corriges](#8-exercices-dexamen-corriges)
-10. [Resume des syntaxes](#resume-des-syntaxes)
-
-
 
 ## Schema de reference
 
@@ -84,6 +66,7 @@ CREATE TABLE historique_produit (
 );
 ```
 
+---
 
 ## 1. Pourquoi les procedures stockees ?
 
@@ -126,6 +109,7 @@ La requete n'existe qu'a un seul endroit : dans la base de donnees.
 | **Maintenance** | Le code SQL existe a un seul endroit. Une modification se fait une fois, pas dans 15 fichiers. |
 | **Reutilisation** | Toute application (PHP, Java, Python) peut appeler la meme procedure. Le code SQL n'est pas lie a un langage. |
 
+---
 
 ## 2. Syntaxe des procedures stockees
 
@@ -341,6 +325,7 @@ SHOW PROCEDURE STATUS WHERE Db = 'nom_base';
 SHOW CREATE PROCEDURE nom_procedure;
 ```
 
+---
 
 ## 3. Structures de controle dans les procedures
 
@@ -637,6 +622,7 @@ SELECT * FROM historique_produit;
 -- Deux lignes : Clavier et Souris
 ```
 
+---
 
 ## 4. Fonctions stockees
 
@@ -742,6 +728,7 @@ DROP FUNCTION IF EXISTS prix_ttc;
 DROP FUNCTION IF EXISTS calculer_age;
 ```
 
+---
 
 ## 5. Triggers (declencheurs)
 
@@ -1075,6 +1062,7 @@ SHOW TRIGGERS FROM nom_base;
 SHOW CREATE TRIGGER nom_trigger;
 ```
 
+---
 
 ## 6. Transactions dans les procedures
 
@@ -1177,6 +1165,7 @@ SELECT * FROM compte;
 -- Compte 1 : 800.00 (inchange), Compte 2 : 700.00 (inchange)
 ```
 
+---
 
 ## 7. Methodologie d'examen
 
@@ -1223,6 +1212,7 @@ Les formes les plus frequentes :
 9. Les transactions ont un COMMIT et un ROLLBACK.
 10. La procedure est testable : on peut ecrire un CALL avec des valeurs concretes.
 
+---
 
 ## 8. Exercices d'examen corriges
 
@@ -1252,6 +1242,7 @@ CALL rechercher_clients('Dupo');
 -- Retourne Dupont, Dupond, etc.
 ```
 
+---
 
 ### Exercice 2 : procedure avec OUT
 
@@ -1282,6 +1273,7 @@ CALL nombre_commandes_client(1, @nb);
 SELECT @nb AS nombre_commandes;
 ```
 
+---
 
 ### Exercice 3 : procedure avec IF
 
@@ -1335,6 +1327,7 @@ SELECT @msg;
 -- 'Refus : augmentation superieure a 50%'
 ```
 
+---
 
 ### Exercice 4 : fonction stockee
 
@@ -1372,6 +1365,7 @@ WHERE id_commande = 1;
 
 Note : `READS SQL DATA` est une bonne pratique pour indiquer que la fonction lit des donnees en base sans les modifier. `COALESCE(v_montant, 0)` retourne 0 si la ligne n'existe pas (au lieu de NULL).
 
+---
 
 ### Exercice 5 : trigger d'audit
 
@@ -1418,6 +1412,7 @@ SELECT * FROM journal_suppression;
 -- table_concernee = 'client', id_enregistrement = 5
 ```
 
+---
 
 ### Exercice 6 : trigger de validation
 
@@ -1457,6 +1452,7 @@ INSERT INTO commande (id_client) VALUES (999);
 -- Erreur : Impossible de creer la commande : client inexistant
 ```
 
+---
 
 ### Exercice 7 : trigger de calcul automatique avec gestion du stock
 
@@ -1510,6 +1506,7 @@ VALUES (1, 1, 8, 25.00);
 -- Erreur : Stock insuffisant pour cette commande
 ```
 
+---
 
 ### Exercice 8 : procedure avec curseur
 
@@ -1578,6 +1575,7 @@ Test :
 CALL rapport_clients_inactifs();
 ```
 
+---
 
 ### Exercice 9 : procedure avec transaction
 
@@ -1668,6 +1666,7 @@ SELECT * FROM ligne_commande WHERE id_commande = @id_cmd;
 SELECT stock FROM produit WHERE id_produit = 1;
 ```
 
+---
 
 ### Exercice 10 : identifier les erreurs
 
@@ -1723,6 +1722,7 @@ END //
 DELIMITER ;
 ```
 
+---
 
 ### Exercice 11 : trigger avec UPDATE et OLD/NEW
 
@@ -1757,6 +1757,7 @@ UPDATE produit SET prix_ht = 200.00 WHERE id_produit = 1;
 -- Erreur : Augmentation refusee : depassement de 25% du prix actuel
 ```
 
+---
 
 ### Exercice 12 : procedure avec WHILE et calcul iteratif
 
@@ -1814,6 +1815,7 @@ CALL simuler_interets(10000, 5, 10);
 -- Annee 10 : 16288.95
 ```
 
+---
 
 ### Exercice 13 : completer une procedure
 
@@ -1863,6 +1865,7 @@ CALL meilleur_client(@id, @nom, @ca);
 SELECT @id AS id_client, @nom AS nom, @ca AS chiffre_affaires;
 ```
 
+---
 
 ## Resume des syntaxes
 

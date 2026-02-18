@@ -1,33 +1,28 @@
 ---
 title: "Linux — Services"
 description: "Apache, Nginx, SSH, Samba, NFS, iptables, pare-feu, serveur web, partage de fichiers"
-category: "Systemes"
+category: "Systèmes"
 tags: ["linux", "apache", "nginx", "ssh", "samba", "iptables", "services"]
 difficulty: "Avancé"
 ---
 
-# Linux — Services
-
-Reference complete pour le BTS SIO SISR. Couvre l'ensemble des services reseau sous Debian/Ubuntu : serveurs web, acces distant, partage de fichiers, DNS, DHCP, pare-feu, proxy et messagerie.
-
-
 ## Table des matieres
 
-1. [1. Serveur web Apache](#1-serveur-web-apache)
-2. [2. Serveur web Nginx](#2-serveur-web-nginx)
-3. [3. HTTPS et SSL/TLS](#3-https-et-ssltls)
-4. [4. SSH avance](#4-ssh-avance)
-5. [5. Samba](#5-samba)
-6. [6. NFS](#6-nfs)
-7. [7. Serveur DHCP](#7-serveur-dhcp)
-8. [8. Serveur DNS Bind9](#8-serveur-dns-bind9)
-9. [9. Pare-feu iptables et nftables](#9-pare-feu-iptables-et-nftables)
-10. [10. Proxy Squid](#10-proxy-squid)
-11. [11. Serveur FTP vsftpd](#11-serveur-ftp-vsftpd)
-12. [12. Postfix — bases](#12-postfix-bases)
-13. [13. Exercices corriges](#13-exercices-corriges)
-14. [Aide-memoire des commandes essentielles](#aide-memoire-des-commandes-essentielles)
+1. [Serveur web Apache](#1-serveur-web-apache)
+2. [Serveur web Nginx](#2-serveur-web-nginx)
+3. [HTTPS et SSL/TLS](#3-https-et-ssltls)
+4. [SSH avance](#4-ssh-avance)
+5. [Samba](#5-samba)
+6. [NFS](#6-nfs)
+7. [Serveur DHCP](#7-serveur-dhcp)
+8. [Serveur DNS Bind9](#8-serveur-dns-bind9)
+9. [Pare-feu iptables et nftables](#9-pare-feu-iptables-et-nftables)
+10. [Proxy Squid](#10-proxy-squid)
+11. [Serveur FTP vsftpd](#11-serveur-ftp-vsftpd)
+12. [Postfix — bases](#12-postfix--bases)
+13. [Exercices corriges](#13-exercices-corriges)
 
+---
 
 ## 1. Serveur web Apache
 
@@ -273,6 +268,7 @@ sudo apache2ctl configtest
 sudo systemctl reload apache2
 ```
 
+---
 
 ## 2. Serveur web Nginx
 
@@ -462,6 +458,7 @@ sudo apt install apache2-utils
 sudo htpasswd -c /etc/nginx/.htpasswd utilisateur1
 ```
 
+---
 
 ## 3. HTTPS et SSL/TLS
 
@@ -590,6 +587,7 @@ sudo systemctl list-timers | grep certbot
 
 Certbot installe un timer systemd (`certbot.timer`) qui tente le renouvellement deux fois par jour. Les certificats Let's Encrypt expirent apres 90 jours.
 
+---
 
 ## 4. SSH avance
 
@@ -797,6 +795,7 @@ ClientAliveCountMax 2              # 2 echecs => deconnexion
 X11Forwarding no                   # Desactiver si inutile
 ```
 
+---
 
 ## 5. Samba
 
@@ -967,6 +966,7 @@ sudo net ads join -U administrateur
 sudo systemctl restart smbd nmbd winbind
 ```
 
+---
 
 ## 6. NFS
 
@@ -1057,6 +1057,7 @@ mount | grep nfs
 df -hT | grep nfs
 ```
 
+---
 
 ## 7. Serveur DHCP
 
@@ -1151,6 +1152,7 @@ cat /var/lib/dhcp/dhcpd.leases
 sudo journalctl -u isc-dhcp-server -f
 ```
 
+---
 
 ## 8. Serveur DNS Bind9
 
@@ -1346,6 +1348,7 @@ zone "1.168.192.in-addr.arpa" {
 
 Le transfert de zone se fait automatiquement lorsque le serial augmente.
 
+---
 
 ## 9. Pare-feu iptables et nftables
 
@@ -1639,6 +1642,7 @@ sudo nft flush ruleset
 | `-m conntrack --ctstate` | `ct state` |
 | `-t nat -A POSTROUTING` | `chain postrouting` dans `table inet nat` |
 
+---
 
 ## 10. Proxy Squid
 
@@ -1799,6 +1803,7 @@ export http_proxy="http://192.168.1.1:3128"
 export https_proxy="http://192.168.1.1:3128"
 ```
 
+---
 
 ## 11. Serveur FTP vsftpd
 
@@ -1955,6 +1960,7 @@ cd /dossier # Changer de repertoire
 bye         # Quitter
 ```
 
+---
 
 ## 12. Postfix — bases
 
@@ -2094,6 +2100,7 @@ mail    IN  A       203.0.113.10
 - **MX** : indique le serveur de messagerie du domaine
 - **SPF** : indique quelles machines sont autorisees a envoyer des mails pour le domaine
 
+---
 
 ## 13. Exercices corriges
 
@@ -2132,6 +2139,7 @@ sudo a2ensite entreprise.conf
 sudo systemctl reload apache2
 ```
 
+---
 
 ### Exercice 2 — Nginx reverse proxy
 
@@ -2162,6 +2170,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
+---
 
 ### Exercice 3 — Certificat auto-signe et HTTPS Apache
 
@@ -2210,6 +2219,7 @@ sudo a2ensite entreprise-ssl.conf
 sudo systemctl reload apache2
 ```
 
+---
 
 ### Exercice 4 — Regles iptables pour un serveur web
 
@@ -2257,6 +2267,7 @@ sudo iptables -A INPUT -j LOG --log-prefix "IPT-DROP: " --log-level 4
 sudo iptables-save | sudo tee /etc/iptables/rules.v4
 ```
 
+---
 
 ### Exercice 5 — NAT et MASQUERADE
 
@@ -2282,6 +2293,7 @@ sudo iptables -A FORWARD -i ens33 -o ens34 -m conntrack --ctstate ESTABLISHED,RE
 sudo iptables-save | sudo tee /etc/iptables/rules.v4
 ```
 
+---
 
 ### Exercice 6 — Partage Samba
 
@@ -2319,6 +2331,7 @@ testparm
 sudo systemctl restart smbd
 ```
 
+---
 
 ### Exercice 7 — Zone DNS Bind9
 
@@ -2396,6 +2409,7 @@ dig @192.168.10.1 labo.local MX
 dig @192.168.10.1 -x 192.168.10.10
 ```
 
+---
 
 ### Exercice 8 — Serveur DHCP avec reservation
 
@@ -2441,6 +2455,7 @@ sudo dhcpd -t
 sudo systemctl restart isc-dhcp-server
 ```
 
+---
 
 ### Exercice 9 — SSH tunnel et ProxyJump
 
@@ -2473,6 +2488,7 @@ Host serveur-interne
 
 Utilisation : `ssh serveur-interne`
 
+---
 
 ### Exercice 10 — NFS : partage et montage permanent
 
@@ -2512,6 +2528,7 @@ Montage permanent dans `/etc/fstab` :
 serveur:/srv/donnees    /mnt/donnees    nfs    defaults,_netdev    0    0
 ```
 
+---
 
 ### Exercice 11 — Proxy Squid avec filtrage
 
@@ -2544,6 +2561,7 @@ sudo squid -k parse
 sudo systemctl restart squid
 ```
 
+---
 
 ### Exercice 12 — nftables complet avec NAT
 
@@ -2621,6 +2639,7 @@ sudo nft list ruleset
 sudo systemctl enable nftables
 ```
 
+---
 
 ### Exercice 13 — Fail2ban pour SSH et Apache
 
@@ -2661,6 +2680,7 @@ sudo fail2ban-client status sshd
 sudo fail2ban-client status apache-auth
 ```
 
+---
 
 ### Exercice 14 — Postfix relais SMTP
 
@@ -2695,6 +2715,7 @@ echo "Test envoi" | mail -s "Test Postfix" destinataire@exemple.fr
 sudo tail -f /var/log/mail.log
 ```
 
+---
 
 ### Exercice 15 — vsftpd avec chroot et SSL
 
@@ -2753,6 +2774,7 @@ sudo iptables -A INPUT -p tcp --dport 21 -j ACCEPT
 sudo iptables -A INPUT -p tcp --dport 30000:31000 -j ACCEPT
 ```
 
+---
 
 ## Aide-memoire des commandes essentielles
 

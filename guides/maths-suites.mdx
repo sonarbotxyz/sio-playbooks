@@ -1,32 +1,10 @@
 ---
 title: "Mathématiques — Suites numériques"
 description: "Suites arithmétiques et géométriques, convergence, sommes, applications aux coûts et amortissements"
-category: "Mathematiques"
+category: "Mathématiques"
 tags: ["suites", "arithmétique", "géométrique", "convergence", "maths"]
 difficulty: "Intermédiaire"
 ---
-
-# Suites numériques
-
-
-
-## Table des matieres
-
-1. [1. Definitions generales](#1-definitions-generales)
-2. [2. Suites arithmetiques](#2-suites-arithmetiques)
-3. [3. Somme des termes d'une suite arithmetique](#3-somme-des-termes-dune-suite-arithmetique)
-4. [4. Suites geometriques](#4-suites-geometriques)
-5. [5. Somme des termes d'une suite geometrique](#5-somme-des-termes-dune-suite-geometrique)
-6. [6. Sens de variation](#6-sens-de-variation)
-7. [7. Convergence et limites](#7-convergence-et-limites)
-8. [8. Suites definies par recurrence : calcul et representation](#8-suites-definies-par-recurrence-calcul-et-representation)
-9. [9. Suites et tableur](#9-suites-et-tableur)
-10. [10. Applications concretes en informatique et gestion](#10-applications-concretes-en-informatique-et-gestion)
-11. [11. Exercices corriges](#11-exercices-corriges)
-12. [12. Formulaire recapitulatif](#12-formulaire-recapitulatif)
-13. [13. Pieges frequents a l'examen](#13-pieges-frequents-a-lexamen)
-
-
 
 ## 1. Definitions generales
 
@@ -69,6 +47,7 @@ Pour calculer U100, il faut calculer tous les termes de U0 a U99.
 | Explicite | Une formule directe Un = f(n) | On remplace n dans la formule |
 | Recurrente | U0 (ou U1) et une relation Un+1 = f(Un) | On calcule tous les termes precedents |
 
+---
 
 ## 2. Suites arithmetiques
 
@@ -139,6 +118,7 @@ Un+1 - Un = (5n + 8) - (5n + 3) = 5n + 8 - 5n - 3 = 5
 
 Le resultat est 5, constante. La suite est arithmetique de raison r = 5.
 
+---
 
 ## 3. Somme des termes d'une suite arithmetique
 
@@ -208,6 +188,7 @@ Cas particulier tres frequent : 1 + 2 + 3 + ... + n = n x (n + 1) / 2.
 
 **Exemple :** 1 + 2 + 3 + ... + 50 = 50 x 51 / 2 = 2 550 / 2 = 1 275.
 
+---
 
 ## 4. Suites geometriques
 
@@ -279,6 +260,7 @@ Un+1 / Un = (3 x 2^n x 2) / (3 x 2^n) = 2
 
 Le resultat est 2, constante. La suite est geometrique de raison q = 2.
 
+---
 
 ## 5. Somme des termes d'une suite geometrique
 
@@ -352,6 +334,7 @@ S = 1000 x 0.96875 / 0.5
 S = 968.75 / 0.5
 S = 1 937.5
 
+---
 
 ## 6. Sens de variation
 
@@ -404,6 +387,7 @@ Un+1 / Un = q = 0.8 < 1, donc la suite est strictement decroissante.
 
 Si Un = f(n), on peut etudier la fonction f sur [0 ; +inf[. Si f est croissante (respectivement decroissante), alors la suite l'est aussi.
 
+---
 
 ## 7. Convergence et limites
 
@@ -449,6 +433,7 @@ Si |q| < 1, la somme de tous les termes (somme infinie) converge :
 
 S = 100 / (1 - 0.5) = 100 / 0.5 = 200
 
+---
 
 ## 8. Suites definies par recurrence : calcul et representation
 
@@ -484,6 +469,7 @@ Le dessin forme un motif en **escalier** si la suite est monotone (croissante ou
 
 Le point ou la courbe y = f(x) croise la droite y = x est appele **point fixe**. Si la suite converge, elle converge vers un point fixe. On le trouve en resolvant f(x) = x.
 
+---
 
 ## 9. Suites et tableur
 
@@ -528,6 +514,7 @@ Ajouter une colonne C pour la somme cumulee :
 
 Tirer C3 vers le bas. La cellule C(n+2) contient la somme U0 + U1 + ... + Un.
 
+---
 
 ## 10. Applications concretes en informatique et gestion
 
@@ -671,6 +658,7 @@ Comparaison pour n = 10 :
 - 2^n = 1 024
 - log2(n) = 3.32 (arrondi)
 
+---
 
 ## 11. Exercices corriges
 
@@ -688,6 +676,7 @@ U5 = 7 + 5 x 4 = 7 + 20 = 27
 
 U20 = 7 + 20 x 4 = 7 + 80 = 87
 
+---
 
 ### Exercice 2 : Trouver la raison et U0
 
@@ -701,6 +690,7 @@ U0 = U3 - 3 x r = 19 - 3 x 4 = 19 - 12 = 7
 
 Verification : U8 = U0 + 8 x r = 7 + 8 x 4 = 7 + 32 = 39. Correct.
 
+---
 
 ### Exercice 3 : Somme arithmetique
 
@@ -721,6 +711,7 @@ S = 13 x 46 / 2
 S = 598 / 2
 S = 299
 
+---
 
 ### Exercice 4 : Suite geometrique - termes
 
@@ -734,6 +725,7 @@ U4 = 3 x 2^4 = 3 x 16 = 48
 
 U8 = 3 x 2^8 = 3 x 256 = 768
 
+---
 
 ### Exercice 5 : Trouver la raison geometrique
 
@@ -751,6 +743,7 @@ U0 = U1 / q = 6 / 3 = 2
 
 Verification : U4 = U0 x q^4 = 2 x 3^4 = 2 x 81 = 162. Correct.
 
+---
 
 ### Exercice 6 : Somme geometrique
 
@@ -767,6 +760,7 @@ S = 4 x (-6 560) / (-2)
 S = 4 x 3 280
 S = 13 120
 
+---
 
 ### Exercice 7 : Placement financier
 
@@ -794,6 +788,7 @@ C10 = 15 000 x 1.04^10
 
 C10 = 15 000 x 1.480244 = 22 203.66 euros (arrondi au centime).
 
+---
 
 ### Exercice 8 : Amortissement lineaire
 
@@ -813,6 +808,7 @@ Suite arithmetique : VNC(n) = 8 000 - 2 000 x n, r = -2 000.
 
 Total des amortissements = 4 x 2 000 = 8 000 euros (le bien est integralement amorti).
 
+---
 
 ### Exercice 9 : Cout de maintenance croissant
 
@@ -829,6 +825,7 @@ Cout total sur 6 ans (U1 + U2 + ... + U6) :
 Nombre de termes : 6.
 S = 6 x (U1 + U6) / 2 = 6 x (1 200 + 1 950) / 2 = 6 x 3 150 / 2 = 18 900 / 2 = 9 450 euros.
 
+---
 
 ### Exercice 10 : Convergence d'une suite geometrique
 
@@ -849,6 +846,7 @@ U10 = 500 x 0.8^10 = 500 x (0.8^5)^2 = 500 x 0.32768^2 = 500 x 0.107374 = 53.69 
 
 La suite tend bien vers 0.
 
+---
 
 ### Exercice 11 : Suite recurrente
 
@@ -872,6 +870,7 @@ L = 8 / 0.4 = 20
 
 La suite converge vers 20.
 
+---
 
 ### Exercice 12 : Loi de Moore
 
@@ -887,6 +886,7 @@ T(5) = 1 000 000 000 x 2^5 = 1 000 000 000 x 32 = 32 000 000 000 (32 milliards).
 En 2030 : n = (2030 - 2010) / 2 = 20 / 2 = 10.
 T(10) = 1 000 000 000 x 2^10 = 1 000 000 000 x 1 024 = 1 024 000 000 000 (1 024 milliards).
 
+---
 
 ### Exercice 13 : Somme et interets composes
 
@@ -917,6 +917,7 @@ Somme = (1 - 1.628895) / (1 - 1.05) = (-0.628895) / (-0.05) = 12.5779
 
 S = 2 000 x 1.05 x 12.5779 = 2 100 x 12.5779 = 26 413.59 euros (arrondi).
 
+---
 
 ### Exercice 14 : Sens de variation
 
@@ -946,6 +947,7 @@ U5 = 25 - 50 + 30 = 5.
 
 Verification : U4 = 16 - 40 + 30 = 6 > U5 = 5. U6 = 36 - 60 + 30 = 6 > U5 = 5. Correct.
 
+---
 
 ### Exercice 15 : Amortissement degressif
 
@@ -966,6 +968,7 @@ Apres 5 ans, la VNC est de 2 016.84 euros.
 
 L'amortissement total cumule est de 12 000 - 2 016.84 = 9 983.16 euros.
 
+---
 
 ### Exercice 16 : Suite et tableur
 
@@ -1003,6 +1006,7 @@ Recherche de la limite : L = 0.9L + 5, donc 0.1L = 5, donc L = 50.
 
 La suite converge vers 50 (suite decroissante, les termes se rapprochent de 50 par valeurs superieures).
 
+---
 
 ### Exercice 17 : Exercice de synthese (examen type)
 
@@ -1059,6 +1063,7 @@ d) Calcul iteratif :
 
 L'entreprise depasse 250 clients a l'annee n = 15.
 
+---
 
 ### Exercice 18 : Somme et budget informatique
 
@@ -1086,6 +1091,7 @@ S = 117 332 euros (arrondi).
 
 Le budget informatique cumule sur 5 ans est d'environ 117 332 euros.
 
+---
 
 ### Exercice 19 : Suite arithmetique - determiner le rang
 
@@ -1111,6 +1117,7 @@ U29 = 3 + 29 x 7 = 3 + 203 = 206 (depasse 200)
 
 La suite depasse 200 a partir du rang n = 29.
 
+---
 
 ## 12. Formulaire recapitulatif
 
@@ -1154,6 +1161,7 @@ La suite depasse 200 a partir du rang n = 29.
 | Difference | Un+1 - Un > 0 | Un+1 - Un < 0 |
 | Quotient (termes > 0) | Un+1 / Un > 1 | Un+1 / Un < 1 |
 
+---
 
 ## 13. Pieges frequents a l'examen
 

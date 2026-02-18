@@ -1,855 +1,18 @@
 ---
 title: "HTML et CSS"
-description: "Structure HTML5, formulaires, CSS3, Flexbox, Grid, responsive design, accessibilite"
-category: "Fondamentaux"
-difficulty: "Debutant"
+description: "Structure HTML5, formulaires, tableaux, CSS, Flexbox, Grid, responsive design"
+sidebar_position: 1
+level: "Debutant"
+reading_time: 44
 ---
-
-# HTML et CSS — Le guide complet pour le BTS SIO SLAM
-
-
-
-## Table des matieres
-
-1. [Partie 1 — HTML](#partie-1-html)
-2. [Partie 2 — CSS](#partie-2-css)
-3. [Partie 3 — Bonnes pratiques](#partie-3-bonnes-pratiques)
-4. [Partie 4 — Exercices d'examen corriges](#partie-4-exercices-dexamen-corriges)
-
-
 
 ## Partie 1 — HTML
 
-
-### 1.1 Structure d'une page HTML5
-
-Toute page HTML5 valide respecte une structure precise. Chaque element a un role. Il n'y a rien de facultatif ici.
-
-```html
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Titre de la page</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <!-- Le contenu visible de la page -->
-</body>
-</html>
-```
-
-**Explication de chaque ligne :**
-
-**`<!DOCTYPE html>`** — Ce n'est pas une balise HTML. C'est une declaration qui indique au navigateur que le document utilise HTML5. Sans cette declaration, le navigateur peut basculer en "mode quirks" et interpreter le CSS de maniere imprevisible. On la place toujours en premiere ligne, sans rien avant (pas meme un espace).
-
-**`<html lang="fr">`** — Element racine qui contient tout le document. L'attribut `lang` indique la langue du contenu. Les lecteurs d'ecran utilisent cette information pour choisir la voix de synthese vocale. Les moteurs de recherche l'utilisent pour le referencement. En BTS SIO, on met `lang="fr"` pour un site francophone.
-
-**`<head>`** — Contient les metadonnees du document. Rien de ce qui se trouve dans `<head>` n'est affiche directement a l'ecran. On y place :
-- Les balises `<meta>` pour le jeu de caracteres et le viewport
-- Le `<title>` qui apparait dans l'onglet du navigateur
-- Les liens vers les feuilles de style CSS
-- Les liens vers les scripts JavaScript
-
-**`<meta charset="UTF-8">`** — Definit l'encodage des caracteres. UTF-8 prend en charge tous les caracteres internationaux (accents, caracteres chinois, emojis). Sans cette balise, les accents peuvent s'afficher de maniere incorrecte.
-
-**`<meta name="viewport" content="width=device-width, initial-scale=1.0">`** — Indique au navigateur mobile que la largeur de la page doit correspondre a la largeur de l'ecran de l'appareil. Sans cette balise, un site affiche sur mobile apparait en version "bureau reduite", illisible. C'est la base du responsive design.
-
-**`<title>`** — Definit le titre affiche dans l'onglet du navigateur et dans les resultats de recherche Google. Chaque page doit avoir un titre unique et descriptif.
-
-**`<link rel="stylesheet" href="style.css">`** — Lie une feuille de style CSS externe au document. L'attribut `rel` precise la relation (stylesheet = feuille de style). L'attribut `href` donne le chemin vers le fichier CSS.
-
-**`<body>`** — Contient tout le contenu visible de la page : texte, images, liens, formulaires, tableaux. Il n'y a qu'un seul `<body>` par document.
-
-
-### 1.2 Balises de texte
-
-#### Les titres : h1 a h6
-
-```html
-<h1>Titre principal de la page</h1>
-<h2>Sous-titre de section</h2>
-<h3>Sous-sous-titre</h3>
-<h4>Niveau 4</h4>
-<h5>Niveau 5</h5>
-<h6>Niveau 6</h6>
-```
-
-Les titres forment une hierarchie. `<h1>` est le plus important, `<h6>` le moins important. Le navigateur les affiche avec des tailles decroissantes par defaut.
-
-Regles a respecter :
-- Une seule balise `<h1>` par page (le titre principal)
-- Ne pas sauter de niveaux : apres un `<h2>`, on utilise `<h3>`, pas `<h4>`
-- Les titres ne servent pas a "mettre du texte en gros" — ils structurent le contenu pour les lecteurs d'ecran et le SEO
-
-#### Paragraphes et texte en ligne
-
-```html
-<p>Ceci est un paragraphe. Le navigateur ajoute automatiquement
-un espace vertical avant et apres chaque paragraphe.</p>
-
-<p>Un deuxieme paragraphe. Chaque balise <code>&lt;p&gt;</code> cree
-un nouveau bloc de texte.</p>
-```
-
-**`<p>`** — Definit un paragraphe. C'est un element de type "block" : il prend toute la largeur disponible et provoque un retour a la ligne avant et apres.
-
-**`<span>`** — Conteneur generique en ligne (inline). Il ne provoque pas de retour a la ligne. On l'utilise pour appliquer un style a une portion de texte :
-
-```html
-<p>Le prix est de <span style="color: red;">49,99 euros</span> TTC.</p>
-```
-
-**`<strong>`** — Indique une importance forte. Le navigateur l'affiche en **gras** par defaut. Ce n'est pas juste du gras visuel : les lecteurs d'ecran insistent sur le mot.
-
-```html
-<p><strong>Attention :</strong> la date limite est demain.</p>
-```
-
-**`<em>`** — Indique une emphase. Le navigateur l'affiche en *italique* par defaut. Comme `<strong>`, c'est semantique, pas juste visuel.
-
-```html
-<p>Il faut <em>absolument</em> valider le formulaire.</p>
-```
-
-**`<br>`** — Retour a la ligne force. Balise auto-fermante (pas de `</br>`). A utiliser avec parcimonie : pour les adresses postales, les poemes. Ne pas utiliser `<br>` pour creer de l'espace vertical — c'est le role du CSS.
-
-```html
-<p>Jean Dupont<br>
-12 rue de la Paix<br>
-75001 Paris</p>
-```
-
-**`<hr>`** — Ligne de separation horizontale. Balise auto-fermante. Represente une coupure thematique entre des paragraphes.
-
-```html
-<p>Fin de la premiere partie.</p>
-<hr>
-<p>Debut de la deuxieme partie.</p>
-```
-
-
-### 1.3 Listes
-
-#### Liste non ordonnee (a puces)
-
-```html
-<ul>
-  <li>Premier element</li>
-  <li>Deuxieme element</li>
-  <li>Troisieme element</li>
-</ul>
-```
-
-`<ul>` (unordered list) cree une liste a puces. Chaque element est dans une balise `<li>` (list item). L'ordre des elements n'a pas d'importance semantique.
-
-#### Liste ordonnee (numerotee)
-
-```html
-<ol>
-  <li>Premiere etape</li>
-  <li>Deuxieme etape</li>
-  <li>Troisieme etape</li>
-</ol>
-```
-
-`<ol>` (ordered list) cree une liste numerotee. L'ordre est significatif. Le navigateur numerote automatiquement les elements.
-
-On peut preciser le numero de depart avec l'attribut `start` :
-
-```html
-<ol start="5">
-  <li>Cet element porte le numero 5</li>
-  <li>Celui-ci le numero 6</li>
-</ol>
-```
-
-#### Listes imbriquees
-
-```html
-<ul>
-  <li>Fruits
-    <ul>
-      <li>Pomme</li>
-      <li>Poire</li>
-    </ul>
-  </li>
-  <li>Legumes
-    <ul>
-      <li>Carotte</li>
-      <li>Tomate</li>
-    </ul>
-  </li>
-</ul>
-```
-
-La liste imbriquee se place a l'interieur d'un `<li>`, pas a cote.
-
-#### Liste de definitions
-
-```html
-<dl>
-  <dt>HTML</dt>
-  <dd>Langage de balisage pour structurer les pages web.</dd>
-
-  <dt>CSS</dt>
-  <dd>Langage de style pour la mise en forme des pages web.</dd>
-</dl>
-```
-
-`<dl>` (definition list) contient des paires terme/definition. `<dt>` (definition term) est le terme a definir. `<dd>` (definition description) est la definition. Utile pour les glossaires et les FAQ.
-
-
-### 1.4 Liens
-
-```html
-<a href="https://www.example.com">Visiter le site</a>
-```
-
-La balise `<a>` (anchor) cree un lien hypertexte. L'attribut `href` (hypertext reference) contient l'URL de destination.
-
-#### Types de liens
-
-```html
-<!-- Lien absolu (URL complete) -->
-<a href="https://www.example.com/page.html">Lien absolu</a>
-
-<!-- Lien relatif (meme site) -->
-<a href="contact.html">Page contact</a>
-<a href="../images/photo.jpg">Image dans le dossier parent</a>
-
-<!-- Lien vers un email -->
-<a href="mailto:contact@example.com">Envoyer un email</a>
-
-<!-- Lien vers un telephone -->
-<a href="tel:+33612345678">Appeler</a>
-```
-
-#### L'attribut target
-
-```html
-<!-- Ouvre dans le meme onglet (comportement par defaut) -->
-<a href="page.html">Meme onglet</a>
-
-<!-- Ouvre dans un nouvel onglet -->
-<a href="page.html" target="_blank">Nouvel onglet</a>
-```
-
-Valeurs possibles de `target` :
-- `_self` : meme onglet (defaut)
-- `_blank` : nouvel onglet
-- `_parent` : cadre parent (usage rare)
-- `_top` : fenetre complete (usage rare)
-
-Quand on utilise `target="_blank"`, il est recommande d'ajouter `rel="noopener noreferrer"` pour des raisons de securite :
-
-```html
-<a href="https://example.com" target="_blank" rel="noopener noreferrer">Lien securise</a>
-```
-
-#### Ancres (liens internes a la page)
-
-```html
-<!-- Creer une ancre avec un id -->
-<h2 id="section-contact">Contact</h2>
-
-<!-- Lien vers cette ancre -->
-<a href="#section-contact">Aller a la section Contact</a>
-```
-
-Le caractere `#` suivi de l'identifiant permet de naviguer vers un element precis de la page. Cela fonctionne aussi entre pages :
-
-```html
-<a href="page.html#section-contact">Section contact de l'autre page</a>
-```
-
-
-### 1.5 Images
-
-```html
-<img src="photo.jpg" alt="Description de l'image">
-```
-
-La balise `<img>` est auto-fermante (pas de `</img>`). Elle possede deux attributs obligatoires :
-
-**`src`** (source) — Le chemin vers le fichier image. Peut etre relatif ou absolu.
-
-**`alt`** (texte alternatif) — Description textuelle de l'image. **Si vous ne retenez qu'une chose sur l'accessibilite, retenez ceci : l'attribut `alt` est obligatoire.** Il est utilise par :
-- Les lecteurs d'ecran pour les personnes malvoyantes
-- Les moteurs de recherche pour comprendre l'image
-- Le navigateur quand l'image ne charge pas
-
-Si l'image est purement decorative, on met un `alt` vide : `alt=""`. Mais on ne supprime jamais l'attribut.
-
-```html
-<!-- Image avec description -->
-<img src="logo.png" alt="Logo de l'entreprise TechCorp">
-
-<!-- Image decorative -->
-<img src="bordure.png" alt="">
-
-<!-- Image avec dimensions -->
-<img src="photo.jpg" alt="Vue de Paris" width="800" height="600">
-```
-
-Les attributs `width` et `height` permettent de reserver l'espace avant le chargement de l'image, evitant un "saut" de la page (cumulative layout shift).
-
-#### La balise figure
-
-```html
-<figure>
-  <img src="graphique.png" alt="Evolution du chiffre d'affaires 2020-2024">
-  <figcaption>Figure 1 : Evolution du chiffre d'affaires entre 2020 et 2024</figcaption>
-</figure>
-```
-
-`<figure>` regroupe une image et sa legende. `<figcaption>` est le texte de legende visible sous (ou au-dessus de) l'image.
-
-
-### 1.6 Tableaux HTML
-
-**Les tableaux sont un sujet recurrent a l'examen.** Il faut maitriser la structure complete, y compris `colspan` et `rowspan`.
-
-#### Structure de base
-
-```html
-<table>
-  <thead>
-    <tr>
-      <th>Nom</th>
-      <th>Prenom</th>
-      <th>Age</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Dupont</td>
-      <td>Jean</td>
-      <td>25</td>
-    </tr>
-    <tr>
-      <td>Martin</td>
-      <td>Marie</td>
-      <td>30</td>
-    </tr>
-  </tbody>
-</table>
-```
-
-**Explication de chaque balise :**
-
-| Balise | Role |
-|--------|------|
-| `<table>` | Conteneur du tableau entier |
-| `<thead>` | En-tete du tableau (ligne de titres de colonnes) |
-| `<tbody>` | Corps du tableau (lignes de donnees) |
-| `<tfoot>` | Pied du tableau (totaux, resume) |
-| `<tr>` | Table Row — une ligne du tableau |
-| `<th>` | Table Header — cellule d'en-tete (texte en gras et centre par defaut) |
-| `<td>` | Table Data — cellule de donnees |
-
-#### colspan et rowspan
-
-`colspan` permet a une cellule de s'etendre sur plusieurs colonnes.
-`rowspan` permet a une cellule de s'etendre sur plusieurs lignes.
-
-**Exemple avec colspan :**
-
-```html
-<table>
-  <thead>
-    <tr>
-      <th colspan="3">Resultats annuels</th>
-    </tr>
-    <tr>
-      <th>Trimestre</th>
-      <th>Ventes</th>
-      <th>Benefice</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>T1</td>
-      <td>15 000</td>
-      <td>3 000</td>
-    </tr>
-    <tr>
-      <td>T2</td>
-      <td>18 000</td>
-      <td>4 500</td>
-    </tr>
-  </tbody>
-</table>
-```
-
-La premiere ligne contient une seule cellule `<th>` qui s'etend sur 3 colonnes. Visuellement, le titre "Resultats annuels" est centre au-dessus des trois colonnes.
-
-**Exemple avec rowspan :**
-
-```html
-<table>
-  <thead>
-    <tr>
-      <th>Categorie</th>
-      <th>Produit</th>
-      <th>Prix</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td rowspan="2">Fruits</td>
-      <td>Pomme</td>
-      <td>1,50</td>
-    </tr>
-    <tr>
-      <td>Poire</td>
-      <td>2,00</td>
-    </tr>
-    <tr>
-      <td rowspan="2">Legumes</td>
-      <td>Carotte</td>
-      <td>0,80</td>
-    </tr>
-    <tr>
-      <td>Tomate</td>
-      <td>1,20</td>
-    </tr>
-  </tbody>
-</table>
-```
-
-La cellule "Fruits" s'etend sur 2 lignes. La deuxieme ligne `<tr>` ne contient que 2 cellules `<td>` au lieu de 3, car la premiere colonne est deja occupee par le `rowspan`.
-
-Resultat visuel :
-
-```
-+----------+---------+------+
-| Categorie| Produit | Prix |
-+----------+---------+------+
-| Fruits   | Pomme   | 1,50 |
-|          +---------+------+
-|          | Poire   | 2,00 |
-+----------+---------+------+
-| Legumes  | Carotte | 0,80 |
-|          +---------+------+
-|          | Tomate  | 1,20 |
-+----------+---------+------+
-```
-
-**Exemple combinant colspan et rowspan :**
-
-```html
-<table>
-  <thead>
-    <tr>
-      <th rowspan="2">Employe</th>
-      <th colspan="2">Heures travaillees</th>
-    </tr>
-    <tr>
-      <th>Semaine 1</th>
-      <th>Semaine 2</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Dupont</td>
-      <td>35</td>
-      <td>38</td>
-    </tr>
-    <tr>
-      <td>Martin</td>
-      <td>40</td>
-      <td>37</td>
-    </tr>
-  </tbody>
-  <tfoot>
-    <tr>
-      <td>Total</td>
-      <td>75</td>
-      <td>75</td>
-    </tr>
-  </tfoot>
-</table>
-```
-
-Resultat :
-
-```
-+----------+---------------------+
-| Employe  | Heures travaillees  |
-|          +----------+----------+
-|          | Semaine 1| Semaine 2|
-+----------+----------+----------+
-| Dupont   | 35       | 38       |
-+----------+----------+----------+
-| Martin   | 40       | 37       |
-+----------+----------+----------+
-| Total    | 75       | 75       |
-+----------+----------+----------+
-```
-
-L'attribut `scope` sur les `<th>` ameliore l'accessibilite :
-
-```html
-<th scope="col">Nom</th>   <!-- en-tete de colonne -->
-<th scope="row">Total</th> <!-- en-tete de ligne -->
-```
-
-La balise `<caption>` ajoute un titre au tableau :
-
-```html
-<table>
-  <caption>Liste des employes du service informatique</caption>
-  <!-- ... -->
-</table>
-```
-
-
-### 1.7 Formulaires
-
-Les formulaires permettent de collecter des donnees aupres de l'utilisateur. Ils sont presents dans presque toutes les applications web et constituent un sujet majeur de l'examen.
-
-#### Structure de base
-
-```html
-<form action="/traitement.php" method="POST">
-  <label for="nom">Nom :</label>
-  <input type="text" id="nom" name="nom">
-
-  <button type="submit">Envoyer</button>
-</form>
-```
-
-**`<form>`** — Conteneur du formulaire. Deux attributs essentiels :
-- `action` : URL vers laquelle les donnees sont envoyees
-- `method` : methode HTTP utilisee (GET ou POST)
-
-**`<label>`** — Etiquette associee a un champ. L'attribut `for` doit correspondre a l'`id` du champ associe. Quand on clique sur le label, le champ correspondant recoit le focus. C'est indispensable pour l'accessibilite.
-
-**`<input>`** — Champ de saisie. L'attribut `type` determine son comportement. L'attribut `name` est le nom de la donnee envoyee au serveur. Sans `name`, la donnee du champ n'est pas transmise.
-
-**`<button type="submit">`** — Bouton de soumission du formulaire.
-
-#### Methode GET vs POST
-
-**GET** envoie les donnees dans l'URL :
-
-```
-https://example.com/recherche?q=html&langue=fr
-```
-
-Caracteristiques de GET :
-- Les donnees sont visibles dans la barre d'adresse
-- L'URL peut etre mise en favoris (y compris les parametres)
-- Limitee en taille (environ 2000 caracteres selon le navigateur)
-- Les donnees restent dans l'historique du navigateur
-- Adaptee pour : recherche, filtrage, pagination
-
-**POST** envoie les donnees dans le corps de la requete HTTP :
-
-Caracteristiques de POST :
-- Les donnees ne sont pas visibles dans l'URL
-- Pas de limite de taille pratique
-- L'URL ne peut pas etre mise en favoris avec les donnees
-- Adaptee pour : inscription, connexion, envoi de fichiers, modification de donnees
-
-**Regle simple : GET pour lire, POST pour ecrire.** Si le formulaire modifie des donnees sur le serveur (creation de compte, ajout en base de donnees), on utilise POST. Si le formulaire ne fait que consulter (recherche, filtre), on utilise GET.
-
-#### Tous les types d'input
-
-```html
-<!-- Texte simple -->
-<input type="text" name="nom" placeholder="Votre nom">
-
-<!-- Mot de passe (caracteres masques) -->
-<input type="password" name="mdp" placeholder="Mot de passe">
-
-<!-- Email (validation automatique du format) -->
-<input type="email" name="email" placeholder="votre@email.com">
-
-<!-- Nombre (fleches haut/bas) -->
-<input type="number" name="age" min="0" max="120" step="1">
-
-<!-- Date (selecteur de date natif) -->
-<input type="date" name="naissance">
-
-<!-- Case a cocher -->
-<input type="checkbox" id="cgu" name="cgu" value="accepte">
-<label for="cgu">J'accepte les conditions</label>
-
-<!-- Boutons radio (un seul choix possible dans un groupe) -->
-<input type="radio" id="homme" name="genre" value="homme">
-<label for="homme">Homme</label>
-<input type="radio" id="femme" name="genre" value="femme">
-<label for="femme">Femme</label>
-
-<!-- Envoi de fichier -->
-<input type="file" name="document" accept=".pdf,.jpg,.png">
-
-<!-- Champ cache (non visible par l'utilisateur) -->
-<input type="hidden" name="id_utilisateur" value="42">
-
-<!-- Bouton de soumission -->
-<input type="submit" value="Envoyer">
-
-<!-- Couleur -->
-<input type="color" name="couleur_preferee">
-
-<!-- Plage (curseur) -->
-<input type="range" name="volume" min="0" max="100">
-
-<!-- Telephone -->
-<input type="tel" name="telephone" pattern="[0-9]{10}">
-
-<!-- URL -->
-<input type="url" name="site_web" placeholder="https://example.com">
-
-<!-- Recherche -->
-<input type="search" name="recherche" placeholder="Rechercher...">
-```
-
-Pour les boutons radio, le `name` doit etre identique dans tout le groupe pour que le navigateur sache qu'un seul choix est possible. Le `value` est la valeur envoyee au serveur.
-
-Pour les cases a cocher, chaque checkbox peut avoir un `name` different ou le meme `name` si on veut envoyer plusieurs valeurs (dans ce cas, on utilise `name="langages[]"` en PHP).
-
-#### Attributs de validation
-
-```html
-<!-- Champ obligatoire -->
-<input type="text" name="nom" required>
-
-<!-- Texte d'indication -->
-<input type="text" name="ville" placeholder="Paris">
-
-<!-- Expression reguliere -->
-<input type="text" name="code_postal" pattern="[0-9]{5}"
-       title="5 chiffres attendus">
-
-<!-- Valeurs min et max -->
-<input type="number" name="quantite" min="1" max="99">
-
-<!-- Longueur min et max -->
-<input type="text" name="pseudo" minlength="3" maxlength="20">
-
-<!-- Champ en lecture seule (envoye avec le formulaire) -->
-<input type="text" name="ref" value="REF-001" readonly>
-
-<!-- Champ desactive (NON envoye avec le formulaire) -->
-<input type="text" name="ancien" value="obsolete" disabled>
-```
-
-Difference entre `readonly` et `disabled` :
-- `readonly` : le champ est non modifiable mais sa valeur est envoyee au serveur
-- `disabled` : le champ est non modifiable et sa valeur n'est PAS envoyee au serveur
-
-L'attribut `title` fournit un message d'aide quand la validation par `pattern` echoue.
-
-#### Autres elements de formulaire
-
-**`<select>` — Liste deroulante :**
-
-```html
-<label for="pays">Pays :</label>
-<select id="pays" name="pays">
-  <option value="">-- Choisir --</option>
-  <option value="fr">France</option>
-  <option value="be">Belgique</option>
-  <option value="ch" selected>Suisse</option>
-</select>
-```
-
-L'attribut `selected` pre-selectionne une option. L'attribut `multiple` permet de selectionner plusieurs valeurs (avec Ctrl+clic).
-
-On peut grouper les options :
-
-```html
-<select name="ville">
-  <optgroup label="France">
-    <option value="paris">Paris</option>
-    <option value="lyon">Lyon</option>
-  </optgroup>
-  <optgroup label="Belgique">
-    <option value="bruxelles">Bruxelles</option>
-  </optgroup>
-</select>
-```
-
-**`<textarea>` — Zone de texte multiligne :**
-
-```html
-<label for="message">Message :</label>
-<textarea id="message" name="message" rows="5" cols="40"
-          placeholder="Votre message..."></textarea>
-```
-
-Les attributs `rows` et `cols` definissent la taille visible (modifiable en CSS). Contrairement a `<input>`, le contenu par defaut se place entre les balises ouvrante et fermante.
-
-**`<fieldset>` et `<legend>` — Regroupement de champs :**
-
-```html
-<fieldset>
-  <legend>Informations personnelles</legend>
-
-  <label for="prenom">Prenom :</label>
-  <input type="text" id="prenom" name="prenom">
-
-  <label for="nom">Nom :</label>
-  <input type="text" id="nom" name="nom">
-</fieldset>
-```
-
-`<fieldset>` trace un cadre visuel autour d'un groupe de champs. `<legend>` est le titre de ce groupe. C'est particulierement utile pour l'accessibilite et la clarte des formulaires longs.
-
-**`<button>` — Les trois types :**
-
-```html
-<!-- Soumet le formulaire (type par defaut dans un <form>) -->
-<button type="submit">Envoyer</button>
-
-<!-- Reinitialise le formulaire -->
-<button type="reset">Effacer</button>
-
-<!-- Bouton generique (pour JavaScript) -->
-<button type="button">Calculer</button>
-```
-
-
-### 1.8 Balises semantiques HTML5
-
-Les balises semantiques decrivent le role du contenu. Elles n'ont pas d'impact visuel par defaut (elles se comportent comme des `<div>`), mais elles sont essentielles pour l'accessibilite, le referencement et la lisibilite du code.
-
-```html
-<body>
-  <header>
-    <h1>Mon Site</h1>
-    <nav>
-      <ul>
-        <li><a href="/">Accueil</a></li>
-        <li><a href="/services">Services</a></li>
-        <li><a href="/contact">Contact</a></li>
-      </ul>
-    </nav>
-  </header>
-
-  <main>
-    <section>
-      <h2>Nos services</h2>
-      <article>
-        <h3>Developpement web</h3>
-        <p>Nous creons des sites web sur mesure.</p>
-      </article>
-      <article>
-        <h3>Hebergement</h3>
-        <p>Solutions d'hebergement performantes.</p>
-      </article>
-    </section>
-
-    <aside>
-      <h2>Actualites</h2>
-      <p>Nouveau service disponible en mars.</p>
-    </aside>
-  </main>
-
-  <footer>
-    <p>Copyright 2024 - Mon Site</p>
-  </footer>
-</body>
-```
-
-| Balise | Role |
-|--------|------|
-| `<header>` | En-tete de la page ou d'une section. Contient souvent le logo, le titre et la navigation. |
-| `<nav>` | Bloc de navigation principale. Contient les liens de navigation du site. |
-| `<main>` | Contenu principal de la page. Un seul `<main>` par page. |
-| `<section>` | Section thematique du contenu. Regroupe des contenus lies par un meme theme. |
-| `<article>` | Contenu autonome et redistribuable (un article de blog, un commentaire, un produit). |
-| `<aside>` | Contenu complementaire, tangentiellement lie au contenu principal (barre laterale, encadre). |
-| `<footer>` | Pied de page. Contient souvent les mentions legales, les liens secondaires. |
-
-**Quand utiliser quoi :** Si le contenu a du sens sorti de son contexte (dans un flux RSS par exemple), c'est un `<article>`. Si le contenu regroupe des elements lies par un theme, c'est une `<section>`. Si le contenu est complementaire, c'est un `<aside>`.
-
-
-### 1.9 Attributs globaux
-
-Les attributs globaux peuvent etre utilises sur n'importe quelle balise HTML.
-
-**`id`** — Identifiant unique dans la page. Deux elements ne doivent jamais avoir le meme `id`. Utilise pour les ancres, le CSS (`#mon-id`) et JavaScript (`getElementById`).
-
-```html
-<div id="contenu-principal">...</div>
-```
-
-**`class`** — Classe CSS. Plusieurs elements peuvent avoir la meme classe. Un element peut avoir plusieurs classes separees par des espaces.
-
-```html
-<p class="texte-important rouge">Attention</p>
-```
-
-**`style`** — Style CSS en ligne. A eviter en production (on prefere les feuilles de style externes).
-
-```html
-<p style="color: blue; font-size: 18px;">Texte bleu</p>
-```
-
-**`title`** — Info-bulle qui apparait au survol de la souris.
-
-```html
-<abbr title="Brevet de Technicien Superieur">BTS</abbr>
-```
-
-**`data-*`** — Attributs personnalises pour stocker des donnees. Le nom apres `data-` est libre. Accessible en JavaScript via `element.dataset`.
-
-```html
-<div data-id="42" data-categorie="informatique">
-  Cet element stocke des donnees personnalisees.
-</div>
-```
-
-En JavaScript : `element.dataset.id` renvoie `"42"`, `element.dataset.categorie` renvoie `"informatique"`.
-
-
-### 1.10 Caracteres speciaux (entites HTML)
-
-Certains caracteres ont une signification speciale en HTML. Pour les afficher en tant que texte, on utilise des entites :
-
-| Entite | Caractere | Description |
-|--------|-----------|-------------|
-| `&amp;` | & | Esperluette |
-| `&lt;` | < | Inferieur (debut de balise) |
-| `&gt;` | > | Superieur (fin de balise) |
-| `&nbsp;` | (espace insecable) | Espace qui ne provoque pas de retour a la ligne |
-| `&eacute;` | e accent aigu | Rarement necessaire si UTF-8 est declare |
-| `&copy;` | symbole copyright | Symbole copyright |
-| `&euro;` | symbole euro | Symbole euro |
-| `&quot;` | " | Guillemet double |
-| `&apos;` | ' | Apostrophe |
-
-En pratique, avec l'encodage UTF-8 declare dans le `<head>`, on peut taper directement les caracteres accentues. Les entites obligatoires sont `&amp;`, `&lt;` et `&gt;` car ces caracteres sont interpretes par le navigateur.
-
-
-### 1.11 Validation W3C
-
-Le W3C (World Wide Web Consortium) definit les standards du web. Un document HTML valide respecte ces standards.
-
-Pourquoi valider :
-- Un code valide est interprete de maniere identique par tous les navigateurs
-- Un code invalide peut provoquer des comportements imprevisibles
-- Les outils d'accessibilite fonctionnent mieux avec du code valide
-- C'est une bonne pratique professionnelle attendue a l'examen
-
-Outil de validation : https://validator.w3.org/
-
-Erreurs frequentes :
-- Oubli de fermer une balise
-- Attribut `alt` manquant sur les images
-- Elements imbriues incorrectement (`<p><div>...</div></p>` est invalide)
-- `id` duplique dans la page
-- Balise `<li>` en dehors d'un `<ul>` ou `<ol>`
-
+---
 
 ## Partie 2 — CSS
 
+---
 
 ### 2.1 Les trois facons d'inclure du CSS
 
@@ -893,6 +56,7 @@ Le CSS est dans un fichier separe (`.css`). C'est la methode recommandee car :
 - Reutilisable sur toutes les pages du site
 - Maintenance facilitee
 
+---
 
 ### 2.2 Selecteurs CSS
 
@@ -1101,6 +265,7 @@ h1, h2, h3 {
 
 La virgule signifie "ou" : on applique le meme style a `<h1>`, `<h2>` et `<h3>`.
 
+---
 
 ### 2.3 Specificite CSS
 
@@ -1164,6 +329,7 @@ p { color: red !important; }  /* L'emporte sur tout, meme un id */
 
 `!important` est a eviter autant que possible. C'est un signe de mauvaise architecture CSS. On l'utilise en dernier recours.
 
+---
 
 ### 2.4 Le modele de boite (box model)
 
@@ -1277,6 +443,7 @@ Quand deux marges verticales se touchent, elles fusionnent : seule la plus grand
 
 L'espace entre les deux paragraphes est de 30px (la plus grande des deux marges), pas 50px. Ce comportement ne s'applique qu'aux marges verticales, pas aux marges horizontales.
 
+---
 
 ### 2.5 Proprietes de texte
 
@@ -1347,6 +514,7 @@ overflow: hidden;              /* cache le debordement */
 text-overflow: ellipsis;       /* ajoute "..." si le texte deborde */
 ```
 
+---
 
 ### 2.6 Proprietes de fond (background)
 
@@ -1389,6 +557,7 @@ background: linear-gradient(135deg, #ff0000, #ff9900, #0000ff);
 background: radial-gradient(circle, #ff0000, #0000ff);
 ```
 
+---
 
 ### 2.7 La propriete display
 
@@ -1430,6 +599,7 @@ L'element est completement retire du flux. Il n'occupe aucun espace et n'est pas
 
 Traites en detail dans les sections 2.10 et 2.11.
 
+---
 
 ### 2.8 La propriete position
 
@@ -1528,6 +698,7 @@ Cas concret : en-tete de tableau qui reste visible pendant le defilement, barre 
 
 `z-index` controle l'ordre d'empilement des elements positionnes (tous sauf `static`). Une valeur plus elevee place l'element au-dessus. Sans `z-index`, les elements sont empiles dans l'ordre d'apparition dans le HTML.
 
+---
 
 ### 2.9 Proprietes de dimension et debordement
 
@@ -1551,6 +722,7 @@ overflow-x: auto;       /* defilement horizontal si necessaire */
 overflow-y: hidden;     /* pas de defilement vertical */
 ```
 
+---
 
 ### 2.10 Flexbox
 
@@ -1728,6 +900,7 @@ Ces trois lignes centrent parfaitement un element horizontalement et verticaleme
 
 Le logo est pousse a gauche, les liens a droite, grace a `space-between`. Les liens sont alignes horizontalement grace au `display: flex` sur la liste.
 
+---
 
 ### 2.11 CSS Grid
 
@@ -1868,6 +1041,7 @@ Les numeros de ligne commencent a 1 et incluent les bords de la grille. Pour 3 c
 
 Cette syntaxe est tres lisible : on "dessine" la mise en page avec des noms.
 
+---
 
 ### 2.12 Responsive design
 
@@ -2048,6 +1222,7 @@ body {
 }
 ```
 
+---
 
 ### 2.13 Transitions et animations
 
@@ -2177,6 +1352,7 @@ transform: skew(10deg);           /* deforme en biais */
 transform: translate(50px, 0) rotate(45deg) scale(1.2);
 ```
 
+---
 
 ### 2.14 Variables CSS (custom properties)
 
@@ -2226,9 +1402,11 @@ Les variables peuvent etre redefinies dans un contexte specifique :
 }
 ```
 
+---
 
 ## Partie 3 — Bonnes pratiques
 
+---
 
 ### 3.1 Organisation des fichiers
 
@@ -2360,9 +1538,11 @@ ul, ol {
 
 Normalize.css est une alternative qui conserve les styles par defaut utiles tout en corrigeant les incoherences entre navigateurs.
 
+---
 
 ## Partie 4 — Exercices d'examen corriges
 
+---
 
 ### Exercice 1 — Formulaire d'inscription complet
 
@@ -2458,6 +1638,7 @@ Normalize.css est une alternative qui conserve les styles par defaut utiles tout
 - Chaque `<label>` est lie a son `<input>` par `for`/`id`
 - `<fieldset>` et `<legend>` regroupent les champs de maniere logique
 
+---
 
 ### Exercice 2 — Tableau de donnees avec colspan et rowspan
 
@@ -2544,6 +1725,7 @@ Normalize.css est une alternative qui conserve les styles par defaut utiles tout
 - `<caption>` donne un titre au tableau
 - `<tfoot>` pour la ligne de total
 
+---
 
 ### Exercice 3 — Page structuree avec balises semantiques
 
@@ -2646,6 +1828,7 @@ Normalize.css est une alternative qui conserve les styles par defaut utiles tout
 </html>
 ```
 
+---
 
 ### Exercice 4 — Specificite CSS
 
@@ -2696,6 +1879,7 @@ Calcul des specificites :
 - C a la specificite la plus elevee (101)
 - Couleur : **verte**
 
+---
 
 ### Exercice 5 — Layout Flexbox
 
@@ -2801,6 +1985,7 @@ Calcul des specificites :
 - `flex: 1` sur chaque colonne pour une repartition egale
 - Convention BEM pour le nommage des classes
 
+---
 
 ### Exercice 6 — Reproduire une maquette (carte produit)
 
@@ -2900,6 +2085,7 @@ Calcul des specificites :
 - Transitions sur la carte (survol) et le bouton
 - Style de focus pour l'accessibilite clavier
 
+---
 
 ### Exercice 7 — CSS Grid : mise en page complete
 
@@ -2997,6 +2183,7 @@ Calcul des specificites :
 }
 ```
 
+---
 
 ### Exercice 8 — Formulaire style avec CSS et responsive
 
@@ -3135,6 +2322,7 @@ Calcul des specificites :
 }
 ```
 
+---
 
 ### Exercice 9 — Tableau style avec CSS
 
@@ -3255,6 +2443,7 @@ Calcul des specificites :
 - `nth-child(n+2)` pour cibler toutes les colonnes a partir de la deuxieme (les notes)
 - Les nombres sont alignes a droite pour faciliter la lecture comparative
 
+---
 
 ### Exercice 10 — Page responsive complete
 

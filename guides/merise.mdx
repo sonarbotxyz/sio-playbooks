@@ -1,26 +1,22 @@
 ---
-title: "Methode Merise"
-description: "MCD, MLD, MPD, MCT, MOT, regles de gestion, cardinalites, passage au relationnel"
-category: "Bases de donnees"
-difficulty: "Intermediaire"
+title: "Methode MERISE"
+description: "MCD, MLD, MPD, cardinalites, regles de gestion, normalisation"
+sidebar_position: 1
+level: "Intermediaire"
+reading_time: 57
 ---
-
-# Methode MERISE — Le Guide Exhaustif BTS SIO SLAM
-
 
 ## Table des matieres
 
 1. [Introduction a Merise](#introduction-a-merise)
 2. [Le Modele Conceptuel de Donnees (MCD)](#le-modele-conceptuel-de-donnees-mcd)
-3. [Du MCD au MLD (Modele Logique de Donnees)](#du-mcd-au-mld-modele-logique-de-donnees)
-4. [Du MLD au MPD (Modele Physique de Donnees)](#du-mld-au-mpd-modele-physique-de-donnees)
+3. [Du MCD au MLD](#du-mcd-au-mld-modele-logique-de-donnees)
+4. [Du MLD au MPD](#du-mld-au-mpd-modele-physique-de-donnees)
 5. [Le Modele Conceptuel de Traitements (MCT)](#le-modele-conceptuel-de-traitements-mct)
 6. [Methodologie d'examen](#methodologie-dexamen)
 7. [Exercices d'examen corriges](#exercices-dexamen-corriges)
-8. [Resume des regles de transformation MCD vers MLD](#resume-des-regles-de-transformation-mcd-vers-mld)
-9. [Resume des types SQL courants pour l'examen](#resume-des-types-sql-courants-pour-lexamen)
-10. [Lexique](#lexique)
 
+---
 
 ## Introduction a Merise
 
@@ -76,6 +72,7 @@ Le cycle de vie d'un projet Merise comporte plusieurs etapes :
 
 **Pour l'examen BTS SIO :** on vous demande essentiellement de maitriser les etapes 2 et 3 — c'est-a-dire de savoir lire/creer un MCD, le transformer en MLD, puis en SQL.
 
+---
 
 ## Le Modele Conceptuel de Donnees (MCD)
 
@@ -163,7 +160,6 @@ Les quatre cardinalites possibles :
 
 **Regle d'or : on lit TOUJOURS les cardinalites du point de vue de l'entite, en posant la question suivante :**
 
-> "UN [entite] [verbe de l'association] COMBIEN de [autre entite] ? Au minimum ? Au maximum ?"
 
 **Exemple detaille — Client passe Commande :**
 
@@ -209,6 +205,7 @@ Question : "Un service emploie combien d'employes ?" → min 1, max n → **1,n*
 Employe (1,1) ---travaille dans--- (1,n) Service
 ```
 
+---
 
 **Exercice 2 — Etudiant / Cours**
 Un etudiant peut suivre plusieurs cours. Un cours est suivi par plusieurs etudiants.
@@ -220,6 +217,7 @@ Question : "Un cours est suivi par combien d'etudiants ?" → min 0, max n → *
 Etudiant (0,n) ---suit--- (0,n) Cours
 ```
 
+---
 
 **Exercice 3 — Personne / Passeport**
 Une personne possede au plus un passeport. Un passeport appartient a exactement une personne.
@@ -231,6 +229,7 @@ Question : "Un passeport appartient a combien de personnes ?" → min 1, max 1 �
 Personne (0,1) ---possede--- (1,1) Passeport
 ```
 
+---
 
 **Exercice 4 — Auteur / Livre**
 Un auteur ecrit au moins un livre. Un livre est ecrit par au moins un auteur (co-auteurs possibles).
@@ -242,6 +241,7 @@ Question : "Un livre est ecrit par combien d'auteurs ?" → min 1, max n → **1
 Auteur (1,n) ---ecrit--- (1,n) Livre
 ```
 
+---
 
 **Exercice 5 — Voiture / Place de parking**
 Une voiture est garee sur au plus une place. Une place accueille au plus une voiture.
@@ -253,6 +253,7 @@ Question : "Une place accueille combien de voitures ?" → min 0, max 1 → **0,
 Voiture (0,1) ---est garee sur--- (0,1) Place
 ```
 
+---
 
 **Exercice 6 — Facture / Commande**
 Une facture correspond a exactement une commande. Une commande genere au plus une facture (car certaines commandes annulees n'ont pas de facture).
@@ -264,6 +265,7 @@ Question : "Une commande genere combien de factures ?" → min 0, max 1 → **0,
 Facture (1,1) ---correspond a--- (0,1) Commande
 ```
 
+---
 
 **Exercice 7 — Medecin / Patient**
 Un medecin soigne plusieurs patients. Un patient peut consulter plusieurs medecins.
@@ -275,6 +277,7 @@ Question : "Un patient est soigne par combien de medecins ?" → min 1, max n �
 Medecin (0,n) ---soigne--- (1,n) Patient
 ```
 
+---
 
 **Exercice 8 — Pays / Capitale**
 Un pays a exactement une capitale. Une capitale est celle d'exactement un pays.
@@ -286,6 +289,7 @@ Question : "Une capitale est celle de combien de pays ?" → min 1, max 1 → **
 Pays (1,1) ---a pour capitale--- (1,1) Capitale
 ```
 
+---
 
 **Exercice 9 — Produit / Categorie**
 Un produit appartient a exactement une categorie. Une categorie contient zero ou plusieurs produits.
@@ -297,6 +301,7 @@ Question : "Une categorie contient combien de produits ?" → min 0, max n → *
 Produit (1,1) ---appartient a--- (0,n) Categorie
 ```
 
+---
 
 **Exercice 10 — Chambre / Hotel**
 Une chambre est dans exactement un hotel. Un hotel possede au moins une chambre.
@@ -451,6 +456,7 @@ Exemple : Commande (1,n) --- contient --- (0,n) Produit. Si on oublie l'attribut
 
 **Remarque :** ici l'association "emprunte" est en realite plus subtile. Si un meme adherent peut emprunter le meme livre plusieurs fois (historique), l'identifiant de l'association doit inclure la date d'emprunt, ou bien on cree une entite **Emprunt**. Pour le BTS SIO, la version avec association porteuse de proprietes est acceptee si on considere que le couple (adherent, livre, dateEmprunt) est unique.
 
+---
 
 #### Exercice MCD 2 — E-commerce
 
@@ -477,6 +483,7 @@ Exemple : Commande (1,n) --- contient --- (0,n) Produit. Si on oublie l'attribut
 +-----------+                                                         +-----------+
 ```
 
+---
 
 #### Exercice MCD 3 — Hopital
 
@@ -516,6 +523,7 @@ Exemple : Commande (1,n) --- contient --- (0,n) Produit. Si on oublie l'attribut
 
 **Note :** on a choisi de faire de Consultation une entite a part entiere (plutot qu'une association ternaire) car elle possede son propre identifiant et des attributs riches. C'est une approche parfaitement valable et souvent preferee.
 
+---
 
 #### Exercice MCD 4 — Ecole
 
@@ -554,6 +562,7 @@ Exemple : Commande (1,n) --- contient --- (0,n) Produit. Si on oublie l'attribut
                                dateNote, valeurNote
 ```
 
+---
 
 #### Exercice MCD 5 — Location de vehicules
 
@@ -579,6 +588,7 @@ Exemple : Commande (1,n) --- contient --- (0,n) Produit. Si on oublie l'attribut
 +-----------+                          +-----------+
 ```
 
+---
 
 ## Du MCD au MLD (Modele Logique de Donnees)
 
@@ -758,6 +768,7 @@ Emprunter(#idAdherent=>Adherent, #isbn=>Livre, #dateEmprunt, dateRetour)
 
 **Remarque :** on a ajoute dateEmprunt a la cle primaire composee pour permettre a un adherent d'emprunter le meme livre plusieurs fois (a des dates differentes).
 
+---
 
 #### MLD 2 — E-commerce
 
@@ -772,6 +783,7 @@ Contenir(#numCommande=>Commande, #refProduit=>Produit, quantite)
 - Client → Commande : association 0,n — 1,1 → cle etrangere idClient dans Commande (regle 2).
 - Commande → Produit : association 1,n — 0,n → table intermediaire Contenir (regle 3).
 
+---
 
 #### MLD 3 — Hopital
 
@@ -787,6 +799,7 @@ Consultation(#numConsultation, dateConsult, heureConsult, diagnostic, #idMedecin
 - Consultation (1,1) — Medecin (0,n) → cle etrangere idMedecin dans Consultation.
 - Consultation (1,1) — Patient (0,n) → cle etrangere numDossier dans Consultation.
 
+---
 
 #### MLD 4 — Ecole
 
@@ -802,6 +815,7 @@ Noter(#numEtudiant=>Etudiant, #codeMatiere=>Matiere, #dateNote, valeurNote)
 - Enseignant — Matiere : association 1,n — 1,n → table Enseigner (regle 3).
 - Etudiant — Matiere : association 0,n — 0,n avec proprietes → table Noter (regle 3). On ajoute dateNote a la cle primaire pour permettre plusieurs notes par etudiant par matiere.
 
+---
 
 #### MLD 5 — Location de vehicules
 
@@ -814,6 +828,7 @@ Louer(#idClient=>Client, #immatriculation=>Vehicule, #dateDebut, dateFinPrevue, 
 **Explication :**
 - Client — Vehicule : association 0,n — 0,n avec proprietes → table Louer (regle 3). dateDebut est ajoutee a la cle primaire pour permettre plusieurs locations du meme vehicule par le meme client.
 
+---
 
 ## Du MLD au MPD (Modele Physique de Donnees)
 
@@ -898,6 +913,7 @@ CREATE TABLE Emprunter (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 #### MPD 2 — E-commerce
 
@@ -940,6 +956,7 @@ CREATE TABLE Contenir (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 #### MPD 3 — Hopital
 
@@ -985,6 +1002,7 @@ CREATE TABLE Consultation (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 #### MPD 4 — Ecole
 
@@ -1033,6 +1051,7 @@ CREATE TABLE Noter (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 #### MPD 5 — Location de vehicules
 
@@ -1070,6 +1089,7 @@ CREATE TABLE Louer (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 ## Le Modele Conceptuel de Traitements (MCT)
 
@@ -1148,6 +1168,7 @@ Exemples :
 4. **Identifier les evenements resultats** produits par chaque operation.
 5. **Definir les synchronisations** si une operation necessite plusieurs evenements.
 
+---
 
 ## Methodologie d'examen
 
@@ -1233,6 +1254,7 @@ Avant de rendre sa copie, verifier point par point :
 - [ ] Les tables referencees sont creees AVANT les tables qui les referencent
 - [ ] ENGINE=InnoDB pour supporter les cles etrangeres
 
+---
 
 ## Exercices d'examen corriges
 
@@ -1332,6 +1354,7 @@ CREATE TABLE Contenir (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 ### Exercice 2 — Gestion d'un cabinet medical
 
@@ -1429,6 +1452,7 @@ CREATE TABLE Prescrire (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 ### Exercice 3 — Gestion d'une salle de sport
 
@@ -1520,6 +1544,7 @@ CREATE TABLE Inscrire (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 ### Exercice 4 — Gestion d'un parc informatique
 
@@ -1599,6 +1624,7 @@ CREATE TABLE Intervention (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 ### Exercice 5 — Gestion d'un festival de musique
 
@@ -1691,6 +1717,7 @@ CREATE TABLE Billet (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 ### Exercice 6 — Gestion d'une agence immobiliere
 
@@ -1780,6 +1807,7 @@ CREATE TABLE Visite (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 ### Exercice 7 — Gestion d'un centre de formation
 
@@ -1879,6 +1907,7 @@ CREATE TABLE Participer (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 ### Exercice 8 — Gestion d'une plateforme de covoiturage
 
@@ -1960,6 +1989,7 @@ CREATE TABLE Reserver (
 ) ENGINE=InnoDB;
 ```
 
+---
 
 ## Resume des regles de transformation MCD vers MLD
 
@@ -1975,6 +2005,7 @@ CREATE TABLE Reserver (
 | Proprietes d'une association n,n | Attributs ordinaires dans la table intermediaire. |
 | Association ternaire | Table intermediaire avec cle primaire composee des trois FK. |
 
+---
 
 ## Resume des types SQL courants pour l'examen
 
@@ -1996,6 +2027,7 @@ CREATE TABLE Reserver (
 | Description longue | TEXT |
 | Booleen | BOOLEAN (TINYINT(1)) |
 
+---
 
 ## Lexique
 
@@ -2017,5 +2049,6 @@ CREATE TABLE Reserver (
 | **MPD** | Modele Physique de Donnees. |
 | **MCT** | Modele Conceptuel de Traitements. |
 
+---
 
 *Ce document constitue une reference complete pour la preparation a l'epreuve de conception de bases de donnees du BTS SIO SLAM. Chaque regle, chaque exemple et chaque exercice a ete concu pour couvrir l'integralite du programme et les situations les plus frequemment rencontrees a l'examen.*

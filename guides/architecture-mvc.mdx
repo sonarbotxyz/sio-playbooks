@@ -1,27 +1,25 @@
 ---
 title: "Architecture MVC"
-description: "Modele-Vue-Controleur : separation des responsabilites, implementation en JavaScript et PHP"
-category: "Architecture"
-difficulty: "Intermediaire"
+description: "Separation Model-View-Controller, implementation en JavaScript et C#"
+sidebar_position: 1
+level: "Intermediaire"
+reading_time: 52
 ---
-
-# Architecture MVC — Le guide complet BTS SIO SLAM
-
 
 ## Table des matieres
 
-1. [1. Pourquoi une architecture ?](#1-pourquoi-une-architecture-)
-2. [2. Les 3 couches MVC](#2-les-3-couches-mvc)
-3. [3. Le flux MVC pas a pas](#3-le-flux-mvc-pas-a-pas)
-4. [4. MVC en pratique : application Web (Express.js)](#4-mvc-en-pratique-application-web-expressjs)
-5. [5. MVC en pratique : application Desktop (C# WinForms)](#5-mvc-en-pratique-application-desktop-c-winforms)
-6. [6. Le pattern DAO (Data Access Object)](#6-le-pattern-dao-data-access-object)
-7. [7. Variantes de MVC](#7-variantes-de-mvc)
-8. [8. Avantages et inconvenients](#8-avantages-et-inconvenients)
-9. [9. Methodologie d'examen](#9-methodologie-dexamen)
-10. [10. Exercices d'examen corriges](#10-exercices-dexamen-corriges)
-11. [Resume final](#resume-final)
+1. Pourquoi une architecture ?
+2. Les 3 couches MVC
+3. Le flux MVC pas a pas
+4. MVC en pratique : application Web (Express.js)
+5. MVC en pratique : application Desktop (C# WinForms)
+6. Le pattern DAO (Data Access Object)
+7. Variantes de MVC
+8. Avantages et inconvenients
+9. Methodologie d'examen
+10. Exercices d'examen corriges
 
+---
 
 ## 1. Pourquoi une architecture ?
 
@@ -240,6 +238,7 @@ C'est le principe fondamental de toute architecture logicielle : chaque partie d
 
 Ce principe porte un nom en anglais : **Separation of Concerns** (SoC). MVC est une application directe de ce principe.
 
+---
 
 ## 2. Les 3 couches MVC
 
@@ -822,6 +821,7 @@ namespace GestionProduits.Controllers
 +-------------------+-----------------------------------+------------------------------------+
 ```
 
+---
 
 ## 3. Le flux MVC pas a pas
 
@@ -888,6 +888,7 @@ Prenons un exemple concret : l'utilisateur veut ajouter un produit.
 3. Tout passe par le Controleur.
 4. Le Modele ne sait pas qu'il est utilise par un Controleur. Il fait son travail et retourne un resultat. On pourrait l'utiliser dans un autre contexte (API, script batch) sans rien changer.
 
+---
 
 ## 4. MVC en pratique : application Web (Express.js)
 
@@ -1277,6 +1278,7 @@ INSERT INTO produits (nom, prix, description) VALUES
 ('Ecran 27 pouces', 349.00, 'Ecran IPS 27 pouces 2560x1440');
 ```
 
+---
 
 ## 5. MVC en pratique : application Desktop (C# WinForms)
 
@@ -1784,6 +1786,7 @@ namespace GestionProduits
 +----------------------------+-----------------------------------+-----------------------------------+
 ```
 
+---
 
 ## 6. Le pattern DAO (Data Access Object)
 
@@ -2014,6 +2017,7 @@ public ProduitController(FormProduits vue)
 }
 ```
 
+---
 
 ## 7. Variantes de MVC
 
@@ -2086,6 +2090,7 @@ En React par exemple, un composant combine souvent la Vue et le Controleur. L'et
 +----------+---------------------+-----------------------+---------------------------+
 ```
 
+---
 
 ## 8. Avantages et inconvenients
 
@@ -2117,6 +2122,7 @@ En React par exemple, un composant combine souvent la Vue et le Controleur. L'et
 
 Regle pratique : si le projet a plus d'une entite ou plus d'un ecran, MVC vaut le coup. Si le projet est susceptible d'evoluer, MVC vaut le coup. Dans le doute, utilisez MVC : le cout initial est faible et les benefices arrivent vite.
 
+---
 
 ## 9. Methodologie d'examen
 
@@ -2153,6 +2159,7 @@ Les sujets d'examen testent la comprehension de MVC de plusieurs facons :
 5. Identifier le code qui fait le lien (recoit les requetes, appelle le modele, transmet a la vue) → c'est le Controleur
 6. Verifier que chaque couche ne contient QUE ce qui lui appartient
 
+---
 
 ## 10. Exercices d'examen corriges
 
@@ -2217,6 +2224,7 @@ Controleur (coordination) :
 
 Le probleme : tout est melange dans un seul fichier. La reorganisation est l'objet de l'exercice suivant.
 
+---
 
 ### Exercice 2 : Reorganisation en MVC
 
@@ -2344,6 +2352,7 @@ router.post('/clients', clientController.ajouterClient);
 module.exports = router;
 ```
 
+---
 
 ### Exercice 3 : Completer la couche manquante (C#)
 
@@ -2520,6 +2529,7 @@ namespace GestionTaches.Controllers
 }
 ```
 
+---
 
 ### Exercice 4 : Identifier les erreurs d'architecture
 
@@ -2595,6 +2605,7 @@ exports.creerCommande = async (req, res) => {
 };
 ```
 
+---
 
 ### Exercice 5 : Concevoir une architecture MVC
 
@@ -2682,6 +2693,7 @@ class Emprunt {
    → Le Controleur rend la vue du formulaire avec un message d'erreur
 ```
 
+---
 
 ### Exercice 6 : QCM (Questions a choix multiples)
 
@@ -2742,6 +2754,7 @@ exports.afficherProduit = async (req, res) => {
 
 **Reponse : B.** Le calcul du prix TTC est de la logique metier. Il doit etre une methode de la classe Produit dans le Modele : `produit.prixTTC()`. Le Controleur ne fait que coordonner, il ne calcule pas.
 
+---
 
 ## Resume final
 

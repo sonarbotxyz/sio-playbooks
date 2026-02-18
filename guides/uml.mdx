@@ -1,26 +1,24 @@
 ---
-title: "UML — Unified Modeling Language"
-description: "Diagrammes de cas d utilisation, classes, sequence, activite, etats, deploiement"
-category: "Architecture"
-difficulty: "Intermediaire"
+title: "UML"
+description: "Cas d'utilisation, classes, sequences, activites, etats, deploiement"
+sidebar_position: 1
+level: "Intermediaire"
+reading_time: 56
 ---
-
-# UML -- Unified Modeling Language
-
 
 ## Table des matieres
 
-1. [1. Introduction a UML](#1-introduction-a-uml)
-2. [2. Diagramme de cas d'utilisation (Use Case)](#2-diagramme-de-cas-dutilisation-use-case)
-3. [3. Diagramme de classes](#3-diagramme-de-classes)
-4. [4. Diagramme de sequence](#4-diagramme-de-sequence)
-5. [5. Diagramme d'activite](#5-diagramme-dactivite)
-6. [6. Diagramme d'etat (bases)](#6-diagramme-detat-bases)
-7. [7. De UML au code et du code a UML](#7-de-uml-au-code-et-du-code-a-uml)
-8. [8. Methodologie d'examen](#8-methodologie-dexamen)
-9. [9. Exercices d'examen corriges](#9-exercices-dexamen-corriges)
-10. [Resume final -- Aide-memoire express](#resume-final-aide-memoire-express)
+1. Introduction a UML
+2. Diagramme de cas d'utilisation (Use Case)
+3. Diagramme de classes
+4. Diagramme de sequence
+5. Diagramme d'activite
+6. Diagramme d'etat
+7. De UML au code et du code a UML
+8. Methodologie d'examen
+9. Exercices d'examen corriges
 
+---
 
 ## 1. Introduction a UML
 
@@ -83,10 +81,8 @@ UML 2.x definit 14 diagrammes repartis en deux grandes familles :
 
 Les diagrammes marques *** sont ceux qui tombent au BTS SIO. Les autres sont hors programme dans la grande majorite des cas.
 
-> PIEGE EXAMEN : On peut vous demander de citer les grandes familles de diagrammes UML
-> (structure vs comportement). Ne les confondez pas. Le diagramme de classes est
-> STRUCTUREL (statique). Le diagramme de sequence est COMPORTEMENTAL (dynamique).
 
+---
 
 ## 2. Diagramme de cas d'utilisation (Use Case)
 
@@ -233,10 +229,6 @@ C'est la question classique. Voici le tableau definitif :
 - Include = Indispensable (les deux commencent par "In")
 - Extend = Extra, En option (les deux commencent par "E")
 
-> PIEGE EXAMEN : Le sens des fleches est INVERSE entre include et extend.
-> - Include : la fleche part du cas principal VERS le cas inclus
-> - Extend : la fleche part du cas optionnel VERS le cas principal
-> Ne les inversez JAMAIS. C'est l'erreur numero 1 aux examens.
 
 ### Identifier les acteurs depuis un cahier des charges
 
@@ -396,6 +388,7 @@ Responsable ---- Gerer les salles
 (+ tout ce que fait Employe par heritage)
 ```
 
+---
 
 ## 3. Diagramme de classes
 
@@ -431,8 +424,6 @@ Une classe se represente par un rectangle divise en trois compartiments :
 ~  package    --> accessible dans le meme paquetage (rarement utilise au BTS)
 ```
 
-> PIEGE EXAMEN : Le signe # signifie "protected", PAS "prive".
-> Le prive c'est le signe - (tiret/moins).
 
 ### Types d'attributs courants
 
@@ -525,9 +516,6 @@ Lecture : Un Client possede 0 ou plusieurs Commandes. Une Commande appartient a 
 La cardinalite pres de Commande (0..*) concerne le Client : "un client a combien de commandes ?"
 La cardinalite pres de Client (1) concerne la Commande : "une commande a combien de clients ?"
 
-> PIEGE EXAMEN : Les cardinalites se lisent "a l'envers". La cardinalite est placee
-> du cote de la classe CIBLE, pas de la classe SOURCE. C'est l'erreur la plus
-> frequente. Relisez toujours : "Un [classe gauche] a [cardinalite droite] [classe droite]".
 
 #### Agregation (losange vide)
 
@@ -571,8 +559,6 @@ Exemples :
   Bibliotheque <>---- Livre      (agregation : le livre existe sans la bibliotheque)
 ```
 
-> PIEGE EXAMEN : Le losange est TOUJOURS du cote du TOUT (le conteneur),
-> jamais du cote de la partie. Facture <*>---- LigneFacture, pas l'inverse.
 
 #### Heritage / Generalisation (fleche triangle vide)
 
@@ -674,8 +660,6 @@ Les methodes abstraites (en italique ou {abstract}) n'ont pas d'implementation d
 
 Une interface ne contient QUE des signatures de methodes (pas d'attributs, pas d'implementation). Les classes qui la realisent doivent implementer toutes ses methodes.
 
-> Note : En C# et Java modernes, les interfaces peuvent avoir des methodes par defaut,
-> mais au BTS SIO on considere le modele classique : interface = contrat pur.
 
 ### Lien avec Merise : MCD vers diagramme de classes
 
@@ -707,29 +691,6 @@ Merise (cote entite A)    UML (cote OPPOSE, pres de B)
 (0,n)                     0..*
 ```
 
-> PIEGE EXAMEN : En Merise, les cardinalites sont du cote de l'entite concernee.
-> En UML, les cardinalites sont du cote OPPOSE (pres de la classe cible).
-> Exemple : Si en Merise on a Client (1,1) --- passe --- (0,n) Commande
-> En UML : Client 1 ---------- 0..* Commande
-> (le 1 est pres de Client car une commande a 1 client,
->  le 0..* est pres de Commande car un client a 0..* commandes)
->
-> ATTENTION : la formulation ci-dessus peut preter a confusion. Soyons precis :
-> En Merise, (1,1) cote Client signifie "un client passe au minimum 1, au maximum 1 commande" -- NON.
-> En fait en Merise, les cardinalites se lisent : "une occurrence de cette entite participe
-> [min, max] fois a cette association".
-> Donc Client (1,1) passe Commande signifie : un client passe entre 1 et 1 commande.
-> Et Commande (0,n) signifie : une commande... non, c'est l'inverse.
->
-> Reprenons clairement :
-> En Merise : Client --(0,n)-- passe --(1,1)-- Commande
-> Se lit : Un Client passe entre 0 et n Commandes. Une Commande est passee par 1 et 1 seul Client.
-> En UML : Client 0..* ---------- 1 Commande
-> Le 0..* est PRES de Commande (un client a 0..* commandes).
-> Le 1 est PRES de Client (une commande a 1 client).
->
-> En resume : les cardinalites Merise "migrent" du meme cote en UML mais avec la lecture inversee.
-> La cardinalite Merise (0,n) cote Client donne 0..* du cote de Commande en UML.
 
 Reformulation definitive et sans ambiguite :
 
@@ -1002,9 +963,8 @@ public class LigneFacture
 }
 ```
 
-> Note : En composition, le conteneur cree et detruit ses parties.
-> En agregation, les parties sont passees de l'exterieur (injection).
 
+---
 
 ## 4. Diagramme de sequence
 
@@ -1236,6 +1196,7 @@ public Resultat ValiderCommande(Panier panier)
 }
 ```
 
+---
 
 ## 5. Diagramme d'activite
 
@@ -1382,6 +1343,7 @@ Notes de lecture :
 - "Prep. colis" et "Empaq." se font en parallele
 - Le losange `<>` represente la decision stock ok / stock ko
 
+---
 
 ## 6. Diagramme d'etat (bases)
 
@@ -1525,6 +1487,7 @@ Notes :
 - `do/` : action continue tant qu'on est dans l'etat
 - `exit/` : action executee a la sortie de l'etat (non montre ici)
 
+---
 
 ## 7. De UML au code et du code a UML
 
@@ -1988,6 +1951,7 @@ public class SessionManager
 }
 ```
 
+---
 
 ## 8. Methodologie d'examen
 
@@ -2103,6 +2067,7 @@ VRAI :  ( Passer commande )
 - [ ] Les fork ont un join correspondant
 - [ ] Les swimlanes sont correctement attribuees
 
+---
 
 ## 9. Exercices d'examen corriges
 
@@ -2161,6 +2126,7 @@ Notes :
 - "Se connecter" est un include de "Prendre RDV" car obligatoire
 - "Creer un compte" est un extend de "Prendre RDV" car optionnel (seulement si pas de compte)
 
+---
 
 ### Exercice 2 : Diagramme de classes -- Gestion de bibliotheque
 
@@ -2221,6 +2187,7 @@ Ouvrage   1 --------- 0..*  Emprunt
 
 L'Emprunt est une **classe d'association** entre Adherent et Ouvrage. Elle porte les informations propres a la relation (dates).
 
+---
 
 ### Exercice 3 : Diagramme de sequence -- Retrait d'argent au distributeur
 
@@ -2298,6 +2265,7 @@ Un client insere sa carte dans le distributeur. Le distributeur demande le code 
      |                |                    |
 ```
 
+---
 
 ### Exercice 4 : Diagramme de classes depuis une description -- Site de petites annonces
 
@@ -2367,6 +2335,7 @@ Notes :
 - Photo est en composition avec Annonce (une photo n'existe pas sans son annonce).
 - Message est une association ternaire simplifiee entre deux Utilisateurs et une Annonce.
 
+---
 
 ### Exercice 5 : Diagramme d'activite -- Processus d'inscription en ligne
 
@@ -2429,6 +2398,7 @@ Un utilisateur remplit le formulaire d'inscription (pseudo, email, mot de passe)
   +--- (boucle vers "Remplir formulaire")
 ```
 
+---
 
 ### Exercice 6 : Diagramme de sequence -- Recherche et emprunt dans une bibliotheque
 
@@ -2499,6 +2469,7 @@ Un adherent recherche un ouvrage par titre via l'interface. L'interface transmet
      |              |               |                |              |
 ```
 
+---
 
 ### Exercice 7 : Completer un diagramme de classes existant
 
@@ -2575,6 +2546,7 @@ Lecture des cardinalites :
   - La Participation porte la note et le statut
 ```
 
+---
 
 ### Exercice 8 : Diagramme d'etat -- Cycle de vie d'un billet d'avion
 
@@ -2633,6 +2605,7 @@ Transitions d'annulation (toutes vers l'etat Annule) :
 
 L'etat Embarque ne permet PLUS l'annulation (le passager est dans l'avion).
 
+---
 
 ### Exercice 9 (bonus) : Du code au diagramme de classes
 
@@ -2786,6 +2759,7 @@ Points cles de la correction :
 - Commentaire et LigneFacture sont en composition (ils n'existent pas seuls)
 - L'attribut `auteur` de type Utilisateur devient une association
 
+---
 
 ### Exercice 10 (bonus) : Cas d'utilisation -- Application de covoiturage
 
@@ -2846,6 +2820,7 @@ Notes :
 - Conducteur et Passager heritent d'Utilisateur (donc ils ont acces a "Creer un compte")
 - Le Systeme de paiement est un acteur secondaire (il ne declenche pas le cas, il y participe)
 
+---
 
 ## Resume final -- Aide-memoire express
 
@@ -2886,5 +2861,6 @@ Include  = obligatoire, fleche A -----> B (A inclut toujours B)
 Extend   = optionnel,   fleche B -----> A (B etend parfois A)
 ```
 
+---
 
 Fin du playbook UML. Relire les exercices, refaire les diagrammes a la main, verifier les cardinalites. Pas de raccourci.

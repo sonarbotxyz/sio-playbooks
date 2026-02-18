@@ -1,29 +1,10 @@
 ---
-title: "Securite des applications"
-description: "Injection SQL, XSS, CSRF, authentification, chiffrement, OWASP Top 10, bonnes pratiques"
-category: "Qualite et Securite"
-difficulty: "Intermediaire"
+title: "Securite des Applications"
+description: "OWASP Top 10, injections SQL, XSS, CSRF, authentification, HTTPS, securisation"
+sidebar_position: 1
+level: "Intermediaire"
+reading_time: 50
 ---
-
-# Securite des Applications
-
-
-
-## Table des matieres
-
-1. [Pourquoi la securite ?](#pourquoi-la-securite-)
-2. [Injection SQL](#injection-sql)
-3. [Cross-Site Scripting (XSS)](#cross-site-scripting-xss)
-4. [Cross-Site Request Forgery (CSRF)](#cross-site-request-forgery-csrf)
-5. [Hachage (Hash)](#hachage-hash)
-6. [Chiffrement (Cryptage)](#chiffrement-cryptage)
-7. [Authentification et gestion de sessions](#authentification-et-gestion-de-sessions)
-8. [RGPD et protection des donnees](#rgpd-et-protection-des-donnees)
-9. [OWASP Top 10 (2021)](#owasp-top-10-2021)
-10. [Methodologie d'examen](#methodologie-dexamen)
-11. [Exercices d'examen corriges](#exercices-dexamen-corriges)
-12. [Resume : les regles d'or de la securite applicative](#resume-les-regles-dor-de-la-securite-applicative)
-
 
 ## Pourquoi la securite ?
 
@@ -62,6 +43,7 @@ Toute donnee provenant de l'exterieur est potentiellement dangereuse :
 
 La regle : **valider, assainir et echapper** toute donnee avant de l'utiliser.
 
+---
 
 ## Injection SQL
 
@@ -289,6 +271,7 @@ if (!loginRegex.IsMatch(login))
 
 3. **ORM (Object-Relational Mapping)** : des outils comme Sequelize (JavaScript) ou Entity Framework (C#) generent des requetes parametrees automatiquement.
 
+---
 
 ## Cross-Site Scripting (XSS)
 
@@ -550,6 +533,7 @@ app.post('/commentaire', (req, res) => {
 });
 ```
 
+---
 
 ## Cross-Site Request Forgery (CSRF)
 
@@ -687,6 +671,7 @@ app.post('/virement', (req, res) => {
 
 Cette protection est complementaire, pas suffisante seule (les en-tetes peuvent etre absents dans certains cas).
 
+---
 
 ## Hachage (Hash)
 
@@ -955,6 +940,7 @@ public class HashAvecSel
 }
 ```
 
+---
 
 ## Chiffrement (Cryptage)
 
@@ -1139,6 +1125,7 @@ Un certificat numerique lie une cle publique a une identite (nom de domaine). Il
 - **Au repos** : les donnees sensibles stockees en base de donnees (numeros de carte bancaire, donnees medicales) doivent etre chiffrees.
 - **Fichiers** : les sauvegardes et exports contenant des donnees sensibles doivent etre chiffres.
 
+---
 
 ## Authentification et gestion de sessions
 
@@ -1337,6 +1324,7 @@ Le principe : combiner deux ou plusieurs facteurs d'authentification differents 
 
 En pratique, le 2FA le plus courant : mot de passe + code temporaire genere par une application (TOTP, Time-based One-Time Password). Le code change toutes les 30 secondes et est base sur un secret partage entre le serveur et l'application.
 
+---
 
 ## RGPD et protection des donnees
 
@@ -1403,6 +1391,7 @@ Son role : informer, conseiller, controler le respect du RGPD, cooperer avec la 
 - En cas de violation de donnees, notifier la CNIL dans les 72 heures.
 - Si le risque est eleve pour les personnes, les notifier egalement.
 
+---
 
 ## OWASP Top 10 (2021)
 
@@ -1498,6 +1487,7 @@ app.get('/profil/:id', authentifie, (req, res) => {
 
 **Protection** : valider et filtrer les URL, bloquer les adresses internes, utiliser des listes blanches de domaines autorises.
 
+---
 
 ## Methodologie d'examen
 
@@ -1535,6 +1525,7 @@ La securite est transversale. Elle peut apparaitre dans :
 - [ ] Les dependances sont a jour (`npm audit`, `dotnet list package --vulnerable`).
 - [ ] La conformite RGPD est assuree (consentement, droits, minimisation).
 
+---
 
 ## Exercices d'examen corriges
 
@@ -1582,6 +1573,7 @@ app.get('/article', (req, res) => {
 
 Double protection : validation (parseInt + verification) et requete preparee.
 
+---
 
 ### Exercice 2 : Identifier le XSS
 
@@ -1622,6 +1614,7 @@ app.get('/bienvenue', (req, res) => {
 });
 ```
 
+---
 
 ### Exercice 3 : Mots de passe en clair
 
@@ -1665,6 +1658,7 @@ public void InscrireUtilisateur(string login, string motDePasse)
 }
 ```
 
+---
 
 ### Exercice 4 : Difference hash et chiffrement
 
@@ -1682,6 +1676,7 @@ Le chiffrement AES est reversible : si l'on possede la cle, on peut dechiffrer e
 
 La bonne pratique : hacher les mots de passe avec bcrypt ou Argon2. Reserver le chiffrement pour les donnees que l'application doit pouvoir relire (numeros de carte bancaire, donnees medicales).
 
+---
 
 ### Exercice 5 : CSRF
 
@@ -1737,6 +1732,7 @@ app.post('/supprimer-compte', csrfProtection, authentifie, (req, res) => {
 
 Le site malveillant ne peut pas connaitre le token CSRF car il est genere dynamiquement par le serveur pour chaque session.
 
+---
 
 ### Exercice 6 : Validation cote client uniquement
 
@@ -1791,6 +1787,7 @@ app.post('/inscription', (req, res) => {
 });
 ```
 
+---
 
 ### Exercice 7 : Controle d'acces defaillant
 
@@ -1829,6 +1826,7 @@ app.get('/api/factures/:id', authentifie, (req, res) => {
 });
 ```
 
+---
 
 ### Exercice 8 : JWT mal utilise
 
@@ -1875,6 +1873,7 @@ app.get('/api/admin', (req, res) => {
 });
 ```
 
+---
 
 ### Exercice 9 : RGPD
 
@@ -1892,6 +1891,7 @@ app.get('/api/admin', (req, res) => {
 
 Donnees acceptables pour un site e-commerce : nom, prenom, email (communication), adresse (livraison), telephone (suivi de livraison). Le reste est soit superflu, soit a collecter au moment opportun.
 
+---
 
 ### Exercice 10 : Identifier toutes les failles
 
@@ -2019,6 +2019,7 @@ app.post('/login', async (req, res) => {
 app.listen(3000);
 ```
 
+---
 
 ### Exercice 11 : Question de cours sur bcrypt
 
@@ -2039,6 +2040,7 @@ C'est un hash bcrypt. Il contient trois informations :
 
 Le sel est integre dans la chaine, ce qui signifie qu'on n'a pas besoin de le stocker separement. La fonction `bcrypt.compare()` extrait le sel du hash stocke, recalcule le hash du mot de passe fourni avec ce sel, et compare les resultats.
 
+---
 
 ### Exercice 12 : Corriger du code C# vulnerable
 
@@ -2107,6 +2109,7 @@ public IActionResult Recherche(string terme)
 }
 ```
 
+---
 
 ## Resume : les regles d'or de la securite applicative
 
