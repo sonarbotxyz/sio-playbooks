@@ -5,55 +5,58 @@ import rehypeHighlight from 'rehype-highlight'
 
 const components = {
   SponsoredTool: ({ name, description, url, badge }: { name: string; description: string; url: string; badge?: string }) => (
-    <div className="rounded-xl bg-gray-50 dark:bg-dark-750 border border-base-blue/20 p-5 my-6 hover-glow">
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <h4 className="font-display font-semibold text-gray-900 dark:text-dark-100">{name}</h4>
+    <div className="my-6 border border-stone-800 bg-stone-900/40 p-5">
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <h4 className="text-sm font-semibold text-stone-100">{name}</h4>
         {badge && (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-base-blue bg-base-blue/10 border border-base-blue/20 px-2 py-0.5 rounded-md flex-shrink-0">
+          <span className="border border-amber-deep/40 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-deep">
             {badge}
           </span>
         )}
       </div>
-      <p className="text-sm text-gray-500 dark:text-dark-300 mb-3">{description}</p>
-      <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-base-blue-light hover:text-base-blue transition-colors">
-        Learn more &rarr;
+      <p className="mb-3 text-sm text-stone-400">{description}</p>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-amber transition hover:text-amber-deep"
+      >
+        En savoir plus →
       </a>
     </div>
   ),
   ProTip: ({ children, type = 'tip' }: { children: React.ReactNode; type?: 'tip' | 'warning' | 'note' }) => {
     const styles = {
-      tip: 'border-base-blue/30 bg-base-blue/5',
-      warning: 'border-amber-500/30 bg-amber-500/5',
-      note: 'border-gray-300 dark:border-dark-400/30 bg-gray-50 dark:bg-dark-700/50',
-    }
-    const icons = {
-      tip: '💡',
-      warning: '⚠️',
-      note: '📝',
+      tip: 'border-amber-deep/40 bg-amber-deep/5',
+      warning: 'border-terminal-err/50 bg-terminal-err/5',
+      note: 'border-stone-700 bg-stone-900/30',
     }
     const labels = {
-      tip: 'Pro Tip',
-      warning: 'Warning',
-      note: 'Note',
+      tip: '[ ASTUCE ]',
+      warning: '[ ATTENTION ]',
+      note: '[ NOTE ]',
+    }
+    const tone = {
+      tip: 'text-amber-deep',
+      warning: 'text-terminal-err',
+      note: 'text-stone-400',
     }
     return (
-      <div className={`rounded-xl border-l-4 p-5 my-6 ${styles[type]}`}>
-        <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-900 dark:text-dark-100">
-          <span>{icons[type]}</span>
+      <div className={`my-6 border-l-2 px-5 py-4 ${styles[type]}`}>
+        <p className={`mb-2 text-[10px] uppercase tracking-[0.25em] ${tone[type]}`}>
           {labels[type]}
-        </div>
-        <div className="text-sm text-gray-600 dark:text-dark-200 [&>p]:my-1">{children}</div>
+        </p>
+        <div className="text-sm leading-relaxed text-stone-200 [&>p]:my-1">{children}</div>
       </div>
     )
   },
 }
 
 export function MDXContent({ source }: { source: string }) {
-  // Strip the first H1 from content to avoid duplicate H1 (already in ArticleHeader)
   const cleanedSource = source.replace(/^#\s+.+$/m, '').trim()
 
   return (
-    <div className="prose prose-light dark:prose-dark max-w-none">
+    <div className="prose prose-terminal max-w-none">
       <MDXRemote
         source={cleanedSource}
         components={components}

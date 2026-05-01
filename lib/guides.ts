@@ -6,7 +6,7 @@ import type { GuideFrontmatter, Guide } from './types';
 import { PUBLISHED_GUIDES, SHOW_ALL } from './launch-config';
 
 export type { GuideFrontmatter, Guide } from './types';
-export { CATEGORY_COLORS, getCategoryColor } from './types';
+export { getCategoryColor } from './types';
 
 function isPublished(slug: string): boolean {
   if (SHOW_ALL || !PUBLISHED_GUIDES) return true;

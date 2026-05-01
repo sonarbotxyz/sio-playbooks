@@ -1,26 +1,15 @@
 import type { Metadata } from 'next'
-import { JetBrains_Mono, Outfit } from 'next/font/google'
+import { JetBrains_Mono } from 'next/font/google'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
-import { ThemeProvider } from '@/components/ThemeProvider'
+import { Scanlines } from '@/components/Scanlines'
 import './globals.css'
 
-const fontDisplay = Outfit({
+const mono = JetBrains_Mono({
   subsets: ['latin'],
-  variable: '--font-display',
-  weight: ['400', '500', '600', '700', '800'],
-})
-
-const fontBody = Outfit({
-  subsets: ['latin'],
-  variable: '--font-body',
-  weight: ['300', '400', '500', '600'],
-})
-
-const fontMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-  weight: ['400', '500'],
+  variable: '--font-jetbrains-mono',
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -62,19 +51,18 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="fr" className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable}`} suppressHydrationWarning>
-      <body className="font-body bg-white dark:bg-dark-900 text-gray-800 dark:text-dark-100 min-h-screen flex flex-col antialiased">
-        <ThemeProvider>
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-          />
-          <Header />
-          <main className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </ThemeProvider>
+    <html lang="fr" className={`${mono.variable} h-full`}>
+      <body className="min-h-full antialiased flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+        <Scanlines />
+        <Header />
+        <main className="relative z-[2] flex-1">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   )

@@ -136,48 +136,44 @@ export default async function GuidePage({
       />
       <ReadingProgress />
 
-      <div className="pt-16">
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 sm:py-10">
         <ArticleHeader frontmatter={guide.frontmatter} />
 
-        <div className="max-w-content mx-auto px-4 sm:px-6 pb-20">
-          <div className="flex gap-12">
-            {/* Main content */}
+        <div className="pb-16">
+          <div className="flex gap-12 pt-10">
             <article className="min-w-0 flex-1 max-w-reading">
               <MDXContent source={guide.content} />
             </article>
 
-            {/* Sidebar TOC */}
             <aside className="hidden xl:block w-64 flex-shrink-0">
               <TableOfContents content={guide.content} />
             </aside>
           </div>
 
-          {/* Mobile TOC (shows above content on mobile) */}
           <div className="xl:hidden mt-8">
             <TableOfContents content={guide.content} />
           </div>
 
-          {/* Next guide suggestion */}
           {nextGuide && nextGuide.slug !== slug && (
-            <div className="mt-16 pt-12 border-t border-gray-200 dark:border-dark-700">
-              <p className="text-xs font-medium text-gray-400 dark:text-dark-400 uppercase tracking-wider mb-4">Next guide</p>
+            <div className="mt-16 border-t border-stone-800 pt-10">
+              <p className="mb-4 text-[10px] uppercase tracking-[0.25em] text-amber-deep">
+                [ Playbook suivant ]
+              </p>
               <Link
                 href={`/guides/${nextGuide.slug}`}
-                className="group block rounded-xl bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-600 hover-glow p-6 max-w-lg"
+                className="group block max-w-xl border border-stone-800 bg-stone-900/30 p-5 transition hover:border-amber hover:bg-stone-950"
               >
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${nextColors.bg} ${nextColors.text} ${nextColors.border} border mb-3`}>
-                  <span>{nextColors.icon}</span>
+                <span className="mb-3 inline-flex items-center gap-2 border border-stone-700 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-stone-400 group-hover:border-amber group-hover:text-amber">
+                  <span className="text-amber-deep font-semibold">{nextColors.icon}</span>
                   {nextGuide.frontmatter.category}
                 </span>
-                <h3 className="font-display font-semibold text-lg text-gray-900 dark:text-dark-100 group-hover:text-base-blue-light transition-colors mb-2">
+                <h3 className="text-base font-semibold leading-snug text-stone-100 group-hover:text-amber transition">
+                  <span className="mr-2 text-stone-600 group-hover:text-amber">&gt;</span>
                   {nextGuide.frontmatter.title}
                 </h3>
-                <div className="flex items-center gap-2 text-sm font-medium text-base-blue group-hover:text-base-blue-light transition-colors">
-                  Lire le playbook
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" className="transform group-hover:translate-x-1 transition-transform">
-                    <path d="M1 7h12M8 2l5 5-5 5" />
-                  </svg>
-                </div>
+                <p className="mt-3 text-[10px] uppercase tracking-[0.2em] text-stone-500 group-hover:text-amber transition">
+                  Lire le playbook →
+                </p>
               </Link>
             </div>
           )}

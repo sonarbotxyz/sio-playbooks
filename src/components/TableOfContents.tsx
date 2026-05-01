@@ -12,7 +12,6 @@ export function TableOfContents({ content }: { content: string }) {
   const [activeId, setActiveId] = useState('')
   const [isOpen, setIsOpen] = useState(false)
 
-  // Parse headings from markdown content
   const headings: TocItem[] = content
     .split('\n')
     .filter(line => /^#{2,3}\s/.test(line))
@@ -60,20 +59,20 @@ export function TableOfContents({ content }: { content: string }) {
     <>
       {/* Desktop sidebar */}
       <nav className="hidden xl:block sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto pr-4">
-        <h4 className="font-display font-semibold text-xs uppercase tracking-wider text-gray-400 dark:text-dark-300 mb-4">
-          On this page
-        </h4>
-        <ul className="space-y-1 border-l border-gray-200 dark:border-dark-600">
+        <p className="mb-4 text-[10px] uppercase tracking-[0.25em] text-amber-deep">
+          [ Sommaire ]
+        </p>
+        <ul className="space-y-1 border-l border-stone-800">
           {headings.map(h => (
             <li key={h.id}>
               <a
                 href={`#${h.id}`}
-                className={`block text-[13px] leading-relaxed transition-colors border-l-2 -ml-[1px] ${
+                className={`block border-l-2 -ml-[1px] text-[12px] leading-relaxed transition ${
                   h.level === 3 ? 'pl-6' : 'pl-4'
                 } ${
                   activeId === h.id
-                    ? 'text-base-blue-light border-base-blue'
-                    : 'text-gray-400 dark:text-dark-300 border-transparent hover:text-gray-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-400'
+                    ? 'text-amber border-amber'
+                    : 'text-stone-500 border-transparent hover:text-stone-200 hover:border-stone-600'
                 }`}
                 onClick={() => setActiveId(h.id)}
               >
@@ -88,12 +87,11 @@ export function TableOfContents({ content }: { content: string }) {
       <div className="xl:hidden mb-6">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-dark-200 hover:text-gray-900 dark:hover:text-dark-100 transition-colors bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-dark-600 rounded-lg px-4 py-2.5 w-full"
+          className="flex w-full items-center gap-2 border border-stone-800 bg-stone-900/30 px-4 py-2.5 text-[11px] uppercase tracking-[0.2em] text-stone-300 transition hover:border-amber hover:text-amber"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M2 4h12M2 8h8M2 12h10" />
-          </svg>
-          Table of Contents
+          <span className="text-amber-deep">[</span>
+          Sommaire
+          <span className="text-amber-deep">]</span>
           <svg
             width="12"
             height="12"
@@ -107,18 +105,18 @@ export function TableOfContents({ content }: { content: string }) {
           </svg>
         </button>
         {isOpen && (
-          <ul className="mt-2 p-3 space-y-1 bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-dark-600 rounded-lg">
+          <ul className="mt-2 space-y-1 border border-stone-800 bg-stone-900/30 p-4">
             {headings.map(h => (
               <li key={h.id}>
                 <a
                   href={`#${h.id}`}
                   onClick={() => setIsOpen(false)}
-                  className={`block text-sm py-1 transition-colors ${
+                  className={`block py-1 text-sm transition ${
                     h.level === 3 ? 'pl-6' : 'pl-3'
                   } ${
                     activeId === h.id
-                      ? 'text-base-blue-light'
-                      : 'text-gray-400 dark:text-dark-300 hover:text-gray-700 dark:hover:text-dark-100'
+                      ? 'text-amber'
+                      : 'text-stone-500 hover:text-stone-200'
                   }`}
                 >
                   {h.text}

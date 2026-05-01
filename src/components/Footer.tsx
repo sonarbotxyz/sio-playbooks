@@ -2,36 +2,31 @@ import Link from 'next/link'
 
 export function Footer() {
   return (
-    <footer className="border-t border-gray-200 dark:border-dark-700 bg-gray-50 dark:bg-dark-900">
-      <div className="max-w-content mx-auto px-4 sm:px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Brand */}
-          <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-3 group">
-              <span className="font-display font-bold text-gray-900 dark:text-dark-100 tracking-tight">
-                Reussir mon <span className="text-base-blue">BTS SIO</span>
-              </span>
+    <footer className="relative z-[2] mt-16 border-t border-stone-800">
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1">
+            <Link
+              href="/"
+              className="text-amber text-sm transition hover:text-amber-deep"
+            >
+              [SIO PLAYBOOKS]
             </Link>
-            <p className="text-sm text-gray-500 dark:text-dark-300 max-w-xs leading-relaxed">
-              Tout le programme BTS SIO en playbooks ultra-detailles avec exercices corriges.
+            <p className="text-[11px] uppercase tracking-wider text-stone-500">
+              Tout le programme BTS SIO · zéro impasse
             </p>
           </div>
-
-          {/* Links */}
-          <div className="space-y-3">
-            <h4 className="font-display font-semibold text-sm text-gray-600 dark:text-dark-200 uppercase tracking-wider">Ressources</h4>
-            <ul className="space-y-2">
-              <li><Link href="/guides" className="text-sm text-gray-500 dark:text-dark-300 hover:text-base-blue-light transition-colors">Tous les playbooks</Link></li>
-            </ul>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/guides"
+              className="text-[11px] uppercase tracking-wider text-stone-500 transition hover:text-amber"
+            >
+              Tous les playbooks &gt;
+            </Link>
+            <span className="text-[11px] uppercase tracking-wider text-stone-700">
+              © {new Date().getFullYear()}
+            </span>
           </div>
-        </div>
-
-        <div className="accent-line mt-10 mb-6" />
-
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-gray-400 dark:text-dark-400">
-            &copy; {new Date().getFullYear()} Reussir mon BTS SIO. Tous droits reserves.
-          </p>
         </div>
       </div>
     </footer>

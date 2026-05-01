@@ -1,116 +1,52 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { ThemeToggle } from './ThemeToggle'
+import { useEffect, useState } from 'react'
 
-const NAV_ITEMS = [
-  { label: 'Accueil', href: '/' },
-  { label: 'Playbooks', href: '/guides' },
-]
+function fmt(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const day = pad(d.getDate())
+  const mon = d.toLocaleString('en-US', { month: 'short' }).toUpperCase()
+  const year = String(d.getFullYear()).slice(2)
+  return `${day}-${mon}-${year} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
 
 export function Header() {
-  const pathname = usePathname()
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
+  const [now, setNow] = useState<Date | null>(null)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    setNow(new Date())
+    const t = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(t)
   }, [])
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled
-        ? 'bg-white/80 dark:bg-dark-900/80 backdrop-blur-xl border-b border-gray-200/60 dark:border-dark-600/60 shadow-sm'
-        : 'bg-transparent border-b border-transparent'
-    }`}>
-      <div className="max-w-content mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <img src="/logo-dark.png" alt="Logo" className="w-8 h-8 block dark:hidden" />
-            <img src="/logo-light.png" alt="Logo" className="w-8 h-8 hidden dark:block" />
-            <span className="font-display font-bold text-[15px] text-gray-900 dark:text-white tracking-tight">
-              Réussir mon BTS SIO
-            </span>
+    <header className="sticky top-0 z-10 border-b border-stone-800 bg-[#0d0d0d]/95 backdrop-blur">
+      <div className="mx-auto flex max-w-content items-center justify-between gap-2 px-3 py-2 text-xs sm:px-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <Link href="/" className="whitespace-nowrap text-amber transition hover:text-amber-deep">
+            [SIO PLAYBOOKS]
           </Link>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {NAV_ITEMS.map(item => {
-              const isActive = item.href === '/'
-                ? pathname === '/'
-                : pathname?.startsWith(item.href)
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'text-base-blue'
-                      : 'text-gray-500 dark:text-dark-200 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  {item.label}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-base-blue rounded-full" />
-                  )}
-                </Link>
-              )
-            })}
-            <div className="w-px h-5 bg-gray-200 dark:bg-dark-600 mx-2" />
-            <ThemeToggle />
-          </nav>
-
-          {/* Mobile */}
-          <div className="flex items-center gap-1 md:hidden">
-            <ThemeToggle />
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="p-2 rounded-lg text-gray-500 dark:text-dark-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"
-              aria-label="Menu"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-                {mobileOpen ? (
-                  <path d="M5 5l10 10M15 5L5 15" />
-                ) : (
-                  <path d="M3 6h14M3 10h10M3 14h14" />
-                )}
-              </svg>
-            </button>
-          </div>
+          <span className="hidden whitespace-nowrap text-terminal-ok sm:inline">[ONLINE]</span>
+          <span className="hidden whitespace-nowrap text-terminal-dim md:inline">
+            {now ? fmt(now) : '--'}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 sm:gap-4">
+          <Link
+            href="/"
+            className="text-xs uppercase tracking-wider text-stone-500 transition hover:text-amber"
+          >
+            Accueil
+          </Link>
+          <Link
+            href="/guides"
+            className="text-xs uppercase tracking-wider text-stone-500 transition hover:text-amber"
+          >
+            Playbooks
+          </Link>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      {mobileOpen && (
-        <div className="md:hidden bg-white/95 dark:bg-dark-800/95 backdrop-blur-xl border-t border-gray-200/60 dark:border-dark-600/60">
-          <div className="px-4 py-3 space-y-1">
-            {NAV_ITEMS.map(item => {
-              const isActive = item.href === '/'
-                ? pathname === '/'
-                : pathname?.startsWith(item.href)
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'text-base-blue bg-base-blue/5'
-                      : 'text-gray-600 dark:text-dark-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-dark-700'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      )}
     </header>
   )
 }

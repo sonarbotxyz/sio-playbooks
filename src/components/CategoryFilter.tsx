@@ -18,47 +18,46 @@ export function CategoryFilter({ guides, categories }: { guides: Guide[]; catego
 
   return (
     <div>
-      {/* Filter pills */}
-      <div className="flex flex-wrap gap-2 mb-8">
+      <div className="mb-8 flex flex-wrap gap-2">
         <button
           onClick={() => setActive(null)}
-          className={`category-pill px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+          className={`border px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] transition ${
             !active
-              ? 'active bg-base-blue/15 border-base-blue text-base-blue-light'
-              : 'bg-gray-50 dark:bg-dark-800 border-gray-200 dark:border-dark-600 text-gray-500 dark:text-dark-300 hover:text-gray-900 dark:hover:text-dark-100'
+              ? 'border-amber bg-stone-950 text-amber'
+              : 'border-stone-700 bg-transparent text-stone-400 hover:border-amber hover:text-amber'
           }`}
         >
-          All
+          Tous
         </button>
         {sortedCategories.map(cat => {
           const colors = getCategoryColor(cat)
+          const isActive = active === cat
           return (
             <button
               key={cat}
-              onClick={() => setActive(active === cat ? null : cat)}
-              className={`category-pill px-4 py-2 rounded-lg text-sm font-medium border transition-all flex items-center gap-1.5 ${
-                active === cat
-                  ? `active ${colors.bg} ${colors.border} ${colors.text}`
-                  : 'bg-gray-50 dark:bg-dark-800 border-gray-200 dark:border-dark-600 text-gray-500 dark:text-dark-300 hover:text-gray-900 dark:hover:text-dark-100'
+              onClick={() => setActive(isActive ? null : cat)}
+              className={`inline-flex items-center gap-2 border px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] transition ${
+                isActive
+                  ? 'border-amber bg-stone-950 text-amber'
+                  : 'border-stone-700 bg-transparent text-stone-400 hover:border-amber hover:text-amber'
               }`}
             >
-              <span className="text-xs">{colors.icon}</span>
+              <span className="text-amber-deep">{colors.icon}</span>
               {cat}
             </button>
           )
         })}
       </div>
 
-      {/* Guide grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map(guide => (
           <GuideCard key={guide.slug} guide={guide} />
         ))}
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-400 dark:text-dark-300 text-sm">No guides in this category yet.</p>
+        <div className="border border-stone-800 bg-stone-900/30 px-6 py-12 text-center">
+          <p className="text-sm text-stone-500">Aucun playbook dans cette catégorie.</p>
         </div>
       )}
     </div>
