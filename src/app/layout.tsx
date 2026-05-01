@@ -14,22 +14,22 @@ const mono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Reussir mon BTS SIO — Playbooks SLAM, SISR, Maths et Droit',
+    default: 'Reussir mon BTS SIO — Playbooks SLAM, SISR, Maths et CEJM',
     template: '%s | Reussir mon BTS SIO',
   },
-  description: 'SLAM, SISR, Maths, Droit — tout le programme BTS SIO en playbooks ultra-detailles avec exercices corriges. 39 playbooks gratuits pour zero impasse le jour de l\'examen.',
+  description: 'SLAM, SISR, Maths, CEJM — tout le programme BTS SIO en playbooks ultra-detailles avec exercices corriges. 39 playbooks gratuits pour zero impasse le jour de l\'examen.',
   metadataBase: new URL('https://www.reussirmonbtssio.com'),
   openGraph: {
     type: 'website',
     siteName: 'Reussir mon BTS SIO',
     title: 'Reussir mon BTS SIO — 39 playbooks pour zero impasse',
-    description: '39 playbooks couvrant l\'integralite du programme BTS SIO : SLAM, SISR, Mathematiques et Droit du numerique. Exercices corriges, schemas, zero blabla.',
+    description: '39 playbooks couvrant l\'integralite du programme BTS SIO : SLAM, SISR, Mathematiques et CEJM. Exercices corriges, schemas, zero blabla.',
     url: 'https://www.reussirmonbtssio.com',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Reussir mon BTS SIO — 39 playbooks gratuits',
-    description: 'SLAM, SISR, Maths, Droit — tout le BTS SIO en playbooks ultra-detailles. Gratuit.',
+    description: 'SLAM, SISR, Maths, CEJM — tout le BTS SIO en playbooks ultra-detailles. Gratuit.',
   },
   robots: {
     index: true,
@@ -47,7 +47,7 @@ export default function RootLayout({
     '@type': 'WebSite',
     name: 'Reussir mon BTS SIO',
     url: 'https://www.reussirmonbtssio.com',
-    description: '39 playbooks couvrant l\'integralite du programme BTS SIO : SLAM, SISR, Mathematiques et Droit du numerique.',
+    description: '39 playbooks couvrant l\'integralite du programme BTS SIO : SLAM, SISR, Mathematiques et CEJM.',
   }
 
   return (

@@ -21,15 +21,15 @@ export default function HomePage() {
       <section className="pt-8 pb-12 sm:pb-16">
         <div className="mb-6 flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-stone-500">
           <span className="inline-block h-[6px] w-[6px] bg-amber" />
-          {guides.length} playbooks · SLAM · SISR · MATHS · DROIT
+          {guides.length} playbooks · SLAM · SISR · MATHS · CEJM
         </div>
         <h1 className="max-w-3xl text-[44px] font-semibold leading-[0.95] tracking-tight text-white md:text-[88px]">
           Tout le programme,
           <br />
-          bébé.
+          en playbook.
         </h1>
         <p className="mt-10 max-w-2xl text-sm leading-relaxed text-stone-400 md:text-base">
-          SLAM, SISR, maths, droit — chaque concept expliqué, chaque exercice
+          SLAM, SISR, maths, CEJM — chaque concept expliqué, chaque exercice
           corrigé. {guides.length} playbooks ultra-détaillés pour réussir ton
           BTS SIO. 25 heures de révision, zéro impasse.
         </p>

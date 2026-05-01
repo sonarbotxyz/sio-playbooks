@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 
-export const alt = 'Reussir mon BTS SIO — playbooks SLAM, SISR, maths et droit'
+export const alt = 'Reussir mon BTS SIO — playbooks SLAM, SISR, maths et CEJM'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -62,7 +62,7 @@ export default function Image() {
             }}
           >
             <span>Tout le programme,</span>
-            <span>bébé.</span>
+            <span>en playbook.</span>
           </div>
         </div>
 
@@ -76,7 +76,7 @@ export default function Image() {
             color: '#a8a29e',
           }}
         >
-          <span>SLAM · SISR · MATHS · DROIT</span>
+          <span>SLAM · SISR · MATHS · CEJM</span>
           <span style={{ color: '#fbbf24' }}>reussirmonbtssio.com</span>
         </div>
       </div>

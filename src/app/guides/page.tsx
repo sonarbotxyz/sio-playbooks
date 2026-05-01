@@ -4,7 +4,7 @@ import { CategoryFilter } from '@/components/CategoryFilter'
 
 export const metadata: Metadata = {
   title: 'Tous les playbooks',
-  description: 'Parcourez tous les playbooks BTS SIO. SLAM, SISR, mathématiques, droit — chaque concept expliqué et chaque exercice corrigé.',
+  description: 'Parcourez tous les playbooks BTS SIO. SLAM, SISR, mathématiques, CEJM — chaque concept expliqué et chaque exercice corrigé.',
   openGraph: {
     title: 'Tous les playbooks | BTS SIO',
     description: 'Parcourez tous les playbooks BTS SIO.',
@@ -27,7 +27,7 @@ export default function GuidesPage() {
         </h1>
         <p className="mt-6 max-w-2xl text-sm leading-relaxed text-stone-400 md:text-base">
           {guides.length} playbooks couvrant tout le programme BTS SIO — SLAM,
-          SISR, mathématiques et droit du numérique.
+          SISR, mathématiques et CEJM.
         </p>
       </header>
 
