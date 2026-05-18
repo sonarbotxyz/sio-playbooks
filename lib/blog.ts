@@ -22,6 +22,20 @@ export interface BlogPost {
 
 const postsDirectory = path.join(process.cwd(), 'content', 'posts');
 
+export const BLOG_CATEGORY_ORDER = [
+  'Sujets corrigés',
+  'Révisions',
+  'Méthodes',
+  'Actualités',
+  "Retours d'élèves",
+];
+
+export function getAllCategories(): string[] {
+  const posts = getAllPosts();
+  const categories = new Set(posts.map(p => p.frontmatter.category).filter((c): c is string => !!c));
+  return Array.from(categories);
+}
+
 export function getPostBySlug(slug: string): BlogPost {
   const fullPath = path.join(postsDirectory, `${slug}.mdx`);
   const fileContents = fs.readFileSync(fullPath, 'utf8');

@@ -1,15 +1,15 @@
 import type { Metadata } from 'next'
-import { getAllPosts } from '../../../lib/blog'
-import { PostCard } from '@/components/PostCard'
+import { getAllPosts, getAllCategories, BLOG_CATEGORY_ORDER } from '../../../lib/blog'
+import { PostCategoryFilter } from '@/components/PostCategoryFilter'
 
 export const metadata: Metadata = {
   title: 'Les coulisses du BTS SIO — corrigés, conseils, actu',
   description:
-    'Corrigés officiels des sujets BTS SIO, conseils de profs, retours d\'élèves et actualité de la formation. Tout ce que les manuels n\'écrivent pas.',
+    "Corrigés officiels des sujets BTS SIO, conseils de profs, retours d'élèves et actualité de la formation. Tout ce que les manuels n'écrivent pas.",
   openGraph: {
     title: 'Les coulisses du BTS SIO | Reussir mon BTS SIO',
     description:
-      'Corrigés, conseils profs, retours d\'élèves et actualité du BTS SIO.',
+      "Corrigés, conseils profs, retours d'élèves et actualité du BTS SIO.",
   },
   alternates: {
     canonical: '/blog',
@@ -18,6 +18,11 @@ export const metadata: Metadata = {
 
 export default function BlogPage() {
   const posts = getAllPosts()
+  const categories = getAllCategories().sort((a, b) => {
+    const ai = BLOG_CATEGORY_ORDER.indexOf(a)
+    const bi = BLOG_CATEGORY_ORDER.indexOf(b)
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
+  })
 
   return (
     <div className="mx-auto max-w-content px-4 py-10 sm:px-6 sm:py-14">
@@ -37,19 +42,7 @@ export default function BlogPage() {
         </p>
       </header>
 
-      {posts.length === 0 ? (
-        <div className="border border-stone-800 bg-stone-900/30 px-6 py-12 text-center">
-          <p className="text-sm text-stone-500">
-            Aucun article pour l&apos;instant.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {posts.map(post => (
-            <PostCard key={post.slug} post={post} />
-          ))}
-        </div>
-      )}
+      <PostCategoryFilter posts={posts} categories={categories} />
     </div>
   )
 }
