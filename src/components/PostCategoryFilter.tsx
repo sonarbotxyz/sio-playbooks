@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { BlogPost } from '../../lib/blog'
+import { getCategoryColor } from '../../lib/types'
 import { PostCard } from './PostCard'
 
 export function PostCategoryFilter({
@@ -32,6 +33,7 @@ export function PostCategoryFilter({
           Tous
         </button>
         {sortedCategories.map(cat => {
+          const colors = getCategoryColor(cat)
           const isActive = active === cat
           return (
             <button
@@ -43,6 +45,7 @@ export function PostCategoryFilter({
                   : 'border-stone-700 bg-transparent text-stone-400 hover:border-amber hover:text-amber'
               }`}
             >
+              <span className="text-amber-deep">{colors.icon}</span>
               {cat}
             </button>
           )

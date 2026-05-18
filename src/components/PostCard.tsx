@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { BlogPost } from '../../lib/blog'
+import { getCategoryColor } from '../../lib/types'
 
 function fmtDate(iso?: string): string {
   if (!iso) return ''
@@ -20,6 +21,9 @@ export function PostCard({ post }: { post: BlogPost }) {
       <div className="flex items-center justify-between gap-3 mb-3">
         {post.frontmatter.category && (
           <span className="inline-flex items-center gap-1.5 border border-stone-700 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-stone-400 group-hover:border-amber group-hover:text-amber transition">
+            <span className="font-semibold">
+              {getCategoryColor(post.frontmatter.category).icon}
+            </span>
             {post.frontmatter.category}
           </span>
         )}
