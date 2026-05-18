@@ -1,0 +1,293 @@
+---
+title: "Corrigé Maths BTS SIO 2026 (E3) — proposition non officielle"
+description: "Proposition de corrigé du sujet E3 Mathématiques pour l'informatique BTS SIO session 2026 : bases, codage affine, matrices, Karnaugh, graphes. Pour vérifier tes réponses."
+slug: "corrige-maths-bts-sio-2026"
+publishedAt: "2026-05-19"
+category: "Sujets corrigés"
+targetKeyword: "corrigé maths bts sio 2026"
+relatedPlaybooks: ["maths-arithmetique", "maths-logique", "maths-matrices", "maths-graphes"]
+---
+
+# Corrigé Maths BTS SIO 2026 (E3) — proposition non officielle
+
+<ProTip type="warning">
+Ceci est une **proposition de corrigé NON OFFICIELLE**, rédigée à chaud le jour de l'épreuve pour t'aider à savoir si tu étais sur la bonne voie. Ce n'est pas le corrigé du jury, il peut contenir des erreurs, et la notation officielle peut différer. Les réponses de l'exercice 1 (QCM) dépendent en partie de la lecture exacte des schémas du sujet. Prends ce corrigé comme une indication, pas comme une vérité absolue.
+</ProTip>
+
+Sujet : **E3 — Mathématiques pour l'informatique**, BTS SIO session 2026, durée 2 h, coefficient 3, code sujet 26SIE3MATPI. Calculatrice mode examen autorisée.
+
+## Les réponses en un coup d'œil
+
+| Question | Réponse proposée |
+|---|---|
+| Ex 1 — Q1 | **C** (22,90625) |
+| Ex 1 — Q2 | **B** ((69D)₁₆) |
+| Ex 1 — Q3 | **A** (f⁻¹({a;b}) = {1;2}) |
+| Ex 1 — Q4 | dépend du schéma (méthode ci-dessous) |
+| Ex 2 — 1 | SI se code **LZ** |
+| Ex 2 — 3.b | inverse(9) = **3** |
+| Ex 2 — 4.b | ZA se décode **IL** |
+| Ex 3 A — 1 | P×N = (130 ; 179) → 130 € le midi, 179 € le soir |
+| Ex 3 A — 2.b | **t = 22 €** |
+| Ex 3 B — 2 | E = **ab + ac** |
+| Ex 3 C — 4.b | **3** chemins de longueur 3 de C vers E |
+| Ex 3 C — 5 | **4 arcs** à ajouter |
+
+---
+
+## Exercice 1 — QCM (4 points)
+
+### Question 1 — base deux vers base dix
+
+Le nombre est (10110,11101)₂.
+
+Partie entière : 10110₂ = 1·16 + 0·8 + 1·4 + 1·2 + 0·1 = **22**.
+
+Partie fractionnaire : ,11101₂ = 1·2⁻¹ + 1·2⁻² + 1·2⁻³ + 0·2⁻⁴ + 1·2⁻⁵
+= 0,5 + 0,25 + 0,125 + 0 + 0,03125 = **0,90625**.
+
+Total = 22 + 0,90625 = **22,90625** → **Réponse C**.
+
+### Question 2 — somme en base seize
+
+(3D8)₁₆ = 3·256 + 13·16 + 8 = 768 + 208 + 8 = 984.
+(2C5)₁₆ = 2·256 + 12·16 + 5 = 512 + 192 + 5 = 709.
+Somme = 984 + 709 = 1693.
+
+Conversion de 1693 en base seize : 1693 = 6·256 + 9·16 + 13, soit **(69D)₁₆**.
+
+Vérification par addition directe en hexadécimal : 8+5 = D (retenue 0) ; D+C = 0x19 → 9 retenue 1 ; 3+2+1 = 6. Résultat 69D → **Réponse B**.
+
+### Question 3 — applications f et g
+
+On peut répondre **sans même lire finement le diagramme**, par élimination :
+
+- **B** est fausse : {1;2} ∩ {2;3} = {2}. L'image d'un singleton par une application a au plus un élément, donc f({2}) ne peut pas valoir {a;b;d}.
+- **C** est fausse : {a;b} et {c;d} sont disjoints. Les images réciproques de deux ensembles disjoints par une application sont disjointes ; elles ne peuvent être égales que si elles sont toutes les deux vides, ce qui n'est pas le cas ici (les 5 éléments de E ont une image dans F).
+- Il reste **A** : f⁻¹({a;b}) = {1;2} — cohérent avec un diagramme où seuls 1 et 2 ont une image dans {a;b}.
+
+**Réponse A**.
+
+### Question 4 — image de 4 par g∘f
+
+Méthode : g∘f(4) = g(f(4)). On lit d'abord l'image de 4 par f sur le **premier** diagramme (E→F), puis l'image de ce résultat par g sur le **second** diagramme (F→G).
+
+C'est la seule question dont la réponse dépend strictement de la lecture des flèches du sujet (le texte seul ne suffit pas à la certifier ici). Applique la méthode : repère la flèche partant de 4 vers F, puis la flèche partant de cette lettre vers G ; la lettre obtenue (x, y ou z) est la réponse. Si tu as appliqué g∘f dans le bon sens (f d'abord, g ensuite), ton raisonnement est bon.
+
+---
+
+## Exercice 2 — Codage affine (5 points)
+
+Clé (a;b) = (9;5). Codage : y ≡ 9x + 5 [26].
+
+### 1. Coder le mot SI
+
+**S** → x = 18. 9·18 + 5 = 162 + 5 = 167. 167 = 6·26 + 11, donc 167 ≡ 11 [26]. y = 11 → lettre **L**.
+
+**I** → x = 8. 9·8 + 5 = 72 + 5 = 77. 77 = 2·26 + 25, donc 77 ≡ 25 [26]. y = 25 → lettre **Z**.
+
+Le mot **SI se code en LZ**.
+
+### 2. Compléter la fonction nbCles()
+
+Une clé est acceptable si pgcd(a, 26) = 1, avec 1 ≤ a ≤ 25 (et 26 choix pour b).
+
+```
+1  Fonction nbCles()
+2     nb ← 0
+3     Pour a allant de 1 à 25 faire
+4        Si pgcd(a, 26) = 1 alors
+5           nb ← nb + 1
+6        Fin de Si
+7     Fin de Pour
+8     Renvoyer nb × 26
+```
+
+- Ligne 3 : a allant de 1 à **25**
+- Ligne 4 : pgcd(a, 26) = **1**
+- Ligne 5 : nb ← **nb + 1**
+
+(Pour information : 26 = 2 × 13, il y a φ(26) = 12 valeurs de a acceptables, donc 12 × 26 = **312 clés acceptables** — non demandé mais utile pour vérifier la logique.)
+
+### 3.a. Compléter la fonction inverse(a)
+
+```
+1  Fonction inverse(a)
+2     c ← 1
+3     Tant que reste(a × c, 26) ≠ 1 faire
+4        c ← c + 1
+5     Renvoyer c
+```
+
+- Ligne 3 : Tant que reste(a × c, 26) **≠ 1** faire
+- Ligne 5 : Renvoyer **c**
+
+### 3.b. Déterminer inverse(9)
+
+On cherche le plus petit c tel que 9c ≡ 1 [26].
+9·1 = 9 ; 9·2 = 18 ; 9·3 = 27 = 26 + 1 ≡ 1 [26].
+
+Donc **inverse(9) = 3**.
+
+### 4.a. Montrer que si 9x + 5 ≡ y [26] alors x + 15 ≡ 3y [26]
+
+On part de 9x + 5 ≡ y [26]. On multiplie les deux membres par 3 :
+
+3(9x + 5) ≡ 3y [26]
+27x + 15 ≡ 3y [26]
+
+Or 27 = 26 + 1 ≡ 1 [26], donc 27x ≡ x [26]. D'où :
+
+**x + 15 ≡ 3y [26]**.
+
+(On en déduit x ≡ 3y − 15 ≡ 3y − 15 + 26 ≡ **3y + 11 [26]**, ce qui justifie la formule admise à la question 4.b.)
+
+### 4.b. Décoder le mot ZA
+
+On utilise x ≡ 3y + 11 [26].
+
+**Z** → y = 25. x ≡ 3·25 + 11 = 86 [26]. 86 = 3·26 + 8, donc x = 8 → lettre **I**.
+
+**A** → y = 0. x ≡ 3·0 + 11 = 11 [26]. x = 11 → lettre **L**.
+
+Le mot **ZA se décode en IL**.
+
+(Cohérence : décoder LZ avec la même formule redonne SI — le système est bien réciproque.)
+
+---
+
+## Exercice 3 (11 points)
+
+### Partie A — Matrices
+
+P = (7 12 20 ; 7 15 30) (ligne 1 = midi, ligne 2 = soir ; colonnes = enfant ≤ 6 ans, enfant 7-13 ans, adulte). N = (2 ; 3 ; 4).
+
+#### 1. Produit P × N et interprétation
+
+Ligne midi : 7·2 + 12·3 + 20·4 = 14 + 36 + 80 = **130**.
+Ligne soir : 7·2 + 15·3 + 30·4 = 14 + 45 + 120 = **179**.
+
+P × N = (130 ; 179).
+
+Interprétation : pour le groupe de 2 enfants de 6 ans ou moins, 3 enfants entre 7 et 13 ans et 4 adultes, l'addition serait de **130 € le midi** et **179 € le soir**.
+
+#### 2.a. Coefficient de la première ligne de P′ × N
+
+P′ = (7 12 t ; 7 15 30). Première ligne de P′ × N :
+
+7·2 + 12·3 + t·4 = 14 + 36 + 4t = **50 + 4t**.
+
+#### 2.b. Valeur de t pour un montant de 138 €
+
+50 + 4t = 138 ⟹ 4t = 88 ⟹ **t = 22**.
+
+Le tarif du menu adulte du midi doit être de **22 €**.
+
+### Partie B — Logique booléenne
+
+Variables : a (apéritif), b (boisson avec le repas), c (café).
+
+#### 1. Traduire les conditions et E
+
+- Apéritif + boisson + café : a·b·c
+- Apéritif + boisson + pas de café : a·b·c̄
+- Apéritif + café + pas de boisson : a·b̄·c
+
+**E = a·b·c + a·b·c̄ + a·b̄·c**.
+
+#### 2. Karnaugh et simplification (somme de deux termes)
+
+Regroupements :
+- a·b·c + a·b·c̄ = a·b·(c + c̄) = **a·b**
+- a·b·c + a·b̄·c = a·c·(b + b̄) = **a·c**
+
+D'où **E = a·b + a·c** (deux termes), soit E = a·(b + c).
+
+#### 3. Traduction par une phrase
+
+Un client est « très rentable » s'il prend **un apéritif ET (une boisson avec son repas OU un café)** — autrement dit un apéritif accompagné d'au moins un achat additionnel (boisson pendant le repas ou café).
+
+#### 4. Expression de Ē (somme de deux termes)
+
+Ē = (a·(b + c))‾ = ā + (b + c)‾ = **ā + b̄·c̄** (loi de De Morgan).
+
+Deux termes : le client n'est pas très rentable s'il ne prend pas d'apéritif, ou s'il ne prend ni boisson ni café.
+
+### Partie C — Graphes
+
+Zones : A accueil, B buffet entrées, C buffet plats chauds, D buffet desserts, E caisse/sortie. Arcs du graphe (d'après le schéma et cohérents avec la fermeture transitive fournie) : A→B, A→C, B→C, C→C (boucle), C→D, C→E, D→D (boucle), D→E.
+
+#### 1.a. Chemin hamiltonien de A vers E
+
+**A → B → C → D → E** : chaque sommet est visité exactement une fois, et tous les arcs existent (A→B, B→C, C→D, D→E).
+
+#### 1.b. Signification
+
+Le client passe successivement par l'accueil, le buffet des entrées, le buffet des plats chauds, le buffet des desserts puis la caisse : c'est un **parcours complet du restaurant, dans l'ordre, en passant une seule fois par chaque zone** (un repas complet sans se resservir).
+
+#### 2. Tableau des successeurs
+
+| Sommet | A | B | C | D | E |
+|---|---|---|---|---|---|
+| Successeur(s) | B, C | C | C, D, E | D, E | — |
+
+#### 3. Matrice d'adjacence M (ordre alphabétique A, B, C, D, E)
+
+```
+        A  B  C  D  E
+   A  [  0  1  1  0  0 ]
+   B  [  0  0  1  0  0 ]
+   C  [  0  0  1  1  1 ]   = M
+   D  [  0  0  0  1  1 ]
+   E  [  0  0  0  0  0 ]
+```
+
+#### 4.a. Matrice M³
+
+En calculant M² puis M³ = M² × M :
+
+```
+        A  B  C  D  E
+   A  [  0  0  2  3  3 ]
+   B  [  0  0  1  2  2 ]
+   C  [  0  0  1  3  3 ]   = M³
+   D  [  0  0  0  1  1 ]
+   E  [  0  0  0  0  0 ]
+```
+
+#### 4.b. Nombre de chemins de longueur 3 de C vers E
+
+Le coefficient ligne C, colonne E de M³ vaut **3** : il y a **3 chemins de longueur 3 allant de C vers E**.
+
+Vérification par énumération : C→C→C→E, C→C→D→E, C→D→D→E. On en trouve bien 3.
+
+#### 5. Arcs à ajouter pour la fermeture transitive
+
+La fermeture transitive M̄ fournie contient 12 arcs (4 depuis A, 3 depuis B, 3 depuis C, 2 depuis D, 0 depuis E). Le graphe initial comporte 8 arcs. Il faut donc ajouter **12 − 8 = 4 arcs** : A→D, A→E, B→D et B→E.
+
+---
+
+## FAQ
+
+**Ce corrigé est-il fiable ?**
+C'est une proposition rédigée le jour même, pas le corrigé officiel. Les exercices 2 et 3 sont vérifiables pas à pas et cohérents (les codages/décodages se vérifient mutuellement, M³ se recoupe par énumération). L'exercice 1 Q4 dépend de la lecture des flèches du schéma : applique la méthode donnée.
+
+**J'ai trouvé un résultat différent sur l'exercice 2, est-ce grave ?**
+Reprends le calcul modulo 26 : l'erreur classique est d'oublier de réduire ax + b modulo 26, ou de se tromper de table de correspondance (A = 0, pas 1). Une seule erreur d'indice décale toute la lettre.
+
+**La note tient-elle compte de la démarche ?**
+Oui. En maths BTS SIO, le raisonnement et les étapes sont valorisés même si le résultat final est faux. Détailler les calculs (comme dans l'exemple du codage affine) rapporte des points.
+
+**Quand sort le corrigé officiel ?**
+Il n'y a pas de corrigé officiel public systématique pour cette épreuve. Les barèmes restent internes au jury. Ce type de proposition non officielle est souvent la seule référence disponible avant les résultats.
+
+## Pour aller plus loin
+
+- [Playbook maths — arithmétique](/guides/maths-arithmetique) — bases, congruences, PGCD, codage affine
+- [Playbook maths — logique](/guides/maths-logique) — algèbre de Boole, tableaux de Karnaugh
+- [Playbook maths — matrices](/guides/maths-matrices) — produit matriciel, puissances
+- [Playbook maths — graphes](/guides/maths-graphes) — matrice d'adjacence, chemins, fermeture transitive
+
+<ProTip type="note">
+Tu as repéré une erreur dans cette proposition ? C'est possible et c'est le jeu d'un corrigé non officiel rédigé à chaud. L'objectif est de te donner un ordre d'idée le jour J, pas de remplacer le jury.
+</ProTip>
