@@ -15,7 +15,7 @@ Note réforme : depuis 2025, l'épreuve écrite Cybersécurité des services inf
 | # | Titre | Mot-clé cible | Intention | Playbooks liés | Statut | Publier avant |
 |---|---|---|---|---|---|---|
 | 1 | Corrigé U7 BTS SIO 2025 SLAM — Sujet Casterman | `sujet u7 bts sio 2025 slam corrigé` | Trouver le corrigé pour réviser | securite, droit-rgpd, sql, procedures-triggers, php-mysql, tests | draft | 2026-05-25 |
-| 2 | Corrigé U7 BTS SIO 2025 SISR | `sujet u7 bts sio 2025 sisr corrigé` | Trouver le corrigé SISR | securite, reseaux-fondamentaux, cybersecurite-infra | idea | 2026-05-25 |
+| 2 | Corrigé U7 BTS SIO 2025 SISR — Sujet SA Blanca | `sujet u7 bts sio 2025 sisr corrigé` | Trouver le corrigé SISR | securite, reseaux-fondamentaux, cybersecurite-infra, routage-commutation, services-reseau, droit-rgpd | draft | 2026-05-25 |
 | 3 | Corrigé U6 BTS SIO 2024 SLAM | `sujet u6 bts sio 2024 slam corrigé` | Sujet pré-réforme, entraînement | poo, sql, php-mysql | idea | 2026-05-30 |
 | 4 | Corrigé U6 BTS SIO 2024 SISR | `sujet u6 bts sio 2024 sisr corrigé` | Sujet pré-réforme, entraînement | reseaux-fondamentaux, windows-server, linux-administration | idea | 2026-05-30 |
 

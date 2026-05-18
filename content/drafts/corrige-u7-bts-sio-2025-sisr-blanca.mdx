@@ -1,0 +1,312 @@
+---
+title: 'Corrigé U7 BTS SIO 2025 SISR — Sujet SA Blanca'
+description: 'Corrigé complet U7 SISR 2025 BTS SIO (cas SA Blanca) : MAC flooding, port-security, SNMPv3, portail captif, règles pare-feu. Pas-à-pas.'
+slug: 'corrige-u7-bts-sio-2025-sisr-blanca'
+publishedAt: '2026-05-21'
+category: 'Sujets corrigés'
+targetKeyword: 'sujet u7 bts sio 2025 sisr corrigé'
+relatedPlaybooks: ['securite', 'reseaux-fondamentaux', 'cybersecurite-infra', 'routage-commutation', 'services-reseau', 'droit-rgpd']
+---
+
+# Corrigé U7 BTS SIO 2025 SISR — Sujet SA Blanca
+
+Tu cherches le corrigé du **sujet U7 BTS SIO 2025 SISR** (anciennement E5, code 25SI7SISR, contexte SA Blanca / Impact Informatique) ? Tu es au bon endroit. Ce corrigé reprend les **2 dossiers** du sujet Métropole — gestion d'un incident réseau par MAC flooding, sécurisation de l'infrastructure Wi-Fi avec portail captif — avec justifications, calculs de priorité ITIL, et règles de pare-feu prêtes à recopier.
+
+Sommaire du sujet :
+- **Dossier A** — Gestion d'un incident sur le réseau local (46 pts)
+- **Dossier B** — Sécurisation de l'infrastructure Wi-Fi existante (34 pts)
+
+---
+
+## Dossier A — Gestion d'un incident sur le réseau local (46 pts)
+
+### Question A1.1 — Interprétation de l'état des LEDs du commutateur D2
+
+Trois signaux concordants pointent vers un commutateur en **état de défaillance avec collisions massives** :
+
+| LED observée                       | Signification (doc A3)                                  |
+|------------------------------------|---------------------------------------------------------|
+| Module d'extension orange clignotant | Dysfonctionnement : défaillance d'un port, du module, du ventilateur |
+| Ports clignotant en orange très rapide | Collisions détectées en très grand nombre               |
+| Autres LEDs vertes sans clignotement | Ports actifs normaux                                    |
+
+L'interprétation cohérente est la suivante : la **table d'adresses MAC du commutateur D2 est saturée** (cf. doc A2, 8000 entrées sur 8000 disponibles). Quand la table est pleine, le firmware bascule le commutateur en mode dit « échec d'ouverture » (failopen) : il se met à **diffuser toutes les trames sur tous les ports actifs** comme le ferait un concentrateur (hub). Cela génère des collisions massives sur l'ensemble des liens — d'où le clignotement très rapide des LEDs des ports — et déclenche le signal de dysfonctionnement matériel sur la LED principale.
+
+Conséquence directe : les communications légitimes deviennent extrêmement lentes parce que la bande passante utile est rongée par les retransmissions liées aux collisions.
+
+### Question A1.2 — Analyse de trame et table MAC
+
+**a) Trames qui ne devraient pas apparaître**
+
+L'analyse Wireshark est effectuée depuis l'ordinateur **192.168.10.86**. Sur un commutateur sain, une carte réseau ne voit que les trames qui lui sont destinées (ou les diffusions broadcast/multicast). Or, sur l'extrait :
+
+| N° | IP source       | IP destination   | Verdict                                          |
+|----|-----------------|------------------|--------------------------------------------------|
+| 01 | 192.168.10.45   | 192.168.10.243   | **Ne devrait pas apparaître** (ni source ni dest) |
+| 02 | 192.168.10.99   | 192.168.10.232   | **Ne devrait pas apparaître**                    |
+| 03 | 192.168.10.61   | 192.168.10.86    | OK (l'ordinateur est destinataire)               |
+| 04 | 192.168.10.20   | 192.168.10.243   | **Ne devrait pas apparaître**                    |
+
+Trois trames sur quatre ne concernent pas 192.168.10.86 — cela trahit une diffusion anormale.
+
+**b) Mode de fonctionnement actuel du commutateur**
+
+La table MAC affichée par `show mac-address` (doc A2) contient **8000 lignes pour une capacité de 8000 entrées** : elle est saturée. Le commutateur ne peut plus apprendre de nouvelles associations port↔MAC, donc à chaque trame qu'il reçoit, comme le destinataire n'est pas dans la table (ou que la table est instable), il **diffuse la trame sur tous ses ports actifs**. C'est exactement le comportement décrit dans le document A1 : « surcharge le commutateur […] il tombe dans un mode échec d'ouverture […] il se comporte alors comme un simple concentrateur ». Le commutateur D2 fonctionne donc en **mode hub-like (failopen) suite à la saturation de sa table MAC**.
+
+**c) Impact sur les autres commutateurs et conséquences sur le VLAN 10**
+
+Les trames diffusées par D2 atteignent les commutateurs voisins via les liens inter-commutateurs. Ces commutateurs apprennent à leur tour les milliers d'adresses MAC sources falsifiées et **propagent la saturation** : c'est ce qu'on observe dans le document A7, où le port 11 de C1 (601 MAC), le port 24 de C2 (601 MAC), le port 24 de D1 (603 MAC) et le port 13 de D2 (527 MAC) sont tous en augmentation rapide.
+
+Sur le VLAN 10, les conséquences cascadent :
+- la bande passante effective s'effondre (chaque trame est diffusée partout au lieu d'être aiguillée);
+- les collisions explosent (mode hub-like);
+- toutes les communications du VLAN deviennent visibles depuis n'importe quel poste, donc la **confidentialité est compromise** (un attaquant peut écouter le trafic — notamment SMBv2 non chiffré vers le NAS).
+
+### Question A1.3 — Risque RGPD et évolution de l'architecture
+
+**a) Risque vis-à-vis du RGPD**
+
+Le serveur NAS (192.168.10.243) **contient des données personnelles de clients et d'utilisateurs**. Il est situé dans **le même VLAN 10 que les postes utilisateurs et les bornes Wi-Fi internes**. Avec D2 en mode hub-like, toutes les trames échangées avec le NAS — y compris le contenu SMBv2 non chiffré (cf. remarque doc A4) — sont **diffusées à tous les postes du VLAN**. N'importe quel poste compromis (ou un attaquant connecté en Wi-Fi interne) peut capturer ces trames et lire les données personnelles en clair.
+
+C'est une violation de la **confidentialité** au sens de l'article 32 du RGPD (mesures techniques garantissant la sécurité du traitement). Si ces données fuitent, Casterman… pardon, BLANCA est tenue de notifier la CNIL sous 72 h et potentiellement les personnes concernées. Le playbook [droit et RGPD](/guides/droit-rgpd) détaille la procédure.
+
+**b) Évolution de l'architecture**
+
+La mesure structurelle : **isoler les serveurs dans un VLAN dédié séparé du VLAN des postes utilisateurs**. Concrètement :
+
+- créer un VLAN « serveurs » (ex. VLAN 30) et y déplacer le NAS, l'annuaire LDAPS, Moodle interne, DNS, DHCP, NAS;
+- faire transiter tous les flux postes↔serveurs par le pare-feu interne (routage inter-VLAN contrôlé), avec une politique « tout interdit par défaut » et des règles explicites pour les flux légitimes;
+- en bonus défense en profondeur : passer SMB en version 3 (chiffrement natif), désactiver SMBv2 non chiffré.
+
+**Justification** : une attaque de niveau 2 (MAC flooding, ARP spoofing) reste **contenue dans son domaine de broadcast**, donc dans son VLAN. Séparer les VLAN limite la portée de l'attaque aux postes — les serveurs et leurs données personnelles ne sont plus exposés à l'écoute passive.
+
+### Question A1.4 — Réévaluation du niveau de priorité
+
+L'évaluation initiale était **P2 — Élevée** (4 h de résolution cible). Selon le document A5, P2 correspond à « le service peut fonctionner mais avec performance fortement réduite ».
+
+La situation a évolué : « impossibilité d'utiliser le réseau informatique et blocage de l'ensemble de l'activité de l'organisation ». On a maintenant :
+
+- **Impact = Élevé** (organisation en entier touchée, plus seulement un service ou quelques utilisateurs);
+- **Urgence = Urgent** (le réseau ne fonctionne plus du tout, blocage total).
+
+Croisé dans la matrice de dérivation (doc A5, ligne Urgent × colonne Élevé), cela donne :
+
+**Nouvelle priorité : P1 — Majeure (résolution cible 2 heures).**
+
+Le niveau P2 n'est plus d'actualité.
+
+### Question A1.5 — Action d'urgence et point de blocage résolu
+
+L'infrastructure est bloquée au point que l'interface de gestion des commutateurs n'est plus joignable — impossible de corriger par configuration. Mais l'armoire dispose d'un interrupteur d'arrêt d'urgence (mentionné explicitement dans l'énoncé).
+
+**Action proposée** : **basculer l'interrupteur d'arrêt d'urgence pour couper l'alimentation des commutateurs, puis les redémarrer**.
+
+**Point de blocage résolu** : la table d'adresses MAC saturée du commutateur D2 (et celles des commutateurs voisins) sont stockées **en mémoire RAM** (cf. doc A1 : « le micrologiciel des commutateurs stocke la table d'adresses MAC dans la mémoire RAM interne qui est limitée en taille »). Couper l'alimentation **vide la RAM**, les tables se reconstruisent normalement au redémarrage, le commutateur retrouve son mode de fonctionnement normal — au moins provisoirement. Le document A1 le confirme explicitement : « Un redémarrage de ces derniers permet de vider ces tables et de retrouver provisoirement un fonctionnement normal. »
+
+C'est une remédiation temporaire : la cause racine reste à traiter (cf. mission A2).
+
+### Question A2.1 — ARP spoofing ou MAC flooding ?
+
+Les deux attaques diffèrent fondamentalement par leur mécanisme :
+
+| Critère                | ARP spoofing                                | MAC flooding                                  |
+|------------------------|---------------------------------------------|-----------------------------------------------|
+| Cible technique        | Cache ARP des postes (couche 3)             | Table MAC du commutateur (couche 2)           |
+| Symptôme visible       | Redirection MITM, doublons d'IP             | Saturation table MAC, mode failopen           |
+| Effet sur les LEDs     | Aucun particulier                           | Collisions massives                           |
+| Effet sur Wireshark    | Trafic redirigé vers l'attaquant            | Toutes les trames diffusées partout           |
+
+Ici, les symptômes observés — **table MAC saturée à 8000/8000**, **diffusion de trames qui ne devraient pas être visibles depuis 192.168.10.86**, **collisions massives** — sont la signature exacte d'une **inondation d'adresses MAC (MAC flooding)**. L'ARP spoofing ne produit pas ces effets.
+
+**L'hypothèse la plus plausible est donc le MAC flooding.**
+
+### Question A2.2 — Identification de l'appareil responsable
+
+Le document A7 montre les ports avec un nombre d'adresses MAC en augmentation rapide (marqués `*`) :
+- D1 port 24 : 603 → uplink vers le cœur (propagation depuis ailleurs);
+- D2 port 13 : 527 → port d'accès (pas un uplink);
+- C2 port 24 : 601 → uplink;
+- C1 port 11 : 601 → uplink.
+
+Les ports d'uplink (D1 p24, C1 p11, C2 p24) reçoivent simplement les MAC en provenance d'autres commutateurs — ils sont **victimes**, pas sources. Seul un port **non-uplink** affichant des centaines de MAC en augmentation rapide trahit l'origine réelle de l'attaque.
+
+D'après le schéma A6, **D2 est le commutateur des bureaux administratifs**, ses ports 1, 2, 13… connectent des postes utilisateurs. Or les autres ports d'accès de D2 (port 2 par exemple) montrent 1 seule MAC, comme attendu. Le **port 13 de D2 avec 527 MAC en augmentation rapide** est donc l'anomalie.
+
+**L'appareil à l'origine de la défaillance est connecté au port 13 du commutateur D2** (un poste des bureaux administratifs, ou plus vraisemblablement un équipement non autorisé branché sur ce port).
+
+### Question A2.3 — Type d'attaque dans l'hypothèse cybermalveillante
+
+S'il s'agit d'un acte volontaire, c'est une **attaque par déni de service par inondation d'adresses MAC (MAC flooding)**. L'outil utilisé est très probablement **macof** (mentionné dans le doc A10 : « envoie des trames Ethernet avec des adresses MAC sources aléatoires »).
+
+L'objectif final probable d'un attaquant n'est pas le DoS pour le DoS, mais de **forcer le commutateur en mode hub-like pour intercepter le trafic** (sniffing passif des communications du VLAN, notamment les flux SMB non chiffrés du NAS). C'est donc une attaque **combinée DoS + écoute**, préparation d'une fuite de données. Le playbook [cybersécurité infra](/guides/cybersecurite-infra) couvre ces attaques de couche 2 en détail.
+
+### Question A3.1 — Sécurité des ports
+
+**a) Pourquoi le mécanisme répond partiellement**
+
+La sécurité des ports (doc A8) limite le nombre d'adresses MAC sources autorisées par port. Si une MAC inconnue apparaît au-delà du seuil, le mécanisme déclenche une réaction. Cela **prévient effectivement la cause** (un MAC flooding sera bloqué dès la première violation).
+
+Mais cela répond **partiellement** au cahier des charges parce que la consigne exige aussi de **« générer une alerte spécifique »** envoyée à Mme JOUANDEAU automatiquement. La sécurité des ports seule se contente d'écrire dans les logs locaux du commutateur : pas de remontée centralisée, pas de notification active. Il manque la **partie supervision/notification** (traitée en A3.2 avec SNMP trap).
+
+**b) Type de réaction le plus adapté**
+
+D'après le tableau comparatif du doc A8 :
+
+| Réaction              | Rejet trafic | Extinction port | Compteur | Journalisation |
+|-----------------------|--------------|-----------------|----------|----------------|
+| **shutdown**          | Oui          | Oui             | Oui      | Oui            |
+| protect               | Oui          | Non             | Non      | Non            |
+
+La consigne demande explicitement de **tracer** et d'**isoler** l'équipement attaquant pour le neutraliser. Le mode **shutdown** est le seul à proposer extinction du port + compteur + journalisation. Le mode protect se contente de rejeter le trafic anormal mais laisse le port actif sans aucune traçabilité — insuffisant.
+
+**Choix : shutdown.** Le port désactivé impose une intervention administrateur pour réactiver, ce qui force l'analyse de la cause avant remise en service.
+
+### Question A3.2 — Supervision SNMP
+
+**a) Trap SNMP versus supervision active**
+
+- **Supervision active** = polling : le serveur de supervision interroge périodiquement chaque agent SNMP (toutes les X secondes). Une attaque qui se produit entre deux interrogations peut passer inaperçue jusqu'au prochain poll, et le trafic de polling consomme de la bande passante en continu pour rien la plupart du temps.
+- **Trap SNMP** = notification asynchrone : l'agent SNMP du commutateur envoie spontanément un message au serveur de supervision **dès qu'un événement surveillé survient** — ici une violation port-security. Latence quasi nulle, alerte temps réel, pas de polling inutile.
+
+Dans le contexte « alerter automatiquement si l'incident se reproduit », le trap est la bonne réponse : il offre la réactivité immédiate qu'une supervision active par polling ne peut pas garantir.
+
+**b) Deux paramètres de sécurité de SNMPv3**
+
+D'après le document A9, la commande de configuration `snmpv3 user <username> auth sha <password> priv aes <priv password>` active deux mécanismes :
+
+1. **`auth sha <password>` — Authentification (algorithme SHA + mot de passe)** : garantit que le message provient bien d'un agent autorisé et n'a pas été altéré en transit. C'est l'**authenticité + intégrité** du message SNMP, absentes dans SNMPv1/v2c qui se contentent d'une *community string* en clair.
+2. **`priv aes <priv password>` — Chiffrement (algorithme AES + mot de passe)** : chiffre le contenu du message SNMP. Garantit la **confidentialité** des informations échangées (un attaquant qui intercepterait le trafic SNMP sur le réseau ne peut pas le lire en clair).
+
+SNMPv3 combine donc les trois propriétés AAA (Authentication + integrity + confidentiality), là où v1/v2c se limitent à un mot de passe en clair.
+
+### Question A3.3 — Commande Kali Linux pour tester
+
+Pour vérifier que le port-security et les traps SNMP fonctionnent, il faut **simuler la même attaque** — du MAC flooding. Parmi les commandes du document A10, la seule pertinente est :
+
+**`macof`** — « envoie des trames Ethernet avec des adresses MAC sources aléatoires ».
+
+Les autres ne correspondent pas :
+- `aircrack-ng` : casse les clés Wi-Fi (sans rapport);
+- `arpspoof` : ARP spoofing (autre attaque, autre couche);
+- `ettercap` : MITM générique mais non spécifique au MAC flooding;
+- `dhcpig` : épuise un pool DHCP;
+- `hydra` : brute force d'identifiants;
+- `macchanger` : change la MAC de la propre interface (utile pour le spoofing mais pas pour flood);
+- `nmap` : scan de ports;
+- `tcpdump` : capture passive.
+
+**Commande retenue : `macof`** (avec éventuellement `-i <interface>` pour préciser l'interface). Si la sécurité des ports est correctement configurée en `shutdown` avec trap SNMP, le port doit se désactiver et l'alerte doit arriver chez Mme JOUANDEAU dans la seconde.
+
+---
+
+## Dossier B — Sécurisation de l'infrastructure Wi-Fi (34 pts)
+
+### Question B1.1 — Problèmes de sécurité de l'architecture Wi-Fi actuelle
+
+Dans la configuration initiale (doc 1), le **Wi-Fi interne est connecté au commutateur cœur de réseau** et tout utilisateur connaissant le SSID + la passphrase peut se connecter au réseau interne. Aucune distinction entre employés permanents et apprenants ponctuels. Les trois critères DIC sont compromis :
+
+**Disponibilité** : la passphrase Wi-Fi circule de bouche-à-oreille, d'anciens apprenants peuvent la garder après leur formation et continuer à consommer bande passante, IP DHCP et services. Cas concret : un ex-apprenant qui squatte la salle d'attente pour télécharger massivement → DHCP saturé, bande passante absente pour les vrais utilisateurs.
+
+**Intégrité** : une fois sur le réseau interne, un utilisateur Wi-Fi peut écrire sur les partages NAS (s'il a — ou devine — des identifiants) ou exploiter une vulnérabilité d'un serveur métier pour modifier des données. Cas concret : un visiteur Wi-Fi modifie ou supprime des fichiers de formation sur le NAS.
+
+**Confidentialité** : le Wi-Fi interne donne accès au VLAN 10, donc à tous les serveurs internes (NAS, Moodle interne, LDAPS, serveur administratif). Comme on l'a vu en dossier A, un attaquant peut écouter le trafic SMBv2 non chiffré ou lancer un MAC flooding. Cas concret : un apprenant ponctuel capture les échanges avec le serveur administratif et obtient des données clients.
+
+**Authentification et traçabilité** (transverse aux trois critères) : pas d'identification individuelle des utilisateurs Wi-Fi, donc impossible en cas d'incident de remonter à l'auteur. Cela rend aussi caduque l'obligation de conservation des logs (loi pour la confiance dans l'économie numérique).
+
+### Question B1.2 — Deux arguments pour le portail captif
+
+1. **Traçabilité légale et obligation de conservation des logs.** En tant qu'opérateur fournissant un accès internet à des tiers (les apprenants ponctuels), BLANCA est tenue par la LCEN de conserver les données permettant d'identifier qui a fait quoi en ligne. Le portail captif force une **inscription nominative préalable** et journalise les sessions : nom, prénom, identifiant, heure de connexion, durée. En cas de requête judiciaire ou d'incident, on peut remonter à la personne précise. C'est impossible avec un Wi-Fi à passphrase partagée.
+
+2. **Pas de provisionnement manuel des comptes (scalabilité opérationnelle).** Les apprenants ponctuels arrivent et repartent en quelques heures, parfois plusieurs dizaines par semaine. Provisionner chaque utilisateur dans LDAP pour le 802.1X serait disproportionné en charge admin. Le portail captif permet l'**auto-inscription en libre-service** — l'apprenant remplit le formulaire, le compte est créé à la volée, supprimé ou désactivé après expiration. Aucun ticket pour l'admin réseau.
+
+(Bonus : compatible avec les terminaux personnels — BYOD — qu'on ne peut pas pré-configurer pour 802.1X.)
+
+### Question B1.3 — Connexion directe au pare-feu interne
+
+Trois raisons concourantes :
+
+1. **Isolation logique stricte**. En connectant le réseau Wi-Fi Invité directement à une interface dédiée du pare-feu interne, on crée un **domaine de diffusion totalement séparé** des VLAN 10 (production) et 20 (surveillance). Aucun chemin de couche 2 n'existe entre le Wi-Fi Invité et le réseau interne — un MAC flooding, un ARP spoofing ou tout incident sur le Wi-Fi Invité reste confiné.
+
+2. **Filtrage centralisé et auditable**. Le pare-feu est l'unique point de passage entre le Wi-Fi Invité et le reste du réseau. La politique « tout interdit par défaut » s'applique nativement : seuls les flux explicitement autorisés (sortie internet via HTTP/HTTPS/DNS, plus le portail captif sur le pare-feu lui-même) passent. Pas d'accès aux serveurs internes possible, même par erreur de configuration. Le playbook [services réseau](/guides/services-reseau) détaille ce type de cloisonnement.
+
+3. **Réduction de la surface d'attaque**. Si le Wi-Fi Invité était connecté au cœur de réseau, il faudrait gérer un VLAN dédié, des ACL inter-VLAN, des routes statiques — autant d'éléments potentiellement mal configurés. La séparation physique élimine la classe entière de bugs « ACL oubliée → fuite vers VLAN sensible ».
+
+### Question B2.1 — Pertinence des données personnelles collectées
+
+Principe RGPD applicable : **minimisation des données** (article 5.1.c) — ne collecter que ce qui est strictement nécessaire à la finalité poursuivie. Évaluation de chaque champ supplémentaire au regard des traitements A (création compte), B (fiche client commerciale) et C (statistiques formation) :
+
+| Donnée                  | Pertinence                                                   | Traitement associé                |
+|-------------------------|--------------------------------------------------------------|-----------------------------------|
+| Téléphone professionnel | Pertinent — coordonnée pro légitime pour relance commerciale | B (démarche commerciale)          |
+| Téléphone personnel     | **Non pertinent** — vie privée, pas nécessaire à la création du compte ni à la statistique formation | Aucun (à exclure du formulaire) |
+| Poste de travail        | Pertinent — caractérise le profil professionnel pour les stats | C (statistiques formation)        |
+| Service dans l'entreprise | Pertinent — affine le profilage métier                     | B et C                            |
+| Type d'emploi           | Pertinent — variable explicative pour les statistiques       | C (statistiques formation)        |
+| Formation suivie        | Pertinent — variable centrale pour les stats d'évaluation    | C (statistiques formation)        |
+
+Le **téléphone personnel** est le seul champ à retirer : il n'est utile à aucun des trois traitements déclarés et constitue une donnée à caractère personnel collectée sans base légale claire. Sa collecte exposerait BLANCA à une sanction CNIL.
+
+### Question B2.2 — Règles de redirection vers le portail captif
+
+L'objectif : un utilisateur non authentifié qui tente d'ouvrir une page web (HTTP ou HTTPS) doit être redirigé de manière transparente vers la page d'authentification du portail captif (hébergée par le pare-feu interne, IP `192.168.30.1`). La technique : **réécriture de l'IP destination vers le pare-feu** (NAT destination).
+
+Règles sur le flux entrant de l'interface Wi-Fi du pare-feu interne :
+
+| #  | IP source         | Port source | IP destination | Port destination | IP translatée | Port translaté | Protocole |
+|----|-------------------|-------------|----------------|------------------|---------------|----------------|-----------|
+| 1  | 192.168.30.0/24   | *           | *              | 80               | 192.168.30.1  | 80             | TCP       |
+| 2  | 192.168.30.0/24   | *           | *              | 443              | 192.168.30.1  | 443            | TCP       |
+
+Toute requête HTTP ou HTTPS sortant du Wi-Fi Invité vers le monde extérieur est rabattue vers le pare-feu lui-même, qui présente la page d'authentification du portail captif. Une fois l'utilisateur authentifié, la session est tracée par cookie et le pare-feu cesse d'appliquer la redirection — le trafic part normalement vers internet.
+
+### Question B2.3 — Règles de filtrage du Wi-Fi Invité
+
+L'objectif : un utilisateur authentifié peut accéder à internet en HTTP/HTTPS ; un utilisateur non authentifié ne peut pas (sauf le DNS, indispensable au fonctionnement même de la résolution de nom avant authentification, et le trafic à destination du pare-feu lui-même qui héberge le portail).
+
+Règles sur le flux entrant de l'interface Wi-Fi du pare-feu interne :
+
+| #  | Authentification | IP source         | Port source | IP destination | Port destination | Protocole | Action    |
+|----|------------------|-------------------|-------------|----------------|------------------|-----------|-----------|
+| 1  | NON              | 192.168.30.0/24   | *           | 192.168.30.1   | 53               | TCP/UDP   | Autorisé  |
+| 2  | NON              | 192.168.30.0/24   | *           | 192.168.30.1   | 80               | TCP       | Autorisé  |
+| 3  | NON              | 192.168.30.0/24   | *           | 192.168.30.1   | 443              | TCP       | Autorisé  |
+| 4  | OUI              | 192.168.30.0/24   | *           | *              | 80               | TCP       | Autorisé  |
+| 5  | OUI              | 192.168.30.0/24   | *           | *              | 443              | TCP       | Autorisé  |
+| 6  | *                | *                 | *           | *              | *                | *         | Bloqué    |
+
+Lecture :
+- **Lignes 1 à 3** : l'utilisateur non authentifié ne peut joindre que le pare-feu lui-même, sur DNS, HTTP et HTTPS — c'est ce qui lui permet d'accéder à la page de connexion du portail captif (et la redirection de B2.2 fait le reste).
+- **Lignes 4 et 5** : une fois authentifié, l'utilisateur peut sortir vers n'importe quelle IP destination sur les ports web standards.
+- **Ligne 6** : règle finale « tout interdit par défaut » qui bloque le reste (FTP, SSH, jeux en ligne, P2P, etc.).
+
+Cette politique respecte le principe de moindre privilège : l'apprenant ponctuel n'a que ce dont il a strictement besoin (consulter le web), rien de plus.
+
+---
+
+## FAQ
+
+**Le sujet U7 SISR 2025 est-il plus difficile que celui de 2024 ?**
+Le changement majeur est l'intégration explicite de la **cybersécurité** au cœur de l'épreuve (anciennement U6 plus orientée infra pure). Le sujet Blanca combine analyse forensique réseau (MAC flooding), conformité RGPD, supervision SNMPv3 et règles de pare-feu — c'est représentatif du nouveau format U7.
+
+**Quels protocoles de couche 2 maîtriser pour l'épreuve SISR ?**
+ARP, STP, VLAN/802.1Q, port-security, 802.1X avec RADIUS, SNMPv3. Et savoir distinguer un MAC flooding d'un ARP spoofing à partir des symptômes observés. Le playbook [routage et commutation](/guides/routage-commutation) couvre ces sujets.
+
+**Comment justifier la priorité ITIL P1/P2/P3/P4 ?**
+Croiser **impact** (utilisateurs affectés, services touchés) et **urgence** (criticité du moment, périodes critiques) dans une matrice de dérivation. P1 = blocage organisationnel total. P2 = service dégradé sans blocage. P3 = perte mineure. P4 = gêne sans alternative bloquée. La grille du document A5 est la référence officielle ITIL.
+
+**Quel outil Kali Linux pour simuler chaque attaque réseau ?**
+MAC flooding = `macof`. ARP spoofing = `arpspoof` ou `ettercap`. DHCP starvation = `dhcpig`. Cassage Wi-Fi = `aircrack-ng`. Brute force = `hydra`. Capture passive = `tcpdump`. Scan = `nmap`. C'est typiquement ce qui tombe en question courte d'épreuve.
+
+**Le portail captif est-il obligatoire pour respecter la LCEN ?**
+Pas obligatoire stricto sensu, mais c'est la solution la plus simple pour respecter l'obligation de conservation des données permettant d'identifier les utilisateurs (un an, article L34-1 du CPCE). Sans portail captif et donc sans identification individuelle, l'organisme s'expose en cas d'incident impliquant un utilisateur Wi-Fi.
+
+---
+
+## Pour aller plus loin
+
+- [Playbook sécurité](/guides/securite) — couches 2 et 3, attaques classiques, défense en profondeur
+- [Playbook réseaux fondamentaux](/guides/reseaux-fondamentaux) — VLAN, segmentation, commutation, broadcast domain
+- [Playbook routage et commutation](/guides/routage-commutation) — STP, 802.1Q, port-security, 802.1X
+- [Playbook cybersécurité infra](/guides/cybersecurite-infra) — MAC flooding, ARP spoofing, MITM, contre-mesures
+- [Playbook services réseau](/guides/services-reseau) — pare-feu, NAT, DMZ, portails captifs
+- [Playbook droit et RGPD](/guides/droit-rgpd) — obligations CNIL, notification violation, conservation des logs
