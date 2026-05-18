@@ -1,0 +1,385 @@
+---
+title: 'Corrigé U7 BTS SIO 2025 SLAM — Sujet Casterman'
+description: 'Corrigé complet du sujet U7 SLAM 2025 Casterman BTS SIO : analyse risques, sécurisation BDPro, droits BDD, API REST. Code commenté.'
+slug: 'corrige-u7-bts-sio-2025-slam-casterman'
+publishedAt: '2026-05-20'
+category: 'Sujets corrigés'
+targetKeyword: 'sujet u7 bts sio 2025 slam corrigé'
+relatedPlaybooks: ['securite', 'droit-rgpd', 'sql', 'procedures-triggers', 'php-mysql', 'tests']
+---
+
+# Corrigé U7 BTS SIO 2025 SLAM — Sujet Casterman
+
+Tu cherches le corrigé du **sujet U7 BTS SIO 2025 SLAM** (anciennement E5, code 25SI7SLAM, contexte Casterman / ESNEdiPro) ? Tu es au bon endroit. Ce corrigé reprend les **4 dossiers** du sujet Métropole — analyse de risques, sécurisation du progiciel BDPro, droits d'accès BDD, API REST — avec code commenté, requêtes SQL exécutables et justifications notées dans le barème.
+
+Sommaire du sujet :
+- **Dossier A** — Participation à l'atelier d'analyse des risques (15 pts)
+- **Dossier B** — Sécurisation du progiciel BDPro (26 pts)
+- **Dossier C** — Gestion des droits et accès à la base de données (23 pts)
+- **Dossier D** — Mise en ligne de la base de données et gestion des accès (16 pts)
+
+---
+
+## Dossier A — Analyse des risques (15 pts)
+
+### Question A1.1 — Niveaux des critères de sécurité
+
+**a) Confidentialité du récit utilisateur 1 (niveau \*\* important)**
+
+Le récit 1 : l'éditeur enregistre les informations d'une nouvelle bande dessinée et numérise le contrat signé avec l'auteur. Le contrat contient des **données personnelles de l'auteur** (nom, adresse, téléphone, mail) et des **informations stratégiques commerciales** (titre de la prochaine BD, contenu artistique inédit, conditions financières).
+
+Une fuite avant publication :
+- compromettrait la stratégie commerciale de Casterman (concurrence, spoiler);
+- violerait le RGPD vis-à-vis de l'auteur (données perso exposées);
+- mettrait en cause la responsabilité contractuelle de Casterman.
+
+Le niveau important (\*\*) est donc justifié.
+
+**b) Intégrité du récit utilisateur 3 (niveau \*\* important)**
+
+Le récit 3 : l'éditeur transmet la BD finale au format PDF à l'imprimeur. Ce PDF est ce qui sera imprimé tel quel sur des dizaines de milliers d'exemplaires. Une altération entre l'envoi et l'impression — pages manquantes, texte modifié, couleurs dégradées, signature manquante — entraînerait :
+- la réimpression complète d'un tirage (coût économique massif);
+- un préjudice d'image durable;
+- des litiges avec l'auteur (œuvre dénaturée).
+
+L'intégrité doit être garantie au plus haut niveau opérationnel.
+
+**c) Différence de niveau en matière de preuve entre les récits 2 et 3**
+
+- Récit 2 (\- sans objet) : l'assistant d'édition **consulte** des informations. Une consultation n'engage personne, n'altère rien et ne déclenche aucun processus en aval. Aucune preuve n'est nécessaire.
+- Récit 3 (\*\* important) : l'éditeur **transmet** la BD finale à l'imprimeur. C'est un acte engageant qui déclenche l'impression et facture. En cas de litige (BD imprimée fautive, retard, conflit avec l'auteur), il faut pouvoir prouver **qui a transmis quoi, quand**. La traçabilité juridique impose une preuve forte.
+
+### Question A2.1 — Deux impacts d'une attaque réussie par rançongiciel
+
+1. **Interruption d'activité par chiffrement des données métier** : BDPro devient inaccessible, les éditeurs ne peuvent plus consulter ni enregistrer les bandes dessinées en cours, les contrats numérisés ne sont plus consultables. Les PDFs finaux destinés à l'imprimeur peuvent être chiffrés → retards de publication, contrats imprimeur en rupture.
+2. **Impact financier et réputationnel** : coût direct (éventuelle rançon, remédiation, expertise externe, restauration des sauvegardes, mise à niveau de l'infra) auquel s'ajoute la perte de confiance des partenaires (auteurs, imprimeur, libraires) et l'atteinte à l'image de marque, particulièrement sensible pour une maison d'édition reconnue.
+
+### Question A2.2 — Trois mesures techniques contre les rançongiciels
+
+1. **Sauvegardes régulières, hors-ligne ou immuables, testées** : sauvegardes déconnectées du réseau de production (3-2-1 : trois copies, deux supports, une hors-site), avec restauration testée périodiquement. Sans ça, la rançon devient la seule option en cas d'attaque.
+2. **EDR / antivirus à jour sur tous les postes et serveurs** : détection comportementale (et pas que par signatures) pour bloquer le chiffrement massif au moment où il commence, avec capacité de remédiation automatique.
+3. **Cloisonnement réseau et application du moindre privilège** : segmentation en VLAN (postes utilisateurs, serveurs métier, serveurs de sauvegarde isolés), comptes utilisateurs sans droits d'administration, partages réseau en lecture seule par défaut. Un rançongiciel exécuté sur un poste ne doit pas pouvoir atteindre l'intégralité du SI.
+
+### Question A2.3 — Violation de données personnelles
+
+**a)** Le **délégué à la protection des données (DPO)** s'il existe, et surtout la **CNIL** (autorité de contrôle française) — dans un délai de **72 heures** à compter de la prise de connaissance de la violation (article 33 du RGPD). Les personnes concernées sont à informer si le risque pour leurs droits et libertés est élevé (article 34), ce qui n'est pas le cas ici selon Mme Siber.
+
+**b)** Le **registre des violations de données à caractère personnel**, tenu par le responsable de traitement. Cette tenue est une obligation issue de l'article 33 §5 du RGPD, indépendamment du fait que la violation soit notifiée à la CNIL ou non.
+
+---
+
+## Dossier B — Sécurisation du progiciel BDPro (26 pts)
+
+### Question B1.1 — Mots de passe en clair, hash ou chiffrement ?
+
+**a) Pourquoi supprimer les mots de passe stockés en clair**
+
+Un mot de passe en clair dans la base, c'est :
+- une exposition totale en cas de fuite de la base (intrusion, exfiltration via rançongiciel, sauvegarde volée);
+- une violation du principe de moindre privilège (tout DBA peut lire les mots de passe);
+- un effet de bord majeur, parce que les utilisateurs réutilisent souvent les mêmes mots de passe ailleurs (mail, banque, autres applis pro) — la fuite de Casterman compromet leurs autres comptes;
+- une non-conformité aux recommandations CNIL et aux bonnes pratiques OWASP.
+
+**b) Hash ou chiffrement : la solution adaptée est le hash**
+
+- Le **chiffrement** est réversible : avec la clé, on retrouve le mot de passe original. Si la clé est compromise (et elle l'est souvent dès que l'attaquant a accès au serveur applicatif), tous les mots de passe redeviennent exploitables.
+- Le **hash** est une fonction à sens unique. On stocke `hash(motDePasse)`. Pour vérifier la connexion, on hash le mot de passe saisi et on compare. Même volée, la base ne révèle pas les mots de passe en clair — l'attaquant doit faire du brute force.
+
+La solution adaptée est donc le **hash avec sel** (pour éviter les rainbow tables) et un algorithme conçu pour les mots de passe : **bcrypt, Argon2 ou scrypt**. SHA-256 nu est insuffisant : trop rapide à calculer, donc trop facile à brute-forcer.
+
+### Question B2.1 — Trigger majUtilisateur
+
+**a) Pourquoi la table HistoMotDePasse reste vide**
+
+Le trigger insère bien dans `HistoMotDePasse` à la ligne 9-10. Mais immédiatement après (lignes 12-13), il **stocke** le nombre d'enregistrements dans `v_nb`, puis **supprime systématiquement l'enregistrement le plus ancien** (lignes 14-16) sans jamais tester `v_nb`.
+
+Résultat à chaque changement de mot de passe :
+1. La table contient `n` enregistrements (au départ : `n = 0`).
+2. INSERT → table à `n + 1` enregistrements.
+3. SELECT COUNT(*) INTO v_nb → `v_nb = n + 1` (jamais utilisé).
+4. DELETE inconditionnel du plus ancien → table à `n` enregistrements.
+
+Si `n = 0` au départ (premier changement), on insère puis on supprime l'unique enregistrement qu'on vient d'ajouter (il est par construction le plus ancien). La table reste vide. Et même quand elle n'est pas vide, on garde toujours autant d'enregistrements qu'avant le changement, jamais plus → la limite de 5 n'est jamais réellement appliquée comme une limite.
+
+**b) Correction du trigger**
+
+Il faut conditionner le DELETE à `v_nb > 5`. Deux lignes à ajouter :
+
+```sql
+CREATE TRIGGER majUtilisateur
+ 1. BEFORE UPDATE ON Utilisateur FOR EACH ROW
+ 2.   BEGIN
+ 3.     DECLARE correct BOOLEAN;
+ 4.     SET correct = true;
+ 5.     # la mise à jour concerne-t-elle le changement du mot de passe ?
+ 6.     IF (OLD.mdpActuel != NEW.mdpActuel) THEN
+ 7.        IF (mdpExisteHisto(NEW.mdpActuel, OLD.id) = false) THEN
+ 8.            # le nouveau mot de passe n'existe pas dans l'historique
+ 9.            INSERT INTO HistoMotDePasse
+10.              VALUES (OLD.id, OLD.dateHeureMdpActuel, OLD.mdpActuel);
+11.
+12.            SELECT COUNT(*) INTO v_nb
+13.              FROM HistoMotDePasse WHERE idUtilisateur = OLD.id;
+13a.           # AJOUT : on supprime le plus ancien seulement si plus de 5
+13b.           IF (v_nb > 5) THEN
+14.              DELETE FROM HistoMotDePasse WHERE idUtilisateur = OLD.id
+15.                AND dateHeureChangeMdp = (SELECT MIN(dateHeureChangeMdp)
+16.                FROM HistoMotDePasse WHERE idUtilisateur = OLD.id);
+16a.           # AJOUT : fin du IF v_nb > 5
+16b.           END IF;
+17.        ELSE
+18.            SET correct = false;
+19.        END IF;
+20.     END IF;
+21.     IF (correct = false) THEN
+22.        SIGNAL SQLSTATE "45000" SET MESSAGE_TEXT = "mot de passe incorrect";
+23.     END IF;
+24.   END;
+```
+
+**Lignes ajoutées : 13b (`IF (v_nb > 5) THEN`) et 16b (`END IF;`).** Aucune ligne existante n'est modifiée. Pour creuser le mécanisme, regarde le playbook [procédures et triggers](/guides/procedures-triggers).
+
+### Question B3.1 — Évolution de la base pour les PDFs
+
+D'après la note du chef de projet (document B3), il faut stocker pour chaque PDF : nom, date de création, chemin d'accès, utilisateur créateur, BD concernée, et signature électronique (uniquement pour la version finale).
+
+Le formalisme retenu est le schéma relationnel. Une nouvelle table **DocumentPDF** est créée :
+
+```text
+DocumentPDF (id, nom, dateCreation, cheminAcces, signatureGPG,
+             isbn, idUtilisateur)
+    id : clé primaire
+    signatureGPG : nullable (renseigné uniquement pour la version finale)
+    isbn : clé étrangère en référence à isbn de BandeDessinee
+    idUtilisateur : clé étrangère en référence à id de Utilisateur
+```
+
+La table `BandeDessinee` n'est pas modifiée : la relation 1:n entre BandeDessinee et DocumentPDF se matérialise par la clé étrangère `isbn` côté DocumentPDF, ce qui permet de stocker plusieurs PDFs par BD (exigence de traçabilité de la note).
+
+### Question B3.2 — Intérêt de la signature électronique du PDF final
+
+Pour **Casterman** :
+- **Non-répudiation interne** : prouver que la version finale a bien été produite par l'éditeur autorisé (et non par un assistant, un stagiaire, un compte compromis).
+- **Traçabilité juridique** : en cas de litige avec l'auteur ou l'imprimeur, on peut prouver l'identité du signataire et la date de signature.
+- **Intégrité** : détecter toute modification du PDF entre la signature et l'impression.
+
+Pour l'**imprimeur** :
+- **Authenticité** : être certain que le PDF reçu vient bien de Casterman et pas d'un attaquant qui aurait usurpé l'adresse mail ou intercepté le canal de transfert.
+- **Intégrité** : être certain que le fichier n'a pas été altéré pendant le transfert ou le stockage côté imprimeur → imprimer exactement la version voulue par l'éditeur.
+- **Engagement contractuel** : en cas de défaut d'impression sur la BD livrée, l'imprimeur peut prouver qu'il a imprimé conformément au PDF signé, transférant ainsi la responsabilité d'une erreur de contenu vers Casterman.
+
+### Question B3.3 — Transfert d'un PDF de 2 Go sécurisé
+
+Un fichier de 2 Go exclut les pièces jointes mail (limite habituelle à 25 Mo). Le canal doit garantir confidentialité et intégrité.
+
+**Solution recommandée : SFTP (SSH File Transfer Protocol)** sur un serveur dédié, avec :
+- authentification par paire de clés SSH (pas seulement mot de passe);
+- chiffrement de bout en bout (SSH);
+- audit des connexions et des transferts (logs serveur);
+- pas de limite de taille de fichier;
+- standard pour les échanges B2B techniques.
+
+Alternatives acceptables : **HTTPS avec espace de transfert sécurisé** (genre Nextcloud, Filesender de RENATER), ou **service de transfert chiffré de bout en bout** (SwissTransfer en mode chiffré). Le mail, FTP simple, ou tout protocole non chiffré sont à exclure.
+
+---
+
+## Dossier C — Droits et accès à la base (23 pts)
+
+### Question C1.1 — Cas testés par la classe UtilisateurTest
+
+Dans `setUp`, l'utilisateur est instancié avec la fonction **Assistant d'édition**, qui a uniquement le droit `select` sur les tables BandeDessinee, Auteur, Realise et Categorie.
+
+| Test  | Appel                                          | Attendu  | Cas testé                                                  |
+|-------|------------------------------------------------|----------|------------------------------------------------------------|
+| test1 | `possedeDroit("Utilisateur", "select")`        | `false`  | Table non listée dans les droits → refus                   |
+| test2 | `possedeDroit("Categorie", "select")`          | `true`   | Table ET opération valides → accord                        |
+| test3 | `possedeDroit("Categorie", "update")`          | `false`  | Table valide mais opération non autorisée → refus          |
+
+Ces trois cas couvrent les chemins essentiels : droit absent (test1), droit présent (test2), opération non autorisée sur une table connue (test3). Pour aller plus loin, regarde le playbook [tests unitaires](/guides/tests).
+
+### Question C1.2 — Code de la méthode possedeDroit
+
+D'après les classes métier (document C4), un `Utilisateur` a une `Fonction`, et une `Fonction` a une liste de `Droit` accessible via `getLesDroits()`. Chaque `Droit` expose `getNomTableBdd()` et `getNomOperation()`.
+
+```java
+/**
+ * Vérifie si l'utilisateur a le droit de réaliser l'opération sur la table.
+ */
+public boolean possedeDroit(String uneTable, String uneOperation) {
+    ArrayList<Droit> lesDroits = this.laFonction.getLesDroits();
+    for (Droit unDroit : lesDroits) {
+        if (unDroit.getNomTableBdd().equals(uneTable)
+            && unDroit.getNomOperation().equals(uneOperation)) {
+            return true;
+        }
+    }
+    return false;
+}
+```
+
+On parcourt la liste des droits de la fonction, on retourne `true` dès qu'on trouve une correspondance exacte (table ET opération), `false` sinon. L'usage de `equals` (et pas `==`) est obligatoire pour comparer des chaînes en Java.
+
+### Question C2.1 — Ajout de l'adresse IP dans creerEnregLog
+
+L'adresse IP arrive en paramètre supplémentaire de la méthode et doit apparaître dans le message log au même format que les autres champs.
+
+```java
+ 1. /**
+ 2.  * crée un enregistrement dans le fichier des traces (log)
+ 3.  * @param util l'utilisateur qui effectue l'opération
+ 4.  * @param droit le droit concerné
+ 5.  * @param date la date et heure de l'opération
+ 6.  * @param adresseIP l'adresse IP de l'équipement de l'utilisateur     // AJOUT doc
+ 7.  */
+ 8. public void creerEnregLog(Utilisateur util, Droit droit, DateTime date,
+ 9.                           String adresseIP){                            // MODIF ligne 8 (signature)
+10.    SimpleDateFormat forme = new SimpleDateFormat("dd/MM/yyyy-HH:mm:ss");
+11.    String strDate = forme.format(date);
+12.    String messageLog = "util:" + util.getIdUtilisateur();
+13.    messageLog += ";operation:" + droit.getNomOperation();
+14.    messageLog += ";table:" + droit.getNomTableBdd() + ";date:" + strDate;
+15.    messageLog += ";ip:" + adresseIP;                                    // AJOUT ligne 15
+16.    logger.info(messageLog);
+17. }
+```
+
+**Lignes concernées** : modification de la signature (ligne 8 ci-dessus, équivalent à la ligne 6 du sujet) pour ajouter `String adresseIP`, et ajout d'une ligne entre la concaténation de la date et l'appel à `logger.info` pour ajouter `;ip:adresseIP` au message.
+
+### Question C2.2 — Requête : nombre de delete dans les 30 dernières minutes
+
+```sql
+SELECT COUNT(*) AS nbDelete
+FROM Log
+WHERE operation = 'delete'
+  AND datestampdiff(MINUTE, dateHeure, sysdate()) <= 30;
+```
+
+`datestampdiff(MINUTE, dateHeure, sysdate())` renvoie le nombre de minutes écoulées entre l'enregistrement et l'instant courant. La condition `<= 30` capture toutes les opérations de suppression réalisées dans les 30 dernières minutes. La valeur est positive puisque les logs sont par construction antérieurs à `sysdate()`. Pour réviser les requêtes d'agrégation, voir le playbook [SQL](/guides/sql).
+
+### Question C2.3 — Corriger la requête d'audit insertion
+
+**a) Pourquoi la requête fournie ne correspond pas au besoin**
+
+```sql
+-- Requête fournie
+SELECT idUtilisateur FROM Log
+WHERE nomTable = "BandeDessinee" AND operation = "insert"
+AND dateHeure >= concat(current_date()," 08:00:00");
+```
+
+Le besoin : pour **chaque utilisateur ayant réalisé plus de 5 ajouts depuis 8 h**, retourner le nombre d'ajouts. La requête actuelle :
+- ne **regroupe pas** par utilisateur (pas de `GROUP BY`) → renvoie une ligne par insertion brute, avec doublons;
+- ne **compte rien** → pas de colonne `nombre d'ajouts`;
+- ne **filtre pas** sur le seuil de 5 → renvoie même les utilisateurs qui ont fait une seule insertion.
+
+**b) Requête corrigée**
+
+```sql
+SELECT idUtilisateur, COUNT(*) AS nbAjouts
+FROM Log
+WHERE nomTable = "BandeDessinee"
+  AND operation = "insert"
+  AND dateHeure >= concat(current_date(), " 08:00:00")
+GROUP BY idUtilisateur
+HAVING COUNT(*) > 5;
+```
+
+Le `GROUP BY idUtilisateur` regroupe les lignes par utilisateur, `COUNT(*)` compte les insertions du groupe, et `HAVING COUNT(*) > 5` ne garde que les utilisateurs au-dessus du seuil. Le filtre `WHERE` agit avant le regroupement, le `HAVING` après — c'est l'ordre logique d'évaluation des clauses SQL.
+
+---
+
+## Dossier D — Mise en ligne de la BDD et gestion des accès (16 pts)
+
+### Question D1.1 — Pourquoi DELETE et PUT sont dangereux
+
+DELETE et PUT sont les deux méthodes HTTP qui **modifient l'état persistant** de la base sans possibilité de retour en arrière naturel :
+
+- **DELETE** supprime des enregistrements. Une suppression mal contrôlée peut effacer définitivement des données (BD, auteurs, contrats), affectant à la fois la **disponibilité** et l'**intégrité** des données. Sans sauvegarde récente, la perte est définitive.
+- **PUT** met à jour un enregistrement existant. Une modification non autorisée altère l'**intégrité** : un attaquant peut modifier des prix, changer le titulaire d'un contrat, falsifier des informations comptables, et l'opération laisse peu de traces visibles (la donnée existe toujours, juste avec une valeur falsifiée).
+
+GET (lecture) et POST (création) sont moins critiques : GET ne modifie rien, POST crée une nouvelle ligne traçable et plus facile à détecter ou rejeter a posteriori. C'est pourquoi DELETE et PUT méritent un contrôle d'autorisation strict côté API. Le playbook [sécurité](/guides/securite) approfondit ces principes.
+
+### Question D1.2 — Sécuriser la méthode delete de Controle
+
+La méthode `delete` doit appeler `autoriseAction` avant d'exécuter la suppression, et renvoyer un code de statut HTTP cohérent en cas d'absence de droit.
+
+```php
+/**
+ * requête HTTP de type DELETE
+ * @param string $table nom de la table
+ * @param array $champs nom et valeur des champs critères du delete
+ */
+public function delete(string $table, array $champs): void {
+    // L'idUtilisateur est toujours présent dans $champs (cf. dossier doc D)
+    $idUtil = $champs['idUtilisateur'];
+
+    // Vérification des droits avant toute opération
+    if (!$this->accessBdd->autoriseAction($idUtil, 'delete', $table)) {
+        $this->reponse(403, null);   // 403 : opération non permise
+        return;
+    }
+
+    $result = $this->accessBdd->delete($table, $champs);
+    $this->reponse(204, $result);
+}
+```
+
+Le code **403 « Opération non permise »** est le bon choix : l'utilisateur est authentifié (sinon on serait en 401) mais n'a pas l'autorisation pour cette opération précise. On sort de la méthode avec `return` après la réponse pour éviter d'exécuter la suppression.
+
+### Question D2.1 — Pourquoi une API publique séparée est plus sécurisée
+
+La solution 2 — créer une **nouvelle API REST publique en lecture seule** dédiée au catalogue — applique trois principes :
+
+1. **Moindre privilège exposé** : la nouvelle API n'expose que la route de récupération du catalogue (`GET /catalogue`). DELETE, PUT, POST n'existent simplement pas → aucune opération destructive ou modifiante n'est atteignable, même par bug d'authentification.
+2. **Surface d'attaque réduite** : l'API authentifiée existante reste interne, derrière son contrôle d'accès. Pas d'endpoint authentifié à exposer côté internet, donc pas de tentatives de brute force, de bypass d'authentification, ou de fuzzing sur les routes sensibles.
+3. **Isolation des risques** : une faille découverte dans l'API publique (injection, fuite via verbe HTTP non prévu) ne compromet que la lecture du catalogue, jamais l'écriture ou les données sensibles (auteurs, contrats, utilisateurs). À l'inverse, ouvrir l'API existante implique de gérer une exception « public sur cette route, authentifié sur les autres » — code complexe, facile à mal coder, source de régressions.
+
+C'est l'application directe du principe de **séparation des privilèges** prôné par OWASP et les recommandations ANSSI.
+
+### Question D3.1 — Mot de passe oublié : failles et alternatives
+
+**a) Deux problèmes de sécurité du mode opératoire actuel**
+
+1. **Envoi du mot de passe par mail** : la procédure rappelle l'identifiant *et* envoie un mot de passe que l'utilisateur pourra changer. Cela implique soit que la BDD stocke le mot de passe en clair pour pouvoir le réenvoyer (faille majeure, déjà traitée en B1.1), soit que le système génère un mot de passe temporaire envoyé en clair par mail. Or le mail n'est pas un canal sécurisé : interception sur le réseau, stockage sur les serveurs SMTP intermédiaires, lecture par un attaquant ayant compromis la boîte. Un mot de passe en clair envoyé par mail est une faille de confidentialité.
+2. **Absence de vérification d'intention** : il suffit qu'un attaquant connaisse l'adresse mail d'un commerçant pour déclencher la procédure et obtenir un mot de passe valide envoyé sur la boîte. Si la boîte mail est elle-même compromise (réutilisation de mots de passe ailleurs, phishing antérieur), l'attaquant prend le contrôle du compte Casterman immédiatement. Aucun mécanisme de durée de vie limitée, aucune notification au légitime que sa demande a été déclenchée.
+
+**b) Mode opératoire plus sécurisé**
+
+1. L'utilisateur saisit son adresse mail (ou son identifiant) sur la page de réinitialisation.
+2. Le système envoie un **lien à usage unique** contenant un **token cryptographiquement fort** (UUID v4 ou jeton aléatoire de 32 octets), enregistré côté serveur avec une **durée de vie courte (15 à 30 minutes)** et un état « non utilisé ».
+3. Quand le commerçant clique le lien, il arrive sur une page où il **choisit lui-même un nouveau mot de passe** (saisi deux fois pour confirmation). Le mot de passe n'est jamais transmis par mail.
+4. Le serveur valide le token (existence, non expiré, non utilisé), enregistre le nouveau mot de passe (haché avec sel via bcrypt ou Argon2), invalide le token.
+5. Le serveur envoie un **mail de confirmation du changement** (sans mot de passe) : si l'utilisateur n'est pas à l'origine de la demande, il sait immédiatement que son compte est ciblé.
+6. (Renforcement optionnel) Ajout d'une étape de **2FA** (code par SMS ou application authenticator) avant validation du nouveau mot de passe pour les comptes à privilèges.
+
+Ce schéma — appelé « password reset by token » — est le standard recommandé par l'OWASP. Le playbook [PHP/MySQL](/guides/php-mysql) montre une implémentation concrète.
+
+---
+
+## FAQ
+
+**Quel est le coefficient de l'épreuve U7 au BTS SIO 2025 ?**
+Coefficient 4, durée 4 heures, sans aucun document autorisé. C'est l'épreuve la plus discriminante de l'option SLAM avec E4.
+
+**Le sujet U7 SLAM 2025 a-t-il été plus difficile que celui de 2024 ?**
+Le passage de U6 à U7 marque la première session post-réforme. Le sujet Casterman 2025 met davantage l'accent sur l'analyse de risque (PSSI, RGPD, rançongiciels) et la sécurisation d'API REST que les sujets U6 antérieurs, plus centrés sur la POO pure et la modélisation Merise.
+
+**Comment réviser efficacement les triggers MySQL pour l'épreuve ?**
+Trois types reviennent : audit (écriture dans une table log), historisation (limite N versions, cas exact de ce sujet), validation métier (vérification d'invariant avant INSERT/UPDATE). Le playbook [procédures et triggers](/guides/procedures-triggers) couvre les trois.
+
+**Quels sont les codes HTTP à connaître pour le dossier API REST ?**
+200 OK, 201 Created (POST réussi), 204 No Content (DELETE réussi), 400 Bad Request (paramètre manquant), 401 Unauthorized (non authentifié), 403 Forbidden (authentifié mais pas autorisé), 404 Not Found, 500 Internal Server Error. La distinction 401/403 tombe presque systématiquement.
+
+**Le sujet Casterman est-il téléchargeable légalement ?**
+Oui, les sujets officiels du BTS SIO Métropole sont publiés par le Ministère de l'Éducation nationale via le CRCF et le site officiel du diplôme. Le sujet 25SI7SLAM est disponible en libre accès.
+
+---
+
+## Pour aller plus loin
+
+- [Playbook sécurité](/guides/securite) — RGPD, chiffrement, hash, OWASP Top 10
+- [Playbook droit et RGPD](/guides/droit-rgpd) — obligations de notification, registres, DPO
+- [Playbook SQL](/guides/sql) — GROUP BY, HAVING, agrégats, fonctions de date
+- [Playbook procédures et triggers](/guides/procedures-triggers) — historisation, audit, validation
+- [Playbook PHP/MySQL](/guides/php-mysql) — API REST, sécurisation, gestion des sessions
+- [Playbook tests unitaires](/guides/tests) — assertions, mocks, couverture

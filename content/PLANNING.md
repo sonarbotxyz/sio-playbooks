@@ -10,12 +10,14 @@ Règles : voir [STYLE.md](./STYLE.md). Toujours remplir `targetKeyword` et `sear
 
 Le trafic search "sujet bts sio corrigé" explose entre mi-mai et fin juin. **Tout ce qui est sujet corrigé doit être publié avant fin mai.**
 
+Note réforme : depuis 2025, l'épreuve écrite Cybersécurité des services informatiques est passée du code **U6** (sessions ≤ 2024) au code **U7** (sessions ≥ 2025). Cible les keywords selon l'année.
+
 | # | Titre | Mot-clé cible | Intention | Playbooks liés | Statut | Publier avant |
 |---|---|---|---|---|---|---|
-| 1 | Sujet E5 BTS SIO 2025 corrigé pas-à-pas | `sujet e5 bts sio 2025 corrigé` | Trouver le corrigé pour réviser | projet-e5, sql, php-mysql | idea | 2026-05-25 |
-| 2 | Sujet E6 BTS SIO 2025 corrigé | `sujet e6 bts sio 2025` | Trouver le corrigé | projet-e5 | idea | 2026-05-25 |
-| 3 | Sujet maths BTS SIO 2025 — corrigé complet | `sujet maths bts sio 2025` | Corrigé maths | maths-arithmetique, maths-suites, maths-graphes | idea | 2026-05-30 |
-| 4 | Sujet CEJM BTS SIO 2025 corrigé | `sujet cejm bts sio 2025` | Corrigé CEJM | droit-rgpd | idea | 2026-05-30 |
+| 1 | Corrigé U7 BTS SIO 2025 SLAM — Sujet Casterman | `sujet u7 bts sio 2025 slam corrigé` | Trouver le corrigé pour réviser | securite, droit-rgpd, sql, procedures-triggers, php-mysql, tests | draft | 2026-05-25 |
+| 2 | Corrigé U7 BTS SIO 2025 SISR | `sujet u7 bts sio 2025 sisr corrigé` | Trouver le corrigé SISR | securite, reseaux-fondamentaux, cybersecurite-infra | idea | 2026-05-25 |
+| 3 | Corrigé U6 BTS SIO 2024 SLAM | `sujet u6 bts sio 2024 slam corrigé` | Sujet pré-réforme, entraînement | poo, sql, php-mysql | idea | 2026-05-30 |
+| 4 | Corrigé U6 BTS SIO 2024 SISR | `sujet u6 bts sio 2024 sisr corrigé` | Sujet pré-réforme, entraînement | reseaux-fondamentaux, windows-server, linux-administration | idea | 2026-05-30 |
 
 ## Révisions de dernière minute (mai-juin)
 

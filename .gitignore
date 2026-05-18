@@ -2,3 +2,7 @@
 .vercel
 node_modules
 *.tsbuildinfo
+.DS_Store
+
+# Sujets PDF officiels — gardés en local, pas dans le repo public
+content/drafts/_sources/
