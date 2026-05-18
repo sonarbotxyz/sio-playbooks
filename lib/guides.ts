@@ -65,6 +65,10 @@ const CATEGORY_MAP: Record<string, string> = {
   'supervision': 'Exploitation',
   'scripting-powershell-bash': 'Exploitation',
   'glpi-parc': 'Exploitation',
+  // CEJM — Culture economique, juridique et manageriale
+  'cejm-economie': 'CEJM',
+  'cejm-management': 'CEJM',
+  'cejm-droit': 'CEJM',
 };
 
 function inferCategory(slug: string, frontmatter: Partial<GuideFrontmatter>): string {

@@ -29,6 +29,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Virtualisation': 'V',
   'Securite': 'SEC',
   'Exploitation': 'E',
+  'CEJM': 'CEJM',
 };
 
 const MONO = {
@@ -52,6 +53,7 @@ export const CATEGORY_ORDER = [
   'Architecture',
   'Qualite et Securite',
   'Mathematiques',
+  'CEJM',
   'Reseaux',
   'Systemes',
   'Virtualisation',
