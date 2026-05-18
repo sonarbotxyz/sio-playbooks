@@ -1,0 +1,423 @@
+---
+title: "Corrigé U6 BTS SIO 2024 SISR — Sujet Clinique MARTIN"
+description: "Corrigé complet du sujet U6 SISR 2024 BTS SIO (Clinique MARTIN) : risque rançongiciel, déchiffrement HTTPS sur Stormshield, audit Active Directory PingCastle, centralisation des logs WEF."
+slug: "corrige-u6-bts-sio-2024-sisr-clinique-martin"
+publishedAt: "2026-05-19"
+category: "Sujets corrigés"
+targetKeyword: "sujet u6 bts sio 2024 sisr corrigé"
+relatedPlaybooks: ["securite", "droit-rgpd", "reseaux-fondamentaux", "cybersecurite-infra", "windows-server", "services-reseau"]
+---
+
+# Corrigé U6 BTS SIO 2024 SISR — Sujet Clinique MARTIN
+
+Tu cherches le corrigé du **sujet U6 BTS SIO 2024 SISR** (code 24SI6SISR-M1, contexte Clinique MARTIN à Pessac) ? Cette épreuve **pré-réforme** (U6, devenue U7 en 2025) couvre un cas réaliste — un établissement de santé qui veut réduire son risque rançongiciel et durcir son Active Directory. Ce corrigé reprend les **2 dossiers** du sujet — gestion du risque rançongiciel + déchiffrement HTTPS, audit AD PingCastle — avec schémas commentés, justifications EBIOS et règles de pare-feu.
+
+Sommaire du sujet :
+- **Dossier A** — Gestion et réduction du risque d'attaque par rançongiciel (52 pts)
+- **Dossier B** — Audit de sécurité de l'annuaire Active Directory (28 pts)
+
+---
+
+## Dossier A — Risque d'attaque par rançongiciel (52 pts)
+
+### Question A1.1 — Risque, niveau EBIOS, mesures
+
+**a) Principal risque associé à une attaque par rançongiciel**
+
+Le principal risque pour la Clinique MARTIN est l'**indisponibilité prolongée du système d'information médical et l'inaccessibilité aux données patient**. Cela se traduit par :
+
+- impossibilité d'accéder aux dossiers médicaux PASTEL et Cariatides en cours d'intervention ou de consultation;
+- annulation ou report d'interventions chirurgicales programmées;
+- retard de diagnostic et d'administration de soins (risque vital);
+- violation de données personnelles de santé si exfiltration (double extorsion typique des rançongiciels modernes : chiffrement + publication des données).
+
+Cas réel évoqué dans l'énoncé : le centre hospitalier Sud Francilien de Corbeil-Essonnes (2022) a dû fonctionner en mode papier pendant plusieurs semaines.
+
+**b) Niveau de gravité EBIOS**
+
+D'après l'échelle EBIOS (document A2) :
+
+| Niveau              | Critère essentiel                                                                    |
+|---------------------|--------------------------------------------------------------------------------------|
+| G5 CATASTROPHIQUE   | Conséquences au-delà de l'organisation, impact sectoriel, mission régalienne         |
+| **G4 CRITIQUE**     | **Survie de l'organisation menacée, impacts graves sur sécurité personnes**          |
+| G3 GRAVE            | Performances dégradées, mode dégradé                                                 |
+| G2 SIGNIFICATIVE    | Conséquences limitées                                                                |
+| G1 MINEURE          | Négligeables                                                                         |
+
+Le niveau retenu est **G4 — CRITIQUE**, parce que :
+- la survie de l'établissement (450 salariés, certifications ISO 9001 et 27799) est directement menacée par un blocage prolongé;
+- les impacts sur la sécurité des personnes sont réels (patients en cours d'hospitalisation, urgences à réorienter);
+- l'écosystème est touché (ARS, organismes sociaux, partenaires fournisseurs).
+
+G5 est défendable si on argumente que la santé est une mission régalienne et que la défaillance d'un établissement de santé peut désorganiser le secteur (cas du CH Sud Francilien). En épreuve, G4 ou G5 sont acceptés avec justification.
+
+**c) Quatre mesures pour éviter / réduire l'impact**
+
+Issues du guide ANSSI « Attaques par rançongiciels, tous concernés » (document A3) :
+
+1. **Sauvegardes régulières, déconnectées et testées** : la sauvegarde hors-ligne (bande, disque externe débranché, espace immuable type WORM/S3 Object Lock) garantit la restauration sans payer la rançon. Tests de restauration périodiques obligatoires — une sauvegarde non testée n'existe pas.
+2. **Maintien à jour des systèmes et logiciels** (patch management) : application rapide des correctifs de sécurité, veille active via CERT-FR, ANSSI, bases CVE. Les rançongiciels exploitent massivement les CVE non patchées (Eternal Blue / WannaCry).
+3. **Cloisonnement réseau** : segmentation par VLAN (administration, postes utilisateurs, serveurs, DMZ), filtrage inter-zones par pare-feu, principe « tout interdit sauf flux légitimes ». Empêche la propagation latérale en cas d'infection d'un poste.
+4. **Moindre privilège et postes d'administration dédiés** : utilisateurs sans droits d'administration sur leur poste, comptes admin distincts des comptes utilisateurs quotidiens, postes d'administration dédiés sans navigation internet ni messagerie. Bloque la classe d'attaque « phishing → admin local → propagation ».
+
+### Question A1.2 — Précisions sur le guide ANSSI
+
+**a) Intérêt des sauvegardes déconnectées et solution matérielle**
+
+**Intérêt** : un rançongiciel parcourt les partages réseau accessibles depuis le poste compromis et chiffre **tout ce qu'il peut atteindre**. Si les sauvegardes sont connectées (NAS monté en permanence, partage SMB ouvert), elles sont chiffrées en même temps que les données de production. Une sauvegarde **physiquement déconnectée** (air-gap) ne peut pas être atteinte par le rançongiciel.
+
+**Solution matérielle** : utilisation de **bandes magnétiques en rotation** (LTO) sortie du système après chaque sauvegarde, ou **disques durs externes** connectés uniquement pendant la fenêtre de sauvegarde puis débranchés et stockés dans un coffre. Alternative moderne : **stockage immuable** (S3 Object Lock, WORM, ou solutions comme Exanet/Atempo Miria) — accessible logiquement mais avec verrou anti-modification pendant N jours.
+
+**b) Veille sur les dernières failles de sécurité**
+
+Les sources principales :
+- **CERT-FR** (Centre gouvernemental français de veille, alerte et réponse) — bulletins d'alerte par mail et flux RSS;
+- **ANSSI** — guides, recommandations, bulletins de sécurité;
+- **NVD / CVE.org** (base américaine des vulnérabilités, par numéro CVE);
+- **Bulletins de sécurité des éditeurs** (Microsoft Security Response Center, Cisco, etc.);
+- Listes de diffusion spécialisées (Bugtraq, oss-security);
+- **CVSS** (scoring de criticité) pour prioriser.
+
+Une équipe sécurité doit s'abonner aux flux pertinents et publier en interne un bulletin hebdomadaire de vulnérabilités à traiter.
+
+**c) Intérêt d'un VLAN dédié à l'administration réseau**
+
+Un VLAN dédié à l'administration sépare logiquement le trafic d'administration (SSH vers les commutateurs, RDP vers les contrôleurs de domaine, accès aux interfaces de pare-feu) du trafic utilisateur. Conséquences positives :
+
+- un poste utilisateur compromis (par phishing par exemple) n'a **pas accès aux interfaces d'administration**, qui sont sur un VLAN séparé filtré côté pare-feu;
+- on peut appliquer un **filtrage strict** sur ce VLAN : seules les machines des admins peuvent l'atteindre, sur des ports précis (22, 3389, 443 vers interfaces de management);
+- en cas d'attaque par mouvement latéral, l'attaquant doit franchir une frontière supplémentaire pour accéder aux équipements critiques.
+
+C'est l'application directe du principe de **cloisonnement** recommandé par l'ANSSI. Le playbook [réseaux fondamentaux](/guides/reseaux-fondamentaux) couvre les VLAN.
+
+**d) Pourquoi les postes d'administration n'ont pas accès à internet**
+
+Trois raisons concourantes :
+
+- **Réduction de la surface d'attaque** : un poste sans accès web ne peut pas être infecté par drive-by download, exploit de navigateur, téléchargement de fichier malveillant.
+- **Pas de phishing efficace** : sans messagerie ni navigation, les vecteurs d'entrée classiques du rançongiciel disparaissent.
+- **Pas d'exfiltration de données depuis le poste admin** : même si l'attaquant parvenait à récupérer des credentials cachés sur le poste, il ne peut pas les utiliser pour communiquer avec un serveur de commande à l'extérieur.
+
+C'est un standard ANSSI : un **PAW (Privileged Access Workstation)** est dédié à l'administration, jamais utilisé pour mail/web, idéalement isolé du réseau bureautique.
+
+### Question A1.3 — Contre-mesures par phase de l'attaque
+
+Le schéma A4 décrit trois phases. Deux contre-mesures par phase, en privilégiant le plus efficace.
+
+**Phase 1 — Envoi et ouverture du courriel malveillant**
+
+1. **Filtrage anti-spam et anti-phishing en passerelle SMTP** : sandbox d'analyse des pièces jointes avant remise (détonation), filtrage des URLs en lien, vérification SPF/DKIM/DMARC pour bloquer les usurpations de domaine.
+2. **Sensibilisation des utilisateurs** : formation au repérage des courriels suspects (expéditeur, ton d'urgence, fautes, lien hover), exercices de phishing simulé, procédure de signalement à la DSI.
+
+**Phase 2 — Téléchargement, contact serveur attaquant, chiffrement**
+
+1. **EDR comportemental sur les postes** (Endpoint Detection and Response) : détecte le pattern de chiffrement massif (un processus qui ouvre/écrit massivement des fichiers en rafale) et isole automatiquement la machine du réseau. C'est la dernière ligne de défense efficace contre un payload inconnu.
+2. **Filtrage sortant et règles de pare-feu strictes** : le pare-feu bloque les connexions vers IP ou domaines suspects (renseignement Threat Intelligence), interdit le trafic sortant non standard, force le passage par un proxy avec liste blanche. Empêche le rançongiciel de joindre son serveur de commande (C2) pour récupérer la clé de chiffrement.
+
+**Phase 3 — Message de rançon, perte des données**
+
+1. **Sauvegardes hors-ligne testées** (déjà discuté) : restauration sans payer, ce qui rend l'attaque non rentable pour le pirate et limite la perte au point de restauration.
+2. **Plan de réponse aux cyberattaques (PRC) et plan de continuité d'activité (PCA)** : cellule de crise documentée, communication interne et externe préparée, notification à la CNIL sous 72 h, contact du CERT-FR, procédure de bascule en mode dégradé (papier, applications de secours). Sans plan, l'organisation perd 2 à 3 jours dans la panique alors que chaque heure compte.
+
+### Question A2.1 — Pourquoi HTTPS complexifie la lutte
+
+Le protocole HTTPS chiffre le contenu des échanges entre le client et le serveur via TLS. Conséquence pour la clinique :
+
+- **Le pare-feu, l'antivirus et l'IPS ne peuvent pas inspecter ce qui passe dans le tunnel chiffré**. Ils voient des octets aléatoires.
+- Un payload malveillant téléchargé via HTTPS arrive sur le poste sans être analysé en transit.
+- Une **exfiltration de données patient** vers un serveur attaquant en HTTPS passe inaperçue.
+- Les rançongiciels utilisent massivement HTTPS pour leur serveur de commande (C2) afin de ne pas être détectés.
+- Le filtrage par catégorie d'URL fonctionne (basé sur le nom de domaine en SNI) mais **l'analyse de contenu est impossible**.
+
+Sans déchiffrement, la clinique perd la visibilité sur plus de 90 % du trafic web moderne.
+
+### Question A2.2 — Schéma du proxy SSL
+
+Le proxy SSL réalise une **interception TLS contrôlée** (man-in-the-middle assumé). Description du flux pour une connexion `Poste interne → www.google.com` :
+
+```text
+┌────────────────┐                  ┌──────────────────┐                  ┌────────────────┐
+│  Poste client  │                  │   Stormshield    │                  │ Serveur externe│
+│    interne     │                  │   Proxy SSL      │                  │  (www.google)  │
+└────────────────┘                  └──────────────────┘                  └────────────────┘
+        │                                    │                                     │
+        │   1. ClientHello (TLS)             │                                     │
+        ├───────────────────────────────────►│   2. ClientHello (TLS)              │
+        │                                    ├────────────────────────────────────►│
+        │                                    │                                     │
+        │   4. Certif émis par PKI Clinique  │   3. Certif réel google.com         │
+        │◄───────────────────────────────────┤◄────────────────────────────────────┤
+        │                                    │                                     │
+        │   ====== TUNNEL CHIFFRÉ A ========►│◄====== TUNNEL CHIFFRÉ B ===========►│
+        │   (TLS, certif PKI interne)        │   (TLS, certif Google)              │
+        │                                    │                                     │
+        │                                    │  >>> DONNÉES EN CLAIR <<<           │
+        │                                    │  IPS + Antivirus + filtrage URL     │
+        │                                    │                                     │
+```
+
+**Zones et chiffrement** :
+
+- **Poste client ↔ Stormshield** : **CHIFFRÉ** (TLS avec certificat émis par l'autorité de certification interne « Clinique Martin PKI » que voit le poste);
+- **À l'intérieur du Stormshield** : **EN CLAIR** — c'est le point d'inspection où l'IPS, l'antivirus et le filtrage URL analysent le contenu;
+- **Stormshield ↔ Serveur externe** : **CHIFFRÉ** (TLS avec le certificat réel du serveur, validé par les CA publiques).
+
+Le proxy maintient donc deux sessions TLS distinctes et fait le pont entre les deux, en clair au milieu.
+
+### Question A2.3 — Avertissement de configuration
+
+**a) Premier test — règle 2 en avertissement**
+
+Les deux règles configurées sont identiques (`passer + IPS + Antivirus + Filtrage URL`), l'une pour HTTP, l'autre pour HTTPS. Le message du Stormshield : « *Une inspection appliquée sur un protocole SSL nécessite d'être précédée d'une règle déchiffrant ce trafic.* »
+
+**Cause** : l'IPS et l'antivirus ne peuvent pas analyser du contenu chiffré. Sans règle de déchiffrement préalable, les inspections demandées sur la règle HTTPS sont **inopérantes** — la configuration n'a aucun effet réel sur ce flux, d'où l'avertissement.
+
+**b) Second test — absence d'avertissement**
+
+Après modification, la politique contient désormais **trois règles** :
+
+1. `passer + inspection` pour HTTP (inchangé).
+2. **`déchiffrer`** pour HTTPS — nouvelle règle qui force le passage par le proxy SSL.
+3. `passer + inspection` pour HTTPS *via Proxy SSL* — applique l'inspection au flux **après** déchiffrement.
+
+L'avertissement disparaît parce que la séquence est désormais cohérente : déchiffrement préalable, puis inspection sur le contenu clair.
+
+### Question A2.4 — Avantages et inconvénients du déchiffrement HTTPS
+
+D'après les recommandations ANSSI 2014 (document A6) :
+
+**Avantages**
+
+- **Analyse antivirus, IPS et filtrage de contenu** sur le trafic HTTPS — détection des payloads et exploits;
+- **Détection d'exfiltration** de données sensibles vers l'extérieur;
+- **Journalisation** uniforme entre HTTP et HTTPS (conformité, forensic);
+- **Mise en cache** des contenus statiques par le proxy (performance);
+- Application des politiques de sécurité de l'entreprise au trafic chiffré.
+
+**Inconvénients**
+
+- **Le proxy devient une cible critique** : s'il est compromis, l'attaquant a accès à TOUT le trafic web déchiffré (mots de passe, cookies de session, données médicales). Le proxy doit être protégé au plus haut niveau.
+- **Authentification client par certificat impossible** : le proxy est en coupure, le client ne dialogue plus directement avec le serveur final. Les sites bancaires ou administratifs qui exigent un certificat client doivent être placés en **liste blanche** (non déchiffrés).
+- **Niveau de sécurité TLS dépendant du proxy** : si le proxy supporte des versions TLS plus anciennes ou des suites cryptographiques plus faibles que les navigateurs modernes, on régresse en sécurité côté connexion externe.
+- **PKI interne obligatoire** : il faut une autorité de certification interne, déployer son certificat racine sur tous les postes (GPO), gérer son cycle de vie.
+- **Vie privée et conformité RGPD** : le déchiffrement de trafic personnel (mail perso, banque, santé personnelle) est une atteinte à la vie privée des salariés, nécessitant information préalable et liste blanche pour les sites sensibles.
+
+### Question A2.5 — Erreur de certificat du navigateur
+
+**a) Cause du message d'erreur**
+
+Le navigateur affiche : `SEC_ERROR_UNKNOWN_ISSUER` sur `www.google.com`. Le détail du certificat (document A7) montre :
+- Nom courant : `www.google.com`
+- Émetteur : `SSL Proxy Trusted CA 5fce40f7`
+- Organisation : `Clinique Martin`
+
+Le poste reçoit un certificat émis par la **PKI interne de la clinique**, comme attendu (c'est le principe du proxy SSL). Mais ce poste ne reconnaît pas cette PKI comme une autorité de certification de confiance — son magasin racine ne contient que les CA publiques mondiales (DigiCert, Let's Encrypt, Sectigo, etc.). Le navigateur bloque donc la connexion comme s'il s'agissait d'une attaque MITM.
+
+**b) Solution de remédiation**
+
+**Déployer le certificat racine de la PKI interne « Clinique Martin Root CA » sur tous les postes clients**, dans leur magasin **« autorités de certification racines de confiance »**. Concrètement :
+
+- **Postes Windows joints au domaine** : déploiement automatique via **GPO Active Directory** (`Configuration ordinateur → Stratégies → Paramètres Windows → Paramètres de sécurité → Stratégies de clé publique → Autorités de certification racines de confiance`);
+- **Postes hors domaine** (tablettes, BYOD) : installation manuelle ou via MDM;
+- **Navigateurs qui utilisent leur propre magasin** (Firefox) : configuration spécifique par stratégie d'entreprise ou import manuel.
+
+Une fois le certificat racine déployé, tous les certificats que le proxy émet à la volée (`*.google.com`, `*.gmail.com`, etc.) sont reconnus comme valides.
+
+### Question A2.6 — Obligations légales du déchiffrement HTTPS
+
+Le déchiffrement HTTPS est un traitement de données à caractère personnel d'autant plus sensible qu'il porte sur potentiellement tous les flux web des salariés. Obligations principales :
+
+**Vis-à-vis des employés**
+- **Information préalable claire** : mention explicite dans la charte informatique, intégrée au règlement intérieur (cf. la procédure d'opposabilité de la charte expliquée dans le [corrigé SLAM 2024](/blog/corrige-u6-bts-sio-2024-slam-gsic));
+- **Consultation du CSE** (Comité Social et Économique) avant déploiement;
+- **Finalité légitime et proportionnée** : sécurité informatique de l'établissement, lutte contre les rançongiciels — pas surveillance individuelle;
+- **Liste blanche d'exclusion** pour les sites concernant la vie privée : webmails personnels, banques en ligne, sites de santé, syndicats, fournisseurs de services médicaux personnels.
+
+**Vis-à-vis de la CNIL**
+- **Inscription au registre des traitements** (article 30 RGPD);
+- **Analyse d'impact (AIPD)** obligatoire (article 35 RGPD) : le déchiffrement systématique constitue un traitement à grande échelle pouvant entraîner un risque élevé pour les droits et libertés;
+- **Minimisation** : journalisation limitée à ce qui est strictement nécessaire pour la finalité de sécurité;
+- **Durée de conservation limitée** : les logs HTTPS déchiffrés ne doivent pas être conservés au-delà de 6 mois (recommandation CNIL), sauf incident en cours;
+- **Sécurité renforcée du proxy** : c'est lui qui détient en clair des données potentiellement sensibles, son durcissement est critique;
+- **Désignation d'un DPO** (la clinique en a déjà un, vu son secteur).
+
+---
+
+## Dossier B — Audit de sécurité Active Directory (28 pts)
+
+### Question B1.1 — Éléments de sûreté pertinents déjà en œuvre
+
+Le rapport PingCastle (documents B3 et B4) révèle plusieurs bonnes pratiques déjà appliquées sur le domaine `cmartin.local` :
+
+1. **Deux contrôleurs de domaine en redondance** (SRV-01 et SRV-02). Si l'un tombe (panne matérielle, maintenance, attaque ciblée), l'authentification reste assurée par le second. C'est la recommandation explicite du document B1 : « il est recommandé d'en avoir deux afin d'assurer l'authentification ».
+2. **Corbeille Active Directory activée** (mention `VRAI` dans le rapport). La suppression accidentelle d'un objet (utilisateur, groupe, OU) peut désormais être réparée par restauration complète de l'objet avec tous ses attributs et appartenances. Sans cette corbeille, une suppression accidentelle ou malveillante peut nécessiter une restauration de sauvegarde complète de l'AD — opération longue et invasive.
+
+(Bonus possible : niveau fonctionnel Windows Server 2016, plutôt récent et compatible avec les protections modernes type ProtectedUsers et stratégies d'authentification.)
+
+### Question B1.2 — Politique de mot de passe
+
+La stratégie de domaine observée :
+
+| Paramètre                          | Valeur     |
+|------------------------------------|------------|
+| Complexité                         | Vrai       |
+| Âge maximum                        | 270 jours  |
+| Âge minimum                        | 1 jour     |
+| Longueur minimale                  | **7**      |
+| Historique des mots de passe       | 24         |
+| Chiffrement réversible             | Faux       |
+| Seuil de cadenassage               | 15         |
+| Durée de cadenassage               | 5 minutes  |
+
+**Trois éléments judicieux**
+
+1. **Complexité activée** (Vrai) — impose la combinaison de catégories de caractères (majuscules, minuscules, chiffres, symboles), ce qui élève l'entropie minimale des mots de passe choisis par les utilisateurs.
+2. **Historique de 24 mots de passe** — empêche un utilisateur de réutiliser un mot de passe utilisé dans les 24 changements précédents. Bloque l'astuce classique du « je remets l'ancien dans 3 mois ».
+3. **Chiffrement réversible désactivé** (Faux) — les mots de passe ne sont pas stockables sous une forme déchiffrable. Indispensable : un chiffrement réversible permettrait à un attaquant ayant accès à la base d'annuaire de récupérer les mots de passe en clair.
+
+**Deux éléments discutables**
+
+1. **Longueur minimale 7 caractères** — la recommandation actuelle de la CNIL et de l'ANSSI est de **12 caractères minimum** (14 ou 16 pour les comptes à privilèges). À 7 caractères avec complexité, l'espace de recherche reste atteignable par force brute hors ligne sur du hashcat avec GPU. Le rapport l'a d'ailleurs surligné en rouge.
+2. **Âge maximum 270 jours** — environ 9 mois sans rotation forcée. La CNIL et le NIST recommandent désormais de **ne plus imposer de rotation systématique** (elle conduit à des mots de passe prévisibles type `Printemps2024!` puis `Été2024!`), MAIS dans le contexte d'un établissement de santé avec données sensibles, soit on impose une rotation plus courte (90 jours) couplée à de la complexité, soit on supprime la rotation forcée mais on impose une longueur > 12 ET une MFA — la politique actuelle ne fait ni l'un ni l'autre.
+
+(Bonus discutable : durée de cadenassage à 5 minutes — trop courte. Un attaquant peut tester 15 essais, attendre 5 min, recommencer, et faire 4 320 essais par jour par compte sans alerte. Recommandation : 30 minutes minimum, ou verrouillage permanent jusqu'à intervention administrateur.)
+
+### Question B1.3 — Mot de passe réutilisé
+
+**a) Exemple concret du danger**
+
+Denis Brodier (RH, donc droits étendus dans l'AD) utilise le même mot de passe sur son compte personnel d'un site de e-commerce et sur son compte Active Directory `cmartin.local`. Scénario :
+
+1. Le site e-commerce subit une fuite de base, les couples `email + mot de passe en clair` sont publiés sur le dark web.
+2. Le service `haveibeenpwned.com` répertorie la fuite. Un attaquant croise les listes : `denis.brodier@cliniquemartin.fr` apparaît avec un mot de passe utilisable.
+3. L'attaquant tente ce mot de passe sur les services exposés de la clinique : VPN, webmail Outlook Web Access, portail RH. C'est l'attaque dite de **credential stuffing**.
+4. Bingo. L'attaquant se connecte avec les droits de Denis (RH étendu) et accède aux dossiers du personnel, planning des médecins, données salariés.
+
+Cela ouvre la porte à : exfiltration de données personnelles (RGPD), ingénierie sociale ciblée contre d'autres salariés, voire élévation de privilèges via vulnérabilité Active Directory.
+
+**b) Outil aidant à respecter « un site = un mot de passe unique »**
+
+Un **gestionnaire de mots de passe** (password manager). Exemples : **KeePass** (open source, recommandé par l'ANSSI), **Bitwarden** (open source, version pro pour entreprise), **1Password**, **Dashlane**.
+
+Fonctionnalités attendues :
+
+- **Générateur** de mots de passe aléatoires forts (32 caractères, mix de catégories);
+- **Coffre-fort chiffré** localement avec un seul mot de passe maître (très fort, à mémoriser);
+- **Saisie automatique** dans les navigateurs et applications;
+- **Synchronisation chiffrée** entre les appareils de l'utilisateur;
+- **Détection** des mots de passe compromis (intégration avec haveibeenpwned);
+- **Audit interne** : repère les mots de passe réutilisés ou faibles dans le coffre.
+
+À déployer en standard pour tout le personnel, avec formation à l'usage.
+
+### Question B2.1 — Systèmes d'exploitation obsolètes
+
+**a) Pourquoi un OS trop ancien pose un problème de sécurité**
+
+Un système d'exploitation **hors support** (end-of-life) ne reçoit plus de mises à jour de sécurité. Concrètement :
+
+- Les **vulnérabilités découvertes ne sont jamais corrigées**, mais elles sont publiquement documentées dans les bases CVE et leurs exploits disponibles publiquement (Metasploit, exploit-db, GitHub).
+- Une machine sous Windows Server 2003 SP2 (présent dans le parc selon le rapport B4) est exposée à des centaines de CVE non patchées, dont des exécutions de code à distance.
+- Les rançongiciels modernes recherchent activement ce type de cible : WannaCry s'est propagé en 2017 en exploitant la faille **MS17-010 / EternalBlue** sur des Windows non patchés.
+- Les **outils de sécurité modernes** (EDR, MFA, chiffrement BitLocker, etc.) ne sont pas compatibles avec les vieux OS.
+
+Une seule machine obsolète peut compromettre l'ensemble du domaine si elle est utilisée comme pivot pour une attaque latérale. Le playbook [Windows Server](/guides/windows-server) revient sur le durcissement AD.
+
+**b) Critère PingCastle pour considérer une machine vulnérable**
+
+PingCastle se base principalement sur :
+
+- la **date de fin de support officiel par Microsoft** (le « end of extended support ») pour chaque version d'OS détectée dans l'AD;
+- éventuellement croisé avec la **présence de CVE critiques connues** non patchées sur cette version.
+
+Si l'OS détecté est antérieur à la date de fin de support actuelle, PingCastle marque la machine comme « vulnérable » et déduit des points dans la note. Dans le rapport B4, les lignes `Windows Server 2003 SP2`, `Windows 10 1803`, `Windows 10 1703`, `Windows 10 1909` correspondent à des versions hors support.
+
+### Question B2.2 — Mise en cache des informations d'identification
+
+**a) Pourquoi c'est particulièrement problématique pour les administrateurs**
+
+Quand un utilisateur se connecte sur un poste joint au domaine, le système **met en cache localement** un hachage (cached credentials) de son mot de passe — pour permettre la connexion même si le contrôleur de domaine est indisponible (utile pour les portables en déplacement).
+
+Si un administrateur s'est connecté un jour sur un poste utilisateur (pour dépanner, par exemple), ses credentials sont cachés dans le registre `HKEY_LOCAL_MACHINE\SECURITY` ou en mémoire LSASS. Un attaquant qui compromet ensuite ce poste utilisateur peut, avec un outil type **Mimikatz**, **extraire ces credentials cachés** et exploiter :
+
+- une attaque **pass-the-hash** : se présenter à d'autres machines avec le hash de l'admin sans connaître son mot de passe en clair;
+- une **élévation de privilèges latérale** : depuis un simple poste utilisateur, l'attaquant devient administrateur du domaine en quelques minutes.
+
+C'est précisément le schéma d'attaque qui a permis la propagation rapide des rançongiciels comme NotPetya en 2017. Pour les comptes ordinaires, le risque existe mais reste limité (peu de droits) ; pour un admin du domaine, l'exposition est **catastrophique**.
+
+**b) Solution proposée**
+
+Trois mesures combinées :
+
+1. **Comptes d'administration dédiés** : tout administrateur a deux comptes — un compte ordinaire pour son travail quotidien (mail, navigation, bureautique) et un compte d'admin distinct utilisé **uniquement** pour les opérations d'administration. Le compte admin n'a pas de boîte mail, pas de droits sur les postes bureautiques.
+2. **Groupe `ProtectedUsers`** (document B5) : ajouter les comptes administrateurs à ce groupe de sécurité spécial de l'AD. Cela désactive NTLM pour ces comptes, réduit la durée de vie des tickets Kerberos, impose AES, et **empêche la mise en cache de leurs credentials sur les postes**. Mimikatz ne récupère rien.
+3. **Postes d'administration dédiés (PAW)** : les opérations d'administration se font depuis un poste isolé, sans navigation web ni messagerie (cf. A1.2.d). Les credentials admin n'apparaissent jamais sur un poste utilisateur ordinaire.
+
+Important (doc B5) : conserver **un compte admin hors du groupe ProtectedUsers** pour pouvoir reprendre la main en cas de souci d'autorisation lié à ces restrictions — un seul, isolé, fortement protégé.
+
+### Question B3.1 — Windows Event Forwarding (WEF)
+
+**a) WEF est-il utilisé actuellement ?**
+
+**Non.** Le rapport PingCastle est explicite (document B4, section « Anomalies → Transfert d'événements Windows ») : « Nombre de configuration WEF trouvée : **0** ». Aucun abonnement WEF n'est configuré dans le domaine `cmartin.local`. Les journaux d'événements restent locaux à chaque machine.
+
+**b) Pertinence du WEF pour la clinique MARTIN**
+
+**Oui, c'est pertinent**, parce que :
+
+- **Centralisation des journaux** sur un Windows Event Collector (WEC) → vue d'ensemble du SI au lieu de logs dispersés sur des centaines de postes;
+- **Préservation des preuves en cas d'incident** : si un poste est compromis et que l'attaquant efface les journaux locaux, les logs sont déjà sur le WEC et restent exploitables pour la forensique;
+- **Détection précoce d'un rançongiciel** : la corrélation des événements (échecs d'authentification massifs, processus inhabituels, élévations de privilèges) sur un même serveur permet de repérer une attaque en cours avant la phase de chiffrement;
+- **Conformité réglementaire** : le RGPD (article 32) et les certifications ISO 27001/27799 exigent des mesures de journalisation et de surveillance. La centralisation est explicitement attendue;
+- **Intégration avec un SIEM** : le WEC peut alimenter en aval un SIEM (Splunk, ELK, Sentinel) pour la corrélation avancée et l'alerte.
+
+Pour un établissement de santé manipulant des données sensibles et déjà confronté à des incidents (défaçage 2009, erreurs médicales 2011), c'est un investissement clairement justifié.
+
+**c) Avantages et limite du WEF**
+
+**Avantages**
+
+- **Natif Windows** : aucun agent tiers à installer, à mettre à jour, à maintenir sur les postes;
+- **Configuration centralisée** par GPO Active Directory : on déploie l'abonnement WEF à un OU entier en quelques clics;
+- **Filtrage à la source** : on choisit quels événements remonter (sécurité, audit, système) sans saturer le collecteur;
+- **Découpage en abonnements** : « Base » pour tous les postes, « Suspect » pour ceux à surveiller activement;
+- **Indépendance vis-à-vis du SIEM** : si l'établissement change de SIEM, il suffit de reconfigurer le WEC pour rediriger les logs — pas besoin de reconfigurer chaque poste.
+
+**Limite**
+
+- **Spécifique à Windows** — les serveurs Linux (le cas échéant) et les équipements réseau (commutateurs, pare-feu Stormshield, points d'accès Wi-Fi) ne sont pas couverts. Ils nécessitent un mécanisme complémentaire : `syslog` natif ou agents type Rsyslog / Syslog-NG / NXLog convertissant les événements Windows vers syslog pour homogénéité.
+
+En pratique, on combine donc WEF pour le parc Windows + syslog pour le reste, le tout convergeant vers un SIEM.
+
+---
+
+## FAQ
+
+**Comment justifier un niveau EBIOS à l'examen ?**
+Identifier la classe d'organisation impactée (l'organisation seule = G3, l'organisation + écosystème immédiat = G4, le secteur/État/sécurité des personnes = G5), puis croiser avec la durée de l'impact (réversible / irréversible). Pour la santé, G4 est défendable par défaut, G5 en cas d'impact patient direct ou de mission régalienne.
+
+**Quelle différence entre WEF et un SIEM ?**
+WEF (Windows Event Forwarding) est la couche de **collecte** native Windows — il transporte les journaux des postes vers un collecteur central (WEC). Un SIEM (Splunk, ELK, Sentinel) est la couche de **corrélation et d'alerte** au-dessus. WEF → WEC → SIEM est la chaîne standard.
+
+**Le déchiffrement HTTPS est-il légal en France ?**
+Oui, à condition de respecter les obligations RGPD : information préalable des employés, intégration au règlement intérieur, consultation du CSE, AIPD, liste blanche pour les sites de la vie privée, conservation limitée des logs. Sans ces formalités, le déchiffrement constitue une atteinte illégale à la vie privée des salariés (Code du travail + RGPD).
+
+**Pourquoi 12 caractères pour un mot de passe et pas 8 ?**
+À 8 caractères avec complexité (~ 70 caractères possibles), l'espace de recherche est de 70⁸ ≈ 5,76 × 10¹⁴ — atteignable par force brute hors ligne sur GPU moderne en quelques semaines. À 12 caractères : 70¹² ≈ 1,4 × 10²² — au-delà des capacités actuelles. Le CNIL et l'ANSSI ont aligné leur recommandation sur 12 caractères en 2021.
+
+**Le sujet Clinique MARTIN est-il téléchargeable légalement ?**
+Oui, les sujets officiels du BTS SIO Métropole sont publiés par le Ministère de l'Éducation nationale. Le sujet 24SI6SISR-M1 est en libre accès.
+
+---
+
+## Pour aller plus loin
+
+- [Corrigé U7 SISR 2025 SA Blanca](/blog/corrige-u7-bts-sio-2025-sisr-blanca) — la session suivante, post-réforme (MAC flooding, portail captif)
+- [Corrigé U6 SLAM 2024 GSIC](/blog/corrige-u6-bts-sio-2024-slam-gsic) — l'autre option de la même session
+- [Playbook sécurité](/guides/securite) — rançongiciel, sauvegardes, défense en profondeur
+- [Playbook cybersécurité infra](/guides/cybersecurite-infra) — PingCastle, durcissement AD, ProtectedUsers
+- [Playbook Windows Server](/guides/windows-server) — Active Directory, GPO, Kerberos
+- [Playbook réseaux fondamentaux](/guides/reseaux-fondamentaux) — VLAN, cloisonnement, segmentation
+- [Playbook services réseau](/guides/services-reseau) — pare-feu, proxy, déchiffrement TLS
+- [Playbook droit et RGPD](/guides/droit-rgpd) — obligations CNIL, AIPD, charte informatique
