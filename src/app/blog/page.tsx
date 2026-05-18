@@ -3,13 +3,13 @@ import { getAllPosts } from '../../../lib/blog'
 import { PostCard } from '@/components/PostCard'
 
 export const metadata: Metadata = {
-  title: 'Blog — Sujets corrigés et révisions BTS SIO',
+  title: 'Les coulisses du BTS SIO — corrigés, conseils, actu',
   description:
-    'Corrigés officiels des sujets BTS SIO (U7 SLAM, U7 SISR, maths, CEJM), méthodes de révision, conseils par les profs.',
+    'Corrigés officiels des sujets BTS SIO, conseils de profs, retours d\'élèves et actualité de la formation. Tout ce que les manuels n\'écrivent pas.',
   openGraph: {
-    title: 'Blog BTS SIO | Reussir mon BTS SIO',
+    title: 'Les coulisses du BTS SIO | Reussir mon BTS SIO',
     description:
-      'Corrigés officiels des sujets BTS SIO et conseils de révision.',
+      'Corrigés, conseils profs, retours d\'élèves et actualité du BTS SIO.',
   },
   alternates: {
     canonical: '/blog',
@@ -27,11 +27,13 @@ export default function BlogPage() {
           Blog · {posts.length} {posts.length === 1 ? 'article' : 'articles'}
         </div>
         <h1 className="max-w-3xl text-[36px] font-semibold leading-[0.95] tracking-tight text-white md:text-[64px]">
-          Sujets corrigés &amp; révisions.
+          Les coulisses
+          <br />
+          du BTS SIO.
         </h1>
         <p className="mt-6 max-w-2xl text-sm leading-relaxed text-stone-400 md:text-base">
-          Corrigés officiels des derniers sujets BTS SIO, méthodes de révision,
-          erreurs à éviter le jour J.
+          Corrigés, conseils profs, retours d&apos;élèves, actualité de la
+          formation.
         </p>
       </header>
 
