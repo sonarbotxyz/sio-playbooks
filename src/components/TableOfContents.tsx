@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import GithubSlugger from 'github-slugger'
 
 interface TocItem {
   id: string
@@ -12,6 +13,10 @@ export function TableOfContents({ content }: { content: string }) {
   const [activeId, setActiveId] = useState('')
   const [isOpen, setIsOpen] = useState(false)
 
+  // Use the exact same slugger as rehype-slug so anchor ids match the
+  // ids rendered on the headings (including accented characters).
+  // Slug in document order to mirror rehype-slug's duplicate handling.
+  const slugger = new GithubSlugger()
   const headings: TocItem[] = content
     .split('\n')
     .filter(line => /^#{2,3}\s/.test(line))
@@ -19,14 +24,8 @@ export function TableOfContents({ content }: { content: string }) {
       const match = line.match(/^(#{2,3})\s+(.+)$/)
       if (!match) return null
       const text = match[2].replace(/\*\*/g, '').replace(/`/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      const id = text
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim()
       return {
-        id,
+        id: slugger.slug(text),
         text,
         level: match[1].length,
       }
