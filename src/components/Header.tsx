@@ -45,6 +45,12 @@ export function Header() {
           >
             Playbooks
           </Link>
+          <Link
+            href="/blog"
+            className="text-xs uppercase tracking-wider text-stone-500 transition hover:text-amber"
+          >
+            Blog
+          </Link>
         </div>
       </div>
     </header>

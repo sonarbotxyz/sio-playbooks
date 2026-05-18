@@ -1,15 +1,24 @@
 import type { MetadataRoute } from 'next'
 import { getAllSlugs } from '../../lib/guides'
+import { getAllPostSlugs } from '../../lib/blog'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://sio-slam.fr'
-  const slugs = getAllSlugs()
+  const baseUrl = 'https://www.reussirmonbtssio.com'
+  const guideSlugs = getAllSlugs()
+  const postSlugs = getAllPostSlugs()
 
-  const guideUrls = slugs.map(slug => ({
+  const guideUrls = guideSlugs.map(slug => ({
     url: `${baseUrl}/guides/${slug}`,
     lastModified: new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.8,
+  }))
+
+  const blogUrls = postSlugs.map(slug => ({
+    url: `${baseUrl}/blog/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
   }))
 
   return [
@@ -25,6 +34,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly',
       priority: 0.9,
     },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
     ...guideUrls,
+    ...blogUrls,
   ]
 }
