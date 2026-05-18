@@ -36,15 +36,8 @@ export default function HomePage() {
 
         <div className="mt-10 flex flex-wrap gap-3">
           <a
-            href="#categories"
-            className="group inline-flex items-center gap-3 border border-amber bg-stone-900 px-5 py-2.5 text-sm text-amber transition hover:bg-stone-950"
-          >
-            <span className="text-stone-500 group-hover:text-amber">&gt;</span>
-            Commencer les révisions
-          </a>
-          <a
             href="/guides"
-            className="group inline-flex items-center gap-3 border border-stone-700 bg-stone-900 px-5 py-2.5 text-sm text-stone-200 transition hover:border-amber hover:text-amber"
+            className="group inline-flex items-center gap-3 border border-amber bg-stone-900 px-5 py-2.5 text-sm text-amber transition hover:bg-stone-950"
           >
             <span className="text-stone-500 group-hover:text-amber">&gt;</span>
             Voir tous les playbooks

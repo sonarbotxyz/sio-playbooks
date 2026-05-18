@@ -10,7 +10,7 @@ export function Footer() {
               href="/"
               className="text-amber text-sm transition hover:text-amber-deep"
             >
-              [SIO PLAYBOOKS]
+              [REUSSIR MON BTS SIO]
             </Link>
             <p className="text-[11px] uppercase tracking-wider text-stone-500">
               Tout le programme BTS SIO · zéro impasse

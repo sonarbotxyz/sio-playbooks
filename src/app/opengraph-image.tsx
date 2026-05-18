@@ -33,7 +33,7 @@ export default function Image() {
         />
         {/* Top bar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{ color: '#ffffff' }}>[SIO PLAYBOOKS]</span>
+          <span style={{ color: '#ffffff' }}>[REUSSIR MON BTS SIO]</span>
           <span style={{ color: '#9ca3af' }}>[ONLINE]</span>
         </div>
 

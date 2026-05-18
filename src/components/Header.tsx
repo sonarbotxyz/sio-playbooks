@@ -25,7 +25,7 @@ export function Header() {
       <div className="mx-auto flex max-w-content items-center justify-between gap-2 px-3 py-2 text-xs sm:px-4">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Link href="/" className="whitespace-nowrap text-amber transition hover:text-amber-deep">
-            [SIO PLAYBOOKS]
+            [REUSSIR MON BTS SIO]
           </Link>
           <span className="hidden whitespace-nowrap text-terminal-ok sm:inline">[ONLINE]</span>
           <span className="hidden whitespace-nowrap text-terminal-dim md:inline">
