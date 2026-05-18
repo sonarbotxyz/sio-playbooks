@@ -17,6 +17,7 @@ export interface BlogPost {
   slug: string;
   frontmatter: BlogPostFrontmatter;
   content: string;
+  readTime: string;
 }
 
 const postsDirectory = path.join(process.cwd(), 'content', 'posts');
@@ -26,6 +27,7 @@ export function getPostBySlug(slug: string): BlogPost {
   const fileContents = fs.readFileSync(fullPath, 'utf8');
   const { data, content } = matter(fileContents);
   const stats = readingTime(content);
+  const readTime = `${Math.ceil(stats.minutes)} min`;
 
   return {
     slug,
@@ -36,9 +38,10 @@ export function getPostBySlug(slug: string): BlogPost {
       category: data.category,
       targetKeyword: data.targetKeyword,
       relatedPlaybooks: data.relatedPlaybooks || [],
-      readTime: `${Math.ceil(stats.minutes)} min`,
+      readTime,
     },
     content,
+    readTime,
   };
 }
 
