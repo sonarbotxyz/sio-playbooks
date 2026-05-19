@@ -1,0 +1,118 @@
+---
+title: "Quoi réviser pour l'E7 SLAM — les priorités à 2 jours de l'épreuve"
+description: "Récap priorisé des révisions E7 cybersécurité option SLAM, basé sur les annales 2023-2025 : analyse de risques, habilitations, sécurité web, API, journalisation, RGPD. L'essentiel, vite."
+slug: "quoi-reviser-e7-bts-sio-slam"
+publishedAt: "2026-05-19"
+category: "Révisions"
+targetKeyword: "quoi réviser e7 bts sio slam"
+relatedPlaybooks: ["securite", "droit-rgpd", "sql", "procedures-triggers", "php-mysql", "poo", "tests", "architecture-mvc"]
+---
+
+# Quoi réviser pour l'E7 SLAM — les priorités à 2 jours de l'épreuve
+
+Il te reste deux jours avant l'**E7 — Cybersécurité des services informatiques, option SLAM** (anciennement E6/U6 avant la réforme). Pas le temps de tout relire. Ce récap te dit **ce qui tombe vraiment**, classé par fréquence et par poids en points, à partir des annales 2023 à 2025 (cas Casterman, GSIC, Lama Zoo, Kirassur…).
+
+## Le format en 30 secondes
+
+- **Durée 4 h, coefficient 4, sur 80 points**, sans document ni matériel autorisé.
+- **2 à 3 dossiers** (A, B, C) sur un **cas d'entreprise unique** + un **dossier documentaire** fourni.
+- Chaque réponse doit **s'appuyer sur le dossier documentaire** : on n'attend pas du par-cœur mais l'exploitation des annexes (code, schémas BDD, extraits de doc).
+- Code attendu : **SQL, PHP, Java**, pseudo-code d'algorithmes, requêtes — souvent à compléter, pas à écrire de zéro.
+
+## Les 8 priorités, dans l'ordre
+
+### 1. Analyse de risques (tombe presque à chaque session)
+
+Quasiment tous les sujets ouvrent sur un dossier d'analyse de risques. À maîtriser :
+
+- les critères **DICP** : Disponibilité, Intégrité, Confidentialité, **Preuve** — savoir justifier un niveau (modéré / important) sur un récit utilisateur (user story);
+- **événements redoutés**, vraisemblance, gravité, impacts sur le SI;
+- impacts d'une **attaque par rançongiciel** et mesures de prévention (sauvegardes hors-ligne testées, MAJ, cloisonnement, moindre privilège, sensibilisation);
+- vocabulaire EBIOS de base.
+
+C'est le dossier le plus rentable : peu technique, beaucoup de points, des réponses argumentées.
+
+### 2. Habilitations, droits d'accès et POO
+
+Récurrent et lourd en points (refonte du système d'habilitation, contrôle des droits) :
+
+- modéliser **fonctions / rôles / droits / utilisateurs** (relation N-N, table associative);
+- écrire/compléter une méthode type `possedeDroit(table, operation)` ou `autoriseAction()` en **Java ou PHP** : parcours d'une `ArrayList`/collection, comparaison avec `.equals()`;
+- **tests unitaires** : lire des `assertTrue` / `assertFalse`, expliquer le cas testé, écrire un test;
+- principe du **moindre privilège**.
+
+Révise la [POO](/guides/poo) et les [tests](/guides/tests).
+
+### 3. Sécurisation de la base : triggers, chiffrement, vues
+
+Présent dans presque tous les sujets SLAM :
+
+- **déclencheurs (triggers)** : lire un trigger `BEFORE/AFTER UPDATE/DELETE`, repérer un bug (DELETE inconditionnel, condition manquante), le corriger en indiquant les lignes;
+- **chiffrement de colonnes sensibles** : clé symétrique + certificat, `EncryptByKey`, ajouter une colonne `varbinary`, migrer, renommer;
+- **vues** et `UNION` pour unifier des sources hétérogènes;
+- mots de passe : **jamais en clair**, hachage avec **sel + bcrypt/Argon2**, jamais le chiffrement réversible.
+
+Le playbook [procédures et triggers](/guides/procedures-triggers) et [SQL](/guides/sql) couvrent l'essentiel.
+
+### 4. Authentification : SSO, JWT, clés API, tokens
+
+L'ouverture du SI aux partenaires revient fort (Kirassur, GSIC) :
+
+- **SSO / OpenID Connect**, échange de **jetons JWT**, `access_token` vs `refresh_token`, durée de vie (`expires_in`), erreur `invalid_token` quand le jeton expire;
+- **clé API** pour authentifier une société partenaire, jeton pour authentifier l'utilisateur;
+- savoir compléter une méthode `getToken()` qui rafraîchit via le refresh token (`grant_type = refresh_token`);
+- **MFA** comme parade au vol de mot de passe (surtout combiné au SSO).
+
+### 5. Sécurité applicative web
+
+Tombe régulièrement (Lama Zoo) :
+
+- **phishing / hameçonnage** : reconnaître, expliquer, prévenir;
+- **CSRF** : principe, protection par jeton anti-CSRF (framework);
+- **XSS / injection** : échappement des sorties (`esc()`, `htmlspecialchars`), requêtes préparées contre l'injection SQL;
+- middleware d'authentification dans un **framework MVC** (filtres, AuthGuard, routes protégées). Voir [architecture MVC](/guides/architecture-mvc) et [PHP/MySQL](/guides/php-mysql).
+
+### 6. API REST sécurisée
+
+- verbes HTTP : **DELETE et PUT sont les plus dangereux** (suppression / altération) → contrôle d'autorisation obligatoire;
+- **codes statut** : 200, 201, 204, 400, **401 (non authentifié) vs 403 (non autorisé)**, 404, 405 (mauvais verbe);
+- vérifier les droits **dans l'API** (pas seulement dans l'appli appelante : une API joignable par Postman contourne le contrôle applicatif);
+- séparer une **API publique en lecture seule** d'une API authentifiée (réduction de surface d'attaque).
+
+### 7. Journalisation et SQL d'audit
+
+- compléter une méthode `creerEnregLog()` / `enregistrerActionSensible()` : ajouter l'**adresse IP**, l'auteur, l'horodatage;
+- recommandations **CNIL** sur la journalisation : auteur **individuellement identifié**, horodatage, équipement, **conservation ~6 mois**;
+- requêtes d'audit : `GROUP BY` + **`HAVING`** (le piège classique), `COUNT(*)`, fonctions de date (`SUBDATE`, `datestampdiff`, `current_date()`), surveillance des `delete`/`insert` suspects.
+
+### 8. RGPD et droit
+
+- **violation de données** : notification **CNIL sous 72 h**, registre, information des personnes si risque élevé;
+- **données sensibles** (article 9 RGPD), cas du NIR;
+- **charte informatique opposable** seulement si intégrée au **règlement intérieur** (avis CSE, dépôt, affichage);
+- infractions : **article 323-1 du Code pénal** (accès/maintien frauduleux : 3 ans, 100 000 €). Voir [droit et RGPD](/guides/droit-rgpd).
+
+## Méthodo express le jour J
+
+1. Lis le **barème** d'abord : répartis ton temps proportionnellement aux points (un dossier à 35 pts > un dossier à 20 pts).
+2. **Survole tout le dossier documentaire** avant de répondre : la moitié des réponses est dans les annexes (code, schéma BDD, extraits de doc).
+3. Pour le code à compléter : repère la **signature**, les variables disponibles, et **indique les numéros de lignes** modifiées comme demandé.
+4. Justifie toujours (« car… »), même court : en cybersécurité l'argumentation rapporte autant que la solution.
+5. Ne laisse **aucune question vide** : une amorce argumentée vaut des points.
+
+## Si tu n'as que 2 h ce soir
+
+Révise dans cet ordre : **analyse de risques (DICP + rançongiciel)** → **triggers SQL + chiffrement** → **droits/habilitations + tests unitaires** → **codes HTTP 401/403 + DELETE/PUT** → **RGPD 72 h + article 323-1**. Ces cinq blocs couvrent l'essentiel des points d'un sujet SLAM type.
+
+## Entraîne-toi sur les corrigés
+
+Le meilleur entraînement à 2 jours : faire un sujet en conditions puis comparer.
+
+- [Corrigé U7 SLAM 2025 — Casterman](/blog/corrige-u7-bts-sio-2025-slam-casterman)
+- [Corrigé U6 SLAM 2024 — GSIC](/blog/corrige-u6-bts-sio-2024-slam-gsic)
+
+## Pour aller plus loin
+
+- [Playbook sécurité](/guides/securite) · [droit et RGPD](/guides/droit-rgpd) · [SQL](/guides/sql) · [procédures et triggers](/guides/procedures-triggers) · [PHP/MySQL](/guides/php-mysql) · [POO](/guides/poo) · [tests](/guides/tests) · [architecture MVC](/guides/architecture-mvc)
+
+Bonne épreuve. **Lis le barème, exploite le dossier documentaire, justifie tout, ne laisse rien vide.**

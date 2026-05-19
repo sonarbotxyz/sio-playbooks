@@ -1,0 +1,107 @@
+---
+title: "Quoi réviser pour l'E7 SISR — les priorités à 2 jours de l'épreuve"
+description: "Récap priorisé des révisions E7 cybersécurité option SISR, basé sur les annales 2023-2025 : EBIOS, rançongiciel, Active Directory, pare-feu, attaques couche 2, journalisation Syslog. L'essentiel, vite."
+slug: "quoi-reviser-e7-bts-sio-sisr"
+publishedAt: "2026-05-19"
+category: "Révisions"
+targetKeyword: "quoi réviser e7 bts sio sisr"
+relatedPlaybooks: ["securite", "cybersecurite-infra", "reseaux-fondamentaux", "routage-commutation", "services-reseau", "windows-server", "supervision", "sauvegarde-pra", "droit-rgpd"]
+---
+
+# Quoi réviser pour l'E7 SISR — les priorités à 2 jours de l'épreuve
+
+Deux jours avant l'**E7 — Cybersécurité des services informatiques, option SISR** (anciennement E6/U6 avant la réforme). Voici **ce qui tombe vraiment**, classé par fréquence et par poids, d'après les annales 2023 à 2025 (cas Blanca, Clinique MARTIN, Ville du Parc, Everest…).
+
+## Le format en 30 secondes
+
+- **Durée 4 h, coefficient 4, sur 80 points**, sans document ni matériel.
+- **2 à 3 dossiers** sur un **cas d'organisation unique** (mairie, clinique, ESN, zoo…) + un **dossier documentaire** dense (schémas réseau, extraits PingCastle/Wireshark, doc ANSSI, configs Cisco).
+- On attend l'**exploitation des annexes** : lire un schéma, une table de filtrage, une capture de trames, un rapport d'audit, puis raisonner.
+- Pas de code applicatif lourd, mais des **scripts** (PowerShell), des **configs** (Cisco, pare-feu), des **règles** (filtrage/redirection) à lire ou compléter.
+
+## Les 8 priorités, dans l'ordre
+
+### 1. Analyse / évaluation des risques (presque toujours le 1er dossier)
+
+- Méthode **EBIOS RM**, événements redoutés, **échelle de gravité G1 à G5**;
+- **priorité ITIL** (P1 à P4) = croisement **impact × urgence** : savoir relire la matrice fournie et **réévaluer** une priorité quand la situation s'aggrave (ex. blocage total → P1);
+- gestion des risques normalisée (référentiels **AFNOR / ANSSI**).
+
+Dossier très rentable : raisonnement + justification, peu de technique pure.
+
+### 2. Rançongiciel et réponse à incident
+
+Quasi systématique (Clinique MARTIN, Ville du Parc — Ryuk, BazarLoader) :
+
+- **phases d'une attaque** par rançongiciel et **contre-mesures par phase**;
+- **sauvegardes déconnectées / immuables, testées** (la restauration testée, pas juste la sauvegarde);
+- **plan de réponse à incident**, **indicateurs de compromission (IOC)**, plan de continuité/reprise;
+- gravité **EBIOS** d'une attaque sur un établissement sensible (santé, collectivité) → souvent **G4/G5**. Voir [sauvegarde et PRA](/guides/sauvegarde-pra).
+
+### 3. Active Directory et durcissement Windows
+
+Très récurrent (Everest, Clinique MARTIN) :
+
+- **audit PingCastle** : lire le rapport, expliquer un point faible;
+- **politique de mot de passe** : longueur ≥ 12, historique, complexité, pas de chiffrement réversible — savoir critiquer une politique faible;
+- **OS obsolètes** = vulnérables (CVE non corrigées, EternalBlue);
+- **cache des identifiants** → **pass-the-hash / Mimikatz** ; parades : **comptes d'admin dédiés**, **groupe ProtectedUsers**, **postes d'administration dédiés (PAW)**, **Microsoft LAPS**;
+- contrôleurs de domaine redondants, corbeille AD. Voir [Windows Server](/guides/windows-server) et [cybersécurité infra](/guides/cybersecurite-infra).
+
+### 4. Pare-feu, filtrage, DMZ
+
+- lire et **écrire des règles de filtrage / redirection** (source, destination, port, action, authentification);
+- politique **« tout interdit par défaut »**, NAT, **DMZ**, répartiteur **HAProxy**;
+- **déchiffrement HTTPS** (proxy SSL) : principe, zones chiffrées/non, **PKI interne**, déploiement du **certificat racine via GPO**, liste blanche, obligations CNIL/employés. Voir [services réseau](/guides/services-reseau).
+
+### 5. Attaques couche 2 et commutateurs
+
+- **MAC flooding** (outil `macof`) vs **ARP spoofing** : savoir les **distinguer par les symptômes**;
+- **port-security** : `shutdown` vs `protect` (shutdown = rejet + extinction + compteur + journalisation → à privilégier pour tracer/isoler);
+- **commandes de sécurisation des ports Cisco**;
+- lecture d'une **capture Wireshark** (trames anormales, diffusion). Voir [routage et commutation](/guides/routage-commutation).
+
+### 6. Journalisation centralisée (Syslog / WEF / SIEM)
+
+Dossier entier possible (Everest) :
+
+- **protocole Syslog** : périphérique / relais / collecteur, sécurité du protocole, **configuration sur équipement Cisco**, filtrage;
+- **WEF (Windows Event Forwarding)** → WEC → **SIEM** ; pourquoi centraliser (corrélation, preuve préservée, détection d'intrusion);
+- recommandations **ANSSI** sur la collecte;
+- supervision **SNMPv3** : **trap vs polling**, sécurité (auth SHA + chiffrement AES). Voir [supervision](/guides/supervision).
+
+### 7. Authentification réseau et accès distant
+
+- **802.1X + serveur RADIUS**, **portail captif** (Wi-Fi invité), WPA2 — et le **RGPD des données du formulaire** d'inscription;
+- **VPN IPSec**, solutions de connexion sécurisée (Cisco Meraki);
+- veille **CERT-FR** sur les vulnérabilités (ex. produits Cisco).
+
+### 8. RGPD et cadre juridique côté infra
+
+- **confidentialité des données sensibles** (santé, données d'habitants) exposées par une faille réseau;
+- **violation de données** : notification **CNIL 72 h**, registre;
+- **charte informatique opposable** via le règlement intérieur;
+- obligations légales d'un **déchiffrement HTTPS** (information des salariés, CSE, AIPD). Voir [droit et RGPD](/guides/droit-rgpd).
+
+## Méthodo express le jour J
+
+1. Lis le **barème** : un dossier à 50 pts mérite la moitié de ton temps.
+2. **Décortique le dossier documentaire** : schémas réseau, table de filtrage, rapport PingCastle, capture Wireshark — c'est là que sont la plupart des réponses.
+3. Pour les règles de pare-feu / configs : reste **rigoureux sur le format** (colonnes, ordre des règles, « tout interdit » en dernier).
+4. Justifie chaque choix (« car… ») : la sécurité = argumentation.
+5. **Aucune question vide** : même une amorce structurée rapporte.
+
+## Si tu n'as que 2 h ce soir
+
+Révise dans cet ordre : **EBIOS + gravité G1-G5 + priorité ITIL** → **rançongiciel : phases, sauvegardes hors-ligne testées** → **AD : PingCastle, ProtectedUsers/LAPS, pass-the-hash** → **règles de pare-feu + DMZ** → **MAC flooding vs ARP spoofing + port-security shutdown** → **Syslog/SNMPv3**. Ces blocs couvrent l'essentiel d'un sujet SISR type.
+
+## Entraîne-toi sur les corrigés
+
+- [Corrigé U7 SISR 2025 — SA Blanca](/blog/corrige-u7-bts-sio-2025-sisr-blanca)
+- [Corrigé U6 SISR 2024 — Clinique MARTIN](/blog/corrige-u6-bts-sio-2024-sisr-clinique-martin)
+
+## Pour aller plus loin
+
+- [Playbook sécurité](/guides/securite) · [cybersécurité infra](/guides/cybersecurite-infra) · [réseaux fondamentaux](/guides/reseaux-fondamentaux) · [routage et commutation](/guides/routage-commutation) · [services réseau](/guides/services-reseau) · [Windows Server](/guides/windows-server) · [supervision](/guides/supervision) · [sauvegarde et PRA](/guides/sauvegarde-pra) · [droit et RGPD](/guides/droit-rgpd)
+
+Bonne épreuve. **Lis le barème, exploite le dossier documentaire, sois rigoureux sur les configs, justifie tout.**
