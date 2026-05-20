@@ -1,0 +1,155 @@
+---
+title: "Glossaire E7 SISR — les 25 termes à connaître par cœur"
+description: "Glossaire express des 25 termes incontournables de l'E7 cybersécurité option SISR : EBIOS, ITIL, MAC flooding, port-security, pass-the-hash, Syslog, SNMPv3, RGPD… Format dictionnaire à scanner avant l'épreuve."
+slug: "glossaire-e7-bts-sio-sisr"
+publishedAt: "2026-05-22"
+category: "Révisions"
+targetKeyword: "glossaire e7 bts sio sisr"
+relatedPlaybooks: ["securite", "cybersecurite-infra", "reseaux-fondamentaux", "routage-commutation", "services-reseau", "windows-server", "supervision", "sauvegarde-pra", "droit-rgpd"]
+---
+
+# Glossaire E7 SISR — les 25 termes à connaître par cœur
+
+Un glossaire à scanner la veille de l'**E7 — Cybersécurité des services informatiques, option SISR**. Définition courte + ce que le jury attend que tu en retiennes pour chaque terme. Si tu sais replacer ces 25 mots dans le contexte d'un cas, tu couvres l'essentiel des points d'un sujet type.
+
+Pour la méthodo et l'ordre de révision, voir [Quoi réviser E7 SISR](/blog/quoi-reviser-e7-bts-sio-sisr).
+
+## Analyse et gestion des risques
+
+### EBIOS RM
+
+Méthode française d'analyse des risques cyber (ANSSI). Vocabulaire à mobiliser : **événement redouté**, **valeur métier**, **vraisemblance**, **gravité**, **scénario de menace**. Référencée explicitement dans plusieurs sujets E7.
+
+### Gravité (échelle G1 à G5)
+
+Échelle EBIOS RM : **G1 mineure**, **G2 significative**, **G3 grave**, **G4 critique**, **G5 catastrophique**. Pour un établissement de santé ou une collectivité bloqué par un rançongiciel, c'est typiquement **G4 ou G5** (impact sur la sécurité des personnes ou conséquences sectorielles).
+
+### Priorité ITIL (P1 à P4)
+
+Niveau de priorité d'un incident = croisement **impact × urgence**. **P1 majeure** (résolution 2 h) = blocage total. **P2 élevée** (4 h) = service dégradé. **P3 normale** (1 j). **P4 basse** (2 j). Sache **réévaluer** une priorité quand la situation s'aggrave.
+
+### Rançongiciel
+
+Malware qui chiffre les données et exige une rançon. Phases : **infection** (mail, faille), **propagation latérale**, **chiffrement** + souvent **exfiltration** (double extorsion). Parades incontournables : sauvegardes hors-ligne testées, cloisonnement, EDR, sensibilisation, plan de réponse.
+
+### IOC (Indicators of Compromise)
+
+Indicateurs de compromission : hashs de fichiers malveillants, adresses IP de C2, noms de domaines, signatures comportementales. Permettent de détecter une infection (Ryuk, BazarLoader…) avant qu'elle se propage.
+
+## Active Directory et durcissement Windows
+
+### Active Directory
+
+Annuaire Microsoft, **colonne vertébrale** du SI Windows. Centralise utilisateurs, groupes, ordinateurs, droits. À retenir : **contrôleurs de domaine redondants**, **corbeille AD** activée, niveau fonctionnel à jour.
+
+### PingCastle
+
+Outil d'audit (gratuit) de l'AD : note de 0 à 100 (plus bas = mieux). Détecte mots de passe faibles, OS obsolètes, mauvaise configuration WEF, comptes administrateurs trop nombreux, etc. Référence dans plusieurs sujets.
+
+### Microsoft LAPS
+
+**L**ocal **A**dministrator **P**assword **S**olution. Génère un mot de passe **unique et aléatoire** pour le compte administrateur local de chaque poste, stocké dans l'AD. Empêche le rebond pass-the-hash entre postes utilisant le même mot de passe admin local.
+
+### ProtectedUsers
+
+Groupe de sécurité spécial de l'AD. Pour ses membres : **désactive NTLM**, force AES, **interdit la mise en cache des credentials** sur les postes. Indispensable pour les comptes administrateurs.
+
+### Pass-the-hash / Mimikatz
+
+Attaque qui exploite les **hashs de mots de passe en cache** (LSASS, registre `HKLM\SECURITY`) extraits par **Mimikatz**, pour s'authentifier sur d'autres machines sans connaître le mot de passe. Vecteur clé des rançongiciels modernes.
+
+### PAW (Privileged Access Workstation)
+
+Poste **dédié à l'administration**, jamais utilisé pour mail/web. Empêche un phishing ou un drive-by de compromettre un compte à privilèges élevés. Combiné aux comptes admin dédiés et à ProtectedUsers.
+
+## Réseau, attaques couche 2
+
+### VLAN
+
+Réseau logique défini sur les commutateurs (802.1Q). Permet de **cloisonner** les flux (postes utilisateurs, serveurs, administration, Wi-Fi invité) sur la même infrastructure physique.
+
+### MAC flooding
+
+Saturation de la **table d'adresses MAC** d'un commutateur (outil **`macof`** sous Kali). Quand la table est pleine, le commutateur bascule en mode **failopen** (hub-like) et **diffuse toutes les trames** sur tous les ports → écoute possible. Symptômes : collisions massives, table à 8000/8000.
+
+### ARP spoofing
+
+Empoisonnement du cache ARP (outil `arpspoof`) pour intercepter le trafic d'une cible (**MITM**). Différent du MAC flooding : agit en couche 3, ne sature pas la table MAC du commutateur. Savoir distinguer les deux par les symptômes est un grand classique d'épreuve.
+
+### Port-security
+
+Mécanisme du commutateur qui **limite le nombre d'adresses MAC** autorisées par port. Réactions : **`shutdown`** (port désactivé + journalisation + compteur de violation — à privilégier pour tracer/isoler) ou `protect` (rejet silencieux, sans journalisation).
+
+### Wireshark
+
+Analyseur de trames. Sait : repérer un protocole non chiffré (SMB v2), une trame inhabituelle pour un poste donné (signe de MAC flooding), un flux destiné à autre chose que toi sur ton commutateur.
+
+## Pare-feu, DMZ, HTTPS
+
+### DMZ
+
+Zone démilitarisée : sous-réseau exposant les **services publics** (serveur web, Moodle public) isolé du réseau interne par un pare-feu. Politique : « tout interdit par défaut » + règles explicites.
+
+### Pare-feu (règles de filtrage / NAT / redirection)
+
+Filtrage = autoriser/bloquer un flux selon source, destination, port, protocole, état d'authentification. **NAT / redirection** = réécriture de l'IP ou du port destination (ex. portail captif, redirection HTTP/HTTPS vers le pare-feu). Standard du sujet SISR : règles à écrire en colonnes (source, port src, dest, port dest, action).
+
+### HAProxy
+
+Répartiteur de charge / **reverse proxy** open source. Place classique dans une DMZ devant des serveurs applicatifs. Gère **terminaison TLS**, certificats, équilibrage, redondance.
+
+### Déchiffrement HTTPS (proxy SSL)
+
+Le pare-feu (Stormshield, Fortinet…) intercepte le TLS, déchiffre, inspecte (antivirus, IPS, filtrage URL), rechiffre vers la destination. Implique une **PKI interne** dont le **certificat racine** doit être déployé sur tous les postes via **GPO**. Obligations légales : information des salariés, **CSE**, AIPD, liste blanche pour les sites de la vie privée.
+
+## Authentification réseau
+
+### 802.1X + RADIUS
+
+Authentification d'**équipement réseau** (filaire ou Wi-Fi) auprès d'un serveur **RADIUS** central (souvent adossé à AD via LDAPS). Standard pour les employés permanents — alternative au mot de passe Wi-Fi partagé.
+
+### Portail captif
+
+Page d'authentification interposée pour le Wi-Fi invité. Permet auto-inscription, traçabilité (obligation **LCEN**), filtrage HTTP/HTTPS. Le formulaire doit respecter la **minimisation RGPD** (pas de téléphone perso si pas pertinent).
+
+### VPN IPsec
+
+Tunnel chiffré entre deux sites ou un poste distant et le SI (chiffrement IP). Alternative : VPN SSL (HTTPS). Sécurise les flux télétravail / inter-sites.
+
+## Journalisation, supervision, veille
+
+### Syslog
+
+Protocole standard de journalisation (UDP 514 ou TCP 6514 sécurisé). Architecture : **périphérique** (génère les logs) → **relais** → **collecteur**. Sait s'intégrer à un SIEM. Configurable sur équipement Cisco. Recommandations **ANSSI** pour la sécurisation.
+
+### WEF / WEC
+
+**W**indows **E**vent **F**orwarding : centralise les journaux Windows vers un **WEC** (collector). Pas d'agent à installer (natif), configuration par GPO. Couplé à un SIEM derrière, c'est la stack classique côté Windows.
+
+### SIEM
+
+**S**ecurity **I**nformation and **E**vent **M**anagement (Splunk, ELK, Sentinel, Wazuh). Corrèle les logs centralisés pour détecter des patterns d'attaque, déclencher des alertes, conserver la preuve.
+
+### SNMPv3
+
+Protocole de supervision réseau, version 3 sécurisée. Deux paramètres clés : **`auth sha`** (authentification + intégrité) et **`priv aes`** (chiffrement). **Trap** (notification asynchrone immédiate) > polling pour les alertes de sécurité (port-security par exemple).
+
+### CERT-FR / ANSSI
+
+**CERT-FR** = équipe gouvernementale de réponse aux incidents (sous l'ANSSI). Publie les bulletins de vulnérabilités, notamment celles des équipements Cisco. La **veille CERT-FR** est attendue côté admin réseau.
+
+## Continuité et droit
+
+### Sauvegarde hors-ligne / immuable
+
+Sauvegarde **déconnectée** du SI (bande LTO, disque débranché) ou en mode **immuable / WORM** (S3 Object Lock). Seule défense réelle contre un rançongiciel qui chiffrerait aussi les NAS connectés. **Tester la restauration** régulièrement — une sauvegarde non testée n'existe pas.
+
+### Notification CNIL 72 h
+
+En cas de violation de données personnelles, notification à la **CNIL dans les 72 h** (article 33 RGPD), consignation au **registre des violations**, information des personnes si **risque élevé**. Particulièrement critique pour un établissement manipulant des données sensibles (santé).
+
+---
+
+Pour creuser : [Playbook sécurité](/guides/securite) · [cybersécurité infra](/guides/cybersecurite-infra) · [réseaux fondamentaux](/guides/reseaux-fondamentaux) · [routage et commutation](/guides/routage-commutation) · [services réseau](/guides/services-reseau) · [Windows Server](/guides/windows-server) · [supervision](/guides/supervision) · [sauvegarde et PRA](/guides/sauvegarde-pra) · [droit et RGPD](/guides/droit-rgpd).
+
+Bonne épreuve. **Si tu sais replacer ces 25 termes dans une phrase qui répond à une question du dossier, tu as déjà l'essentiel.**

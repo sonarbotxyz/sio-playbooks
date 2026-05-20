@@ -1,0 +1,149 @@
+---
+title: "Glossaire E7 SLAM — les 25 termes à connaître par cœur"
+description: "Glossaire express des 25 termes incontournables de l'E7 cybersécurité option SLAM : EBIOS, JWT, hash, trigger, CSRF, codes HTTP, RGPD… Format dictionnaire à scanner avant l'épreuve."
+slug: "glossaire-e7-bts-sio-slam"
+publishedAt: "2026-05-23"
+category: "Révisions"
+targetKeyword: "glossaire e7 bts sio slam"
+relatedPlaybooks: ["securite", "droit-rgpd", "sql", "procedures-triggers", "php-mysql", "poo", "tests"]
+---
+
+# Glossaire E7 SLAM — les 25 termes à connaître par cœur
+
+Un glossaire à scanner la veille de l'**E7 — Cybersécurité des services informatiques, option SLAM**. Chaque terme : une définition courte + ce que le jury attend que tu en retiennes. Si tu sais replacer ces 25 mots dans un cas, tu couvres l'essentiel des points d'un sujet type.
+
+Pour la méthodo et l'ordre de révision, voir [Quoi réviser E7 SLAM](/blog/quoi-reviser-e7-bts-sio-slam).
+
+## Analyse de risques et RGPD
+
+### EBIOS RM
+
+Méthode française d'analyse des risques cyber (ANSSI). On parle d'**événements redoutés**, de **gravité**, de **vraisemblance**. À l'écrit, tu mobilises le vocabulaire sans dérouler la méthode complète.
+
+### DICP
+
+Quatre critères de sécurité : **Disponibilité**, **Intégrité**, **Confidentialité**, **Preuve**. À chaque récit utilisateur (user story), tu justifies un niveau (modéré ★ / important ★★) sur chaque critère, en t'appuyant sur le contexte du cas.
+
+### Événement redouté
+
+Conséquence indésirable d'une menace (fuite, indisponibilité, altération). On le caractérise par sa gravité et la valeur du bien impacté.
+
+### RGPD
+
+Règlement européen 2016/679 sur la protection des données personnelles. À retenir : **bases légales** (consentement, contrat, obligation légale, intérêt légitime…), **droits des personnes** (accès, rectification, effacement, portabilité), **registre des traitements**, **AIPD** si traitement à risque.
+
+### Donnée sensible (article 9 RGPD)
+
+Catégories particulières : santé, opinions politiques, origine, biométrie, orientation sexuelle, données génétiques. Traitement **interdit en principe**, sauf exceptions strictement encadrées. Pas à confondre avec le NIR (encadré à part par la CNIL).
+
+### Notification CNIL 72 h
+
+En cas de **violation de données**, le responsable de traitement notifie la **CNIL dans les 72 h** (article 33 RGPD). Information des personnes en plus si **risque élevé** pour leurs droits. La violation est consignée dans un **registre dédié**.
+
+### AIPD
+
+**A**nalyse d'**I**mpact relative à la **P**rotection des **D**onnées (article 35 RGPD). Obligatoire pour les traitements à risque élevé (biométrie, profilage, large échelle de données sensibles).
+
+## Authentification et accès
+
+### Hachage (hash)
+
+Fonction **à sens unique** : on stocke `hash(motDePasse)`, jamais le mot de passe en clair. À la connexion, on hache la saisie et on compare. Irréversible — c'est ce qui le distingue du chiffrement.
+
+### Sel (salage)
+
+Chaîne aléatoire ajoutée au mot de passe avant hachage. Empêche les **rainbow tables** (un même mot de passe donnera deux hashs différents pour deux utilisateurs). À utiliser systématiquement avec bcrypt / Argon2.
+
+### bcrypt / Argon2
+
+Fonctions de hachage **lentes**, conçues pour les mots de passe (résistantes au brute force GPU). À privilégier sur SHA-256 nu, qui est trop rapide.
+
+### Chiffrement symétrique
+
+Réversible avec une **clé**. À utiliser pour les données qu'il faut **lire ultérieurement** (numéro de sécu, dossier médical). En SQL Server : `CREATE SYMMETRIC KEY` + certificat, `EncryptByKey()`. Type de stockage : **`varbinary`**.
+
+### SSO (Single Sign-On)
+
+Authentification unique : un seul jeu d'identifiants pour plusieurs applications. Combiné à **OpenID Connect**, il s'appuie sur des **JWT** échangés entre l'application et le serveur d'authentification.
+
+### JWT (access_token / refresh_token)
+
+JSON Web Token. L'**access_token** identifie l'utilisateur pour chaque appel d'API, durée de vie courte (`expires_in`, ex. 300 s). Le **refresh_token** sert à obtenir un nouvel access_token sans réauthentification, durée plus longue (ex. 1800 s). L'erreur `invalid_token` signale typiquement un access_token expiré → utiliser le refresh.
+
+### Clé API
+
+Identifiant secret unique attribué à une **application partenaire** (B2B). Authentifie l'appelant (pas l'utilisateur). Souvent associé à un **jeton utilisateur** dans une seconde étape (Kirassur).
+
+### MFA / 2FA
+
+Authentification **multi-facteur** : mot de passe (connaissance) + code TOTP, SMS ou clé physique (possession) + biométrie (inhérence). Parade efficace au vol de mot de passe, indispensable côté SSO.
+
+## Sécurisation de la base
+
+### Trigger / déclencheur SQL
+
+Code exécuté automatiquement sur un événement (`BEFORE/AFTER` `INSERT/UPDATE/DELETE`). Typiques en E7 : **historisation de mot de passe** (limite N versions), **audit** (écriture dans une table log), **validation** d'invariant métier. Piège classique : un `DELETE` non conditionné qui vide ce qu'on vient d'insérer.
+
+### Vue SQL
+
+`CREATE VIEW` : table virtuelle issue d'un `SELECT`. Utilisée pour **unifier** des sources hétérogènes (avec `UNION`) ou **masquer** des colonnes sensibles. Le compte qui consomme la vue n'a besoin de droits que sur la vue, pas sur les tables sous-jacentes.
+
+### UNION
+
+Combine les résultats de plusieurs `SELECT` ayant le **même nombre et type de colonnes**. `UNION` supprime les doublons, `UNION ALL` les garde. Pour aligner des schémas différents, on utilise `NULL` pour les colonnes manquantes.
+
+### GROUP BY / HAVING
+
+`GROUP BY` regroupe par valeur de colonne pour appliquer un **agrégat** (`COUNT`, `SUM`, `AVG`). `HAVING` filtre **après** regroupement (ex. `HAVING COUNT(*) > 5`). Le piège : utiliser `WHERE` à la place de `HAVING` (impossible avec un agrégat).
+
+## Sécurité applicative web
+
+### CSRF (Cross-Site Request Forgery)
+
+Une requête frauduleuse exécutée à l'insu de l'utilisateur authentifié. Parade standard : **jeton anti-CSRF** vérifié côté serveur à chaque requête sensible (les frameworks le proposent nativement).
+
+### XSS (Cross-Site Scripting)
+
+Injection de JavaScript dans une page via une entrée utilisateur non échappée. Parade : **échappement systématique** des sorties (`esc()`, `htmlspecialchars()`, `{{ }}` des templates).
+
+### Injection SQL / requête préparée
+
+Concaténer une saisie utilisateur dans une requête SQL = faille majeure. Parade : **requêtes préparées** avec paramètres liés (`?` ou `:nom`).
+
+## API REST
+
+### Verbes HTTP
+
+**GET** (lire), **POST** (créer), **PUT** (mettre à jour), **DELETE** (supprimer). `DELETE` et `PUT` sont les plus dangereux pour l'intégrité — contrôle d'autorisation **obligatoire dans l'API**, pas seulement dans l'application appelante.
+
+### Codes HTTP 401 vs 403
+
+**401 Unauthorized** = pas (ou mal) authentifié. **403 Forbidden** = authentifié mais **pas autorisé** pour cette ressource. Distinction systématiquement testée. Autres codes utiles : 200, 201, 204, 400, 404, 405 (mauvais verbe HTTP sur la route).
+
+## Méthodo, droit, traçabilité
+
+### Moindre privilège
+
+Principe : un compte / processus n'a que les droits **strictement nécessaires** à sa fonction. Côté BDD, un compte applicatif aura `SELECT, INSERT` sur quelques tables, jamais `ALL` ni `DROP`.
+
+### Test unitaire
+
+Méthode qui vérifie un comportement isolé. `assertTrue(cond)` lève une exception si `cond` est faux ; `assertFalse(cond)` si `cond` est vrai. Le jury demande souvent **quel cas est testé** et de **compléter une méthode** pour faire passer les tests.
+
+### Charte informatique opposable
+
+La charte ne peut servir à sanctionner un salarié que si elle est **intégrée au règlement intérieur** (avis du **CSE**, dépôt, affichage — article L1311-1 du Code du travail). Sans cette intégration, elle est seulement informative.
+
+### Article 323-1 du Code pénal
+
+Accès ou maintien **frauduleux** dans un système de traitement automatisé de données : **3 ans d'emprisonnement, 100 000 € d'amende**. S'applique au stagiaire qui utilise les identifiants d'un collègue, par exemple.
+
+### Journalisation conforme CNIL
+
+Une journalisation valide enregistre : l'**auteur individuellement identifié** (pas seulement l'adresse MAC ou l'IP), l'**horodatage**, l'**équipement utilisé**, la **nature de l'opération**. Durée de conservation recommandée : **6 mois**. C'est le critère qui manque le plus souvent dans les sujets.
+
+---
+
+Pour creuser : [Playbook sécurité](/guides/securite) · [droit et RGPD](/guides/droit-rgpd) · [SQL](/guides/sql) · [procédures et triggers](/guides/procedures-triggers) · [PHP/MySQL](/guides/php-mysql) · [POO](/guides/poo) · [tests](/guides/tests).
+
+Bonne épreuve. **Si tu peux replacer ces 25 termes dans une phrase qui répond à une question du dossier, tu as déjà l'essentiel.**
